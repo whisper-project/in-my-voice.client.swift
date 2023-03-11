@@ -7,13 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
 		37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CE429AAC1E50051CFE5 /* whisperApp.swift */; };
-		37763CE729AAC1E50051CFE5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CE629AAC1E50051CFE5 /* ContentView.swift */; };
 		37763CE929AAC1E60051CFE5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37763CE829AAC1E60051CFE5 /* Assets.xcassets */; };
 		37763CEC29AAC1E60051CFE5 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37763CEB29AAC1E60051CFE5 /* Preview Assets.xcassets */; };
 		37763CF629AAC1E60051CFE5 /* whisperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CF529AAC1E60051CFE5 /* whisperTests.swift */; };
 		37763D0029AAC1E60051CFE5 /* whisperUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CFF29AAC1E60051CFE5 /* whisperUITests.swift */; };
 		37763D0229AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D0129AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift */; };
+		37763D1729AC2F710051CFE5 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 37763D1629AC2F710051CFE5 /* LICENSE */; };
+		37763D1D29AC33230051CFE5 /* WhisperData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D1C29AC33230051CFE5 /* WhisperData.swift */; };
+		37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D1F29AC4C5B0051CFE5 /* Set+Cancelable.swift */; };
+		37763D2629AC8D550051CFE5 /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D2529AC8D550051CFE5 /* ListenView.swift */; };
+		377646C629BACB4B002C411C /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C529BACB4B002C411C /* MainViewModel.swift */; };
+		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
+		377646CA29BACC16002C411C /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothManager.swift */; };
+		37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35829BC5DD300F952FE /* WhisperView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,9 +42,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3775A13929AD4EB6007159F5 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		37763CE129AAC1E50051CFE5 /* whisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = whisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37763CE429AAC1E50051CFE5 /* whisperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperApp.swift; sourceTree = "<group>"; };
-		37763CE629AAC1E50051CFE5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		37763CE829AAC1E60051CFE5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		37763CEB29AAC1E60051CFE5 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		37763CF129AAC1E60051CFE5 /* whisperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = whisperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -45,6 +53,14 @@
 		37763CFF29AAC1E60051CFE5 /* whisperUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperUITests.swift; sourceTree = "<group>"; };
 		37763D0129AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		37763D0E29AB3D5A0051CFE5 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		37763D1629AC2F710051CFE5 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		37763D1C29AC33230051CFE5 /* WhisperData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperData.swift; sourceTree = "<group>"; };
+		37763D1F29AC4C5B0051CFE5 /* Set+Cancelable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Set+Cancelable.swift"; sourceTree = "<group>"; };
+		37763D2529AC8D550051CFE5 /* ListenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenView.swift; sourceTree = "<group>"; };
+		377646C529BACB4B002C411C /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
+		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		377646C929BACC16002C411C /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
+		37D6B35829BC5DD300F952FE /* WhisperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				37763D0E29AB3D5A0051CFE5 /* README.md */,
+				37763D1629AC2F710051CFE5 /* LICENSE */,
 				37763CE329AAC1E50051CFE5 /* whisper */,
 				37763CF429AAC1E60051CFE5 /* whisperTests */,
 				37763CFE29AAC1E60051CFE5 /* whisperUITests */,
@@ -97,9 +114,12 @@
 			isa = PBXGroup;
 			children = (
 				37763CE429AAC1E50051CFE5 /* whisperApp.swift */,
-				37763CE629AAC1E50051CFE5 /* ContentView.swift */,
+				37763D0F29AB54F80051CFE5 /* Views */,
+				37763D1329AC034B0051CFE5 /* Models */,
+				37763D1E29AC4C3E0051CFE5 /* Extensions */,
 				37763CE829AAC1E60051CFE5 /* Assets.xcassets */,
 				37763CEA29AAC1E60051CFE5 /* Preview Content */,
+				3775A13929AD4EB6007159F5 /* Settings.bundle */,
 			);
 			path = whisper;
 			sourceTree = "<group>";
@@ -127,6 +147,58 @@
 				37763D0129AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift */,
 			);
 			path = whisperUITests;
+			sourceTree = "<group>";
+		};
+		37763D0F29AB54F80051CFE5 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				377646C229BAC589002C411C /* MainView */,
+				37763D1229AB561F0051CFE5 /* ListenView */,
+				37763D1129AB560E0051CFE5 /* WhisperView */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		37763D1129AB560E0051CFE5 /* WhisperView */ = {
+			isa = PBXGroup;
+			children = (
+				37D6B35829BC5DD300F952FE /* WhisperView.swift */,
+			);
+			path = WhisperView;
+			sourceTree = "<group>";
+		};
+		37763D1229AB561F0051CFE5 /* ListenView */ = {
+			isa = PBXGroup;
+			children = (
+				37763D2529AC8D550051CFE5 /* ListenView.swift */,
+			);
+			path = ListenView;
+			sourceTree = "<group>";
+		};
+		37763D1329AC034B0051CFE5 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				377646C929BACC16002C411C /* BluetoothManager.swift */,
+				37763D1C29AC33230051CFE5 /* WhisperData.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		37763D1E29AC4C3E0051CFE5 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				37763D1F29AC4C5B0051CFE5 /* Set+Cancelable.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		377646C229BAC589002C411C /* MainView */ = {
+			isa = PBXGroup;
+			children = (
+				377646C729BACB73002C411C /* MainView.swift */,
+				377646C529BACB4B002C411C /* MainViewModel.swift */,
+			);
+			path = MainView;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -233,6 +305,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */,
+				37763D1729AC2F710051CFE5 /* LICENSE in Resources */,
 				37763CEC29AAC1E60051CFE5 /* Preview Assets.xcassets in Resources */,
 				37763CE929AAC1E60051CFE5 /* Assets.xcassets in Resources */,
 			);
@@ -259,8 +333,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				37763CE729AAC1E50051CFE5 /* ContentView.swift in Sources */,
+				377646C829BACB73002C411C /* MainView.swift in Sources */,
+				377646CA29BACC16002C411C /* BluetoothManager.swift in Sources */,
+				37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */,
+				37763D1D29AC33230051CFE5 /* WhisperData.swift in Sources */,
+				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
+				37763D2629AC8D550051CFE5 /* ListenView.swift in Sources */,
+				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -347,7 +427,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.5;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -401,7 +481,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.5;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -422,11 +502,16 @@
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Whisper;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Whisper and Listen to other devices";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Allow discovery by other devices";
+				INFOPLIST_KEY_NSBluetoothWhileInUseUsageDescription = "Whispering and Listening to other devices";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -451,11 +536,16 @@
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Whisper;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Whisper and Listen to other devices";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Allow discovery by other devices";
+				INFOPLIST_KEY_NSBluetoothWhileInUseUsageDescription = "Whispering and Listening to other devices";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

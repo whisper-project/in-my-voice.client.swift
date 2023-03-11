@@ -3,13 +3,12 @@
 // All material in this project and repository is licensed under the
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
-import SwiftUI
+import Combine
 
-@main
-struct whisperApp: App {
-    var body: some Scene {
-        WindowGroup {
-            MainView()
-        }
+extension Set where Element: Cancellable {
+    
+    func cancel() {
+        forEach { $0.cancel() }
     }
+    
 }
