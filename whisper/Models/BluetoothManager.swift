@@ -12,8 +12,12 @@ final class BluetoothManager: NSObject {
         
     var stateSubject: CurrentValueSubject<CBManagerState, Never> = .init(.unknown)
     var peripheralSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
-    var servicesSubject: PassthroughSubject<CBService, Never> = .init()
-    var characteristicsSubject: PassthroughSubject<(CBService, [CBCharacteristic]), Never> = .init()
+    var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
+    var characteristicsSubject: PassthroughSubject<CBService, Never> = .init()
+    var centralSubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
+    var centralUnsubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
+    var readRequestSubject: PassthroughSubject<CBATTRequest, Never> = .init()
+    var readyToUpdateSubject: PassthroughSubject<(), Never> = .init()
     
     private var centralManager: CBCentralManager!
     private var peripheralManager: CBPeripheralManager!
@@ -32,20 +36,32 @@ final class BluetoothManager: NSObject {
     
     func scan(forService: CBUUID) {
         wanted_services.insert(forService)
-        scan_for_services()
+        scanForWantedServices()
     }
     
     func stopScan(forService: CBUUID) {
         wanted_services.remove(forService)
-        scan_for_services()
+        scanForWantedServices()
     }
     
-    private func scan_for_services() {
+    private func scanForWantedServices() {
         if wanted_services.isEmpty {
             centralManager.stopScan()
         } else {
             centralManager.scanForPeripherals(withServices: Array(wanted_services))
         }
+    }
+    
+    func publish(service: CBMutableService) {
+        peripheralManager.add(service)
+    }
+    
+    func unpublish(service: CBMutableService) {
+        peripheralManager.remove(service)
+    }
+    
+    func unpublishAll() {
+        peripheralManager.removeAllServices()
     }
     
     func advertise(service: CBUUID) {
@@ -70,9 +86,12 @@ final class BluetoothManager: NSObject {
     }
     
     func connect(_ peripheral: CBPeripheral) {
-        centralManager.stopScan()
         peripheral.delegate = self
         centralManager.connect(peripheral)
+    }
+    
+    func disconnect(_ peripheral: CBPeripheral) {
+        centralManager.cancelPeripheralConnection(peripheral)
     }
 }
 
@@ -89,7 +108,14 @@ extension BluetoothManager: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        peripheral.discoverServices(Array(wanted_services))
+        peripheral.discoverServices(nil)
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        if let err = error {
+            print("Failed to disconnect peripheral \(peripheral): \(err)")
+            return
+        }
     }
 }
 
@@ -104,27 +130,48 @@ extension BluetoothManager: CBPeripheralManagerDelegate {
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
         if let err = error {
             print("Add \(service) failed with \(err)")
-            fatalError("Couldn't add the service \(service.uuid) - please report a bug!")
+            fatalError("Couldn't add the service \(service) - please report a bug!")
         }
+    }
+    
+    func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
+        centralSubscribedSubject.send((central, characteristic))
+    }
+    
+    func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
+        centralUnsubscribedSubject.send((central, characteristic))
+    }
+
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        readRequestSubject.send(request)
+    }
+    
+    func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
+        readyToUpdateSubject.send(())
     }
 }
 
 extension BluetoothManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        guard let services = peripheral.services else {
+        if let err = error {
+            print("Error discovering services for \(peripheral): \(err)")
             return
         }
-        for service in services {
-            if wanted_services.contains(service.uuid) {
-                servicesSubject.send(service)
-            }
-        }
+        servicesSubject.send((peripheral, peripheral.services ?? []))
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        guard let characteristics = service.characteristics else {
+        if let err = error {
+            print("Error discovering characteristics for \(service) on \(peripheral): \(err)")
             return
         }
-        characteristicsSubject.send((service, characteristics))
+        characteristicsSubject.send(service)
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
+        if let err = error {
+            print("Error subscribing or unsubscribing to \(characteristic) on \(peripheral): \(err)")
+            return
+        }
     }
 }

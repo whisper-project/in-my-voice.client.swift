@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
 		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
 		37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CE429AAC1E50051CFE5 /* whisperApp.swift */; };
 		37763CE929AAC1E60051CFE5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37763CE829AAC1E60051CFE5 /* Assets.xcassets */; };
@@ -22,6 +23,7 @@
 		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
 		377646CA29BACC16002C411C /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothManager.swift */; };
 		37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35829BC5DD300F952FE /* WhisperView.swift */; };
+		37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35D29BCF66400F952FE /* ListenViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +44,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
 		3775A13929AD4EB6007159F5 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		37763CE129AAC1E50051CFE5 /* whisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = whisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37763CE429AAC1E50051CFE5 /* whisperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperApp.swift; sourceTree = "<group>"; };
@@ -61,6 +64,7 @@
 		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		377646C929BACC16002C411C /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
 		37D6B35829BC5DD300F952FE /* WhisperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperView.swift; sourceTree = "<group>"; };
+		37D6B35D29BCF66400F952FE /* ListenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +167,7 @@
 			isa = PBXGroup;
 			children = (
 				37D6B35829BC5DD300F952FE /* WhisperView.swift */,
+				374BBEBA29BD809D0052997A /* WhisperViewModel.swift */,
 			);
 			path = WhisperView;
 			sourceTree = "<group>";
@@ -171,6 +176,7 @@
 			isa = PBXGroup;
 			children = (
 				37763D2529AC8D550051CFE5 /* ListenView.swift */,
+				37D6B35D29BCF66400F952FE /* ListenViewModel.swift */,
 			);
 			path = ListenView;
 			sourceTree = "<group>";
@@ -341,6 +347,8 @@
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
 				37763D2629AC8D550051CFE5 /* ListenView.swift in Sources */,
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
+				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,
+				374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -511,7 +519,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -545,7 +553,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
