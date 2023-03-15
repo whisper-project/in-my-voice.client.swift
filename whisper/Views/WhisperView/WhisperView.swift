@@ -13,6 +13,19 @@ struct WhisperView: View {
     var body: some View {
         GeometryReader { proxy in
             VStack(spacing: 10) {
+                HStack {
+                    Spacer()
+                    Button(action: { mode = .ask }) {
+                        Text("Stop Whispering")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                            .padding(10)
+                    }
+                    .background(Color.blue)
+                    .cornerRadius(15)
+                    .padding(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
+                }
+                .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
                 Text(model.pastText)
                     .foregroundColor(.gray)
                     .lineLimit(nil)
@@ -20,7 +33,7 @@ struct WhisperView: View {
                     .padding()
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 3/4, alignment: .bottomLeading)
                     .border(.gray, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                 Text(model.statusText)
                     .font(.caption)
                 TextField("", text: $model.liveText)
@@ -29,15 +42,7 @@ struct WhisperView: View {
                     .padding()
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 1/4, alignment: .topLeading)
                     .border(.black, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-                Button(action: { mode = .ask }) {
-                    Text("Stop Whispering")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .padding(10)
-                }
-                .background(Color.blue)
-                .cornerRadius(15)
+                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
             }
         }
         .onAppear { self.model.start() }

@@ -18,7 +18,9 @@ final class BluetoothManager: NSObject {
     var centralUnsubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
     var readRequestSubject: PassthroughSubject<CBATTRequest, Never> = .init()
     var readyToUpdateSubject: PassthroughSubject<(), Never> = .init()
-    
+    var receivedValueSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic), Never> = .init()
+    var disconnectedSubject: PassthroughSubject<CBPeripheral, Never> = .init()
+
     private var centralManager: CBCentralManager!
     private var peripheralManager: CBPeripheralManager!
     
@@ -92,6 +94,10 @@ final class BluetoothManager: NSObject {
     
     func disconnect(_ peripheral: CBPeripheral) {
         centralManager.cancelPeripheralConnection(peripheral)
+    }
+    
+    func respondToReadRequest(request: CBATTRequest, withCode: CBATTError.Code) {
+        peripheralManager.respond(to: request, withResult: withCode)
     }
 }
 
@@ -167,11 +173,26 @@ extension BluetoothManager: CBPeripheralDelegate {
         }
         characteristicsSubject.send(service)
     }
+        
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        if let err = error {
+            print("Error retrieving value for \(characteristic) on \(peripheral): \(err)")
+            return
+        }
+        receivedValueSubject.send((peripheral, characteristic))
+    }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
         if let err = error {
             print("Error subscribing or unsubscribing to \(characteristic) on \(peripheral): \(err)")
             return
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        print("Lost services \(invalidatedServices) from \(peripheral)")
+        if invalidatedServices.first(where: { $0.uuid == WhisperData.whisperServiceUuid }) != nil {
+            disconnectedSubject.send(peripheral)
         }
     }
 }
