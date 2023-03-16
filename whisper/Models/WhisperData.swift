@@ -14,16 +14,21 @@ struct WhisperData {
     static let whisperDisconnectUuid = CBUUID(string: "235FC59C-9DC4-4758-B8F0-3E25CB017F45")
     static let listenServiceUuid = CBUUID(string: "FEEFEB67-2CC4-409C-B77B-540DD72F1848")
     static let listenNameUuid = CBUUID(string: "246FB297-3AED-4B08-A231-47EFC4EEFD4D")
-    static let deviceName = {
+    static var deviceName = {
         let defaults = UserDefaults.standard
         let name = defaults.string(forKey: "device_name_preference") ?? ""
         return name
     }()
+    static func updateDeviceName(_ name: String) {
+        deviceName = name
+        let defaults = UserDefaults.standard
+        defaults.setValue(deviceName, forKey: "device_name_preference")
+    }
 
     static var listenNameCharacteristic = CBMutableCharacteristic(
-        type: listenNameUuid, properties: .read, value: Data(deviceName.utf8), permissions: .readable)
+        type: listenNameUuid, properties: .read, value: nil, permissions: .readable)
     static var whisperNameCharacteristic = CBMutableCharacteristic(
-        type: whisperNameUuid, properties: .read, value: Data(deviceName.utf8), permissions: .readable)
+        type: whisperNameUuid, properties: .read, value: nil, permissions: .readable)
     static var whisperPastTextCharacteristic = CBMutableCharacteristic(
         type: whisperPastTextUuid, properties: .read, value: nil, permissions: .readable)
     static var whisperLiveTextCharacteristic = CBMutableCharacteristic(

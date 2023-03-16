@@ -26,42 +26,44 @@ struct MainView: View {
     
     @ViewBuilder
     private func choiceView() -> some View {
-        VStack {
+        VStack(spacing: 60) {
             HStack(spacing: 60) {
-                Button(action: { self.set_mode(.whisper) }) {
-                    Text("Whisper")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .padding(10)
+                VStack(spacing: 60) {
+                    Button(action: { self.set_mode(.whisper) }) {
+                        Text("Whisper")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                            .padding(10)
+                    }
+                    .background(Color.blue)
+                    .cornerRadius(15)
+                    Button(action: { self.set_mode(.whisper, always: true) }) {
+                        Text("Always\nWhisper")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                            .padding(10)
+                    }
+                    .background(Color.blue)
+                    .cornerRadius(15)
                 }
-                .background(Color.blue)
-                .cornerRadius(15)
-                Button(action: { self.set_mode(.listen) }) {
-                    Text("Listen")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .padding(EdgeInsets(top: 10, leading: 20, bottom: 10, trailing: 20))
+                VStack(spacing: 60) {
+                    Button(action: { self.set_mode(.listen) }) {
+                        Text("Listen")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                            .padding(EdgeInsets(top: 10, leading: 25, bottom: 10, trailing: 25))
+                    }
+                    .background(Color.blue)
+                    .cornerRadius(15)
+                    Button(action: { self.set_mode(.listen, always: true) }) {
+                        Text("Always\nListen")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                            .padding(EdgeInsets(top: 10, leading: 20, bottom: 10, trailing: 20))
+                    }
+                    .background(Color.blue)
+                    .cornerRadius(15)
                 }
-                .background(Color.blue)
-                .cornerRadius(15)
-            }
-            HStack(spacing: 60) {
-                Button(action: { self.set_mode(.whisper, always: true) }) {
-                    Text("Always\nWhisper")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .padding(10)
-                }
-                .background(Color.blue)
-                .cornerRadius(15)
-                Button(action: { self.set_mode(.listen, always: true) }) {
-                    Text("Always\nListen")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .padding(EdgeInsets(top: 10, leading: 20, bottom: 10, trailing: 20))
-                }
-                .background(Color.blue)
-                .cornerRadius(15)
             }
         }
     }
