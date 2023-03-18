@@ -38,7 +38,7 @@ struct ListenView: View {
                             .fontWeight(.bold)
                             .padding(10)
                     }
-                    .background(Color.blue)
+                    .background(Color.accentColor)
                     .cornerRadius(15)
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 20))
                 }

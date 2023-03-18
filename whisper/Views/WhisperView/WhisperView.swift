@@ -21,7 +21,7 @@ struct WhisperView: View {
                             .fontWeight(.bold)
                             .padding(10)
                     }
-                    .background(Color.blue)
+                    .background(Color.accentColor)
                     .cornerRadius(15)
                     .padding(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
                 }
@@ -37,6 +37,7 @@ struct WhisperView: View {
                 Text(model.statusText)
                     .font(.caption)
                 TextField("", text: $model.liveText)
+                    .onChange(of: model.liveText, perform: model.updateListeners)
                     .lineLimit(nil)
                     .multilineTextAlignment(.leading)
                     .padding()

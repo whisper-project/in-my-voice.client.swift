@@ -53,6 +53,10 @@ final class WhisperViewModel: ObservableObject {
         manager.unpublish(service: WhisperData.whisperService)
     }
     
+    func updateListeners(_ newLiveText: String) {
+        
+    }
+    
     private func find_listener() {
         print("Advertising whisperer...")
         manager.advertise(service: WhisperData.whisperServiceUuid)
