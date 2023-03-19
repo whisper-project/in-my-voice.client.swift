@@ -8,10 +8,10 @@ import CoreBluetooth
 
 final class WhisperViewModel: ObservableObject {
     @Published var statusText: String = ""
-    @Published var liveText: String = "This is some live text to seed the communication"
-    @Published var pastText: String = "This is some past text to seed the communication"
+    @Published var liveText: String = ""
+    @Published var pastText: String = ""
     
-    private var liveTextNotifyOffset: UInt32 = 0
+    private var pendingChunks: [TextProtocol.ProtocolChunk] = []
     private var advertisingInProgress = false
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
@@ -53,8 +53,41 @@ final class WhisperViewModel: ObservableObject {
         manager.unpublish(service: WhisperData.whisperService)
     }
     
-    func updateListeners(_ newLiveText: String) {
-        
+    /// Receive an updated live text from the view.
+    /// Returns whether or not to reset the live text to empty.
+    func updateLiveText(old: String, new: String) -> Bool {
+        if let chunk = TextProtocol.diffLines(old: old, new: new) {
+            pendingChunks.append(chunk)
+            updateListeners()
+            if new.hasSuffix("\n") {
+                pastText = pastText + new
+                return true
+            }
+        }
+        return false
+    }
+    
+    /// update listeners on changes in live text
+    func updateListeners() {
+        guard !listeners.isEmpty else {
+            print("No listeners to update, ignoring process update")
+            return
+        }
+        guard !pendingChunks.isEmpty else {
+            print("Nothing to update listeners with")
+            return
+        }
+        print("Updating subscribed listeners...")
+        while !pendingChunks.isEmpty {
+            let chunk = pendingChunks.first!
+            let sendOk = manager.updateValue(value: chunk.toData(),
+                                             characteristic: WhisperData.whisperLiveTextCharacteristic)
+            if sendOk {
+                pendingChunks.removeFirst()
+            } else {
+                break
+            }
+        }
     }
     
     private func find_listener() {
@@ -128,8 +161,9 @@ final class WhisperViewModel: ObservableObject {
             responseData = Data(WhisperData.deviceName.utf8)
         } else if characteristic.uuid == WhisperData.whisperLiveTextUuid {
             print("Request is for live text")
-            responseData = Data(liveText.utf8)
-            liveTextNotifyOffset = 0
+            // the requesting whisperer should replace their liveText with ours
+            let chunk = TextProtocol.ProtocolChunk(start: 0, text: liveText)
+            responseData = chunk.toData()
         } else if characteristic.uuid == WhisperData.whisperPastTextUuid {
             print("Request is for past text")
             responseData = Data(pastText.utf8)
@@ -149,10 +183,6 @@ final class WhisperViewModel: ObservableObject {
     }
     
     private func processReadyToUpdate(_ ignore: ()) {
-        guard !listeners.isEmpty else {
-            print("No listeners to update, ignoring process update")
-            return
-        }
-        print("Update subscribed listeners")
+        updateListeners()
     }
 }

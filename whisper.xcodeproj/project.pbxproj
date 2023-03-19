@@ -22,6 +22,7 @@
 		377646C629BACB4B002C411C /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C529BACB4B002C411C /* MainViewModel.swift */; };
 		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
 		377646CA29BACC16002C411C /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothManager.swift */; };
+		378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378A8E1629C554F20097F15A /* TextProtocol.swift */; };
 		37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35829BC5DD300F952FE /* WhisperView.swift */; };
 		37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35D29BCF66400F952FE /* ListenViewModel.swift */; };
 /* End PBXBuildFile section */
@@ -64,6 +65,7 @@
 		377646C529BACB4B002C411C /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
 		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		377646C929BACC16002C411C /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
+		378A8E1629C554F20097F15A /* TextProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextProtocol.swift; sourceTree = "<group>"; };
 		37D6B35829BC5DD300F952FE /* WhisperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperView.swift; sourceTree = "<group>"; };
 		37D6B35D29BCF66400F952FE /* ListenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -188,6 +190,7 @@
 			children = (
 				377646C929BACC16002C411C /* BluetoothManager.swift */,
 				37763D1C29AC33230051CFE5 /* WhisperData.swift */,
+				378A8E1629C554F20097F15A /* TextProtocol.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -347,6 +350,7 @@
 				37763D1D29AC33230051CFE5 /* WhisperData.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
+				378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */,
 				37763D2629AC8D550051CFE5 /* ListenView.swift in Sources */,
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
 				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,

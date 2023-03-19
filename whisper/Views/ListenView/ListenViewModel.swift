@@ -24,8 +24,7 @@ final class ListenViewModel: ObservableObject {
     private var pastTextCharacteristic: CBCharacteristic?
     private var disconnectCharacteristic: CBCharacteristic?
     private var scanInProgress: Bool = false
-    private var liveTextBuffer = String()
-    private var pastTextBuffer = String()
+    private var resetInProgress: Bool = false
 
     init() {
         manager.peripheralSubject
@@ -56,7 +55,7 @@ final class ListenViewModel: ObservableObject {
     func stop() {
         disconnect()
     }
-    
+        
     private func findWhisperer() {
         guard whisperer == nil else {
             print("Tried to find a whisperer when we have one, ignoring request")
@@ -82,8 +81,8 @@ final class ListenViewModel: ObservableObject {
         }
         if connectComplete {
             statusText = "Listening to \(whispererName)"
-            liveText = liveTextBuffer
-            pastText = pastTextBuffer
+            liveText = ""
+            pastText = ""
         }
     }
     
@@ -146,7 +145,7 @@ final class ListenViewModel: ObservableObject {
         }
         if let liveTextC = allCs.first(where: { $0.uuid == WhisperData.whisperLiveTextUuid }) {
             liveTextCharacteristic = liveTextC
-            whisperer?.readValue(for: liveTextCharacteristic!)
+            whisperer!.readValue(for: liveTextCharacteristic!)
             whisperer!.setNotifyValue(true, for: liveTextCharacteristic!)
         } else {
             fatalError("Whisper service has no live text characteristic: report a bug!")
@@ -178,10 +177,27 @@ final class ListenViewModel: ObservableObject {
             }
         } else if characteristic.uuid == liveTextCharacteristic?.uuid {
             print("Received live text value from whisperer")
-            // TODO: do protocol analysis of data
-            if let textData = characteristic.value {
-                if !textData.isEmpty {
-                    liveText = liveText + String(decoding: textData, as: UTF8.self)
+            if let textData = characteristic.value,
+               let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
+                if chunk.start == 0 {
+                    // a full read does a reset
+                    resetInProgress = false
+                    liveText = chunk.text
+                } else if chunk.start > liveText.count {
+                    // we must have missed a packet, read the full state to reset
+                    // unless we're already waiting for the read to return
+                    if !resetInProgress {
+                        whisperer!.readValue(for: liveTextCharacteristic!)
+                        resetInProgress = true
+                    }
+                } else {
+                    let nextText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
+                    if nextText.hasSuffix("\n") {
+                        liveText = ""
+                        pastText = nextText + pastText
+                    } else {
+                        liveText = nextText
+                    }
                 }
             }
         } else if characteristic.uuid == pastTextCharacteristic?.uuid {

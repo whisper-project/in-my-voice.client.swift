@@ -99,6 +99,10 @@ final class BluetoothManager: NSObject {
     func respondToReadRequest(request: CBATTRequest, withCode: CBATTError.Code) {
         peripheralManager.respond(to: request, withResult: withCode)
     }
+    
+    func updateValue(value: Data, characteristic: CBMutableCharacteristic) -> Bool {
+        return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: nil)
+    }
 }
 
 extension BluetoothManager: CBCentralManagerDelegate {

@@ -7,7 +7,7 @@ import SwiftUI
 
 struct WhisperView: View {
     @Binding var mode: OperatingMode
-
+    @State private var liveText: String = ""
     @StateObject private var model: WhisperViewModel = .init()
 
     var body: some View {
@@ -36,8 +36,12 @@ struct WhisperView: View {
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                 Text(model.statusText)
                     .font(.caption)
-                TextField("", text: $model.liveText)
-                    .onChange(of: model.liveText, perform: model.updateListeners)
+                TextField("", text: $liveText)
+                    .onChange(of: liveText) { [liveText] new in
+                        if model.updateLiveText(old: liveText, new: new) {
+                            self.liveText = ""
+                        }
+                    }
                     .lineLimit(nil)
                     .multilineTextAlignment(.leading)
                     .padding()
