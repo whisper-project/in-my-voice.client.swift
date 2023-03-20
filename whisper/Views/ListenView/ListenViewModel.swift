@@ -15,6 +15,7 @@ final class ListenViewModel: ObservableObject {
     @Published var liveText: String = ""
     @Published var pastText: String = ""
     
+    private var safePastText: String = ""
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
     private var whisperer: CBPeripheral?
@@ -55,6 +56,11 @@ final class ListenViewModel: ObservableObject {
     func stop() {
         disconnect()
     }
+    
+    /// User has changed the past text, reset it
+    func resetPastText() {
+        pastText = safePastText
+    }
         
     private func findWhisperer() {
         guard whisperer == nil else {
@@ -64,6 +70,7 @@ final class ListenViewModel: ObservableObject {
         statusText = "Looking for a whisperer to listen to…"
         liveText = connectingLiveText
         pastText = connectingPastText
+        safePastText = pastText
         if !scanInProgress {
             scanInProgress = true
             print("Advertising listener and scanning for whisperer...")
@@ -83,6 +90,7 @@ final class ListenViewModel: ObservableObject {
             statusText = "Listening to \(whispererName)"
             liveText = ""
             pastText = ""
+            safePastText = ""
         }
     }
     
@@ -179,7 +187,11 @@ final class ListenViewModel: ObservableObject {
             print("Received live text value from whisperer")
             if let textData = characteristic.value,
                let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
-                if chunk.start == 0 {
+                if chunk.isCompletionChunk() {
+                    pastText = pastText + "\n" + liveText
+                    safePastText = pastText
+                    liveText = ""
+                } else if chunk.start == 0 {
                     // a full read does a reset
                     resetInProgress = false
                     liveText = chunk.text
@@ -191,13 +203,7 @@ final class ListenViewModel: ObservableObject {
                         resetInProgress = true
                     }
                 } else {
-                    let nextText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
-                    if nextText.hasSuffix("\n") {
-                        liveText = ""
-                        pastText = nextText + pastText
-                    } else {
-                        liveText = nextText
-                    }
+                    liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
                 }
             }
         } else if characteristic.uuid == pastTextCharacteristic?.uuid {
@@ -205,6 +211,7 @@ final class ListenViewModel: ObservableObject {
             if let textData = characteristic.value {
                 if !textData.isEmpty {
                     pastText = pastText + String(decoding: textData, as: UTF8.self)
+                    safePastText = pastText
                 }
             }
         } else if characteristic.uuid == disconnectCharacteristic?.uuid {
@@ -226,6 +233,7 @@ final class ListenViewModel: ObservableObject {
         nameCharacteristic = nil
         pastTextCharacteristic = nil
         pastText = connectingPastText
+        safePastText = pastText
         liveTextCharacteristic = nil
         liveText = connectingLiveText
         whispererName = unknownWhispererName
@@ -251,6 +259,7 @@ final class ListenViewModel: ObservableObject {
             nameCharacteristic = nil
             pastTextCharacteristic = nil
             pastText = connectingPastText
+            safePastText = pastText
         }
         statusText = "Stopped listening"
     }

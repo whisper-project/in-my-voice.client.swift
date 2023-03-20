@@ -12,16 +12,19 @@ import Foundation
 /// make sure that replaying a suffix sequence of packets is idempotent, and
 /// that the listener can tell if they've missed a packet (so they can re-read).
 ///
-/// The design is to send a packet each time the user types a few characters,
-/// and to include in each packet the offset in the existing text at which those
-/// characters were typed.  If a listener receives an offset that's shorter than
+/// The design is to send a packet each time the user changes the live text,
+/// and to include in each packet the offset in the existing text at which
+/// the change starts.  If a listener receives an offset that's shorter than
 /// his current text, he can assume the user has revised earlier text.
 /// If a listener receives an offset that's longer than his current text, he
 /// can assume he's missed a packet and call for a new read of the data,
 /// suspending packet processing until the full data is received.
+///
+/// Special case: a negative offset indicates the live text was completed
+/// and should be moved to past text.
 final class TextProtocol {
     struct ProtocolChunk {
-        var start: UInt64
+        var start: Int
         var text: String
         
         func toData() -> Data {
@@ -34,10 +37,20 @@ final class TextProtocol {
             if parts.count == 0 {
                 // data packets with no "|" character are malformed
                 return nil
-            } else {
-                let offset = UInt64(parts[0]) ?? 0
+            } else if let offset = Int(parts[0]) {
                 return ProtocolChunk(start: offset, text: parts.count == 2 ? String(parts[1]) : "")
+            } else {
+                // data packets with no int before the "|" are malformed
+                return nil
             }
+        }
+
+        static func completionChunk() -> ProtocolChunk {
+            return ProtocolChunk(start: -1, text: "")
+        }
+        
+        func isCompletionChunk() -> Bool {
+            return start < 0
         }
     }
     
@@ -48,7 +61,7 @@ final class TextProtocol {
                 if i == old.startIndex {
                     return ProtocolChunk(start: 0, text: new)
                 } else {
-                    return ProtocolChunk(start: UInt64(old.distance(from: old.startIndex, to: i)),
+                    return ProtocolChunk(start: Int(old.distance(from: old.startIndex, to: i)),
                                          text: String(new.suffix(from: j)))
                 }
             }
@@ -59,10 +72,10 @@ final class TextProtocol {
             return nil
         } else if old.count < new.count {
             // old is a prefix of new
-            return ProtocolChunk(start: UInt64(old.count), text: String(new.suffix(new.count - old.count)))
+            return ProtocolChunk(start: old.count, text: String(new.suffix(new.count - old.count)))
         } else {
             // new is a prefix of old
-            return ProtocolChunk(start: UInt64(new.count), text: "")
+            return ProtocolChunk(start: new.count, text: "")
         }
     }
     

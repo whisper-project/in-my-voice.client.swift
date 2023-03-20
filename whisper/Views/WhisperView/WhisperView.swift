@@ -8,6 +8,7 @@ import SwiftUI
 struct WhisperView: View {
     @Binding var mode: OperatingMode
     @State private var liveText: String = ""
+    @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel = .init()
 
     var body: some View {
@@ -26,9 +27,17 @@ struct WhisperView: View {
                     .padding(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
                 }
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
-                Text(model.pastText)
+                TextField("", text: $model.pastText, axis: .vertical)
+                    .onChange(of: model.pastText) { _ in
+                        model.resetPastText()
+                        focusField = "liveText"
+                    }
+                    .onSubmit {
+                        model.resetPastText()
+                        focusField = "liveText"
+                    }
+                    .focused($focusField, equals: "pastText")
                     .foregroundColor(.gray)
-                    .lineLimit(nil)
                     .multilineTextAlignment(.leading)
                     .padding()
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 3/4, alignment: .bottomLeading)
@@ -42,15 +51,24 @@ struct WhisperView: View {
                             self.liveText = ""
                         }
                     }
-                    .lineLimit(nil)
+                    .onSubmit {
+                        model.submitLiveText()
+                        liveText = ""
+                        focusField = "liveText"
+                    }
+                    .focused($focusField, equals: "liveText")
                     .multilineTextAlignment(.leading)
                     .padding()
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 1/4, alignment: .topLeading)
                     .border(.black, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
             }
+            .lineLimit(nil)
         }
-        .onAppear { self.model.start() }
+        .onAppear {
+            self.model.start()
+            focusField = "liveText"
+        }
         .onDisappear { self.model.stop() }
     }
 }

@@ -8,9 +8,10 @@ import CoreBluetooth
 
 final class WhisperViewModel: ObservableObject {
     @Published var statusText: String = ""
-    @Published var liveText: String = ""
     @Published var pastText: String = ""
     
+    private var liveText: String = ""
+    private var safePastText: String = ""
     private var pendingChunks: [TextProtocol.ProtocolChunk] = []
     private var advertisingInProgress = false
     private var manager = BluetoothManager.shared
@@ -56,15 +57,26 @@ final class WhisperViewModel: ObservableObject {
     /// Receive an updated live text from the view.
     /// Returns whether or not to reset the live text to empty.
     func updateLiveText(old: String, new: String) -> Bool {
+        liveText = new
         if let chunk = TextProtocol.diffLines(old: old, new: new) {
             pendingChunks.append(chunk)
             updateListeners()
-            if new.hasSuffix("\n") {
-                pastText = pastText + new
-                return true
-            }
         }
         return false
+    }
+    
+    /// User has submitted the live text
+    func submitLiveText() {
+        pastText = pastText + "\n" + liveText
+        safePastText = pastText
+        liveText = ""
+        pendingChunks.append(TextProtocol.ProtocolChunk.completionChunk())
+        updateListeners()
+    }
+    
+    /// User has changed the past text, reset it
+    func resetPastText() {
+        pastText = safePastText
     }
     
     /// update listeners on changes in live text
@@ -166,7 +178,7 @@ final class WhisperViewModel: ObservableObject {
             responseData = chunk.toData()
         } else if characteristic.uuid == WhisperData.whisperPastTextUuid {
             print("Request is for past text")
-            responseData = Data(pastText.utf8)
+            responseData = Data(safePastText.utf8)
         }
         if let responseData = responseData {
             if request.offset > responseData.count {
