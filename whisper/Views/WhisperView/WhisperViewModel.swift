@@ -8,8 +8,8 @@ import CoreBluetooth
 
 final class WhisperViewModel: ObservableObject {
     @Published var statusText: String = ""
-    @Published var pastText: String = ""
-    
+    var pastText: PastTextViewModel = .init()
+
     private var liveText: String = ""
     private var safePastText: String = ""
     private var pendingChunks: [TextProtocol.ProtocolChunk] = []
@@ -67,16 +67,10 @@ final class WhisperViewModel: ObservableObject {
     
     /// User has submitted the live text
     func submitLiveText() {
-        pastText = pastText + "\n" + liveText
-        safePastText = pastText
+        pastText.addLine(liveText)
         liveText = ""
         pendingChunks.append(TextProtocol.ProtocolChunk.completionChunk())
         updateListeners()
-    }
-    
-    /// User has changed the past text, reset it
-    func resetPastText() {
-        pastText = safePastText
     }
     
     /// update listeners on changes in live text

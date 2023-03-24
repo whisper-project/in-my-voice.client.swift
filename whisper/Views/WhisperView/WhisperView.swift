@@ -27,18 +27,8 @@ struct WhisperView: View {
                     .padding(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
                 }
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
-                TextField("", text: $model.pastText, axis: .vertical)
-                    .onChange(of: model.pastText) { _ in
-                        model.resetPastText()
-                        focusField = "liveText"
-                    }
-                    .onSubmit {
-                        model.resetPastText()
-                        focusField = "liveText"
-                    }
-                    .focused($focusField, equals: "pastText")
+                PastTextView(model: model.pastText)
                     .foregroundColor(.gray)
-                    .multilineTextAlignment(.leading)
                     .padding()
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 3/4, alignment: .bottomLeading)
                     .border(.gray, width: 2)
@@ -57,12 +47,12 @@ struct WhisperView: View {
                         focusField = "liveText"
                     }
                     .focused($focusField, equals: "liveText")
-                    .multilineTextAlignment(.leading)
                     .padding()
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 1/4, alignment: .topLeading)
                     .border(.black, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
             }
+            .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
         .onAppear {

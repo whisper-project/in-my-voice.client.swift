@@ -7,15 +7,17 @@ import Combine
 import CoreBluetooth
 
 let connectingLiveText = "This is where the line being typed by the whisperer will appear in real time... "
-let connectingPastText = "The most recent line will be on top.\nThis is where lines will move after the whisperer hits return."
+let connectingPastText = """
+This is where lines will move after the whisperer hits return.
+The most recent line will be on the bottom.
+"""
 let unknownWhispererName = "(not yet known)"
 
 final class ListenViewModel: ObservableObject {
     @Published var statusText: String = ""
     @Published var liveText: String = ""
-    @Published var pastText: String = ""
+    var pastText: PastTextViewModel = .init()
     
-    private var safePastText: String = ""
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
     private var whisperer: CBPeripheral?
@@ -57,11 +59,6 @@ final class ListenViewModel: ObservableObject {
         disconnect()
     }
     
-    /// User has changed the past text, reset it
-    func resetPastText() {
-        pastText = safePastText
-    }
-        
     private func findWhisperer() {
         guard whisperer == nil else {
             print("Tried to find a whisperer when we have one, ignoring request")
@@ -69,8 +66,7 @@ final class ListenViewModel: ObservableObject {
         }
         statusText = "Looking for a whisperer to listen to…"
         liveText = connectingLiveText
-        pastText = connectingPastText
-        safePastText = pastText
+        pastText.setFromText(connectingPastText)
         if !scanInProgress {
             scanInProgress = true
             print("Advertising listener and scanning for whisperer...")
@@ -89,8 +85,7 @@ final class ListenViewModel: ObservableObject {
         if connectComplete {
             statusText = "Listening to \(whispererName)"
             liveText = ""
-            pastText = ""
-            safePastText = ""
+            pastText.clearLines()
         }
     }
     
@@ -188,8 +183,7 @@ final class ListenViewModel: ObservableObject {
             if let textData = characteristic.value,
                let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
                 if chunk.isCompletionChunk() {
-                    pastText = pastText + "\n" + liveText
-                    safePastText = pastText
+                    pastText.addLine(liveText)
                     liveText = ""
                 } else if chunk.start == 0 {
                     // a full read does a reset
@@ -209,9 +203,10 @@ final class ListenViewModel: ObservableObject {
         } else if characteristic.uuid == pastTextCharacteristic?.uuid {
             print("Received past text value from whisperer")
             if let textData = characteristic.value {
-                if !textData.isEmpty {
-                    pastText = pastText + String(decoding: textData, as: UTF8.self)
-                    safePastText = pastText
+                if textData.isEmpty {
+                    pastText.clearLines()
+                } else {
+                    pastText.setFromText(String(decoding: textData, as: UTF8.self))
                 }
             }
         } else if characteristic.uuid == disconnectCharacteristic?.uuid {
@@ -232,8 +227,7 @@ final class ListenViewModel: ObservableObject {
         disconnectCharacteristic = nil
         nameCharacteristic = nil
         pastTextCharacteristic = nil
-        pastText = connectingPastText
-        safePastText = pastText
+        pastText.setFromText(connectingPastText)
         liveTextCharacteristic = nil
         liveText = connectingLiveText
         whispererName = unknownWhispererName
@@ -258,8 +252,7 @@ final class ListenViewModel: ObservableObject {
             whispererName = unknownWhispererName
             nameCharacteristic = nil
             pastTextCharacteristic = nil
-            pastText = connectingPastText
-            safePastText = pastText
+            pastText.setFromText(connectingPastText)
         }
         statusText = "Stopped listening"
     }

@@ -9,9 +9,9 @@ struct ListenView: View {
     @Binding var mode: OperatingMode
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
-    
+
     var body: some View {
-        GeometryReader { proxy in
+        GeometryReader { geometry in
             VStack(spacing: 10) {
                 HStack {
                     Spacer()
@@ -25,30 +25,20 @@ struct ListenView: View {
                     .cornerRadius(15)
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 20))
                 }
-                TextField("", text: $model.pastText, axis: .vertical)
-                    .onChange(of: model.pastText) { _ in
-                        model.resetPastText()
-                        focusField = false
-                    }
-                    .onSubmit {
-                        focusField = false
-                    }
-                    .focused($focusField)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.leading)
-                    .padding()
-                    .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 3/4, alignment: .bottomLeading)
+                PastTextView(model: model.pastText)
+                    .padding(10)
+                    .frame(maxWidth: geometry.size.width, maxHeight: geometry.size.height * 3 / 4, alignment: .bottomLeading)
                     .border(.gray, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                 Text(model.statusText)
                     .font(.caption)
                 Text(model.liveText)
-                    .multilineTextAlignment(.leading)
                     .padding()
-                    .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 1/4, alignment: .topLeading)
+                    .frame(maxWidth: geometry.size.width, maxHeight: geometry.size.height * 1/4, alignment: .topLeading)
                     .border(.black, width: 2)
-                    .padding(EdgeInsets(top: 10, leading: 20, bottom: 0, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
             }
+            .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
         .onAppear { self.model.start() }
