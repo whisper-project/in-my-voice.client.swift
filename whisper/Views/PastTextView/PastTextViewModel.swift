@@ -36,10 +36,6 @@ final class PastTextViewModel: ObservableObject {
     }
     
     func getAsText() -> String {
-        if pastText.isEmpty {
-            return ""
-        } else {
-            return pastText.reduce(pastText[0].text, { $0 + "\n" + $1.text })
-        }
+        return pastText.map({ $0.text }).joined(separator: "\n")
     }
 }

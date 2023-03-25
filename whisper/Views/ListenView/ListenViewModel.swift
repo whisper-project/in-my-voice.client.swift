@@ -18,6 +18,7 @@ final class ListenViewModel: ObservableObject {
     @Published var liveText: String = ""
     var pastText: PastTextViewModel = .init()
     
+    private var wasInBackground = false
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
     private var whisperer: CBPeripheral?
@@ -57,6 +58,10 @@ final class ListenViewModel: ObservableObject {
     
     func stop() {
         disconnect()
+    }
+    
+    func wentToBackground() {
+        wasInBackground = true
     }
     
     private func findWhisperer() {
@@ -182,20 +187,23 @@ final class ListenViewModel: ObservableObject {
             print("Received live text value from whisperer")
             if let textData = characteristic.value,
                let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
-                if chunk.isCompletionChunk() {
+                if wasInBackground || chunk.start > liveText.count {
+                    // we probably missed a packet, read the full state to reset
+                    // unless we're already waiting for the reads to return
+                    if wasInBackground || !resetInProgress {
+                        print("Resetting after missed packet...")
+                        resetInProgress = true
+                        wasInBackground = false
+                        whisperer!.readValue(for: liveTextCharacteristic!)
+                        whisperer!.readValue(for: pastTextCharacteristic!)
+                    }
+                } else if chunk.isCompletionChunk() {
                     pastText.addLine(liveText)
                     liveText = ""
                 } else if chunk.start == 0 {
                     // a full read does a reset
                     resetInProgress = false
                     liveText = chunk.text
-                } else if chunk.start > liveText.count {
-                    // we must have missed a packet, read the full state to reset
-                    // unless we're already waiting for the read to return
-                    if !resetInProgress {
-                        whisperer!.readValue(for: liveTextCharacteristic!)
-                        resetInProgress = true
-                    }
                 } else {
                     liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
                 }

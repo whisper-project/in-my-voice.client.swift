@@ -10,7 +10,7 @@ struct PastTextView: View {
 
     var body: some View {
         GeometryReader { gp in
-            ScrollViewReader { _ in
+            ScrollViewReader { sp in
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading) {
                         Spacer()
@@ -20,7 +20,17 @@ struct PastTextView: View {
                                 .multilineTextAlignment(.leading)
                         }
                     }
-                    .frame(minHeight: gp.size.height)
+                    .frame(minWidth: gp.size.width, minHeight: gp.size.height, alignment: .leading)
+                }
+                .onAppear {
+                    if model.pastText.count > 0 {
+                        sp.scrollTo(model.pastText.count - 1, anchor: .bottom)
+                    }
+                }
+                .onChange(of: model.pastText.count) { _ in
+                    if model.pastText.count > 0 {
+                        sp.scrollTo(model.pastText.count - 1, anchor: .bottom)
+                    }
                 }
             }
         }

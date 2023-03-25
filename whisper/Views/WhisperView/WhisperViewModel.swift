@@ -11,7 +11,6 @@ final class WhisperViewModel: ObservableObject {
     var pastText: PastTextViewModel = .init()
 
     private var liveText: String = ""
-    private var safePastText: String = ""
     private var pendingChunks: [TextProtocol.ProtocolChunk] = []
     private var advertisingInProgress = false
     private var manager = BluetoothManager.shared
@@ -56,13 +55,12 @@ final class WhisperViewModel: ObservableObject {
     
     /// Receive an updated live text from the view.
     /// Returns whether or not to reset the live text to empty.
-    func updateLiveText(old: String, new: String) -> Bool {
+    func updateLiveText(old: String, new: String) {
         liveText = new
         if let chunk = TextProtocol.diffLines(old: old, new: new) {
             pendingChunks.append(chunk)
             updateListeners()
         }
-        return false
     }
     
     /// User has submitted the live text
@@ -172,7 +170,7 @@ final class WhisperViewModel: ObservableObject {
             responseData = chunk.toData()
         } else if characteristic.uuid == WhisperData.whisperPastTextUuid {
             print("Request is for past text")
-            responseData = Data(safePastText.utf8)
+            responseData = Data(pastText.getAsText().utf8)
         }
         if let responseData = responseData {
             if request.offset > responseData.count {

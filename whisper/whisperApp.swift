@@ -5,6 +5,20 @@
 
 import SwiftUI
 
+/// global constants for light/dark mode
+let lightLiveTextColor = Color(.black)
+let darkLiveTextColor = Color(.white)
+let lightLiveBorderColor = Color(.black)
+let darkLiveBorderColor = Color(.white)
+let lightPastTextColor = Color(.darkGray)
+let darkPastTextColor = Color(.lightGray)
+let lightPastBorderColor = Color(.darkGray)
+let darkPastBorderColor = Color(.lightGray)
+
+/// global constants for relative view sizes
+let pastTextProportion = 4.0/5.0
+let liveTextProportion = 1.0/5.0
+
 @main
 struct whisperApp: App {
     var body: some Scene {

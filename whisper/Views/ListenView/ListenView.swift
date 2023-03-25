@@ -6,7 +6,11 @@
 import SwiftUI
 
 struct ListenView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
+    
     @Binding var mode: OperatingMode
+    
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
 
@@ -26,23 +30,44 @@ struct ListenView: View {
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 20))
                 }
                 PastTextView(model: model.pastText)
+                    .textSelection(.enabled)
+                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     .padding(10)
-                    .frame(maxWidth: geometry.size.width, maxHeight: geometry.size.height * 3 / 4, alignment: .bottomLeading)
-                    .border(.gray, width: 2)
+                    .frame(maxWidth: geometry.size.width,
+                           maxHeight: geometry.size.height * pastTextProportion,
+                           alignment: .bottomLeading)
+                    .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                 Text(model.statusText)
                     .font(.caption)
+                    .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                 Text(model.liveText)
+                    .textSelection(.enabled)
+                    .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                     .padding()
-                    .frame(maxWidth: geometry.size.width, maxHeight: geometry.size.height * 1/4, alignment: .topLeading)
-                    .border(.black, width: 2)
+                    .frame(maxWidth: geometry.size.width,
+                           maxHeight: geometry.size.height * liveTextProportion,
+                           alignment: .topLeading)
+                    .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
-        .onAppear { self.model.start() }
-        .onDisappear { self.model.stop() }
+        .onAppear {
+            print("Listener appeared")
+            self.model.start()
+        }
+        .onDisappear {
+            print("Listener disappeared")
+            self.model.stop()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .background {
+                print("Went to background")
+                model.wentToBackground()
+            }
+        }
     }
 }
 

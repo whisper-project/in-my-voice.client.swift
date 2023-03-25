@@ -6,7 +6,10 @@
 import SwiftUI
 
 struct WhisperView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     @Binding var mode: OperatingMode
+    
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel = .init()
@@ -28,18 +31,20 @@ struct WhisperView: View {
                 }
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
                 PastTextView(model: model.pastText)
-                    .foregroundColor(.gray)
+                    .textSelection(.enabled)
+                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     .padding()
-                    .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 3/4, alignment: .bottomLeading)
-                    .border(.gray, width: 2)
+                    .frame(maxWidth: proxy.size.width,
+                           maxHeight: proxy.size.height * pastTextProportion,
+                           alignment: .bottomLeading)
+                    .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                 Text(model.statusText)
                     .font(.caption)
+                    .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                 TextField("", text: $liveText)
                     .onChange(of: liveText) { [liveText] new in
-                        if model.updateLiveText(old: liveText, new: new) {
-                            self.liveText = ""
-                        }
+                        model.updateLiveText(old: liveText, new: new)
                     }
                     .onSubmit {
                         model.submitLiveText()
@@ -47,9 +52,12 @@ struct WhisperView: View {
                         focusField = "liveText"
                     }
                     .focused($focusField, equals: "liveText")
+                    .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                     .padding()
-                    .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height * 1/4, alignment: .topLeading)
-                    .border(.black, width: 2)
+                    .frame(maxWidth: proxy.size.width,
+                           maxHeight: proxy.size.height * liveTextProportion,
+                           alignment: .topLeading)
+                    .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
             }
             .multilineTextAlignment(.leading)
