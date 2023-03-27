@@ -48,11 +48,11 @@ struct WhisperView: View {
                     .onChange(of: liveText) { [liveText] new in
                         self.liveText = model.updateLiveText(old: liveText, new: new)
                     }
-//                    .onSubmit {
-//                        model.submitLiveText()
-//                        liveText = ""
-//                        focusField = "liveText"
-//                    }
+                    .onSubmit {
+                        // for use with ipad
+                        self.liveText = model.submitLiveText()
+                        focusField = "liveText"
+                    }
                     .focused($focusField, equals: "liveText")
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                     .padding()

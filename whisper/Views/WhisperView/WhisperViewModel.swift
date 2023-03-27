@@ -74,11 +74,8 @@ final class WhisperViewModel: ObservableObject {
     }
     
     /// User has submitted the live text
-    func submitLiveText() {
-        pastText.addLine(liveText)
-        liveText = ""
-        pendingChunks.append(TextProtocol.ProtocolChunk.completionChunk())
-        updateListeners()
+    func submitLiveText() -> String {
+        return self.updateLiveText(old: liveText, new: liveText + "\n")
     }
     
     /// update listeners on changes in live text
