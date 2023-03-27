@@ -54,13 +54,23 @@ final class WhisperViewModel: ObservableObject {
     }
     
     /// Receive an updated live text from the view.
-    /// Returns whether or not to reset the live text to empty.
-    func updateLiveText(old: String, new: String) {
-        liveText = new
-        if let chunk = TextProtocol.diffLines(old: old, new: new) {
-            pendingChunks.append(chunk)
-            updateListeners()
+    /// Returns the new live text the view should display.
+    func updateLiveText(old: String, new: String) -> String {
+        guard old != new else {
+            return liveText
         }
+        let chunks = TextProtocol.diffLines(old: old, new: new)
+        for chunk in chunks {
+            pendingChunks.append(chunk)
+            if chunk.isCompletionChunk() {
+                pastText.addLine(liveText)
+                liveText = ""
+            } else {
+                liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
+            }
+        }
+        updateListeners()
+        return liveText
     }
     
     /// User has submitted the live text
@@ -166,7 +176,7 @@ final class WhisperViewModel: ObservableObject {
         } else if characteristic.uuid == WhisperData.whisperLiveTextUuid {
             print("Request is for live text")
             // the requesting whisperer should replace their liveText with ours
-            let chunk = TextProtocol.ProtocolChunk(start: 0, text: liveText)
+            let chunk = TextProtocol.ProtocolChunk(isDiff: false, start: 0, text: liveText)
             responseData = chunk.toData()
         } else if characteristic.uuid == WhisperData.whisperPastTextUuid {
             print("Request is for past text")

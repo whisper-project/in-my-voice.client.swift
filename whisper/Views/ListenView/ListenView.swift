@@ -42,6 +42,8 @@ struct ListenView: View {
                     .font(.caption)
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                 Text(model.liveText)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(nil)
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                     .padding()
@@ -51,8 +53,6 @@ struct ListenView: View {
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
             }
-            .multilineTextAlignment(.leading)
-            .lineLimit(nil)
         }
         .onAppear {
             print("Listener appeared")
@@ -63,9 +63,17 @@ struct ListenView: View {
             self.model.stop()
         }
         .onChange(of: scenePhase) { newPhase in
-            if newPhase == .background {
+            switch newPhase {
+            case .background:
                 print("Went to background")
                 model.wentToBackground()
+            case .inactive:
+                print("Went inactive")
+            case .active:
+                print("Went to foreground")
+                model.wentToForeground()
+            @unknown default:
+                print("Went to unkown phase: \(newPhase)")
             }
         }
     }

@@ -42,15 +42,17 @@ struct WhisperView: View {
                 Text(model.statusText)
                     .font(.caption)
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
-                TextField("", text: $liveText)
+                TextField("", text: $liveText, axis: .vertical)
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.leading)
                     .onChange(of: liveText) { [liveText] new in
-                        model.updateLiveText(old: liveText, new: new)
+                        self.liveText = model.updateLiveText(old: liveText, new: new)
                     }
-                    .onSubmit {
-                        model.submitLiveText()
-                        liveText = ""
-                        focusField = "liveText"
-                    }
+//                    .onSubmit {
+//                        model.submitLiveText()
+//                        liveText = ""
+//                        focusField = "liveText"
+//                    }
                     .focused($focusField, equals: "liveText")
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                     .padding()

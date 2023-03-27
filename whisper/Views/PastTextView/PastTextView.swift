@@ -16,8 +16,9 @@ struct PastTextView: View {
                         Spacer()
                         ForEach(model.pastText) {
                             Text($0.text)
-                                .id($0.id)
+                                .lineLimit(nil)
                                 .multilineTextAlignment(.leading)
+                                .id($0.id)
                         }
                     }
                     .frame(minWidth: gp.size.width, minHeight: gp.size.height, alignment: .leading)

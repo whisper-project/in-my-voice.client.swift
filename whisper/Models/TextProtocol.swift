@@ -20,15 +20,16 @@ import Foundation
 /// can assume he's missed a packet and call for a new read of the data,
 /// suspending packet processing until the full data is received.
 ///
-/// Special case: a negative offset indicates the live text was completed
-/// and should be moved to past text.
+/// Special case: a diff offset of -1 indicates a line of live text was completed
+/// and should be moved to past text (and the live text made empty).
 final class TextProtocol {
     struct ProtocolChunk {
+        var isDiff: Bool = true
         var start: Int
         var text: String
         
         func toData() -> Data {
-            let string: String = "\(start)|" + text
+            let string: String = (isDiff ? "\(start)|" : "-2|") + text
             return Data(string.utf8)
         }
         
@@ -38,7 +39,7 @@ final class TextProtocol {
                 // data packets with no "|" character are malformed
                 return nil
             } else if let offset = Int(parts[0]) {
-                return ProtocolChunk(start: offset, text: parts.count == 2 ? String(parts[1]) : "")
+                return ProtocolChunk(isDiff: offset != -2, start: offset == -2 ? 0 : offset, text: parts.count == 2 ? String(parts[1]) : "")
             } else {
                 // data packets with no int before the "|" are malformed
                 return nil
@@ -52,35 +53,47 @@ final class TextProtocol {
         func isCompletionChunk() -> Bool {
             return start < 0
         }
+        
+        static func fromText(text: String, start: Int) -> [ProtocolChunk] {
+            guard text.count > start else {
+                return []
+            }
+            let lines = text.suffix(text.count - start).split(separator: "\n", omittingEmptySubsequences: false)
+            var result: [ProtocolChunk] = [ProtocolChunk(start: start, text: String(lines[0]))]
+            for line in lines.dropFirst() {
+                result.append(ProtocolChunk.completionChunk())
+                result.append(ProtocolChunk(start: 0, text: String(line)))
+            }
+            return result
+        }
     }
     
-    static func diffLines(old: String, new: String) -> ProtocolChunk? {
+    /// Create a series of protocol chunks that will turn the old line into the new line
+    /// The old line is assumed not to have any newlines in it.  The new line may have
+    /// newlines in it, in which case there will be multiple chunks in the output with a
+    /// completion chunk for every newline.
+    static func diffLines(old: String, new: String) -> [ProtocolChunk] {
         let matching = zip(old.indices, new.indices)
-        for (i, j) in matching  {
+        for (i, j) in matching {
             if old[i] != new[j] {
-                if i == old.startIndex {
-                    return ProtocolChunk(start: 0, text: new)
-                } else {
-                    return ProtocolChunk(start: Int(old.distance(from: old.startIndex, to: i)),
-                                         text: String(new.suffix(from: j)))
-                }
+                return ProtocolChunk.fromText(text: new, start: old.distance(from: old.startIndex, to: i))
             }
         }
         // if we fall through, one is a substring of the other
         if old.count == new.count {
             // no changes
-            return nil
+            return []
         } else if old.count < new.count {
-            // old is a prefix of new
-            return ProtocolChunk(start: old.count, text: String(new.suffix(new.count - old.count)))
+            return ProtocolChunk.fromText(text: new, start: old.count)
         } else {
             // new is a prefix of old
-            return ProtocolChunk(start: new.count, text: "")
+            return [ProtocolChunk(start: new.count, text: "")]
         }
     }
     
+    /// Apply a single, non-completion chunk to an existing line (which has no newlines).
     static func applyDiff(old: String, chunk: ProtocolChunk) -> String {
-        let prefix = String(old.prefix(Int(chunk.start)))
+        let prefix = String(old.prefix(chunk.start))
         return prefix + chunk.text
     }
 }
