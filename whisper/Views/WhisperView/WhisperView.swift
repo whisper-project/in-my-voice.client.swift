@@ -42,14 +42,14 @@ struct WhisperView: View {
                 Text(model.statusText)
                     .font(.caption)
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
-                TextField("", text: $liveText, axis: .vertical)
-                    .lineLimit(nil)
-                    .multilineTextAlignment(.leading)
+                TextEditor(text: $liveText)
                     .onChange(of: liveText) { [liveText] new in
                         self.liveText = model.updateLiveText(old: liveText, new: new)
                     }
                     .onSubmit {
-                        // for use with ipad
+                        // shouldn't ever be used with a TextEditor,
+                        // but it was needed with a TextField with a vertical axis
+                        // when using a Magic Keyboard
                         self.liveText = model.submitLiveText()
                         focusField = "liveText"
                     }
