@@ -55,11 +55,11 @@ struct ListenView: View {
             .lineLimit(nil)
         }
         .onAppear {
-            print("Listener appeared")
+            print("ListenView appeared")
             self.model.start()
         }
         .onDisappear {
-            print("Listener disappeared")
+            print("ListenView disappeared")
             self.model.stop()
         }
         .onChange(of: scenePhase) { newPhase in

@@ -12,6 +12,7 @@ final class WhisperViewModel: ObservableObject {
 
     private var liveText: String = ""
     private var pendingChunks: [TextProtocol.ProtocolChunk] = []
+    private var directedChunks: [CBCentral: [TextProtocol.ProtocolChunk]] = [:]
     private var advertisingInProgress = false
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
@@ -53,6 +54,17 @@ final class WhisperViewModel: ObservableObject {
         manager.unpublish(service: WhisperData.whisperService)
     }
     
+    func sendAllText(listener: CBCentral) {
+        guard directedChunks[listener] == nil else {
+            print("Read already in progress for listener \(listener)")
+            return
+        }
+        var chunks = pastText.getLines().map{TextProtocol.ProtocolChunk.fromPastText(text: $0)}
+        chunks.append(TextProtocol.ProtocolChunk.fromLiveText(text: liveText))
+        directedChunks[listener] = chunks
+        updateListeners()
+    }
+    
     /// Receive an updated live text from the view.
     /// Returns the new live text the view should display.
     func updateLiveText(old: String, new: String) -> String {
@@ -62,7 +74,7 @@ final class WhisperViewModel: ObservableObject {
         let chunks = TextProtocol.diffLines(old: old, new: new)
         for chunk in chunks {
             pendingChunks.append(chunk)
-            if chunk.isCompletionChunk() {
+            if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
                 liveText = ""
             } else {
@@ -81,22 +93,40 @@ final class WhisperViewModel: ObservableObject {
     /// update listeners on changes in live text
     func updateListeners() {
         guard !listeners.isEmpty else {
-            print("No listeners to update, ignoring process update")
+            print("No listeners to update, dumping pending changes")
+            pendingChunks.removeAll()
             return
         }
-        guard !pendingChunks.isEmpty else {
-            print("Nothing to update listeners with")
-            return
-        }
-        print("Updating subscribed listeners...")
-        while !pendingChunks.isEmpty {
-            let chunk = pendingChunks.first!
-            let sendOk = manager.updateValue(value: chunk.toData(),
-                                             characteristic: WhisperData.whisperLiveTextCharacteristic)
-            if sendOk {
-                pendingChunks.removeFirst()
-            } else {
-                break
+        // prioritize readers over subscribers, because we want to hold
+        // the changes to live text until the readers are caught up
+        if !directedChunks.isEmpty {
+            print("Updating reading listeners...")
+            while let (listener, chunks) = directedChunks.first {
+                while let chunk = chunks.first {
+                    let sendOk = manager.updateValue(value: chunk.toData(),
+                                                     characteristic: WhisperData.whisperTextCharacteristic,
+                                                     central: listener)
+                    if sendOk {
+                        if chunks.count == 1 {
+                            directedChunks.removeValue(forKey: listener)
+                        } else {
+                            directedChunks[listener]!.removeFirst()
+                        }
+                    } else {
+                        return
+                    }
+                }
+            }
+        } else if !pendingChunks.isEmpty {
+            print("Updating subscribed listeners...")
+            while let chunk = pendingChunks.first {
+                let sendOk = manager.updateValue(value: chunk.toData(),
+                                                 characteristic: WhisperData.whisperTextCharacteristic)
+                if sendOk {
+                    pendingChunks.removeFirst()
+                } else {
+                    return
+                }
             }
         }
     }
@@ -164,29 +194,22 @@ final class WhisperViewModel: ObservableObject {
     
     private func processReadRequest(_ request: CBATTRequest) {
         print("Received read request \(request)...")
+        guard request.offset == 0 else {
+            print("Read request has non-zero offset, ignoring it")
+            manager.respondToReadRequest(request: request, withCode: .invalidOffset)
+            return
+        }
         addListener(request.central)
         let characteristic = request.characteristic
-        var responseData: Data? = nil
         if characteristic.uuid == WhisperData.whisperNameUuid {
             print("Request is for name")
-            responseData = Data(WhisperData.deviceName.utf8)
-        } else if characteristic.uuid == WhisperData.whisperLiveTextUuid {
+            request.value = Data(WhisperData.deviceName.utf8)
+            manager.respondToReadRequest(request: request, withCode: .success)
+        } else if characteristic.uuid == WhisperData.whisperTextUuid {
             print("Request is for live text")
-            // the requesting whisperer should replace their liveText with ours
-            let chunk = TextProtocol.ProtocolChunk(isDiff: false, start: 0, text: liveText)
-            responseData = chunk.toData()
-        } else if characteristic.uuid == WhisperData.whisperPastTextUuid {
-            print("Request is for past text")
-            responseData = Data(pastText.getAsText().utf8)
-        }
-        if let responseData = responseData {
-            if request.offset > responseData.count {
-                manager.respondToReadRequest(request: request, withCode: .invalidOffset)
-            } else {
-                let subData = responseData.subdata(in: request.offset ..< responseData.count)
-                request.value = subData
-                manager.respondToReadRequest(request: request, withCode: .success)
-            }
+            request.value = TextProtocol.ProtocolChunk.acknowledgeRead().toData()
+            manager.respondToReadRequest(request: request, withCode: .success)
+            sendAllText(listener: request.central)
         } else {
             print("Got a read request for an unexpected characteristic: \(characteristic)")
             manager.respondToReadRequest(request: request, withCode: .attributeNotFound)

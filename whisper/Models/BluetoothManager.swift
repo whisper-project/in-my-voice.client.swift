@@ -103,6 +103,10 @@ final class BluetoothManager: NSObject {
     func updateValue(value: Data, characteristic: CBMutableCharacteristic) -> Bool {
         return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: nil)
     }
+    
+    func updateValue(value: Data, characteristic: CBMutableCharacteristic, central: CBCentral) -> Bool {
+        return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: [central])
+    }
 }
 
 extension BluetoothManager: CBCentralManagerDelegate {

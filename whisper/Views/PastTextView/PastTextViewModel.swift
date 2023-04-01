@@ -20,6 +20,10 @@ final class PastTextViewModel: ObservableObject {
         self.setFromText(initialText)
     }
     
+    func getLines() -> [String] {
+        return pastText.map({ $0.text })
+    }
+    
     func addLine(_ line: String) {
         pastText.append(PastTextLine(text: line, id: pastText.count))
     }
