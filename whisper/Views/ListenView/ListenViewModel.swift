@@ -201,7 +201,8 @@ final class ListenViewModel: ObservableObject {
                let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
                 if resetInProgress {
                     if chunk.isFirstRead() {
-                        print("Received acknowledgement of read from whisperer")
+                        print("Received reset acknowledgement from whisperer, clearing past text")
+                        pastText.clearLines()
                     } else if chunk.isDiff() {
                         print("Ignoring diff chunk because a read is in progress")
                     } else if chunk.isCompleteLine() {
