@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
+		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
+		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
 		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
 		37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CE429AAC1E50051CFE5 /* whisperApp.swift */; };
 		37763CE929AAC1E60051CFE5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37763CE829AAC1E60051CFE5 /* Assets.xcassets */; };
@@ -49,6 +51,8 @@
 /* Begin PBXFileReference section */
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		376388CC29DDFB77006E5686 /* StatusTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusTextView.swift; sourceTree = "<group>"; };
+		3771F83429DD2F900011419E /* FontSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizes.swift; sourceTree = "<group>"; };
 		3775A13929AD4EB6007159F5 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		37763CE129AAC1E50051CFE5 /* whisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = whisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37763CE429AAC1E50051CFE5 /* whisperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperApp.swift; sourceTree = "<group>"; };
@@ -99,6 +103,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		376388CB29DDFB3F006E5686 /* StatusTextView */ = {
+			isa = PBXGroup;
+			children = (
+				376388CC29DDFB77006E5686 /* StatusTextView.swift */,
+			);
+			path = StatusTextView;
+			sourceTree = "<group>";
+		};
 		37763CD829AAC1E50051CFE5 = {
 			isa = PBXGroup;
 			children = (
@@ -168,6 +180,7 @@
 				37763D1229AB561F0051CFE5 /* ListenView */,
 				37763D1129AB560E0051CFE5 /* WhisperView */,
 				37C5142029CA2B0F001A121B /* PastTextView */,
+				376388CB29DDFB3F006E5686 /* StatusTextView */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -196,6 +209,7 @@
 				377646C929BACC16002C411C /* BluetoothManager.swift */,
 				37763D1C29AC33230051CFE5 /* WhisperData.swift */,
 				378A8E1629C554F20097F15A /* TextProtocol.swift */,
+				3771F83429DD2F900011419E /* FontSizes.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -358,7 +372,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */,
 				377646C829BACB73002C411C /* MainView.swift in Sources */,
+				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
 				377646CA29BACC16002C411C /* BluetoothManager.swift in Sources */,
 				37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */,
 				37763D1D29AC33230051CFE5 /* WhisperData.swift in Sources */,
@@ -529,7 +545,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -564,7 +580,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;

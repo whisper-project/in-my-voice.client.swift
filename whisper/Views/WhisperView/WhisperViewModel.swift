@@ -16,11 +16,12 @@ final class WhisperViewModel: ObservableObject {
     private var advertisingInProgress = false
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
+    private var listenAdvertisers: [String: String] = [:]
     private var listeners: Set<String> = []
     
     init() {
         manager.peripheralSubject
-            .sink { [weak self] in self?.noticeAdvertisement($0) }
+            .sink { [weak self] in self?.noticeListener($0) }
             .store(in: &cancellables)
         manager.centralSubscribedSubject
             .sink { [weak self] in self?.noticeSubscription($0) }
@@ -42,14 +43,14 @@ final class WhisperViewModel: ObservableObject {
     
     func start() {
         manager.publish(service: WhisperData.whisperService)
-        // make sure we notice listeners who come late
-        manager.scan(forService: WhisperData.listenServiceUuid)
-        find_listener()
+        // look for listeners who are looking for us
+        manager.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
+        refreshStatusText()
     }
     
     func stop() {
-        stop_find_listener()
-        manager.stopScan(forService: WhisperData.listenServiceUuid)
+        manager.stopScan()
+        stopAdvertising()
         listeners.removeAll()
         manager.unpublish(service: WhisperData.whisperService)
     }
@@ -131,24 +132,30 @@ final class WhisperViewModel: ObservableObject {
         }
     }
     
-    private func find_listener() {
+    private func startAdvertising() {
+        guard !advertisingInProgress else {
+            return
+        }
         print("Advertising whisperer...")
-        manager.advertise(service: WhisperData.whisperServiceUuid)
+        manager.advertise(services: [WhisperData.whisperServiceUuid])
         advertisingInProgress = true
-        refreshStatusText()
     }
     
-    private func stop_find_listener() {
-        print("Stop advertising whisperer...")
-        manager.stopAdvertising(service: WhisperData.whisperServiceUuid)
+    private func stopAdvertising() {
+        print("Stop advertising whisperer")
+        manager.stopAdvertising()
+        listenAdvertisers.removeAll()
         advertisingInProgress = false
-        refreshStatusText()
     }
     
     func refreshStatusText() {
-        let maybeLooking = advertisingInProgress ? ", looking for more..." : ""
-        if advertisingInProgress && listeners.isEmpty {
-            statusText = "Looking for listeners..."
+        let maybeLooking = advertisingInProgress ? ", looking for \(listenAdvertisers.count - listeners.count) more..." : ""
+        if listeners.isEmpty {
+            if advertisingInProgress {
+                statusText = "Looking for listeners..."
+            } else {
+                statusText = "No listeners yet, but you can type"
+            }
         } else if listeners.count == 1 {
             statusText = "Whispering to 1 listener\(maybeLooking)"
         } else {
@@ -157,29 +164,42 @@ final class WhisperViewModel: ObservableObject {
     }
     
     private func addListener(_ central: CBCentral) {
-        let (inserted, _) = listeners.insert(central.identifier.uuidString)
-        if inserted {
-            print("Found listener \(central)")
-            stop_find_listener()
+        let uuidString = central.identifier.uuidString
+        guard !listeners.contains(uuidString) else {
+            // we've already connected this listener
+            return
+        }
+        listeners.insert(uuidString)
+        if listenAdvertisers.count <= listeners.count {
+            print("Connected as many listeners as were advertising")
+            stopAdvertising()
         }
         refreshStatusText()
     }
     
     private func removeListener(_ central: CBCentral) {
         if listeners.remove(central.identifier.uuidString) != nil {
-            print("Lost listener \(central)")
-            if listeners.isEmpty {
-                find_listener()
-            }
+            print("Lost\(listeners.isEmpty ? " last" : "") listener \(central)")
         }
         refreshStatusText()
     }
     
-    private func noticeAdvertisement(_ pair: (CBPeripheral, [String: Any])) {
+    private func noticeListener(_ pair: (CBPeripheral, [String: Any])) {
+        let uuidString = pair.0.identifier.uuidString
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(WhisperData.listenServiceUuid) {
-                debugPrint("Heard from listener \(pair.0) with ad \(pair.1)")
-                find_listener()
+                if let localName = listenAdvertisers[uuidString] {
+                    print("Ignoring repeat ad from already-pending listener \(uuidString) with name \(localName)")
+                } else {
+                    var name = "(no name)"
+                    if let adName = pair.1[CBAdvertisementDataLocalNameKey],
+                       let localName = adName as? String {
+                        name = localName
+                    }
+                    listenAdvertisers[uuidString] = name
+                    print("Got first ad from listener \(uuidString) with name \(name)")
+                    startAdvertising()
+                }
             }
         }
     }

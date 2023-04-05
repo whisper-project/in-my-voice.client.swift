@@ -13,6 +13,7 @@ struct WhisperView: View {
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel = .init()
+    @State private var size = FontSizes.FontSize.normal
 
     var body: some View {
         GeometryReader { proxy in
@@ -31,6 +32,7 @@ struct WhisperView: View {
                 }
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
                 PastTextView(model: model.pastText)
+                    .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     .padding()
@@ -39,10 +41,9 @@ struct WhisperView: View {
                            alignment: .bottomLeading)
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-                Text(model.statusText)
-                    .font(.caption)
-                    .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
+                StatusTextView(size: $size, text: $model.statusText)
                 TextEditor(text: $liveText)
+                    .font(FontSizes.fontFor(size))
                     .onChange(of: liveText) { [liveText] new in
                         self.liveText = model.updateLiveText(old: liveText, new: new)
                     }

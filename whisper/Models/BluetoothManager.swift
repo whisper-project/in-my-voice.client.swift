@@ -25,8 +25,7 @@ final class BluetoothManager: NSObject {
     private var peripheralManager: CBPeripheralManager!
     
     private var current_state: CBManagerState!
-    private var wanted_services: Set<CBUUID> = []
-    private var advertised_services: Set<CBUUID> = []
+    private var advertised_services: [CBUUID] = []
     
     override init() {
         super.init()
@@ -36,22 +35,18 @@ final class BluetoothManager: NSObject {
         stateSubject.send(current_state)
     }
     
-    func scan(forService: CBUUID) {
-        wanted_services.insert(forService)
-        scanForWantedServices()
-    }
-    
-    func stopScan(forService: CBUUID) {
-        wanted_services.remove(forService)
-        scanForWantedServices()
-    }
-    
-    private func scanForWantedServices() {
-        if wanted_services.isEmpty {
-            centralManager.stopScan()
-        } else {
-            centralManager.scanForPeripherals(withServices: Array(wanted_services))
+    func scan(forServices: [CBUUID], allow_repeats: Bool = false) {
+        guard !forServices.isEmpty else {
+            fatalError("Can't scan for no services")
         }
+        centralManager.scanForPeripherals(
+            withServices: forServices,
+            options: [CBCentralManagerScanOptionAllowDuplicatesKey: allow_repeats as NSNumber]
+        )
+    }
+    
+    func stopScan() {
+        centralManager.stopScan()
     }
     
     func publish(service: CBMutableService) {
@@ -66,25 +61,18 @@ final class BluetoothManager: NSObject {
         peripheralManager.removeAllServices()
     }
     
-    func advertise(service: CBUUID) {
-        advertised_services.insert(service)
-        advertise_services()
-    }
-    
-    func stopAdvertising(service: CBUUID) {
-        advertised_services.remove(service)
-        advertise_services()
-    }
-    
-    private func advertise_services() {
-        if advertised_services.isEmpty {
-            peripheralManager.stopAdvertising()
-        } else {
-            peripheralManager.startAdvertising([
-                CBAdvertisementDataServiceUUIDsKey: Array(advertised_services),
-                CBAdvertisementDataLocalNameKey: WhisperData.deviceName
-            ])
+    func advertise(services: [CBUUID], localName: String = WhisperData.deviceName) {
+        guard !services.isEmpty else {
+            fatalError("Can't advertise no services")
         }
+        peripheralManager.startAdvertising([
+            CBAdvertisementDataServiceUUIDsKey: services,
+            CBAdvertisementDataLocalNameKey: localName,
+        ])
+    }
+    
+    func stopAdvertising() {
+        peripheralManager.stopAdvertising()
     }
     
     func connect(_ peripheral: CBPeripheral) {

@@ -13,6 +13,7 @@ struct ListenView: View {
     
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
+    @State private var size = FontSizes.FontSize.normal
 
     var body: some View {
         GeometryReader { geometry in
@@ -30,6 +31,7 @@ struct ListenView: View {
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 20))
                 }
                 PastTextView(model: model.pastText)
+                    .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     .padding(10)
@@ -38,10 +40,9 @@ struct ListenView: View {
                            alignment: .bottomLeading)
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-                Text(model.statusText)
-                    .font(.caption)
-                    .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
+                StatusTextView(size: $size, text: $model.statusText)
                 Text(model.liveText)
+                    .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                     .padding()

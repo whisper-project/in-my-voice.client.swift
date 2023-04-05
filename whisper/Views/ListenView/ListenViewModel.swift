@@ -93,8 +93,8 @@ final class ListenViewModel: ObservableObject {
         if !scanInProgress {
             scanInProgress = true
             print("Advertising listener and scanning for whisperer...")
-            manager.scan(forService: WhisperData.whisperServiceUuid)
-            manager.advertise(service: WhisperData.listenServiceUuid)
+            manager.scan(forServices: [WhisperData.whisperServiceUuid])
+            manager.advertise(services: [WhisperData.listenServiceUuid])
         }
     }
     
@@ -102,8 +102,8 @@ final class ListenViewModel: ObservableObject {
         if scanInProgress {
             scanInProgress = false
             print("Stop advertising listener and scanning for whisperer")
-            manager.stopScan(forService: WhisperData.whisperServiceUuid)
-            manager.stopAdvertising(service: WhisperData.listenServiceUuid)
+            manager.stopScan()
+            manager.stopAdvertising()
         }
         if connectComplete {
             statusText = "Listening to \(whispererName)"

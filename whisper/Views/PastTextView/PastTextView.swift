@@ -43,6 +43,7 @@ struct PastTextView_Previews: PreviewProvider {
     Line 3 is extremely, long and\nit wraps
     Line 4 is short
     """)
+    
     static var previews: some View {
         PastTextView(model: model)
     }
