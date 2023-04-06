@@ -14,7 +14,7 @@ struct ListenView: View {
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
     @State private var size = FontSizes.FontSize.normal
-
+    
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 10) {
@@ -50,7 +50,7 @@ struct ListenView: View {
                            maxHeight: geometry.size.height * liveTextProportion,
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: 20, bottom: bottomViewPad, trailing: 20))
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)

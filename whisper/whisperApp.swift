@@ -19,6 +19,18 @@ let darkPastBorderColor = Color(.lightGray)
 let pastTextProportion = 4.0/5.0
 let liveTextProportion = 1.0/5.0
 
+/// global constants for platform differentiation
+let bottomViewPad: CGFloat = {
+    if ProcessInfo.processInfo.isiOSAppOnMac {
+        return 20
+    } else if UIDevice.current.userInterfaceIdiom == .phone {
+        return 0
+    } else {
+        return 5
+    }
+}()
+
+
 @main
 struct whisperApp: App {
     var body: some Scene {

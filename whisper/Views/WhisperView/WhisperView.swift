@@ -61,7 +61,7 @@ struct WhisperView: View {
                            maxHeight: proxy.size.height * liveTextProportion,
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: 20, bottom: bottomViewPad + 5, trailing: 20))
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
