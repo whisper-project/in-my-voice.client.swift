@@ -9,7 +9,7 @@ struct ListenView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     
-    @Binding var mode: OperatingMode
+    var exitAction: () -> ()
     
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
@@ -20,7 +20,7 @@ struct ListenView: View {
             VStack(spacing: 10) {
                 HStack {
                     Spacer()
-                    Button(action: { mode = .ask }) {
+                    Button(action: exitAction) {
                         Text("Stop Listening")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
@@ -50,40 +50,40 @@ struct ListenView: View {
                            maxHeight: geometry.size.height * liveTextProportion,
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: bottomViewPad, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: 20, bottom: listenViewBottomPad, trailing: 20))
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
         .onAppear {
-            print("ListenView appeared")
+            logger.log("ListenView appeared")
             self.model.start()
         }
         .onDisappear {
-            print("ListenView disappeared")
+            logger.log("ListenView disappeared")
             self.model.stop()
         }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
             case .background:
-                print("Went to background")
+                logger.log("Went to background")
                 model.wentToBackground()
             case .inactive:
-                print("Went inactive")
+                logger.log("Went inactive")
             case .active:
-                print("Went to foreground")
+                logger.log("Went to foreground")
                 model.wentToForeground()
             @unknown default:
-                print("Went to unkown phase: \(newPhase)")
+                logger.error("Went to unknown phase: \(String(describing: newPhase))")
             }
         }
     }
 }
 
 struct ListenView_Previews: PreviewProvider {
-    static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ in print("Stop") })
+    static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
 
     static var previews: some View {
-        ListenView(mode: mode)
+        ListenView(exitAction: {})
     }
 }

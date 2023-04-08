@@ -20,15 +20,19 @@ let pastTextProportion = 4.0/5.0
 let liveTextProportion = 1.0/5.0
 
 /// global constants for platform differentiation
-let bottomViewPad: CGFloat = {
+let (listenViewBottomPad, whisperViewBottomPad): (CGFloat, CGFloat) = {
     if ProcessInfo.processInfo.isiOSAppOnMac {
-        return 20
+        return (20, 20)
     } else if UIDevice.current.userInterfaceIdiom == .phone {
-        return 0
+        return (0, 5)
     } else {
-        return 5
+        return (5, 15)
     }
 }()
+
+/// logging
+import os
+let logger = Logger()
 
 
 @main

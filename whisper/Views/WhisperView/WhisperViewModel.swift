@@ -57,7 +57,7 @@ final class WhisperViewModel: ObservableObject {
     
     func sendAllText(listener: CBCentral) {
         guard directedChunks[listener] == nil else {
-            print("Read already in progress for listener \(listener)")
+            logger.log("Read already in progress for listener \(listener)")
             return
         }
         var chunks = pastText.getLines().map{TextProtocol.ProtocolChunk.fromPastText(text: $0)}
@@ -94,14 +94,14 @@ final class WhisperViewModel: ObservableObject {
     /// update listeners on changes in live text
     func updateListeners() {
         guard !listeners.isEmpty else {
-            print("No listeners to update, dumping pending changes")
+            logger.debug("No listeners to update, dumping pending changes")
             pendingChunks.removeAll()
             return
         }
         // prioritize readers over subscribers, because we want to hold
         // the changes to live text until the readers are caught up
         if !directedChunks.isEmpty {
-            print("Updating reading listeners...")
+            logger.log("Updating reading listeners...")
             while let (listener, chunks) = directedChunks.first {
                 while let chunk = chunks.first {
                     let sendOk = manager.updateValue(value: chunk.toData(),
@@ -119,7 +119,7 @@ final class WhisperViewModel: ObservableObject {
                 }
             }
         } else if !pendingChunks.isEmpty {
-            print("Updating subscribed listeners...")
+            logger.debug("Updating subscribed listeners...")
             while let chunk = pendingChunks.first {
                 let sendOk = manager.updateValue(value: chunk.toData(),
                                                  characteristic: WhisperData.whisperTextCharacteristic)
@@ -136,13 +136,13 @@ final class WhisperViewModel: ObservableObject {
         guard !advertisingInProgress else {
             return
         }
-        print("Advertising whisperer...")
+        logger.log("Advertising whisperer...")
         manager.advertise(services: [WhisperData.whisperServiceUuid])
         advertisingInProgress = true
     }
     
     private func stopAdvertising() {
-        print("Stop advertising whisperer")
+        logger.log("Stop advertising whisperer")
         manager.stopAdvertising()
         listenAdvertisers.removeAll()
         advertisingInProgress = false
@@ -171,7 +171,7 @@ final class WhisperViewModel: ObservableObject {
         }
         listeners.insert(uuidString)
         if listenAdvertisers.count <= listeners.count {
-            print("Connected as many listeners as were advertising")
+            logger.log("Connected as many listeners as were advertising")
             stopAdvertising()
         }
         refreshStatusText()
@@ -179,7 +179,7 @@ final class WhisperViewModel: ObservableObject {
     
     private func removeListener(_ central: CBCentral) {
         if listeners.remove(central.identifier.uuidString) != nil {
-            print("Lost\(listeners.isEmpty ? " last" : "") listener \(central)")
+            logger.log("Lost\(self.listeners.isEmpty ? " last" : "") listener \(central)")
         }
         refreshStatusText()
     }
@@ -189,7 +189,7 @@ final class WhisperViewModel: ObservableObject {
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(WhisperData.listenServiceUuid) {
                 if let localName = listenAdvertisers[uuidString] {
-                    print("Ignoring repeat ad from already-pending listener \(uuidString) with name \(localName)")
+                    logger.debug("Ignoring repeat ad from already-pending listener \(uuidString) with name \(localName)")
                 } else {
                     var name = "(no name)"
                     if let adName = pair.1[CBAdvertisementDataLocalNameKey],
@@ -197,7 +197,7 @@ final class WhisperViewModel: ObservableObject {
                         name = localName
                     }
                     listenAdvertisers[uuidString] = name
-                    print("Got first ad from listener \(uuidString) with name \(name)")
+                    logger.debug("Got first ad from listener \(uuidString) with name \(name)")
                     startAdvertising()
                 }
             }
@@ -213,25 +213,25 @@ final class WhisperViewModel: ObservableObject {
     }
     
     private func processReadRequest(_ request: CBATTRequest) {
-        print("Received read request \(request)...")
+        logger.log("Received read request \(request)...")
         guard request.offset == 0 else {
-            print("Read request has non-zero offset, ignoring it")
+            logger.log("Read request has non-zero offset, ignoring it")
             manager.respondToReadRequest(request: request, withCode: .invalidOffset)
             return
         }
         addListener(request.central)
         let characteristic = request.characteristic
         if characteristic.uuid == WhisperData.whisperNameUuid {
-            print("Request is for name")
+            logger.log("Request is for name")
             request.value = Data(WhisperData.deviceName.utf8)
             manager.respondToReadRequest(request: request, withCode: .success)
         } else if characteristic.uuid == WhisperData.whisperTextUuid {
-            print("Request is for live text")
+            logger.log("Request is for live text")
             request.value = TextProtocol.ProtocolChunk.acknowledgeRead().toData()
             manager.respondToReadRequest(request: request, withCode: .success)
             sendAllText(listener: request.central)
         } else {
-            print("Got a read request for an unexpected characteristic: \(characteristic)")
+            logger.error("Got a read request for an unexpected characteristic: \(characteristic)")
             manager.respondToReadRequest(request: request, withCode: .attributeNotFound)
         }
     }

@@ -8,8 +8,8 @@ import SwiftUI
 struct WhisperView: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    @Binding var mode: OperatingMode
-    
+    var exitAction: () -> ()
+
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel = .init()
@@ -20,7 +20,7 @@ struct WhisperView: View {
             VStack(spacing: 10) {
                 HStack {
                     Spacer()
-                    Button(action: { mode = .ask }) {
+                    Button(action: exitAction) {
                         Text("Stop Whispering")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
@@ -61,7 +61,7 @@ struct WhisperView: View {
                            maxHeight: proxy.size.height * liveTextProportion,
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: bottomViewPad + 5, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: 20, bottom: whisperViewBottomPad, trailing: 20))
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
@@ -75,9 +75,7 @@ struct WhisperView: View {
 }
 
 struct WhisperView_Previews: PreviewProvider {
-    static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ in print("Stop") })
-
     static var previews: some View {
-        WhisperView(mode: mode)
+        WhisperView(exitAction: {})
     }
 }

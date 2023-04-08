@@ -75,7 +75,7 @@ final class ListenViewModel: ObservableObject {
             return
         }
         guard !resetInProgress else {
-            print("Got reset during reset, ignoring it")
+            logger.log("Got reset during reset, ignoring it")
             return
         }
         resetInProgress = true
@@ -84,16 +84,21 @@ final class ListenViewModel: ObservableObject {
     
     private func findWhisperer() {
         guard whisperer == nil else {
-            print("Tried to find a whisperer when we have one, ignoring request")
+            logger.log("Tried to find a whisperer when we have one, ignoring request")
             return
         }
         statusText = "Looking for a whisperer to listen to…"
         liveText = connectingLiveText
         pastText.setFromText(connectingPastText)
-        if !scanInProgress {
+        if let peripheral = manager.connectedPeripherals(forServices: [WhisperData.whisperServiceUuid]).first,
+           let service = peripheral.services?.first {
+            logger.log("Found connected whisperer \(peripheral), readying it...")
+            whisperer = peripheral
+            whispererReady(service)
+        } else if !scanInProgress {
             scanInProgress = true
-            print("Advertising listener and scanning for whisperer...")
-            manager.scan(forServices: [WhisperData.whisperServiceUuid])
+            logger.log("Advertising listener and scanning for whisperer...")
+            manager.scan(forServices: [WhisperData.whisperServiceUuid], allow_repeats: true)
             manager.advertise(services: [WhisperData.listenServiceUuid])
         }
     }
@@ -101,7 +106,7 @@ final class ListenViewModel: ObservableObject {
     private func stopFindWhisperer(connectComplete: Bool) {
         if scanInProgress {
             scanInProgress = false
-            print("Stop advertising listener and scanning for whisperer")
+            logger.log("Stop advertising listener and scanning for whisperer")
             manager.stopScan()
             manager.stopAdvertising()
         }
@@ -115,16 +120,18 @@ final class ListenViewModel: ObservableObject {
     private func foundWhisperer(_ pair: (CBPeripheral, [String: Any])) {
         stopFindWhisperer(connectComplete: false)
         guard whisperer == nil else {
-            print("Already have a whisperer, won't connect to \(pair.0) with ad \(pair.1)")
+            logger.log("Already have a whisperer, won't connect to \(pair.0) with ad \(pair.1)")
             return
         }
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? Array<CBUUID> {
             if uuids.contains(WhisperData.whisperServiceUuid) {
-                print("Connecting to whisperer \(pair.0) with ad \(pair.1)")
+                logger.log("Connecting to whisperer \(pair.0) with ad \(pair.1)")
                 whisperer = pair.0
                 manager.connect(whisperer!)
+                return
             }
         }
+        logger.error("Notified of whisperer with incorrect ad data: \(pair.1)")
     }
 
     private func connectedWhisperer(_ pair: (CBPeripheral, [CBService])) {
@@ -136,7 +143,7 @@ final class ListenViewModel: ObservableObject {
             }
         }
         if let whisperSvc = pair.1.first(where: {svc in svc.uuid == WhisperData.whisperServiceUuid}) {
-            print("Connected to whisperer \(whisperer!) with service \(pair.1), readying...")
+            logger.log("Connected to whisperer \(self.whisperer!) with service \(pair.1), readying...")
             whisperer!.discoverCharacteristics(
                 [
                     WhisperData.whisperNameUuid,
@@ -154,7 +161,7 @@ final class ListenViewModel: ObservableObject {
         guard service.characteristics != nil else {
             fatalError("Readied whisper service with no characteristics: report a bug!")
         }
-        print("Readying whisperer \(whisperer!)...")
+        logger.log("Readying whisperer \(self.whisperer!)...")
         let allCs = service.characteristics!
         if let nameC = allCs.first(where: { $0.uuid == WhisperData.whisperNameUuid }) {
             nameCharacteristic = nameC
@@ -184,10 +191,10 @@ final class ListenViewModel: ObservableObject {
         }
         let characteristic = pair.1
         if characteristic.uuid == disconnectCharacteristic?.uuid {
-            print("Received disconnect from whisperer")
+            logger.log("Received disconnect from whisperer")
             disconnect()
         } else if characteristic.uuid == nameCharacteristic?.uuid {
-            print("Received name value from whisperer")
+            logger.log("Received name value from whisperer")
             if let nameData = characteristic.value {
                 if nameData.isEmpty {
                     whispererName = "(anonymous)"
@@ -201,49 +208,49 @@ final class ListenViewModel: ObservableObject {
                let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
                 if resetInProgress {
                     if chunk.isFirstRead() {
-                        print("Received reset acknowledgement from whisperer, clearing past text")
+                        logger.log("Received reset acknowledgement from whisperer, clearing past text")
                         pastText.clearLines()
                     } else if chunk.isDiff() {
-                        print("Ignoring diff chunk because a read is in progress")
+                        logger.log("Ignoring diff chunk because a read is in progress")
                     } else if chunk.isCompleteLine() {
-                        print("Got past line \(pastText.pastText.count) in read")
+                        logger.debug("Got past line \(self.pastText.pastText.count) in read")
                         pastText.addLine(chunk.text)
                     } else if chunk.isLastRead() {
-                        print("Got live text in read")
+                        logger.log("Reset completes with \(self.pastText.pastText.count) past lines & \(chunk.text.count) live characters")
                         liveText = chunk.text
                         resetInProgress = false
                     }
                 } else {
                     if !chunk.isDiff() {
-                        print("Ignoring non-diff chunk because no read in progress")
+                        logger.log("Ignoring non-diff chunk because no read in progress")
                     } else if chunk.offset == 0 {
-                        print("Got diff: replacement of live text")
+                        logger.debug("Got diff: live text is '\(chunk.text)'")
                         liveText = chunk.text
                     } else if chunk.isCompleteLine() {
-                        print("Got diff: move live text to past text")
+                        logger.log("Got diff: move live text to past text")
                         pastText.addLine(liveText)
                         liveText = ""
                     } else if chunk.offset > liveText.count {
                         // we must have missed a packet, read the full state to reset
-                        print("Resetting after missed packet...")
+                        logger.log("Resetting after missed packet...")
                         readAllText()
                     } else {
-                        print("Got diff: update to live text")
+                        logger.debug("Got diff: live text[\(chunk.offset)...] updated to '\(chunk.text)'")
                         liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
                     }
                 }
             }
         } else {
-            print("Got a received value notification for an unexpected characteristic: \(characteristic)")
+            logger.log("Got a received value notification for an unexpected characteristic: \(characteristic)")
         }
     }
     
     private func wasDisconnected(_ peripheral: CBPeripheral) {
         guard peripheral == whisperer else {
-            print("Received disconnect from \(peripheral) while connected to \(String(describing: whisperer))")
+            logger.log("Received disconnect from \(peripheral) while connected to \(String(describing: self.whisperer))")
             return
         }
-        print("Whisperer disconnected")
+        logger.log("Whisperer disconnected: \(self.whisperer!)")
         manager.disconnect(whisperer!)
         disconnectCharacteristic = nil
         nameCharacteristic = nil
@@ -256,7 +263,7 @@ final class ListenViewModel: ObservableObject {
     }
     
     private func disconnect() {
-        stopFindWhisperer(connectComplete: true)
+        stopFindWhisperer(connectComplete: false)
         if let liveTextC = textCharacteristic {
             whisperer!.setNotifyValue(false, for: liveTextC)
             textCharacteristic = nil
@@ -267,6 +274,7 @@ final class ListenViewModel: ObservableObject {
             disconnectCharacteristic = nil
         }
         if let whisperP = whisperer {
+            logger.log("Disconnecting existing whisperer \(self.whisperer!)")
             manager.disconnect(whisperP)
             whisperer = nil
             whispererName = unknownWhispererName

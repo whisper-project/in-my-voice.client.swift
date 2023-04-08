@@ -8,20 +8,23 @@ import SwiftUI
 struct MainView: View {
     @State private var currentDeviceName: String = WhisperData.deviceName
     @State private var newDeviceName: String = WhisperData.deviceName
-    @State private var mode: OperatingMode = MainViewModel.get_initial_mode()
     @StateObject private var model: MainViewModel = .init()
     
+    private var settingsUrl = UIApplication.openSettingsURLString
+        
     var body: some View {
-        if model.state != .poweredOn {
-            Text("Enable Bluetooth to start scanning")
+        if model.state == .unauthorized {
+            Link("Enable Bluetooth to continue...", destination: URL(string: settingsUrl)!)
+        } else if model.state != .poweredOn {
+            Text("Waiting for Bluetooth before continuing...")
         } else {
-            switch mode {
+            switch model.mode {
             case .ask:
                 choiceView()
             case .listen:
-                ListenView(mode: $mode)
+                ListenView(exitAction: model.choiceMode)
             case .whisper:
-                WhisperView(mode: $mode)
+                WhisperView(exitAction: model.choiceMode)
             }
         }
     }
@@ -45,7 +48,7 @@ struct MainView: View {
             .frame(maxWidth: 300, maxHeight: 105)
             HStack(spacing: 60) {
                 VStack(spacing: 60) {
-                    Button(action: { self.set_mode(.whisper) }) {
+                    Button(action: { self.model.setMode(.whisper) }) {
                         Text("Whisper")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
@@ -54,7 +57,7 @@ struct MainView: View {
                     .background(WhisperData.deviceName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
                     .disabled(currentDeviceName == "")
-                    Button(action: { self.set_mode(.whisper, always: true) }) {
+                    Button(action: { self.model.setMode(.whisper, always: true) }) {
                         Text("Always\nWhisper")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
@@ -65,7 +68,7 @@ struct MainView: View {
                     .disabled(currentDeviceName == "")
                 }
                 VStack(spacing: 60) {
-                    Button(action: { self.set_mode(.listen) }) {
+                    Button(action: { self.model.setMode(.listen) }) {
                         Text("Listen")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
@@ -73,7 +76,7 @@ struct MainView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
-                    Button(action: { self.set_mode(.listen, always: true) }) {
+                    Button(action: { self.model.setMode(.listen, always: true) }) {
                         Text("Always\nListen")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
@@ -83,15 +86,6 @@ struct MainView: View {
                     .cornerRadius(15)
                 }
             }
-        }
-    }
-    
-    private func set_mode(_ mode: OperatingMode, always: Bool = false) {
-        self.mode = mode
-        if always {
-            MainViewModel.save_initial_mode(mode)
-        } else {
-            MainViewModel.save_initial_mode(.ask)
         }
     }
 }

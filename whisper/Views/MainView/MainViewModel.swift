@@ -10,31 +10,47 @@ enum OperatingMode: Int {
     case ask = 0, listen = 1, whisper = 2
 }
 
+let modePreferenceKey = "initial_mode_preference"
+
 final class MainViewModel: ObservableObject {
-    @Published var state: CBManagerState = .poweredOn
+    @Published var state: CBManagerState = .unknown
+    @Published var mode: OperatingMode = .ask
     
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
+    private let defaults = UserDefaults.standard
     
     init() {
         manager.stateSubject
-            .filter{ [weak self] in self?.state != $0 }
-            .sink{ [weak self] in self?.state = $0 }
+            .sink(receiveValue: setState)
             .store(in: &cancellables)
+        let val = defaults.integer(forKey: modePreferenceKey)
+        mode = OperatingMode(rawValue: val) ?? .ask
     }
     
     deinit {
         cancellables.cancel()
     }
     
-    static func get_initial_mode() -> OperatingMode {
-        let defaults = UserDefaults.standard
-        let val = defaults.integer(forKey: "initial_mode_preference")
-        return OperatingMode(rawValue: val) ?? .ask
+    private func setState(_ new: CBManagerState) {
+        if new != state {
+            logger.log("Bluetooth state changes to \(String(describing: new))")
+            state = new
+        } else {
+            logger.log("Bluetooth state remains \(String(describing: new))")
+        }
     }
     
-    static func save_initial_mode(_ mode: OperatingMode) {
-        let defaults = UserDefaults.standard
-        defaults.set(mode.rawValue, forKey: "initial_mode_preference")
+    func setMode(_ mode: OperatingMode, always: Bool = false) {
+        self.mode = mode
+        if always {
+            defaults.set(mode.rawValue, forKey: modePreferenceKey)
+        } else {
+            defaults.set(OperatingMode.ask.rawValue, forKey: modePreferenceKey)
+        }
+    }
+    
+    func choiceMode() {
+        mode = .ask
     }
 }
