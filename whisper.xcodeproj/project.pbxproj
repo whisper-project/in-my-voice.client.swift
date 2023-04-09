@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3712340E29E20BD700CBF49C /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712340D29E20BD700CBF49C /* ControlView.swift */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
 		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
@@ -49,6 +50,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3712340D29E20BD700CBF49C /* ControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlView.swift; sourceTree = "<group>"; };
+		3712341129E2151100CBF49C /* Binding+Convert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Binding+Convert.swift"; sourceTree = "<group>"; };
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		376388CC29DDFB77006E5686 /* StatusTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusTextView.swift; sourceTree = "<group>"; };
@@ -103,6 +106,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3712340C29E20BAF00CBF49C /* ControlView */ = {
+			isa = PBXGroup;
+			children = (
+				3712340D29E20BD700CBF49C /* ControlView.swift */,
+			);
+			path = ControlView;
+			sourceTree = "<group>";
+		};
 		376388CB29DDFB3F006E5686 /* StatusTextView */ = {
 			isa = PBXGroup;
 			children = (
@@ -179,6 +190,7 @@
 				377646C229BAC589002C411C /* MainView */,
 				37763D1229AB561F0051CFE5 /* ListenView */,
 				37763D1129AB560E0051CFE5 /* WhisperView */,
+				3712340C29E20BAF00CBF49C /* ControlView */,
 				37C5142029CA2B0F001A121B /* PastTextView */,
 				376388CB29DDFB3F006E5686 /* StatusTextView */,
 			);
@@ -218,6 +230,7 @@
 			isa = PBXGroup;
 			children = (
 				37763D1F29AC4C5B0051CFE5 /* Set+Cancelable.swift */,
+				3712341129E2151100CBF49C /* Binding+Convert.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -380,6 +393,7 @@
 				37763D1D29AC33230051CFE5 /* WhisperData.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
+				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
 				378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */,
 				37763D2629AC8D550051CFE5 /* ListenView.swift in Sources */,
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,

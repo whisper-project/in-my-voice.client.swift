@@ -49,8 +49,4 @@ final class MainViewModel: ObservableObject {
             defaults.set(OperatingMode.ask.rawValue, forKey: modePreferenceKey)
         }
     }
-    
-    func choiceMode() {
-        mode = .ask
-    }
 }

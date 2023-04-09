@@ -22,9 +22,9 @@ struct MainView: View {
             case .ask:
                 choiceView()
             case .listen:
-                ListenView(exitAction: model.choiceMode)
+                ListenView(mode: $model.mode)
             case .whisper:
-                WhisperView(exitAction: model.choiceMode)
+                WhisperView(mode: $model.mode)
             }
         }
     }

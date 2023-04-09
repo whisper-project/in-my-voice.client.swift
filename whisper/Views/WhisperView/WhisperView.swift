@@ -6,30 +6,21 @@
 import SwiftUI
 
 struct WhisperView: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.dynamicTypeSize) var dynamicTypeSize
 
-    var exitAction: () -> ()
+    @Binding var mode: OperatingMode
 
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel = .init()
-    @State private var size = FontSizes.FontSize.normal
+    @State private var size = FontSizes.FontName.normal.rawValue
+    @State private var magnify: Bool = false
 
     var body: some View {
         GeometryReader { proxy in
             VStack(spacing: 10) {
-                HStack {
-                    Spacer()
-                    Button(action: exitAction) {
-                        Text("Stop Whispering")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .padding(10)
-                    }
-                    .background(Color.accentColor)
-                    .cornerRadius(15)
-                    .padding(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
-                }
+                ControlView(size: $size, magnify: $magnify, mode: $mode)
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
                 PastTextView(model: model.pastText)
                     .font(FontSizes.fontFor(size))
@@ -41,9 +32,11 @@ struct WhisperView: View {
                            alignment: .bottomLeading)
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-                StatusTextView(size: $size, text: $model.statusText)
+                    .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
+                StatusTextView(text: $model.statusText)
                 TextEditor(text: $liveText)
                     .font(FontSizes.fontFor(size))
+                    .truncationMode(.head)
                     .onChange(of: liveText) { [liveText] new in
                         self.liveText = model.updateLiveText(old: liveText, new: new)
                     }
@@ -62,6 +55,7 @@ struct WhisperView: View {
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: whisperViewBottomPad, trailing: 20))
+                    .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
@@ -75,7 +69,9 @@ struct WhisperView: View {
 }
 
 struct WhisperView_Previews: PreviewProvider {
+    static var mode: Binding<OperatingMode> = Binding(get: { return .whisper }, set: { _ = $0 })
+    
     static var previews: some View {
-        WhisperView(exitAction: {})
+        WhisperView(mode: mode)
     }
 }

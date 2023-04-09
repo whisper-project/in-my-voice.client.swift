@@ -19,7 +19,9 @@ struct FontSizes {
         Font.largeTitle,
     ]
     
-    enum FontSize: Int {
+    typealias FontSize = Int
+    
+    enum FontName: Int {
         case xxxsmall = 0
         case xxsmall = 1
         case xsmall = 2
@@ -32,24 +34,32 @@ struct FontSizes {
         case xxxxlarge = 9
     }
     
-    static let minSize = 0
-    static let maxSize = 9
-    
-    static func fontFor(_ size: FontSize) -> Font {
-        return fontSizeMap[size.rawValue]
+    static func fontFor(name: FontName) -> Font {
+        return fontSizeMap[name.rawValue]
     }
     
-    static func nextLarger(_ size: FontSize) -> FontSize {
-        guard size.rawValue < maxSize else {
-            return FontSize.xxxxlarge
+    static func fontFor(_ size: Int) -> Font {
+        if 0 <= size && size < fontSizeMap.count {
+            return fontSizeMap[size]
+        } else {
+            return fontFor(name: .normal)
         }
-        return FontSize(rawValue: size.rawValue + 1)!
     }
     
-    static func nextSmaller(_ size: FontSize) -> FontSize {
-        guard size.rawValue > FontSize.normal.rawValue else {
-            return FontSize.normal
+    static let minTextSize = 4
+    static let maxTextSize = 9
+    
+    static func nextTextLarger(_ size: Int) -> Int {
+        guard size < maxTextSize else {
+            return maxTextSize
         }
-        return FontSize(rawValue: size.rawValue - 1)!
+        return size + 1
+    }
+    
+    static func nextTextSmaller(_ size: Int) -> Int {
+        guard size > minTextSize else {
+            return minTextSize
+        }
+        return size - 1
     }
 }

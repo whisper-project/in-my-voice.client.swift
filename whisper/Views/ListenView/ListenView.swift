@@ -6,30 +6,21 @@
 import SwiftUI
 
 struct ListenView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.scenePhase) var scenePhase
+    @Environment(\.dynamicTypeSize) var dynamicTypeSize
     
-    var exitAction: () -> ()
+    @Binding var mode: OperatingMode
     
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
-    @State private var size = FontSizes.FontSize.normal
-    
+    @State private var size = FontSizes.FontName.normal.rawValue
+    @State private var magnify: Bool = false
+
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 10) {
-                HStack {
-                    Spacer()
-                    Button(action: exitAction) {
-                        Text("Stop Listening")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .padding(10)
-                    }
-                    .background(Color.accentColor)
-                    .cornerRadius(15)
-                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 20))
-                }
+                ControlView(size: $size, magnify: $magnify, mode: $mode)
                 PastTextView(model: model.pastText)
                     .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
@@ -40,9 +31,11 @@ struct ListenView: View {
                            alignment: .bottomLeading)
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-                StatusTextView(size: $size, text: $model.statusText)
+                    .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
+                StatusTextView(text: $model.statusText)
                 Text(model.liveText)
                     .font(FontSizes.fontFor(size))
+                    .truncationMode(.head)
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
                     .padding()
@@ -51,6 +44,7 @@ struct ListenView: View {
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: listenViewBottomPad, trailing: 20))
+                    .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
@@ -84,6 +78,6 @@ struct ListenView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
 
     static var previews: some View {
-        ListenView(exitAction: {})
+        ListenView(mode: mode)
     }
 }
