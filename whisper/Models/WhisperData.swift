@@ -26,7 +26,7 @@ struct WhisperData {
     }
     static func alertSound() -> String {
         let defaults = UserDefaults.standard
-        return defaults.string(forKey: "alert_sound_preference") ?? "air-horn"
+        return defaults.string(forKey: "alert_sound_preference") ?? "bike-horn"
     }
 
     static var listenNameCharacteristic = CBMutableCharacteristic(

@@ -14,7 +14,7 @@
 			<key>Key</key>
 			<string>alert_sound_preference</string>
 			<key>DefaultValue</key>
-			<string>air-horn</string>
+			<string>bike-horn</string>
 			<key>Titles</key>
 			<array>
 				<string>Air Horn</string>
