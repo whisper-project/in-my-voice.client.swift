@@ -3,6 +3,7 @@
 // All material in this project and repository is licensed under the
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
+import AVFAudio
 import Combine
 import CoreBluetooth
 
@@ -28,6 +29,7 @@ final class ListenViewModel: ObservableObject {
     private var scanInProgress = false
     private var wasInBackground = false
     private var resetInProgress = false
+    private var soundEffect: AVAudioPlayer?
 
     init() {
         manager.peripheralSubject
@@ -80,6 +82,27 @@ final class ListenViewModel: ObservableObject {
         }
         resetInProgress = true
         whisperer!.readValue(for: textCharacteristic!)
+    }
+    
+    func playSound(_ name: String) {
+        var name = name
+        var path = Bundle.main.path(forResource: name, ofType: "mp3")
+        if path == nil {
+            // try again with default sound
+            name = WhisperData.alertSound()
+            path = Bundle.main.path(forResource: name, ofType: "mp3")
+        }
+        guard path != nil else {
+            logger.error("Couldn't find sound file for '\(name)'")
+            return
+        }
+        let url = URL(fileURLWithPath: path!)
+        do {
+            soundEffect = try AVAudioPlayer(contentsOf: url)
+            soundEffect?.play()
+        } catch {
+            logger.error("Couldn't create player for sound '\(name)'")
+        }
     }
     
     private func findWhisperer() {
@@ -206,7 +229,9 @@ final class ListenViewModel: ObservableObject {
         } else if characteristic.uuid == textCharacteristic?.uuid {
             if let textData = characteristic.value,
                let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
-                if resetInProgress {
+                if chunk.isSound() {
+                    playSound(chunk.text)
+                } else if resetInProgress {
                     if chunk.isFirstRead() {
                         logger.log("Received reset acknowledgement from whisperer, clearing past text")
                         pastText.clearLines()

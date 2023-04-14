@@ -20,7 +20,7 @@ struct WhisperView: View {
     var body: some View {
         GeometryReader { proxy in
             VStack(spacing: 10) {
-                ControlView(size: $size, magnify: $magnify, mode: $mode)
+                ControlView(size: $size, magnify: $magnify, mode: $mode, playSound: model.playSound)
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
                 PastTextView(model: model.pastText)
                     .font(FontSizes.fontFor(size))

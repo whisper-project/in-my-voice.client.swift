@@ -40,6 +40,9 @@ import Foundation
 /// line and is always the last packet received from a direct read.
 /// - An offset of -4 is an empty chunk that is sent to acknowledge a read request,
 /// and indicates that a full replay to the requesting listener is being sent.
+///
+/// Sound packets (sent to all listeners) have an offset of -9, and the text
+/// indicates the command being sent.
 final class TextProtocol {
     struct ProtocolChunk {
         var offset: Int
@@ -79,6 +82,10 @@ final class TextProtocol {
             return offset == -4
         }
         
+        func isSound() -> Bool {
+            return offset == -9
+        }
+        
         static func fromPastText(text: String) -> ProtocolChunk {
             return ProtocolChunk(offset: -2, text: text)
         }
@@ -89,6 +96,10 @@ final class TextProtocol {
         
         static func acknowledgeRead() -> ProtocolChunk {
             return ProtocolChunk(offset: -4, text: "")
+        }
+        
+        static func sound(_ text: String) -> ProtocolChunk {
+            return ProtocolChunk(offset: -9, text: text)
         }
         
         static func fromLiveTyping(text: String, start: Int) -> [ProtocolChunk] {

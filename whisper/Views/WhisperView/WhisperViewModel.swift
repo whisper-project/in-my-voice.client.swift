@@ -86,6 +86,13 @@ final class WhisperViewModel: ObservableObject {
         return liveText
     }
     
+    func playSound() {
+        let soundName = WhisperData.alertSound()
+        let chunk = TextProtocol.ProtocolChunk.sound(soundName)
+        pendingChunks.append(chunk)
+        updateListeners()
+    }
+    
     /// User has submitted the live text
     func submitLiveText() -> String {
         return self.updateLiveText(old: liveText, new: liveText + "\n")

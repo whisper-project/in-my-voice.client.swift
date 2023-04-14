@@ -24,6 +24,10 @@ struct WhisperData {
         let defaults = UserDefaults.standard
         defaults.setValue(deviceName, forKey: "device_name_preference")
     }
+    static func alertSound() -> String {
+        let defaults = UserDefaults.standard
+        return defaults.string(forKey: "alert_sound_preference") ?? "air-horn"
+    }
 
     static var listenNameCharacteristic = CBMutableCharacteristic(
         type: listenNameUuid, properties: .read, value: nil, permissions: .readable)
