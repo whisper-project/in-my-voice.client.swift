@@ -6,6 +6,7 @@
 import AVFAudio
 import Combine
 import CoreBluetooth
+import UserNotifications
 
 let connectingLiveText = "This is where the line being typed by the whisperer will appear in real time... "
 let connectingPastText = """
@@ -27,9 +28,10 @@ final class ListenViewModel: ObservableObject {
     private var textCharacteristic: CBCharacteristic?
     private var disconnectCharacteristic: CBCharacteristic?
     private var scanInProgress = false
-    private var wasInBackground = false
+    private var isInBackground = false
     private var resetInProgress = false
     private var soundEffect: AVAudioPlayer?
+    private var notifySoundInBackground = false
 
     init() {
         manager.peripheralSubject
@@ -54,6 +56,13 @@ final class ListenViewModel: ObservableObject {
     }
     
     func start() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if error != nil {
+                logger.error("Error asking the user to approve alerts: \(error!)")
+            }
+            self.notifySoundInBackground = granted
+        }
         findWhisperer()
     }
     
@@ -62,17 +71,31 @@ final class ListenViewModel: ObservableObject {
     }
     
     func wentToBackground() {
-        wasInBackground = true
-    }
-    
-    func wentToForeground() {
-        if wasInBackground {
-            wasInBackground = false
-            readAllText()
+        guard !isInBackground else {
+            return
+        }
+        isInBackground = true
+        // now that we are doing background processing,
+        // we need to stop advertising when we go to
+        // the background, so as to save battery.
+        if scanInProgress {
+            manager.stopAdvertising()
         }
     }
     
-    func readAllText() {
+    func wentToForeground() {
+        guard isInBackground else {
+            return
+        }
+        isInBackground = false
+        // if we are looking for a listener, resume
+        // advertising now that we are  in the foreground.
+        if scanInProgress {
+            manager.advertise(services: [WhisperData.listenServiceUuid])
+        }
+    }
+    
+    private func readAllText() {
         guard whisperer != nil && textCharacteristic != nil else {
             return
         }
@@ -84,25 +107,49 @@ final class ListenViewModel: ObservableObject {
         whisperer!.readValue(for: textCharacteristic!)
     }
     
-    func playSound(_ name: String) {
+    private func playSound(_ name: String) {
         var name = name
-        var path = Bundle.main.path(forResource: name, ofType: "mp3")
+        var path = Bundle.main.path(forResource: name, ofType: "caf")
         if path == nil {
             // try again with default sound
             name = WhisperData.alertSound()
-            path = Bundle.main.path(forResource: name, ofType: "mp3")
+            path = Bundle.main.path(forResource: name, ofType: "caf")
         }
         guard path != nil else {
             logger.error("Couldn't find sound file for '\(name)'")
             return
         }
+        guard !isInBackground else {
+            notifySound(name)
+            return
+        }
         let url = URL(fileURLWithPath: path!)
-        do {
-            soundEffect = try AVAudioPlayer(contentsOf: url)
-            soundEffect?.play()
-        } catch {
+        soundEffect = try? AVAudioPlayer(contentsOf: url)
+        if let player = soundEffect {
+            if !player.play() {
+                logger.error("Couldn't play sound '\(name)'")
+            }
+        } else {
             logger.error("Couldn't create player for sound '\(name)'")
         }
+    }
+    
+    private func notifySound(_ name: String) {
+        guard notifySoundInBackground else {
+            logger.error("Received background request to play sound '\(name)' but don't have permission.")
+            return
+        }
+        let soundName = UNNotificationSoundName(name + ".caf")
+        let sound = UNNotificationSound(named: soundName)
+        let content = UNMutableNotificationContent()
+        content.title = "Whisper"
+        content.body = "The whisperer wants your attention!"
+        content.sound = sound
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.25, repeats: false)
+        let uuid = UUID().uuidString
+        let request = UNNotificationRequest(identifier: uuid, content: content, trigger: trigger)
+        let center = UNUserNotificationCenter.current()
+        center.add(request) { error in if error != nil { logger.error("Couldn't notify: \(error!)") } }
     }
     
     private func findWhisperer() {
@@ -122,7 +169,11 @@ final class ListenViewModel: ObservableObject {
             scanInProgress = true
             logger.log("Advertising listener and scanning for whisperer...")
             manager.scan(forServices: [WhisperData.whisperServiceUuid], allow_repeats: true)
-            manager.advertise(services: [WhisperData.listenServiceUuid])
+            if isInBackground {
+                logger.error("Starting to find whisperer while in background, don't advertise")
+            } else {
+                manager.advertise(services: [WhisperData.listenServiceUuid])
+            }
         }
     }
     
@@ -230,6 +281,7 @@ final class ListenViewModel: ObservableObject {
             if let textData = characteristic.value,
                let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
                 if chunk.isSound() {
+                    logger.log("Received request to play sound '\(chunk.text)'")
                     playSound(chunk.text)
                 } else if resetInProgress {
                     if chunk.isFirstRead() {
