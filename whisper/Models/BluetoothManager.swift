@@ -17,8 +17,11 @@ final class BluetoothManager: NSObject {
     var centralSubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
     var centralUnsubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
     var readRequestSubject: PassthroughSubject<CBATTRequest, Never> = .init()
+    var writeRequestSubject: PassthroughSubject<[CBATTRequest], Never> = .init()
+    var writeResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
+    var notifyResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
     var readyToUpdateSubject: PassthroughSubject<(), Never> = .init()
-    var receivedValueSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic), Never> = .init()
+    var receivedValueSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
     var disconnectedSubject: PassthroughSubject<CBPeripheral, Never> = .init()
 
     private var centralManager: CBCentralManager!
@@ -90,6 +93,10 @@ final class BluetoothManager: NSObject {
         peripheralManager.respond(to: request, withResult: withCode)
     }
     
+    func respondToWriteRequest(request: CBATTRequest, withCode: CBATTError.Code) {
+        peripheralManager.respond(to: request, withResult: withCode)
+    }
+    
     func updateValue(value: Data, characteristic: CBMutableCharacteristic) -> Bool {
         return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: nil)
     }
@@ -156,6 +163,10 @@ extension BluetoothManager: CBPeripheralManagerDelegate {
         readRequestSubject.send(request)
     }
     
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        writeRequestSubject.send(requests)
+    }
+    
     func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
         readyToUpdateSubject.send(())
     }
@@ -177,20 +188,17 @@ extension BluetoothManager: CBPeripheralDelegate {
         }
         characteristicsSubject.send(service)
     }
+    
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        writeResultSubject.send((peripheral, characteristic, error))
+    }
         
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let err = error {
-            logger.error("Error retrieving value for \(characteristic) on \(peripheral): \(err)")
-            return
-        }
-        receivedValueSubject.send((peripheral, characteristic))
+        receivedValueSubject.send((peripheral, characteristic, error))
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
-        if let err = error {
-            logger.error("Error subscribing or unsubscribing to \(characteristic) on \(peripheral): \(err)")
-            return
-        }
+        notifyResultSubject.send((peripheral, characteristic, error))
     }
     
     func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {

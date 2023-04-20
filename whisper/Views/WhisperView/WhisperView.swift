@@ -16,6 +16,7 @@ struct WhisperView: View {
     @StateObject private var model: WhisperViewModel = .init()
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
+    @State private var showListeners: Bool = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -34,6 +35,12 @@ struct WhisperView: View {
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 StatusTextView(text: $model.statusText)
+                    .onTapGesture {
+                        self.showListeners = true
+                    }
+                    .popover(isPresented: $showListeners) {
+                        ListenersView(model: model)
+                    }
                 TextEditor(text: $liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)

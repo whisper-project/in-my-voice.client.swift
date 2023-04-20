@@ -18,18 +18,23 @@ let unknownWhispererName = "(not yet known)"
 final class ListenViewModel: ObservableObject {
     @Published var statusText: String = ""
     @Published var liveText: String = ""
+    @Published var wasDropped: Bool = false
     var pastText: PastTextViewModel = .init()
     
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
     private var whisperer: CBPeripheral?
     private var whispererName: String = unknownWhispererName
-    private var nameCharacteristic: CBCharacteristic?
+    static private var droppedWhisperers: Set<String> = []
+    private var listenNameCharacteristic: CBCharacteristic?
+    private var whisperNameCharacteristic: CBCharacteristic?
     private var textCharacteristic: CBCharacteristic?
-    private var disconnectCharacteristic: CBCharacteristic?
+    private var rejectCharacteristic: CBCharacteristic?
     private var scanInProgress = false
-    private var isInBackground = false
+    private var scanTimer: Timer?
     private var resetInProgress = false
+    private var disconnectInProgress = false
+    private var isInBackground = false
     private var soundEffect: AVAudioPlayer?
     private var notifySoundInBackground = false
 
@@ -45,6 +50,12 @@ final class ListenViewModel: ObservableObject {
             .store(in: &cancellables)
         manager.receivedValueSubject
             .sink{ [weak self] in self?.readValue($0) }
+            .store(in: &cancellables)
+        manager.writeResultSubject
+            .sink{ [weak self] in self?.wroteValue($0) }
+            .store(in: &cancellables)
+        manager.notifyResultSubject
+            .sink{ [weak self] in self?.subscribedValue($0) }
             .store(in: &cancellables)
         manager.disconnectedSubject
             .sink{ [weak self] in self?.wasDisconnected($0) }
@@ -68,6 +79,7 @@ final class ListenViewModel: ObservableObject {
     
     func stop() {
         disconnect()
+        statusText = "Stopped Listening"
     }
     
     func wentToBackground() {
@@ -161,6 +173,7 @@ final class ListenViewModel: ObservableObject {
         liveText = connectingLiveText
         pastText.setFromText(connectingPastText)
         if let peripheral = manager.connectedPeripherals(forServices: [WhisperData.whisperServiceUuid]).first,
+           !Self.droppedWhisperers.contains(peripheral.identifier.uuidString),
            let service = peripheral.services?.first {
             logger.log("Found connected whisperer \(peripheral), readying it...")
             whisperer = peripheral
@@ -192,6 +205,10 @@ final class ListenViewModel: ObservableObject {
     }
     
     private func foundWhisperer(_ pair: (CBPeripheral, [String: Any])) {
+        guard !Self.droppedWhisperers.contains(pair.0.identifier.uuidString) else {
+            logger.log("Ignoring whisperer that previously dropped us: \(pair.0)")
+            return
+        }
         stopFindWhisperer(connectComplete: false)
         guard whisperer == nil else {
             logger.log("Already have a whisperer, won't connect to \(pair.0) with ad \(pair.1)")
@@ -220,6 +237,7 @@ final class ListenViewModel: ObservableObject {
             logger.log("Connected to whisperer \(self.whisperer!) with service \(pair.1), readying...")
             whisperer!.discoverCharacteristics(
                 [
+                    WhisperData.listenNameUuid,
                     WhisperData.whisperNameUuid,
                     WhisperData.whisperTextUuid,
                     WhisperData.whisperDisconnectUuid,
@@ -237,37 +255,80 @@ final class ListenViewModel: ObservableObject {
         }
         logger.log("Readying whisperer \(self.whisperer!)...")
         let allCs = service.characteristics!
-        if let nameC = allCs.first(where: { $0.uuid == WhisperData.whisperNameUuid }) {
-            nameCharacteristic = nameC
-            whisperer?.readValue(for: nameCharacteristic!)
+        if let listenNameC = allCs.first(where: { $0.uuid == WhisperData.listenNameUuid }) {
+            listenNameCharacteristic = listenNameC
+            whisperer?.writeValue(Data(WhisperData.deviceName.utf8), for: listenNameCharacteristic!, type: .withResponse)
+        } else {
+            logger.error("Whisper service has no listenName characteristic: please upgrade")
+        }
+        if let whisperNameC = allCs.first(where: { $0.uuid == WhisperData.whisperNameUuid }) {
+            whisperNameCharacteristic = whisperNameC
+            whisperer?.readValue(for: whisperNameCharacteristic!)
         } else {
             fatalError("Whisper service has no name characteristic: report a bug!")
         }
         if let liveTextC = allCs.first(where: { $0.uuid == WhisperData.whisperTextUuid }) {
             textCharacteristic = liveTextC
-            whisperer!.setNotifyValue(true, for: textCharacteristic!)
         } else {
             fatalError("Whisper service has no live text characteristic: report a bug!")
         }
         if let disconnectC = allCs.first(where: { $0.uuid == WhisperData.whisperDisconnectUuid }) {
-            disconnectCharacteristic = disconnectC
-            whisperer!.setNotifyValue(true, for: disconnectC)
+            rejectCharacteristic = disconnectC
         } else {
             fatalError("Whisper service has no disconnect characteristic: report a bug!")
         }
-        stopFindWhisperer(connectComplete: true)
-        readAllText()
+        stopFindWhisperer(connectComplete: false)
     }
     
-    private func readValue(_ pair: (CBPeripheral, CBCharacteristic)) {
-        guard pair.0 == whisperer else {
-            fatalError("Received a read value from unexpected peripheral \(pair.0)")
+    private func wroteValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
+        guard triple.0 == whisperer else {
+            logger.error("Received write result for unexpected whisperer: \(triple.0)")
+            return
         }
-        let characteristic = pair.1
-        if characteristic.uuid == disconnectCharacteristic?.uuid {
-            logger.log("Received disconnect from whisperer")
+        guard triple.1.uuid == WhisperData.listenNameUuid else {
+            logger.error("Received write result for unexpected characteristic: \(triple.1)")
+            return
+        }
+        if let error = triple.2 {
+            analyzeError(error)
+        } else {
+            // we have successfully paired with this whisperer
+            stopFindWhisperer(connectComplete: true)
+            whisperer!.setNotifyValue(true, for: textCharacteristic!)
+            whisperer!.setNotifyValue(true, for: rejectCharacteristic!)
+            readAllText()
+        }
+    }
+    
+    private func subscribedValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
+        guard triple.0 == whisperer else {
+            logger.error("Received notification result for unexpected whisperer: \(triple.0)")
+            return
+        }
+        guard triple.1.uuid == WhisperData.whisperTextUuid || triple.1.uuid == WhisperData.whisperDisconnectUuid else {
+            logger.error("Received notification result for unexpected characteristic: \(triple.1)")
+            return
+        }
+        if let error = triple.2 {
+            analyzeError(error)
+        }
+    }
+    
+    private func readValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
+        guard triple.0 == whisperer else {
+            fatalError("Read a value from unexpected peripheral \(triple.0)")
+        }
+        guard triple.2 == nil else {
+            analyzeError(triple.2!)
+            return
+        }
+        let characteristic = triple.1
+        if characteristic.uuid == rejectCharacteristic?.uuid {
+            logger.log("Received reject from whisperer")
+            Self.droppedWhisperers.insert(whisperer!.identifier.uuidString)
             disconnect()
-        } else if characteristic.uuid == nameCharacteristic?.uuid {
+            wasDropped = true
+        } else if characteristic.uuid == whisperNameCharacteristic?.uuid {
             logger.log("Received name value from whisperer")
             if let nameData = characteristic.value {
                 if nameData.isEmpty {
@@ -324,40 +385,61 @@ final class ListenViewModel: ObservableObject {
     
     private func wasDisconnected(_ peripheral: CBPeripheral) {
         guard peripheral == whisperer else {
-            logger.log("Received disconnect from \(peripheral) while connected to \(String(describing: self.whisperer))")
+            logger.log("List whisperer service from \(peripheral) while connected to \(String(describing: self.whisperer))")
             return
         }
-        logger.log("Whisperer disconnected: \(self.whisperer!)")
-        manager.disconnect(whisperer!)
-        disconnectCharacteristic = nil
-        nameCharacteristic = nil
-        pastText.setFromText(connectingPastText)
+        logger.log("Whisperer service was unpublished")
         textCharacteristic = nil
-        liveText = connectingLiveText
-        whispererName = unknownWhispererName
-        whisperer = nil
-        findWhisperer()
+        rejectCharacteristic = nil
+        disconnect()
+        wasDropped = true
+    }
+    
+    private func analyzeError(_ error: Error) {
+        guard !disconnectInProgress else {
+            // we expect errors when a disconnect is in progress
+            return
+        }
+        if let err = error as? CBATTError {
+            switch err.code {
+            case .insufficientEncryption:
+                // we didn't pair so we couldn't encrypt
+                logger.log("Whisperer required pairing but it was refused.")
+            case .insufficientAuthorization:
+                logger.log("Whisperer has this listener on its deny list.")
+                Self.droppedWhisperers.insert(whisperer!.identifier.uuidString)
+            default:
+                logger.error("Unexpected communication error: \(err)")
+            }
+        } else {
+            logger.error("Unexpected error in Bluetooth subsystem: \(String(describing: error))")
+        }
+        disconnect()
+        wasDropped = true
     }
     
     private func disconnect() {
-        stopFindWhisperer(connectComplete: false)
-        if let liveTextC = textCharacteristic {
-            whisperer!.setNotifyValue(false, for: liveTextC)
-            textCharacteristic = nil
-            liveText = connectingLiveText
+        guard !disconnectInProgress else {
+            return
         }
-        if let disconnectC = disconnectCharacteristic {
-            whisperer!.setNotifyValue(false, for: disconnectC)
-            disconnectCharacteristic = nil
+        disconnectInProgress = true
+        stopFindWhisperer(connectComplete: false)
+        whisperNameCharacteristic = nil
+        if let liveTextC = textCharacteristic {
+            whisperer?.setNotifyValue(false, for: liveTextC)
+            textCharacteristic = nil
+        }
+        if let disconnectC = rejectCharacteristic {
+            whisperer?.setNotifyValue(false, for: disconnectC)
+            rejectCharacteristic = nil
         }
         if let whisperP = whisperer {
             logger.log("Disconnecting existing whisperer \(self.whisperer!)")
             manager.disconnect(whisperP)
             whisperer = nil
             whispererName = unknownWhispererName
-            nameCharacteristic = nil
-            pastText.setFromText(connectingPastText)
+            whisperNameCharacteristic = nil
         }
-        statusText = "Stopped listening"
+        disconnectInProgress = false
     }
 }

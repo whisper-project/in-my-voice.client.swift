@@ -34,15 +34,16 @@ struct MainView: View {
         VStack(spacing: 60) {
             Form {
                 Section(content: {
-                    TextField("Whisperer Name", text: $newDeviceName, prompt: Text("Required for whispering"))
-                        .onSubmit {
-                            WhisperData.updateDeviceName(self.newDeviceName)
-                            self.currentDeviceName = WhisperData.deviceName
+                    TextField("Your Name & Device", text: $newDeviceName, prompt: Text("Dan on iPhone"))
+                        .onChange(of: newDeviceName) {
+                            WhisperData.updateDeviceName($0)
+                            self.currentDeviceName = $0
                         }
                         .textInputAutocapitalization(TextInputAutocapitalization.never)
                         .disableAutocorrection(true)
+                        .truncationMode(.head)
                 }, header: {
-                    Text("Whisperer Name")
+                    Text("Your Name & Device")
                 })
             }
             .frame(maxWidth: 300, maxHeight: 105)
@@ -76,6 +77,7 @@ struct MainView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
+                    .disabled(currentDeviceName == "")
                     Button(action: { self.model.setMode(.listen, always: true) }) {
                         Text("Always\nListen")
                             .foregroundColor(.white)
@@ -84,6 +86,7 @@ struct MainView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
+                    .disabled(currentDeviceName == "")
                 }
             }
         }
