@@ -8,7 +8,7 @@ import CoreBluetooth
 
 final class WhisperViewModel: ObservableObject {
     @Published var statusText: String = ""
-    @Published var listeners: [CBCentral: String] = [:]
+    @Published var listeners: [CBCentral: (String, String)] = [:]   // id, name
     var pastText: PastTextViewModel = .init()
 
     private var liveText: String = ""
@@ -17,10 +17,10 @@ final class WhisperViewModel: ObservableObject {
     private var advertisingInProgress = false
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
-    private var listenAdvertisers: [String: String] = [:]
+    private var listenAdvertisers: [String: String] = [:]   // id
     private var whisperService: CBMutableService?
-    // UUIDs of dropped listeners
-    private var droppedListeners: [String] = []
+    // ids, UUIDs of dropped listeners
+    private var droppedListeners: [(String, String)] = []   // (UUID, id)
     
     init() {
         manager.peripheralSubject
@@ -110,12 +110,13 @@ final class WhisperViewModel: ObservableObject {
     
     /// Drop a listener from the authorized list
     func dropListener(_ central: CBCentral) {
-        guard listeners[central] != nil else {
+        guard let (id, name) = listeners[central] else {
             logger.log("Ignoring drop request for non-listener: \(central)")
             return
         }
+        logger.notice("Dropping listener with id \(id), name \(name): \(central)")
         // remember not to re-add this listener
-        droppedListeners.append(central.identifier.uuidString)
+        droppedListeners.append((central.identifier.uuidString, listeners[central]!.0))
         // disconnect from this listener
         if !manager.updateValue(value: Data(), characteristic: WhisperData.whisperDisconnectCharacteristic, central: central) {
             logger.error("Drop message failed to central: \(central)")
@@ -210,14 +211,13 @@ final class WhisperViewModel: ObservableObject {
         }
     }
     
-    private func addListener(_ central: CBCentral, name: String? = nil) {
+    private func addListener(_ central: CBCentral, id: String, name: String) {
         guard listeners[central] == nil else {
             // we've already connected this listener
             return
         }
-        let name = name ?? central.identifier.uuidString
-        listeners[central] = name
-        logger.log("Added listener \(name): \(central)")
+        listeners[central] = (id, name)
+        logger.log("Added listener with id \(id), \(name): \(central)")
         if listenAdvertisers.count <= listeners.count {
             logger.log("Connected as many listeners as were advertising")
             stopAdvertising()
@@ -227,7 +227,7 @@ final class WhisperViewModel: ObservableObject {
     
     private func removeListener(_ central: CBCentral) {
         if let removed = listeners.removeValue(forKey: central) {
-            logger.log("Lost\(self.listeners.isEmpty ? " last" : "") listener \(removed): \(central)")
+            logger.log("Lost\(self.listeners.isEmpty ? " last" : "") listener id \(removed.0), name \(removed.1): \(central)")
         }
         refreshStatusText()
     }
@@ -236,16 +236,20 @@ final class WhisperViewModel: ObservableObject {
         let uuidString = pair.0.identifier.uuidString
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(WhisperData.listenServiceUuid) {
-                if let localName = listenAdvertisers[uuidString] {
-                    logger.debug("Ignoring repeat ad from already-pending listener \(uuidString) with name \(localName)")
+                if let id = listenAdvertisers[uuidString] {
+                    logger.debug("Ignoring repeat ad from already-pending listener \(uuidString) with id \(id)")
                 } else {
-                    var name = "(no name)"
-                    if let adName = pair.1[CBAdvertisementDataLocalNameKey],
-                       let localName = adName as? String {
-                        name = localName
+                    guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
+                          let id = adName as? String else {
+                        logger.error("Ignoring advertisement with no listener id")
+                        return
                     }
-                    listenAdvertisers[uuidString] = name
-                    logger.debug("Got first ad from listener \(uuidString) with name \(name)")
+                    guard !droppedListeners.contains(where: { $0.1 == id }) else {
+                        logger.info("Ignoring advertisement from dropped listener id \(id)")
+                        return
+                    }
+                    listenAdvertisers[uuidString] = id
+                    logger.debug("Got first ad from listener \(uuidString) with id \(id)")
                     startAdvertising()
                 }
             }
@@ -300,7 +304,7 @@ final class WhisperViewModel: ObservableObject {
             manager.respondToWriteRequest(request: request, withCode: .requestNotSupported)
             return
         }
-        guard !droppedListeners.contains(where: { request.central.identifier.uuidString == $0 }) else {
+        guard !droppedListeners.contains(where: { request.central.identifier.uuidString == $0.0 }) else {
             // dropped listeners cannot be re-aquired in this session
             manager.respondToWriteRequest(request: request, withCode: .insufficientAuthorization)
             return
@@ -311,13 +315,19 @@ final class WhisperViewModel: ObservableObject {
             return
         }
         guard let value = request.value,
-              let name = String(data: value, encoding: .utf8) else {
+              let idAndName = String(data: value, encoding: .utf8) else {
             logger.error("Got an empty listener name value: \(request)")
             manager.respondToWriteRequest(request: request, withCode: .invalidAttributeValueLength)
             return
         }
-        logger.log("Received name '\(name)' from new listener \(request.central)")
-        addListener(request.central, name: name)
+        let parts = idAndName.split(separator: "|", maxSplits: 1)
+        guard parts.count == 2 else {
+            logger.error("Got an invalid format for listener name: \(idAndName)")
+            manager.respondToWriteRequest(request: request, withCode: .invalidHandle)
+            return
+        }
+        logger.log("Received id \(parts[0]), name '\(parts[1])' from new listener \(request.central)")
+        addListener(request.central, id: String(parts[0]), name: String(parts[1]))
         manager.respondToWriteRequest(request: request, withCode: .success)
     }
     

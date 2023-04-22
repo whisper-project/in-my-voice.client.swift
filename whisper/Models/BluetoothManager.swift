@@ -66,10 +66,11 @@ final class BluetoothManager: NSObject {
         peripheralManager.removeAllServices()
     }
     
-    func advertise(services: [CBUUID], localName: String = WhisperData.deviceName) {
+    func advertise(services: [CBUUID], localName: String = WhisperData.deviceId) {
         guard !services.isEmpty else {
             fatalError("Can't advertise no services")
         }
+//        let name = Data(localName.utf8)
         peripheralManager.startAdvertising([
             CBAdvertisementDataServiceUUIDsKey: services,
             CBAdvertisementDataLocalNameKey: localName,

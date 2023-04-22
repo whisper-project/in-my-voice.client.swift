@@ -42,7 +42,7 @@ struct ListenersView: View {
     }
     
     private func makeRows() -> [Row] {
-        var rows = model.listeners.map({ central, name in Row(id: name, central: central) })
+        var rows = model.listeners.map({ central, pair in Row(id: pair.1, central: central) })
         rows.sort()
         return rows
     }

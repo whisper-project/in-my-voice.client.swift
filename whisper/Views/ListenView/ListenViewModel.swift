@@ -257,9 +257,10 @@ final class ListenViewModel: ObservableObject {
         let allCs = service.characteristics!
         if let listenNameC = allCs.first(where: { $0.uuid == WhisperData.listenNameUuid }) {
             listenNameCharacteristic = listenNameC
-            whisperer?.writeValue(Data(WhisperData.deviceName.utf8), for: listenNameCharacteristic!, type: .withResponse)
+            let idAndName = "\(WhisperData.deviceId)|\(WhisperData.deviceName)"
+            whisperer?.writeValue(Data(idAndName.utf8), for: listenNameCharacteristic!, type: .withResponse)
         } else {
-            logger.error("Whisper service has no listenName characteristic: please upgrade")
+            fatalError("Whisper service has no listenName characteristic: please upgrade the Whisperer's app")
         }
         if let whisperNameC = allCs.first(where: { $0.uuid == WhisperData.whisperNameUuid }) {
             whisperNameCharacteristic = whisperNameC

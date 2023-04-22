@@ -29,6 +29,16 @@ struct WhisperData {
     }
     
     // MARK: UUIDs
+    static var deviceId: String = {
+        let defaults = UserDefaults.standard
+        if let id = defaults.string(forKey: "local_device_id") {
+            return id
+        } else {
+            let id =  randomString(length: 8)
+            defaults.setValue(id, forKey: "local_device_id")
+            return id
+        }
+    }()
     static let whisperServiceUuid = CBUUID(string: "6284331A-48F1-4E96-BD5C-97791DBA9FE5")
     static let whisperNameUuid = CBUUID(string: "392E137A-D692-4CBC-882A-9D4A81C5CDDB")
     static let whisperSpareUuid = CBUUID(string: "6048A326-0F6F-4744-9C7A-A9796C8C7748")
@@ -64,5 +74,11 @@ struct WhisperData {
             listenNameCharacteristic(),
         ]
         return service
+    }
+    
+    // MARK: helpers
+    static func randomString(length: Int) -> String {
+        let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*()_+`-={}[]"
+        return String((0..<length).map{ _ in letters.randomElement()! })
     }
 }
