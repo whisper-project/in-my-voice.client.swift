@@ -19,6 +19,7 @@ final class ListenViewModel: ObservableObject {
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var wasDropped: Bool = false
+    @Published var timedOut: Bool = false
     var pastText: PastTextViewModel = .init()
     
     private var manager = BluetoothManager.shared
@@ -31,7 +32,7 @@ final class ListenViewModel: ObservableObject {
     private var textCharacteristic: CBCharacteristic?
     private var rejectCharacteristic: CBCharacteristic?
     private var scanInProgress = false
-    private var scanTimer: Timer?
+    private weak var scanTimer: Timer?
     private var resetInProgress = false
     private var disconnectInProgress = false
     private var isInBackground = false
@@ -91,7 +92,7 @@ final class ListenViewModel: ObservableObject {
         // we need to stop advertising when we go to
         // the background, so as to save battery.
         if scanInProgress {
-            manager.stopAdvertising()
+            stopAdvertising()
         }
     }
     
@@ -103,7 +104,7 @@ final class ListenViewModel: ObservableObject {
         // if we are looking for a listener, resume
         // advertising now that we are  in the foreground.
         if scanInProgress {
-            manager.advertise(services: [WhisperData.listenServiceUuid])
+            startAdvertising()
         }
     }
     
@@ -185,7 +186,7 @@ final class ListenViewModel: ObservableObject {
             if isInBackground {
                 logger.error("Starting to find whisperer while in background, don't advertise")
             } else {
-                manager.advertise(services: [WhisperData.listenServiceUuid])
+                startAdvertising()
             }
         }
     }
@@ -195,12 +196,37 @@ final class ListenViewModel: ObservableObject {
             scanInProgress = false
             logger.log("Stop advertising listener and scanning for whisperer")
             manager.stopScan()
-            manager.stopAdvertising()
+            stopAdvertising()
         }
         if connectComplete {
             statusText = "Listening to \(whispererName)"
             liveText = ""
             pastText.clearLines()
+        }
+    }
+    
+    private func startAdvertising() {
+        if let timer = scanTimer {
+            logger.error("Started advertising while advertising?  Cancelling prior timer.")
+            scanTimer = nil
+            timer.invalidate()
+        }
+        scanTimer = Timer.scheduledTimer(withTimeInterval: advertisingMaxTime, repeats: false) { timer in
+            logger.log("Advertising timed out without a response from a whisperer.")
+            self.timedOut = true
+            // run loop will invalidate the timer
+            self.scanTimer = nil
+            self.manager.stopAdvertising()
+        }
+        manager.advertise(services: [WhisperData.listenServiceUuid])
+    }
+    
+    private func stopAdvertising() {
+        manager.stopAdvertising()
+        if let timer = scanTimer {
+            // manual cancellation: invalidate the running timer
+            scanTimer = nil
+            timer.invalidate()
         }
     }
     

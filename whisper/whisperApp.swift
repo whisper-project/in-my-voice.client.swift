@@ -30,6 +30,9 @@ let (listenViewBottomPad, whisperViewBottomPad, fontButtonPad): (CGFloat, CGFloa
     }
 }()
 
+/// global timeouts
+let advertisingMaxTime = TimeInterval(20) // seconds of advertising before required connection
+
 /// logging
 import os
 let logger = Logger()

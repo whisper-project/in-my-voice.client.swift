@@ -9,15 +9,17 @@ import CoreBluetooth
 final class WhisperViewModel: ObservableObject {
     @Published var statusText: String = ""
     @Published var listeners: [CBCentral: (String, String)] = [:]   // id, name
+    @Published var timedOut: Bool = false
     var pastText: PastTextViewModel = .init()
 
     private var liveText: String = ""
     private var pendingChunks: [TextProtocol.ProtocolChunk] = []
     private var directedChunks: [CBCentral: [TextProtocol.ProtocolChunk]] = [:]
     private var advertisingInProgress = false
+    private weak var adTimer: Timer?
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
-    private var listenAdvertisers: [String: String] = [:]   // id
+    private var listenAdvertisers: [(String, String)] = []   // (UUID, id)
     private var whisperService: CBMutableService?
     // ids, UUIDs of dropped listeners
     private var droppedListeners: [(String, String)] = []   // (UUID, id)
@@ -181,12 +183,24 @@ final class WhisperViewModel: ObservableObject {
     }
     
     private func startAdvertising() {
-        guard !advertisingInProgress else {
-            return
+        if advertisingInProgress {
+            logger.log("Refresh advertising timer for new listener...")
+            if let timer = adTimer {
+                adTimer = nil
+                timer.invalidate()
+            }
+        } else {
+            logger.log("Advertising whisperer...")
         }
-        logger.log("Advertising whisperer...")
         manager.advertise(services: [WhisperData.whisperServiceUuid])
         advertisingInProgress = true
+        adTimer = Timer.scheduledTimer(withTimeInterval: advertisingMaxTime, repeats: false) { timer in
+            logger.log("Advertising timed out without a response from a listener.")
+            self.timedOut = true
+            // run loop will invalidate the timer
+            self.adTimer = nil
+            self.stopAdvertising()
+        }
     }
     
     private func stopAdvertising() {
@@ -194,6 +208,11 @@ final class WhisperViewModel: ObservableObject {
         manager.stopAdvertising()
         listenAdvertisers.removeAll()
         advertisingInProgress = false
+        if let timer = adTimer {
+            // manual cancellation: invalidate the running timer
+            adTimer = nil
+            timer.invalidate()
+        }
     }
     
     func refreshStatusText() {
@@ -236,8 +255,8 @@ final class WhisperViewModel: ObservableObject {
         let uuidString = pair.0.identifier.uuidString
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(WhisperData.listenServiceUuid) {
-                if let id = listenAdvertisers[uuidString] {
-                    logger.debug("Ignoring repeat ad from already-pending listener \(uuidString) with id \(id)")
+                if let (_, id) = listenAdvertisers.first(where: { $0.0 == uuidString }) {
+                    logger.debug("Ignoring repeat ad from already-pending listener \(id) with UUID \(uuidString)")
                 } else {
                     guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
                           let id = adName as? String else {
@@ -248,7 +267,7 @@ final class WhisperViewModel: ObservableObject {
                         logger.info("Ignoring advertisement from dropped listener id \(id)")
                         return
                     }
-                    listenAdvertisers[uuidString] = id
+                    listenAdvertisers.append((uuidString, id))
                     logger.debug("Got first ad from listener \(uuidString) with id \(id)")
                     startAdvertising()
                 }

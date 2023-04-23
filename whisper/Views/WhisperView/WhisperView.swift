@@ -67,6 +67,12 @@ struct WhisperView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
+        .alert("No Listeners", isPresented: $model.timedOut) {
+            Button("OK") { }
+        } message: {
+            Text("There was a listener trying to connect but something went wrong. Have them try again.")
+                .lineLimit(nil)
+        }
         .onAppear {
             self.model.start()
             focusField = "liveText"

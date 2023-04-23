@@ -54,6 +54,12 @@ struct ListenView: View {
         } message: {
             Text("The connection to the listener was lost")
         }
+        .alert("No Whisperers", isPresented: $model.timedOut) {
+            Button("OK") { mode = .ask }
+        } message: {
+            Text("Couldn't find a whisperer.  Try again when a whisperer is ready.")
+                .lineLimit(nil)
+        }
         .onAppear {
             logger.log("ListenView appeared")
             self.model.start()
