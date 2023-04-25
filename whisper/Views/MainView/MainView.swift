@@ -9,23 +9,15 @@ struct MainView: View {
     @State private var currentDeviceName: String = WhisperData.deviceName
     @State private var newDeviceName: String = WhisperData.deviceName
     @StateObject private var model: MainViewModel = .init()
-    
-    private var settingsUrl = UIApplication.openSettingsURLString
-        
+            
     var body: some View {
-        if model.state == .unauthorized {
-            Link("Enable Bluetooth to continue...", destination: URL(string: settingsUrl)!)
-        } else if model.state != .poweredOn {
-            Text("Waiting for Bluetooth before continuing...")
-        } else {
-            switch model.mode {
-            case .ask:
-                choiceView()
-            case .listen:
-                ListenView(mode: $model.mode)
-            case .whisper:
-                WhisperView(mode: $model.mode)
-            }
+        switch model.mode {
+        case .ask:
+            choiceView()
+        case .listen:
+            ListenView(mode: $model.mode)
+        case .whisper:
+            WhisperView(mode: $model.mode)
         }
     }
     

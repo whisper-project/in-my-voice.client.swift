@@ -16,7 +16,7 @@ struct WhisperView: View {
     @StateObject private var model: WhisperViewModel = .init()
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
-    @State private var showListeners: Bool = false
+    @State private var showStatusDetail: Bool = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -36,10 +36,10 @@ struct WhisperView: View {
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 StatusTextView(text: $model.statusText)
                     .onTapGesture {
-                        self.showListeners = true
+                        self.showStatusDetail = true
                     }
-                    .popover(isPresented: $showListeners) {
-                        ListenersView(model: model)
+                    .popover(isPresented: $showStatusDetail) {
+                        statusView()
                     }
                 TextEditor(text: $liveText)
                     .font(FontSizes.fontFor(size))
@@ -78,6 +78,19 @@ struct WhisperView: View {
             focusField = "liveText"
         }
         .onDisappear { self.model.stop() }
+    }
+    
+    @ViewBuilder
+    private func statusView() -> some View {
+        if model.bluetoothWaiting {
+            if model.bluetoothState == .unauthorized {
+                Link("Enable Bluetooth to continue...", destination: URL(string: UIApplication.openSettingsURLString)!)
+            } else if model.bluetoothState != .poweredOn {
+                Text("Waiting for Bluetooth before continuing...")
+            }
+        } else {
+            ListenersView(model: model)
+        }
     }
 }
 

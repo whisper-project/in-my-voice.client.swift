@@ -16,6 +16,7 @@ struct ListenView: View {
     @StateObject private var model: ListenViewModel = .init()
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
+    @State private var showStatusDetail: Bool = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -33,6 +34,12 @@ struct ListenView: View {
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 StatusTextView(text: $model.statusText)
+                    .onTapGesture {
+                        showStatusDetail = true
+                    }
+                    .popover(isPresented: $showStatusDetail) {
+                        statusView()
+                    }
                 Text(model.liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)
@@ -81,6 +88,19 @@ struct ListenView: View {
             @unknown default:
                 logger.error("Went to unknown phase: \(String(describing: newPhase))")
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func statusView() -> some View {
+        if model.bluetoothWaiting {
+            if model.bluetoothState == .unauthorized {
+                Link("Enable Bluetooth to continue...", destination: URL(string: UIApplication.openSettingsURLString)!)
+            } else if model.bluetoothState != .poweredOn {
+                Text("Waiting for Bluetooth before continuing...")
+            }
+        } else {
+            WhisperersView(model: model)
         }
     }
 }

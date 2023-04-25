@@ -12,7 +12,7 @@ struct ListenersView: View {
     @ObservedObject var model: WhisperViewModel
     
     var body: some View {
-        if model.listeners.isEmpty {
+        if model.listeners.values.filter({ $0.isSubscribed }).isEmpty {
             Text("No Listeners")
         } else {
             VStack(alignment: .leading) {
@@ -36,13 +36,18 @@ struct ListenersView: View {
         var id: String
         var central: CBCentral
 
-        static func < (lhs: ListenersView.Row, rhs: ListenersView.Row) -> Bool {
+        static func < (lhs: Self, rhs: Self) -> Bool {
             lhs.id < rhs.id
         }
     }
     
     private func makeRows() -> [Row] {
-        var rows = model.listeners.map({ central, pair in Row(id: pair.1, central: central) })
+        var rows: [Row] = []
+        for (central, listener) in model.listeners {
+            if listener.isSubscribed {
+                rows.append(Row(id: listener.name, central: central))
+            }
+        }
         rows.sort()
         return rows
     }

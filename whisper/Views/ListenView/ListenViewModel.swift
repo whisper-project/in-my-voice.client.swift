@@ -10,27 +10,63 @@ import UserNotifications
 
 let connectingLiveText = "This is where the line being typed by the whisperer will appear in real time... "
 let connectingPastText = """
-This is where lines will move after the whisperer hits return.
-The most recent line will be on the bottom.
-"""
-let unknownWhispererName = "(not yet known)"
+    This is where lines will move after the whisperer hits return.
+    The most recent line will be on the bottom.
+    """
 
 final class ListenViewModel: ObservableObject {
+    class Candidate {
+        var peripheral: CBPeripheral
+        var deviceId: String
+        var name: String = "(not yet known)"
+        var isPrimary: Bool = false
+        var isPaired: Bool = false
+        var listenNameCharacteristic: CBCharacteristic?
+        var whisperNameCharacteristic: CBCharacteristic?
+        var textCharacteristic: CBCharacteristic?
+        var rejectCharacteristic: CBCharacteristic?
+        
+        init(peripheral: CBPeripheral, deviceId: String) {
+            self.peripheral = peripheral
+            self.deviceId = deviceId
+        }
+        
+        func setPrimary(isPrimary: Bool) {
+            guard self.isPaired else {
+                if isPrimary {
+                    fatalError("Can't make unpaired candidate primary: \(self)")
+                } else {
+                    // nothing to do
+                    return
+                }
+            }
+            guard self.isPrimary != isPrimary else {
+                // nothing to do
+                return
+            }
+            self.isPrimary = isPrimary
+            if let liveTextC = self.textCharacteristic {
+                self.peripheral.setNotifyValue(isPrimary, for: liveTextC)
+            }
+            if let rejectC = self.rejectCharacteristic {
+                self.peripheral.setNotifyValue(isPrimary, for: rejectC)
+            }
+        }
+    }
+    
+    @Published var bluetoothState: CBManagerState = .unknown
+    @Published var bluetoothWaiting: Bool = true
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var wasDropped: Bool = false
     @Published var timedOut: Bool = false
     var pastText: PastTextViewModel = .init()
     
-    private var manager = BluetoothManager.shared
+    private var manager = BluetoothManager()
     private var cancellables: Set<AnyCancellable> = []
-    private var whisperer: CBPeripheral?
-    private var whispererName: String = unknownWhispererName
+    private var candidates: [CBPeripheral: Candidate] = [:]
+    private var whisperer: Candidate?
     static private var droppedWhisperers: Set<String> = []
-    private var listenNameCharacteristic: CBCharacteristic?
-    private var whisperNameCharacteristic: CBCharacteristic?
-    private var textCharacteristic: CBCharacteristic?
-    private var rejectCharacteristic: CBCharacteristic?
     private var scanInProgress = false
     private weak var scanTimer: Timer?
     private var resetInProgress = false
@@ -38,22 +74,25 @@ final class ListenViewModel: ObservableObject {
     private var isInBackground = false
     private var soundEffect: AVAudioPlayer?
     private var notifySoundInBackground = false
-
+    
     init() {
+        manager.stateSubject
+            .sink(receiveValue: setState)
+            .store(in: &cancellables)
         manager.peripheralSubject
-            .sink{ [weak self] in self?.foundWhisperer($0) }
+            .sink{ [weak self] in self?.discoveredWhisperer($0) }
             .store(in: &cancellables)
         manager.servicesSubject
             .sink{ [weak self] in self?.connectedWhisperer($0) }
             .store(in: &cancellables)
         manager.characteristicsSubject
-            .sink{ [weak self] in self?.whispererReady($0) }
+            .sink{ [weak self] in self?.pairWithWhisperer($0) }
             .store(in: &cancellables)
         manager.receivedValueSubject
             .sink{ [weak self] in self?.readValue($0) }
             .store(in: &cancellables)
         manager.writeResultSubject
-            .sink{ [weak self] in self?.wroteValue($0) }
+            .sink{ [weak self] in self?.confirmPairing($0) }
             .store(in: &cancellables)
         manager.notifyResultSubject
             .sink{ [weak self] in self?.subscribedValue($0) }
@@ -75,10 +114,17 @@ final class ListenViewModel: ObservableObject {
             }
             self.notifySoundInBackground = granted
         }
-        findWhisperer()
     }
     
     func stop() {
+        logger.log("Stop scanning for whisperers")
+        manager.stopScan()
+        if scanInProgress {
+            scanInProgress = false
+            logger.log("Stop advertising this listener")
+            stopAdvertising()
+        }
+        // disconnect from already-found candidates
         disconnect()
         statusText = "Stopped Listening"
     }
@@ -108,8 +154,31 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
+    func eligibleCandidates() -> [Candidate] {
+        return candidates.values.filter{ $0.isPaired }
+    }
+    
+    func switchPrimary(to: CBPeripheral) {
+        guard var new = candidates[to], new.isPaired else {
+            logger.error("Can't switch primary to non-candidate \(to)")
+            return
+        }
+        switchPrimary(&new)
+    }
+    
+    private func switchPrimary(_ new: inout Candidate) {
+        if let old = whisperer {
+            old.setPrimary(isPrimary: false)
+            whisperer = nil
+        }
+        new.setPrimary(isPrimary: true)
+        whisperer = new
+        foundWhisperer()
+        readAllText()
+    }
+    
     private func readAllText() {
-        guard whisperer != nil && textCharacteristic != nil else {
+        guard whisperer != nil else {
             return
         }
         guard !resetInProgress else {
@@ -117,7 +186,7 @@ final class ListenViewModel: ObservableObject {
             return
         }
         resetInProgress = true
-        whisperer!.readValue(for: textCharacteristic!)
+        whisperer!.peripheral.readValue(for: whisperer!.textCharacteristic!)
     }
     
     private func playSound(_ name: String) {
@@ -165,24 +234,19 @@ final class ListenViewModel: ObservableObject {
         center.add(request) { error in if error != nil { logger.error("Couldn't notify: \(error!)") } }
     }
     
+    /// Start the process of looking for a listener.  This resets the status line, live, and past text and starts advertising.
+    /// This is only done when we don't have any eligible candidate whisperers.
     private func findWhisperer() {
         guard whisperer == nil else {
-            logger.log("Tried to find a whisperer when we have one, ignoring request")
+            logger.error("Advertising for a whisperer when we have one, ignoring request")
             return
         }
-        statusText = "Looking for a whisperer to listen to…"
+        setStatusText()
         liveText = connectingLiveText
         pastText.setFromText(connectingPastText)
-        if let peripheral = manager.connectedPeripherals(forServices: [WhisperData.whisperServiceUuid]).first,
-           !Self.droppedWhisperers.contains(peripheral.identifier.uuidString),
-           let service = peripheral.services?.first {
-            logger.log("Found connected whisperer \(peripheral), readying it...")
-            whisperer = peripheral
-            whispererReady(service)
-        } else if !scanInProgress {
+        if !scanInProgress {
             scanInProgress = true
-            logger.log("Advertising listener and scanning for whisperer...")
-            manager.scan(forServices: [WhisperData.whisperServiceUuid], allow_repeats: true)
+            logger.log("Advertising listener...")
             if isInBackground {
                 logger.error("Starting to find whisperer while in background, don't advertise")
             } else {
@@ -191,33 +255,64 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    private func stopFindWhisperer(connectComplete: Bool) {
+    /// Complete the process of looking for a listener.  This resets the status line, live and past text and stops any advertising.
+    /// This is only done when we have paired with and are connecting to a candidate whisperer.
+    private func foundWhisperer() {
+        guard whisperer != nil else {
+            logger.error("Stop advertising for a whisperer when we don't have one, ignoring the request")
+            return
+        }
         if scanInProgress {
             scanInProgress = false
-            logger.log("Stop advertising listener and scanning for whisperer")
-            manager.stopScan()
+            logger.log("Stop advertising listener")
             stopAdvertising()
         }
-        if connectComplete {
-            statusText = "Listening to \(whispererName)"
-            liveText = ""
-            pastText.clearLines()
+        setStatusText(name: whisperer!.name)
+        liveText = ""
+        pastText.clearLines()
+    }
+    
+    private func setStatusText(name: String? = nil) {
+        if bluetoothWaiting {
+            if bluetoothState == .unauthorized {
+                statusText = "Tap here to enable Bluetooth…"
+            } else {
+                statusText = "Waiting for Bluetooth to be ready…"
+            }
+        } else if let name = name {
+            statusText = "Listening to \(name)"
+            let eligible = eligibleCandidates().count - 1   // the whisperer is eligible
+            if eligible > 0 {
+                statusText += " (\(eligible) other\(eligible > 1 ? "s" : "") available)"
+            }
+        } else {
+            statusText = "Advertising for a whisperer to listen to…"
         }
     }
     
     private func startAdvertising() {
-        if let timer = scanTimer {
-            logger.error("Started advertising while advertising?  Cancelling prior timer.")
-            scanTimer = nil
-            timer.invalidate()
+        guard scanTimer == nil else {
+            fatalError("Started advertising while already advertising: report a bug!")
         }
-        scanTimer = Timer.scheduledTimer(withTimeInterval: advertisingMaxTime, repeats: false) { timer in
-            logger.log("Advertising timed out without a response from a whisperer.")
-            self.timedOut = true
-            // run loop will invalidate the timer
+        func firstTimer(_: Timer) {
             self.scanTimer = nil
-            self.manager.stopAdvertising()
+            if self.candidates.count == 0 {
+                logger.log("Advertising timed out before we heard from any whisperers.")
+                self.timedOut = true
+            } else {
+                logger.log("Advertising ended before we have completed pairing, but we have candidates.")
+                self.scanTimer = Timer.scheduledTimer(withTimeInterval: pairingMaxTime, repeats: false, block: secondTimer)
+            }
+            manager.stopAdvertising()
         }
+        func secondTimer(_: Timer) {
+            self.scanTimer = nil
+            if scanInProgress {
+                logger.log("We couldn't successfully pair any candidates in time.")
+                self.timedOut = true
+            }
+        }
+        scanTimer = Timer.scheduledTimer(withTimeInterval: advertisingMaxTime, repeats: false, block: firstTimer)
         manager.advertise(services: [WhisperData.listenServiceUuid])
     }
     
@@ -230,43 +325,41 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    private func foundWhisperer(_ pair: (CBPeripheral, [String: Any])) {
-        guard !Self.droppedWhisperers.contains(pair.0.identifier.uuidString) else {
-            logger.log("Ignoring whisperer that previously dropped us: \(pair.0)")
-            return
-        }
-        stopFindWhisperer(connectComplete: false)
-        guard whisperer == nil else {
-            logger.log("Already have a whisperer, won't connect to \(pair.0) with ad \(pair.1)")
-            return
-        }
+    /// Called when we see an ad from a potential whisperer
+    private func discoveredWhisperer(_ pair: (CBPeripheral, [String: Any])) {
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? Array<CBUUID> {
             if uuids.contains(WhisperData.whisperServiceUuid) {
-                logger.log("Connecting to whisperer \(pair.0) with ad \(pair.1)")
-                whisperer = pair.0
-                manager.connect(whisperer!)
+                guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
+                      let deviceId = adName as? String else {
+                    logger.error("Ignoring advertisement with no listener id")
+                    return
+                }
+                guard candidates[pair.0] == nil else {
+                    logger.debug("Ignoring repeat ad from candidate \(deviceId)")
+                    return
+                }
+                logger.log("Connecting to candidate \(pair.0) with id \(deviceId)")
+                candidates[pair.0] = Candidate(peripheral: pair.0, deviceId: deviceId)
+                manager.connect(pair.0)
                 return
             }
         }
-        logger.error("Notified of whisperer with incorrect ad data: \(pair.1)")
+        logger.error("Notified of whisperer \(pair.0) with incorrect ad data: \(pair.1)")
     }
-
+    
+    /// Called when we get a connection established to a potential whisperer
     private func connectedWhisperer(_ pair: (CBPeripheral, [CBService])) {
-        guard pair.0 == whisperer else {
-            if let requested = whisperer {
-                fatalError("Connected to whisperer \(pair.0) but requested connection to \(requested)")
-            } else {
-                fatalError("Connected to whisperer \(pair.0) but didn't request a connection")
-            }
+        guard let candidate = candidates[pair.0] else {
+            fatalError("Connected to whisperer \(pair.0) but didn't request a connection")
         }
         if let whisperSvc = pair.1.first(where: {svc in svc.uuid == WhisperData.whisperServiceUuid}) {
-            logger.log("Connected to whisperer \(self.whisperer!) with service \(pair.1), readying...")
-            whisperer!.discoverCharacteristics(
+            logger.log("Connected to whisperer \(candidate.deviceId), readying...")
+            candidate.peripheral.discoverCharacteristics(
                 [
                     WhisperData.listenNameUuid,
                     WhisperData.whisperNameUuid,
-                    WhisperData.whisperTextUuid,
-                    WhisperData.whisperDisconnectUuid,
+                    WhisperData.textUuid,
+                    WhisperData.disconnectUuid,
                 ],
                 for: whisperSvc
             )
@@ -275,97 +368,106 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    private func whispererReady(_ service: CBService) {
-        guard service.characteristics != nil else {
-            fatalError("Readied whisper service with no characteristics: report a bug!")
+    /// Called when we have discovered the whisper service on a potential whisperer
+    private func pairWithWhisperer(_ pair: (CBPeripheral, CBService)) {
+        let (peripheral, service) = pair
+        guard let candidate = candidates[peripheral] else {
+            fatalError("Connected to a whisper service that's not a candidate: report a bug!")
         }
-        logger.log("Readying whisperer \(self.whisperer!)...")
+        guard service.characteristics != nil else {
+            fatalError("Conected to a whisper service with no characteristics: report a bug!")
+        }
+        logger.log("Trying to pair with connected whisper service on: \(candidate.deviceId)...")
         let allCs = service.characteristics!
         if let listenNameC = allCs.first(where: { $0.uuid == WhisperData.listenNameUuid }) {
-            listenNameCharacteristic = listenNameC
-            let idAndName = "\(WhisperData.deviceId)|\(WhisperData.deviceName)"
-            whisperer?.writeValue(Data(idAndName.utf8), for: listenNameCharacteristic!, type: .withResponse)
+            candidate.listenNameCharacteristic = listenNameC
         } else {
             fatalError("Whisper service has no listenName characteristic: please upgrade the Whisperer's app")
         }
         if let whisperNameC = allCs.first(where: { $0.uuid == WhisperData.whisperNameUuid }) {
-            whisperNameCharacteristic = whisperNameC
-            whisperer?.readValue(for: whisperNameCharacteristic!)
+            candidate.whisperNameCharacteristic = whisperNameC
         } else {
             fatalError("Whisper service has no name characteristic: report a bug!")
         }
-        if let liveTextC = allCs.first(where: { $0.uuid == WhisperData.whisperTextUuid }) {
-            textCharacteristic = liveTextC
+        if let liveTextC = allCs.first(where: { $0.uuid == WhisperData.textUuid }) {
+            candidate.textCharacteristic = liveTextC
         } else {
             fatalError("Whisper service has no live text characteristic: report a bug!")
         }
-        if let disconnectC = allCs.first(where: { $0.uuid == WhisperData.whisperDisconnectUuid }) {
-            rejectCharacteristic = disconnectC
+        if let disconnectC = allCs.first(where: { $0.uuid == WhisperData.disconnectUuid }) {
+            candidate.rejectCharacteristic = disconnectC
         } else {
             fatalError("Whisper service has no disconnect characteristic: report a bug!")
         }
-        stopFindWhisperer(connectComplete: false)
+        let idAndName = "\(WhisperData.deviceId)|\(WhisperData.deviceName)"
+        peripheral.writeValue(Data(idAndName.utf8), for: candidate.listenNameCharacteristic!, type: .withResponse)
+        peripheral.readValue(for: candidate.whisperNameCharacteristic!)
     }
     
-    private func wroteValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
-        guard triple.0 == whisperer else {
-            logger.error("Received write result for unexpected whisperer: \(triple.0)")
-            return
+    /// Get a confirmation or error from a pairing attempt with a candidate whisperer
+    private func confirmPairing(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
+        guard var candidate = candidates[triple.0] else {
+            fatalError("Received write result for a non-candidate: \(triple.0)")
         }
         guard triple.1.uuid == WhisperData.listenNameUuid else {
-            logger.error("Received write result for unexpected characteristic: \(triple.1)")
-            return
+            fatalError("Received write result for unexpected characteristic: \(triple.1)")
         }
         if let error = triple.2 {
-            analyzeError(error)
+            analyzeError(candidate: candidate, error: error)
+        } else if whisperer == nil {
+            // we have successfully paired for the first time
+            candidate.isPaired = true
+            switchPrimary(&candidate)
         } else {
-            // we have successfully paired with this whisperer
-            stopFindWhisperer(connectComplete: true)
-            whisperer!.setNotifyValue(true, for: textCharacteristic!)
-            whisperer!.setNotifyValue(true, for: rejectCharacteristic!)
-            readAllText()
+            // we already have a whisperer, but now we have another paired candidate
+            candidate.isPaired = true
         }
     }
     
     private func subscribedValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
-        guard triple.0 == whisperer else {
+        guard let candidate = candidates[triple.0] else {
             logger.error("Received notification result for unexpected whisperer: \(triple.0)")
             return
         }
-        guard triple.1.uuid == WhisperData.whisperTextUuid || triple.1.uuid == WhisperData.whisperDisconnectUuid else {
+        guard triple.1.uuid == WhisperData.textUuid || triple.1.uuid == WhisperData.disconnectUuid else {
             logger.error("Received notification result for unexpected characteristic: \(triple.1)")
             return
         }
         if let error = triple.2 {
-            analyzeError(error)
+            analyzeError(candidate: candidate, error: error)
         }
     }
     
     private func readValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
-        guard triple.0 == whisperer else {
-            fatalError("Read a value from unexpected peripheral \(triple.0)")
+        guard let candidate = candidates[triple.0] else {
+            logger.error("Read a value from an unexpected whisperer: \(triple.0)")
+            return
         }
         guard triple.2 == nil else {
-            analyzeError(triple.2!)
+            analyzeError(candidate: candidate, error: triple.2!)
             return
         }
         let characteristic = triple.1
-        if characteristic.uuid == rejectCharacteristic?.uuid {
-            logger.log("Received reject from whisperer")
-            Self.droppedWhisperers.insert(whisperer!.identifier.uuidString)
-            disconnect()
-            wasDropped = true
-        } else if characteristic.uuid == whisperNameCharacteristic?.uuid {
-            logger.log("Received name value from whisperer")
+        if characteristic.uuid == candidate.rejectCharacteristic?.uuid {
+            logger.log("Received reject from candidate")
+            wasDisconnected(candidate.peripheral)
+        } else if characteristic.uuid == candidate.whisperNameCharacteristic?.uuid {
+            logger.log("Received name value from candidate")
             if let nameData = characteristic.value {
                 if nameData.isEmpty {
-                    whispererName = "(anonymous)"
+                    candidate.name = candidate.deviceId
                 } else {
-                    whispererName = String(decoding: nameData, as: UTF8.self)
+                    candidate.name = String(decoding: nameData, as: UTF8.self)
                 }
-                statusText = "Listening to \(whispererName)"
+                if candidate.isPrimary {
+                    setStatusText(name: candidate.name)
+                }
             }
-        } else if characteristic.uuid == textCharacteristic?.uuid {
+        } else if characteristic.uuid == candidate.textCharacteristic?.uuid {
+            guard candidate.isPrimary else {
+                logger.error("Ignoring text data from non-primary candidate: \(candidate.deviceId)")
+                return
+            }
             if let textData = characteristic.value,
                let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
                 if chunk.isSound() {
@@ -411,62 +513,94 @@ final class ListenViewModel: ObservableObject {
     }
     
     private func wasDisconnected(_ peripheral: CBPeripheral) {
-        guard peripheral == whisperer else {
-            logger.log("List whisperer service from \(peripheral) while connected to \(String(describing: self.whisperer))")
+        guard let candidate = candidates[peripheral] else {
+            logger.log("Lost whisperer service from non-candidate: \(peripheral)")
             return
         }
-        logger.log("Whisperer service was unpublished")
-        textCharacteristic = nil
-        rejectCharacteristic = nil
-        disconnect()
-        wasDropped = true
+        logger.log("We were rejected from or service lost with candidate: \(candidate.deviceId)")
+        guard !candidate.isPrimary else {
+            // the connected whisperer has vanished
+            disconnect()
+            wasDropped = true
+            return
+        }
+        candidates.removeValue(forKey: peripheral)
+        if let whisperer = whisperer {
+            setStatusText(name: whisperer.name)
+        }
     }
     
-    private func analyzeError(_ error: Error) {
+    private func analyzeError(candidate: Candidate, error: Error) {
         guard !disconnectInProgress else {
             // we expect errors when a disconnect is in progress
+            return
+        }
+        guard !candidate.isPrimary else {
+            // the whisperer was disconnected
+            disconnect()
+            wasDropped = true
             return
         }
         if let err = error as? CBATTError {
             switch err.code {
             case .insufficientEncryption:
                 // we didn't pair so we couldn't encrypt
-                logger.log("Whisperer required pairing but it was refused.")
+                logger.log("Candidate requested pairing but it was refused.")
             case .insufficientAuthorization:
-                logger.log("Whisperer has this listener on its deny list.")
-                Self.droppedWhisperers.insert(whisperer!.identifier.uuidString)
+                logger.log("Candidate has this listener on its deny list.")
             default:
                 logger.error("Unexpected communication error: \(err)")
             }
         } else {
             logger.error("Unexpected error in Bluetooth subsystem: \(String(describing: error))")
         }
-        disconnect()
-        wasDropped = true
     }
     
     private func disconnect() {
         guard !disconnectInProgress else {
             return
         }
+        logger.log("Disconnecting all candidates!")
         disconnectInProgress = true
-        stopFindWhisperer(connectComplete: false)
-        whisperNameCharacteristic = nil
-        if let liveTextC = textCharacteristic {
-            whisperer?.setNotifyValue(false, for: liveTextC)
-            textCharacteristic = nil
+        whisperer = nil
+        for candidate in candidates.values {
+            if candidate.isPrimary {
+                logger.log("Unsubscribing primary: \(candidate.deviceId)")
+                candidate.setPrimary(isPrimary: false)
+            }
+            // warn the whisperer of the disconnect
+            logger.log("Disconnecting candidate: \(candidate.deviceId)")
+            if let dc = candidate.rejectCharacteristic {
+                candidate.peripheral.writeValue(Data(), for: dc, type: .withoutResponse)
+            }
         }
-        if let disconnectC = rejectCharacteristic {
-            whisperer?.setNotifyValue(false, for: disconnectC)
-            rejectCharacteristic = nil
+        for candidate in candidates.values {
+            // actually disconnect
+            manager.disconnect(candidate.peripheral)
         }
-        if let whisperP = whisperer {
-            logger.log("Disconnecting existing whisperer \(self.whisperer!)")
-            manager.disconnect(whisperP)
-            whisperer = nil
-            whispererName = unknownWhispererName
-            whisperNameCharacteristic = nil
-        }
+        candidates.removeAll()
         disconnectInProgress = false
+    }
+    
+    private func startListening() {
+        logger.log("Start scanning for whisperers...")
+        manager.scan(forServices: [WhisperData.whisperServiceUuid], allow_repeats: true)
+        // advertise this listener
+        findWhisperer()
+    }
+    
+    private func setState(_ new: CBManagerState) {
+        if new != bluetoothState {
+            logger.log("Bluetooth state changes to \(String(describing: new))")
+            bluetoothState = new
+        } else {
+            logger.log("Bluetooth state remains \(String(describing: new))")
+        }
+        if bluetoothWaiting {
+            if bluetoothState == .poweredOn {
+                bluetoothWaiting = false
+                startListening()
+            }
+        }
     }
 }

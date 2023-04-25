@@ -8,12 +8,10 @@ import CoreBluetooth
 import UIKit
 
 final class BluetoothManager: NSObject {
-    static let shared: BluetoothManager = .init()
-        
     var stateSubject: CurrentValueSubject<CBManagerState, Never> = .init(.unknown)
     var peripheralSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
     var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
-    var characteristicsSubject: PassthroughSubject<CBService, Never> = .init()
+    var characteristicsSubject: PassthroughSubject<(CBPeripheral, CBService), Never> = .init()
     var centralSubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
     var centralUnsubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
     var readRequestSubject: PassthroughSubject<CBATTRequest, Never> = .init()
@@ -187,7 +185,7 @@ extension BluetoothManager: CBPeripheralDelegate {
             logger.error("Error discovering characteristics for \(service) on \(peripheral): \(err)")
             return
         }
-        characteristicsSubject.send(service)
+        characteristicsSubject.send((peripheral, service))
     }
     
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {

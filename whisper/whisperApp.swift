@@ -31,7 +31,8 @@ let (listenViewBottomPad, whisperViewBottomPad, fontButtonPad): (CGFloat, CGFloa
 }()
 
 /// global timeouts
-let advertisingMaxTime = TimeInterval(20) // seconds of advertising before required connection
+let advertisingMaxTime = TimeInterval(20)   // seconds of advertising before required connection
+let pairingMaxTime = TimeInterval(60)       // seconds of connect time before pair succeeds
 
 /// logging
 import os

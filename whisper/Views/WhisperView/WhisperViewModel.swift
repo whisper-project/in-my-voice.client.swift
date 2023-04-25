@@ -7,8 +7,21 @@ import Combine
 import CoreBluetooth
 
 final class WhisperViewModel: ObservableObject {
+    class Listener {
+        var deviceId: String
+        var name: String
+        var isSubscribed: Bool = false
+        
+        init(deviceId: String, name: String) {
+            self.deviceId = deviceId
+            self.name = name
+        }
+    }
+    
+    @Published var bluetoothState: CBManagerState = .unknown
+    @Published var bluetoothWaiting: Bool = true
     @Published var statusText: String = ""
-    @Published var listeners: [CBCentral: (String, String)] = [:]   // id, name
+    @Published var listeners: [CBCentral: Listener] = [:]
     @Published var timedOut: Bool = false
     var pastText: PastTextViewModel = .init()
 
@@ -17,14 +30,17 @@ final class WhisperViewModel: ObservableObject {
     private var directedChunks: [CBCentral: [TextProtocol.ProtocolChunk]] = [:]
     private var advertisingInProgress = false
     private weak var adTimer: Timer?
-    private var manager = BluetoothManager.shared
+    private var manager = BluetoothManager()
     private var cancellables: Set<AnyCancellable> = []
-    private var listenAdvertisers: [(String, String)] = []   // (UUID, id)
+    private var listenAdvertisers: [(String, String)] = []   // (UUID, deviceId)
     private var whisperService: CBMutableService?
     // ids, UUIDs of dropped listeners
-    private var droppedListeners: [(String, String)] = []   // (UUID, id)
+    private var droppedListeners: [(String, String)] = []   // (UUID, deviceId)
     
     init() {
+        manager.stateSubject
+            .sink(receiveValue: setState)
+            .store(in: &cancellables)
         manager.peripheralSubject
             .sink { [weak self] in self?.noticeListener($0) }
             .store(in: &cancellables)
@@ -50,16 +66,12 @@ final class WhisperViewModel: ObservableObject {
     }
     
     func start() {
-        whisperService = WhisperData.whisperService()
-        manager.publish(service: whisperService!)
-        // look for listeners who are looking for us
-        manager.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
         refreshStatusText()
     }
     
     func stop() {
-        manager.stopScan()
         stopAdvertising()
+        manager.stopScan()
         listeners.removeAll()
         if let service = whisperService {
             manager.unpublish(service: service)
@@ -112,13 +124,13 @@ final class WhisperViewModel: ObservableObject {
     
     /// Drop a listener from the authorized list
     func dropListener(_ central: CBCentral) {
-        guard let (id, name) = listeners[central] else {
+        guard let listener = listeners[central] else {
             logger.log("Ignoring drop request for non-listener: \(central)")
             return
         }
-        logger.notice("Dropping listener with id \(id), name \(name): \(central)")
+        logger.notice("Dropping listener with id \(listener.deviceId), name \(listener.name): \(central)")
         // remember not to re-add this listener
-        droppedListeners.append((central.identifier.uuidString, listeners[central]!.0))
+        droppedListeners.append((central.identifier.uuidString, listener.deviceId))
         // disconnect from this listener
         if !manager.updateValue(value: Data(), characteristic: WhisperData.whisperDisconnectCharacteristic, central: central) {
             logger.error("Drop message failed to central: \(central)")
@@ -201,6 +213,7 @@ final class WhisperViewModel: ObservableObject {
             self.adTimer = nil
             self.stopAdvertising()
         }
+        refreshStatusText()
     }
     
     private func stopAdvertising() {
@@ -213,30 +226,40 @@ final class WhisperViewModel: ObservableObject {
             adTimer = nil
             timer.invalidate()
         }
+        refreshStatusText()
     }
     
     func refreshStatusText() {
-        let maybeLooking = advertisingInProgress ? ", looking for \(listenAdvertisers.count - listeners.count) more..." : ""
-        if listeners.isEmpty {
-            if advertisingInProgress {
-                statusText = "Looking for listeners..."
+        if bluetoothWaiting {
+            if bluetoothState == .unauthorized {
+                statusText = "Tap here to enable Bluetooth…"
             } else {
-                statusText = "No listeners yet, but you can type"
+                statusText = "Waiting for Bluetooth to be ready…"
             }
-        } else if listeners.count == 1 {
-            statusText = "Whispering to 1 listener\(maybeLooking)"
         } else {
-            statusText = "Whispering to \(listeners.count) listeners\(maybeLooking)"
+            let maybeLooking = advertisingInProgress ? ", looking for \(listenAdvertisers.count - listeners.count) more…" : ""
+            let subscribedCount = listeners.values.filter({ $0.isSubscribed }).count
+            if subscribedCount == 0 {
+                if advertisingInProgress {
+                    statusText = "Looking for listeners…"
+                } else {
+                    statusText = "No listeners yet, but you can type"
+                }
+            } else if subscribedCount == 1 {
+                statusText = "Whispering to 1 listener\(maybeLooking)"
+            } else {
+                statusText = "Whispering to \(subscribedCount) listeners\(maybeLooking)"
+            }
         }
     }
     
-    private func addListener(_ central: CBCentral, id: String, name: String) {
+    private func addListener(_ central: CBCentral, deviceId: String, name: String) {
         guard listeners[central] == nil else {
             // we've already connected this listener
             return
         }
-        listeners[central] = (id, name)
-        logger.log("Added listener with id \(id), \(name): \(central)")
+        listeners[central] = Listener(deviceId: deviceId, name: name)
+        logger.log("Added listener with deviceId \(deviceId), name \(name): \(central)")
         if listenAdvertisers.count <= listeners.count {
             logger.log("Connected as many listeners as were advertising")
             stopAdvertising()
@@ -246,7 +269,8 @@ final class WhisperViewModel: ObservableObject {
     
     private func removeListener(_ central: CBCentral) {
         if let removed = listeners.removeValue(forKey: central) {
-            logger.log("Lost\(self.listeners.isEmpty ? " last" : "") listener id \(removed.0), name \(removed.1): \(central)")
+            let subscribed = listeners.values.filter({ $0.isSubscribed })
+            logger.log("Lost\(subscribed.isEmpty ? " last" : "") listener id \(removed.deviceId), name \(removed.name): \(central)")
         }
         refreshStatusText()
     }
@@ -255,20 +279,24 @@ final class WhisperViewModel: ObservableObject {
         let uuidString = pair.0.identifier.uuidString
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(WhisperData.listenServiceUuid) {
-                if let (_, id) = listenAdvertisers.first(where: { $0.0 == uuidString }) {
-                    logger.debug("Ignoring repeat ad from already-pending listener \(id) with UUID \(uuidString)")
+                if let (_, deviceId) = listenAdvertisers.first(where: { $0.0 == uuidString }) {
+                    logger.debug("Ignoring repeat ad from already-pending listener \(deviceId) with UUID \(uuidString)")
                 } else {
                     guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
-                          let id = adName as? String else {
-                        logger.error("Ignoring advertisement with no listener id")
+                          let deviceId = adName as? String else {
+                        logger.error("Ignoring advertisement with no listener deviceId")
                         return
                     }
-                    guard !droppedListeners.contains(where: { $0.1 == id }) else {
-                        logger.info("Ignoring advertisement from dropped listener id \(id)")
+                    guard !listeners.values.contains(where: { $0.deviceId == deviceId }) else {
+                        logger.info("Ignoring advertisement from existing listener deviceId \(deviceId)")
                         return
                     }
-                    listenAdvertisers.append((uuidString, id))
-                    logger.debug("Got first ad from listener \(uuidString) with id \(id)")
+                    guard !droppedListeners.contains(where: { $0.1 == deviceId }) else {
+                        logger.info("Ignoring advertisement from dropped listener deviceId \(deviceId)")
+                        return
+                    }
+                    listenAdvertisers.append((uuidString, deviceId))
+                    logger.debug("Got first ad from listener \(uuidString) with id \(deviceId)")
                     startAdvertising()
                 }
             }
@@ -276,14 +304,21 @@ final class WhisperViewModel: ObservableObject {
     }
     
     private func noticeSubscription(_ pair: (CBCentral, CBCharacteristic)) {
-        guard listeners[pair.0] != nil else {
+        guard let listener = listeners[pair.0] else {
             logger.error("Ignoring subscription request from non-listener \(pair.0)")
             return
         }
+        listener.isSubscribed = true
+        refreshStatusText()
     }
     
     private func noticeUnsubscription(_ pair: (CBCentral, CBCharacteristic)) {
-        removeListener(pair.0)
+        guard let listener = listeners[pair.0] else {
+            logger.error("Ignoring unsubscription request from non-listener \(pair.0)")
+            return
+        }
+        listener.isSubscribed = false
+        refreshStatusText()
     }
     
     private func processReadRequest(_ request: CBATTRequest) {
@@ -298,7 +333,7 @@ final class WhisperViewModel: ObservableObject {
             logger.log("Request is for name")
             request.value = Data(WhisperData.deviceName.utf8)
             manager.respondToReadRequest(request: request, withCode: .success)
-        } else if characteristic.uuid == WhisperData.whisperTextUuid {
+        } else if characteristic.uuid == WhisperData.textUuid {
             guard listeners[request.central] != nil else {
                 logger.error("Refusing read text request from non-listener \(request.central)")
                 manager.respondToReadRequest(request: request, withCode: .insufficientAuthorization)
@@ -328,29 +363,55 @@ final class WhisperViewModel: ObservableObject {
             manager.respondToWriteRequest(request: request, withCode: .insufficientAuthorization)
             return
         }
-        guard request.characteristic.uuid == WhisperData.listenNameUuid else {
+        if request.characteristic.uuid == WhisperData.listenNameUuid {
+            guard let value = request.value,
+                  let idAndName = String(data: value, encoding: .utf8) else {
+                logger.error("Got an empty listener name value: \(request)")
+                manager.respondToWriteRequest(request: request, withCode: .invalidAttributeValueLength)
+                return
+            }
+            let parts = idAndName.split(separator: "|", maxSplits: 1)
+            guard parts.count == 2 else {
+                logger.error("Got an invalid format for listener name: \(idAndName)")
+                manager.respondToWriteRequest(request: request, withCode: .invalidHandle)
+                return
+            }
+            logger.log("Received deviceId \(parts[0]), name '\(parts[1])' from possible listener \(request.central)")
+            addListener(request.central, deviceId: String(parts[0]), name: String(parts[1]))
+            manager.respondToWriteRequest(request: request, withCode: .success)
+        } else if request.characteristic.uuid == WhisperData.disconnectUuid {
+            // this listener is disconnecting from us
+            removeListener(request.central)
+        } else {
             logger.error("Got a write of unexpected characteristic \(request.characteristic)")
             manager.respondToWriteRequest(request: request, withCode: .unlikelyError)
-            return
         }
-        guard let value = request.value,
-              let idAndName = String(data: value, encoding: .utf8) else {
-            logger.error("Got an empty listener name value: \(request)")
-            manager.respondToWriteRequest(request: request, withCode: .invalidAttributeValueLength)
-            return
-        }
-        let parts = idAndName.split(separator: "|", maxSplits: 1)
-        guard parts.count == 2 else {
-            logger.error("Got an invalid format for listener name: \(idAndName)")
-            manager.respondToWriteRequest(request: request, withCode: .invalidHandle)
-            return
-        }
-        logger.log("Received id \(parts[0]), name '\(parts[1])' from new listener \(request.central)")
-        addListener(request.central, id: String(parts[0]), name: String(parts[1]))
-        manager.respondToWriteRequest(request: request, withCode: .success)
     }
     
     private func processReadyToUpdate(_ ignore: ()) {
         updateListeners()
+    }
+    
+    private func startWhispering() {
+        whisperService = WhisperData.whisperService()
+        manager.publish(service: whisperService!)
+        // look for listeners who are looking for us
+        manager.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
+        refreshStatusText()
+    }
+    
+    private func setState(_ new: CBManagerState) {
+        if new != bluetoothState {
+            logger.log("Bluetooth state changes to \(String(describing: new))")
+            bluetoothState = new
+        } else {
+            logger.log("Bluetooth state remains \(String(describing: new))")
+        }
+        if bluetoothWaiting {
+            if bluetoothState == .poweredOn {
+                bluetoothWaiting = false
+                startWhispering()
+            }
+        }
     }
 }

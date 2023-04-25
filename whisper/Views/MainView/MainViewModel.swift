@@ -13,32 +13,18 @@ enum OperatingMode: Int {
 let modePreferenceKey = "initial_mode_preference"
 
 final class MainViewModel: ObservableObject {
-    @Published var state: CBManagerState = .unknown
     @Published var mode: OperatingMode = .ask
     
-    private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
     private let defaults = UserDefaults.standard
     
     init() {
-        manager.stateSubject
-            .sink(receiveValue: setState)
-            .store(in: &cancellables)
         let val = defaults.integer(forKey: modePreferenceKey)
         mode = OperatingMode(rawValue: val) ?? .ask
     }
     
     deinit {
         cancellables.cancel()
-    }
-    
-    private func setState(_ new: CBManagerState) {
-        if new != state {
-            logger.log("Bluetooth state changes to \(String(describing: new))")
-            state = new
-        } else {
-            logger.log("Bluetooth state remains \(String(describing: new))")
-        }
     }
     
     func setMode(_ mode: OperatingMode, always: Bool = false) {
