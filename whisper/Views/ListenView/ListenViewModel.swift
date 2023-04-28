@@ -54,15 +54,13 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    @Published var bluetoothState: CBManagerState = .unknown
-    @Published var bluetoothWaiting: Bool = true
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var wasDropped: Bool = false
     @Published var timedOut: Bool = false
     var pastText: PastTextViewModel = .init()
     
-    private var manager = BluetoothManager()
+    private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
     private var candidates: [CBPeripheral: Candidate] = [:]
     private var whisperer: Candidate?
@@ -74,11 +72,8 @@ final class ListenViewModel: ObservableObject {
     private var isInBackground = false
     private var soundEffect: AVAudioPlayer?
     private var notifySoundInBackground = false
-    
+
     init() {
-        manager.stateSubject
-            .sink(receiveValue: setState)
-            .store(in: &cancellables)
         manager.peripheralSubject
             .sink{ [weak self] in self?.discoveredWhisperer($0) }
             .store(in: &cancellables)
@@ -114,6 +109,7 @@ final class ListenViewModel: ObservableObject {
             }
             self.notifySoundInBackground = granted
         }
+        findWhisperer()
     }
     
     func stop() {
@@ -273,13 +269,7 @@ final class ListenViewModel: ObservableObject {
     }
     
     private func setStatusText(name: String? = nil) {
-        if bluetoothWaiting {
-            if bluetoothState == .unauthorized {
-                statusText = "Tap here to enable Bluetooth…"
-            } else {
-                statusText = "Waiting for Bluetooth to be ready…"
-            }
-        } else if let name = name {
+        if let name = name {
             statusText = "Listening to \(name)"
             let eligible = eligibleCandidates().count - 1   // the whisperer is eligible
             if eligible > 0 {
@@ -580,27 +570,5 @@ final class ListenViewModel: ObservableObject {
         }
         candidates.removeAll()
         disconnectInProgress = false
-    }
-    
-    private func startListening() {
-        logger.log("Start scanning for whisperers...")
-        manager.scan(forServices: [WhisperData.whisperServiceUuid], allow_repeats: true)
-        // advertise this listener
-        findWhisperer()
-    }
-    
-    private func setState(_ new: CBManagerState) {
-        if new != bluetoothState {
-            logger.log("Bluetooth state changes to \(String(describing: new))")
-            bluetoothState = new
-        } else {
-            logger.log("Bluetooth state remains \(String(describing: new))")
-        }
-        if bluetoothWaiting {
-            if bluetoothState == .poweredOn {
-                bluetoothWaiting = false
-                startListening()
-            }
-        }
     }
 }

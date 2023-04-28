@@ -38,7 +38,7 @@ struct ListenView: View {
                         showStatusDetail = true
                     }
                     .popover(isPresented: $showStatusDetail) {
-                        statusView()
+                        WhisperersView(model: model)
                     }
                 Text(model.liveText)
                     .font(FontSizes.fontFor(size))
@@ -88,19 +88,6 @@ struct ListenView: View {
             @unknown default:
                 logger.error("Went to unknown phase: \(String(describing: newPhase))")
             }
-        }
-    }
-    
-    @ViewBuilder
-    private func statusView() -> some View {
-        if model.bluetoothWaiting {
-            if model.bluetoothState == .unauthorized {
-                Link("Enable Bluetooth to continue...", destination: URL(string: UIApplication.openSettingsURLString)!)
-            } else if model.bluetoothState != .poweredOn {
-                Text("Waiting for Bluetooth before continuing...")
-            }
-        } else {
-            WhisperersView(model: model)
         }
     }
 }

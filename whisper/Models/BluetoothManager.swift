@@ -8,6 +8,8 @@ import CoreBluetooth
 import UIKit
 
 final class BluetoothManager: NSObject {
+    static let shared: BluetoothManager = .init()
+        
     var stateSubject: CurrentValueSubject<CBManagerState, Never> = .init(.unknown)
     var peripheralSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
     var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()

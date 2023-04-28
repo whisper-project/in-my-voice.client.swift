@@ -39,7 +39,7 @@ struct WhisperView: View {
                         self.showStatusDetail = true
                     }
                     .popover(isPresented: $showStatusDetail) {
-                        statusView()
+                        ListenersView(model: model)
                     }
                 TextEditor(text: $liveText)
                     .font(FontSizes.fontFor(size))
@@ -78,19 +78,6 @@ struct WhisperView: View {
             focusField = "liveText"
         }
         .onDisappear { self.model.stop() }
-    }
-    
-    @ViewBuilder
-    private func statusView() -> some View {
-        if model.bluetoothWaiting {
-            if model.bluetoothState == .unauthorized {
-                Link("Enable Bluetooth to continue...", destination: URL(string: UIApplication.openSettingsURLString)!)
-            } else if model.bluetoothState != .poweredOn {
-                Text("Waiting for Bluetooth before continuing...")
-            }
-        } else {
-            ListenersView(model: model)
-        }
     }
 }
 

@@ -18,8 +18,6 @@ final class WhisperViewModel: ObservableObject {
         }
     }
     
-    @Published var bluetoothState: CBManagerState = .unknown
-    @Published var bluetoothWaiting: Bool = true
     @Published var statusText: String = ""
     @Published var listeners: [CBCentral: Listener] = [:]
     @Published var timedOut: Bool = false
@@ -30,7 +28,7 @@ final class WhisperViewModel: ObservableObject {
     private var directedChunks: [CBCentral: [TextProtocol.ProtocolChunk]] = [:]
     private var advertisingInProgress = false
     private weak var adTimer: Timer?
-    private var manager = BluetoothManager()
+    private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
     private var listenAdvertisers: [(String, String)] = []   // (UUID, deviceId)
     private var whisperService: CBMutableService?
@@ -38,9 +36,6 @@ final class WhisperViewModel: ObservableObject {
     private var droppedListeners: [(String, String)] = []   // (UUID, deviceId)
     
     init() {
-        manager.stateSubject
-            .sink(receiveValue: setState)
-            .store(in: &cancellables)
         manager.peripheralSubject
             .sink { [weak self] in self?.noticeListener($0) }
             .store(in: &cancellables)
@@ -66,6 +61,10 @@ final class WhisperViewModel: ObservableObject {
     }
     
     func start() {
+        whisperService = WhisperData.whisperService()
+        manager.publish(service: whisperService!)
+        // look for listeners who are looking for us
+        manager.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
         refreshStatusText()
     }
     
@@ -230,26 +229,17 @@ final class WhisperViewModel: ObservableObject {
     }
     
     func refreshStatusText() {
-        if bluetoothWaiting {
-            if bluetoothState == .unauthorized {
-                statusText = "Tap here to enable Bluetooth…"
+        let maybeLooking = advertisingInProgress ? ", looking for \(listenAdvertisers.count - listeners.count) more..." : ""
+        if listeners.isEmpty {
+            if advertisingInProgress {
+                statusText = "Looking for listeners..."
             } else {
-                statusText = "Waiting for Bluetooth to be ready…"
+                statusText = "No listeners yet, but you can type"
             }
+        } else if listeners.count == 1 {
+            statusText = "Whispering to 1 listener\(maybeLooking)"
         } else {
-            let maybeLooking = advertisingInProgress ? ", looking for \(listenAdvertisers.count - listeners.count) more…" : ""
-            let subscribedCount = listeners.values.filter({ $0.isSubscribed }).count
-            if subscribedCount == 0 {
-                if advertisingInProgress {
-                    statusText = "Looking for listeners…"
-                } else {
-                    statusText = "No listeners yet, but you can type"
-                }
-            } else if subscribedCount == 1 {
-                statusText = "Whispering to 1 listener\(maybeLooking)"
-            } else {
-                statusText = "Whispering to \(subscribedCount) listeners\(maybeLooking)"
-            }
+            statusText = "Whispering to \(listeners.count) listeners\(maybeLooking)"
         }
     }
     
@@ -390,28 +380,5 @@ final class WhisperViewModel: ObservableObject {
     
     private func processReadyToUpdate(_ ignore: ()) {
         updateListeners()
-    }
-    
-    private func startWhispering() {
-        whisperService = WhisperData.whisperService()
-        manager.publish(service: whisperService!)
-        // look for listeners who are looking for us
-        manager.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
-        refreshStatusText()
-    }
-    
-    private func setState(_ new: CBManagerState) {
-        if new != bluetoothState {
-            logger.log("Bluetooth state changes to \(String(describing: new))")
-            bluetoothState = new
-        } else {
-            logger.log("Bluetooth state remains \(String(describing: new))")
-        }
-        if bluetoothWaiting {
-            if bluetoothState == .poweredOn {
-                bluetoothWaiting = false
-                startWhispering()
-            }
-        }
     }
 }
