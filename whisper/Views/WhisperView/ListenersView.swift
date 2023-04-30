@@ -12,7 +12,7 @@ struct ListenersView: View {
     @ObservedObject var model: WhisperViewModel
     
     var body: some View {
-        if model.listeners.values.filter({ $0.isSubscribed }).isEmpty {
+        if model.listeners.isEmpty {
             Text("No Listeners")
         } else {
             VStack(alignment: .leading) {
@@ -44,9 +44,7 @@ struct ListenersView: View {
     private func makeRows() -> [Row] {
         var rows: [Row] = []
         for (central, listener) in model.listeners {
-            if listener.isSubscribed {
-                rows.append(Row(id: listener.name, central: central))
-            }
+            rows.append(Row(id: listener.name, central: central))
         }
         rows.sort()
         return rows

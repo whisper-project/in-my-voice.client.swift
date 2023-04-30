@@ -62,7 +62,7 @@ struct WhisperData {
     static var whisperTextCharacteristic = CBMutableCharacteristic(
         type: textUuid, properties: [.read, .notify], value: nil, permissions: .readable)
     static var whisperDisconnectCharacteristic = CBMutableCharacteristic(
-        type: disconnectUuid, properties: [.read, .notify, .writeWithoutResponse], value: nil, permissions: [.readable, .writeable])
+        type: disconnectUuid, properties: [.read, .notify], value: nil, permissions: [.readable])
 
     // MARK: Services
     static func whisperService() -> CBMutableService {

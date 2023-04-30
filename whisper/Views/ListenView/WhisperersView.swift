@@ -12,18 +12,18 @@ struct WhisperersView: View {
     @ObservedObject var model: ListenViewModel
     
     var body: some View {
-        if model.eligibleCandidates().isEmpty {
+        if model.whisperers().isEmpty {
             Text("No Whisperers")
+                .padding()
         } else {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(makeRows()) { row in
                     HStack(spacing: 5) {
                         Text(row.id)
-                            .bold(row.isPrimary)
                         Spacer()
-                        Button(action: { model.switchPrimary(to: row.peripheral) }, label: { Image(systemName: "ear.badge.checkmark") })
+                        Button(action: { model.setWhisperer(to: row.peripheral) }, label: { Image(systemName: "ear.badge.checkmark") })
                             .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 0))
-                            .disabled(row.isPrimary)
+                            .disabled(row.isSelected)
                     }
                     .font(FontSizes.fontFor(FontSizes.minTextSize + 2))
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
@@ -36,7 +36,7 @@ struct WhisperersView: View {
     private struct Row: Identifiable, Comparable {
         var id: String
         var peripheral: CBPeripheral
-        var isPrimary: Bool
+        var isSelected: Bool
         
         static func < (lhs: Self, rhs: Self) -> Bool {
             lhs.id < rhs.id
@@ -44,11 +44,11 @@ struct WhisperersView: View {
     }
     
     private func makeRows() -> [Row] {
-        var rows = model.eligibleCandidates().map({ candidate in
-            Row(id: candidate.name, peripheral: candidate.peripheral, isPrimary: candidate.isPrimary)
+        let whisperers = model.whisperers()
+        let count = whisperers.count
+        return whisperers.map({ candidate in
+            Row(id: candidate.name, peripheral: candidate.peripheral, isSelected: count == 1)
         })
-        rows.sort()
-        return rows
     }
 }
 

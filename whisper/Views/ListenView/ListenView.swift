@@ -7,9 +7,9 @@ import SwiftUI
 
 struct ListenView: View {
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.scenePhase) var scenePhase
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
-    
+    @Environment(\.scenePhase) var scenePhase
+
     @Binding var mode: OperatingMode
     
     @FocusState var focusField: Bool
@@ -61,11 +61,10 @@ struct ListenView: View {
         } message: {
             Text("The connection to the listener was lost")
         }
-        .alert("No Whisperers", isPresented: $model.timedOut) {
-            Button("OK") { mode = .ask }
+        .alert("Communication Error", isPresented: $model.connectionError) {
+            Button("OK") { model.readAllText() }
         } message: {
-            Text("Couldn't find a whisperer.  Try again when a whisperer is ready.")
-                .lineLimit(nil)
+            Text("Some text from the whisperer was lost. It will be re-read.")
         }
         .onAppear {
             logger.log("ListenView appeared")

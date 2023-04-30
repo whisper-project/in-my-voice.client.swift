@@ -8,6 +8,7 @@ import SwiftUI
 struct WhisperView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
+    @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
 
@@ -67,17 +68,25 @@ struct WhisperView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
-        .alert("No Listeners", isPresented: $model.timedOut) {
-            Button("OK") { }
-        } message: {
-            Text("There was a listener trying to connect but something went wrong. Have them try again.")
-                .lineLimit(nil)
-        }
         .onAppear {
             self.model.start()
             focusField = "liveText"
         }
         .onDisappear { self.model.stop() }
+        .onChange(of: scenePhase) { newPhase in
+            switch newPhase {
+            case .background:
+                logger.log("Went to background")
+                model.wentToBackground()
+            case .inactive:
+                logger.log("Went inactive")
+            case .active:
+                logger.log("Went to foreground")
+                model.wentToForeground()
+            @unknown default:
+                logger.error("Went to unknown phase: \(String(describing: newPhase))")
+            }
+        }
     }
 }
 
