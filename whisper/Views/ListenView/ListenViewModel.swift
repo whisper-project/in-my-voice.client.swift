@@ -41,12 +41,12 @@ final class ListenViewModel: ObservableObject {
     @Published var wasDropped: Bool = false
     @Published var connectionError: Bool = false
     @Published var showStatusDetail: Bool = false
+    @Published var candidates: [CBPeripheral: Whisperer] = [:]
+    @Published var whisperer: Whisperer?
     var pastText: PastTextViewModel = .init()
     
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
-    private var candidates: [CBPeripheral: Whisperer] = [:]
-    private var whisperer: Whisperer?
     private var scanInProgress = false
     private var resetInProgress = false
     private var disconnectInProgress = false
@@ -122,14 +122,6 @@ final class ListenViewModel: ObservableObject {
         logger.log("End initial wait for whisperers due to background transition")
         scanInProgress = false
         maybeSetWhisperer()
-    }
-    
-    func whisperers() -> [Whisperer] {
-        if let whisperer = whisperer {
-            return [whisperer]
-        } else {
-            return candidates.values.filter({ $0.canBeWhisperer() }).sorted(by: { $0.name < $1.name })
-        }
     }
     
     func setWhisperer(to: CBPeripheral) {
@@ -337,6 +329,8 @@ final class ListenViewModel: ObservableObject {
         } else if let candidate = candidates.removeValue(forKey: peripheral) {
             logger.log("Candidate \(candidate.deviceId) has stopped whispering")
             manager.disconnect(candidate.peripheral)
+            // see if that resolves which whisperer to use
+            maybeSetWhisperer()
         } else {
             logger.log("Ignoring disconnect from unknown whisperer: \(peripheral)")
         }
@@ -457,10 +451,12 @@ final class ListenViewModel: ObservableObject {
             // we are still waiting for more candidates
             return
         }
-        let eligible = whisperers()
-        if eligible.count == 1 {
-            // only 1 whisperer after waiting for the scan
-            setWhisperer(eligible[0])
+        if whisperer == nil {
+            let eligible = candidates.values.filter({ $0.canBeWhisperer() })
+            if eligible.count == 1 {
+                // only 1 whisperer after waiting for the scan
+                setWhisperer(eligible[0])
+            }
         }
         refreshStatusText()
     }
@@ -494,7 +490,7 @@ final class ListenViewModel: ObservableObject {
         } else if scanInProgress {
             statusText = "Looking for whisperers…"
         } else {
-            let count = whisperers().count
+            let count = candidates.values.filter({ $0.canBeWhisperer() }).count
             if count > 1 {
                 statusText = "Tap to select your desired whisperer…"
                 showStatusDetail = true
