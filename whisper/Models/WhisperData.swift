@@ -34,7 +34,7 @@ struct WhisperData {
         if let id = defaults.string(forKey: "local_device_id") {
             return id
         } else {
-            let id =  randomString(length: 8)
+            let id = randomString(length: 8)
             defaults.setValue(id, forKey: "local_device_id")
             return id
         }

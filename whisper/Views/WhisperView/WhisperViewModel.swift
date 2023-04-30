@@ -35,6 +35,7 @@ final class WhisperViewModel: ObservableObject {
     private var isInBackground = false
 
     init() {
+        logger.log("Initializing WhisperView model")
         manager.peripheralSubject
             .sink { [weak self] in self?.noticeAd($0) }
             .store(in: &cancellables)
@@ -175,7 +176,7 @@ final class WhisperViewModel: ObservableObject {
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(WhisperData.listenServiceUuid) {
                 if let listener = listenAdvertisers[pair.0] {
-                    logger.debug("Ignoring repeat ad from already-pending listener \(listener.deviceId)")
+//                    logger.debug("Ignoring repeat ad from already-pending listener \(listener.deviceId)")
                 } else {
                     guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
                           let deviceId = adName as? String else {
@@ -199,31 +200,25 @@ final class WhisperViewModel: ObservableObject {
             logger.error("Ignoring subscribe for unexpected characteristic: \(pair.1)")
             return
         }
-        guard listeners[pair.0] == nil else {
-            // this listener is already subscribed - nothing to do
-            return
-        }
-        guard let candidate = candidates[pair.0] else {
+        guard addListener(pair.0) else {
             logger.error("Ignoring subscription request from non-candidate: \(pair.0)")
             return
         }
-        logger.log("Candidate \(candidate.deviceId) (\(candidate.name)) has become a listener")
-        listeners[pair.0] = candidate
-        candidates.removeValue(forKey: pair.0)
-        refreshStatusText()
+        // nothing else to do
     }
     
     private func noticeUnsubscription(_ pair: (CBCentral, CBCharacteristic)) {
-        guard pair.1.uuid == WhisperData.whisperTextCharacteristic else {
+        guard pair.1.uuid == WhisperData.textUuid || pair.1.uuid == WhisperData.disconnectUuid else {
             logger.error("Ignoring unsubscribe for unexpected characteristic: \(pair.1)")
             return
         }
         if let candidate = candidates.removeValue(forKey: pair.0) {
-            logger.log("Dropping candidate \(candidate.deviceId): \(pair.0)")
-        } else if listeners[pair.0] != nil {
+            logger.log("Unsubscribe/drop candidate \(candidate.deviceId): \(pair.0)")
+        } else if let listener = listeners[pair.0] {
+            logger.log("Unsubscribe/drop listener \(listener.deviceId): \(pair.0)")
             removeListener(pair.0)
         } else {
-            logger.error("Ignoring unsubscription request from non-candidate, non-listener: \(pair.0)")
+            logger.log("Ignoring unsubscription request from already-dropped candidate or listener: \(pair.0)")
         }
     }
     
@@ -240,19 +235,20 @@ final class WhisperViewModel: ObservableObject {
             request.value = Data(WhisperData.deviceName.utf8)
             manager.respondToReadRequest(request: request, withCode: .success)
         } else if characteristic.uuid == WhisperData.textUuid {
-            guard listeners[request.central] != nil else {
-                logger.error("Refusing read text request from non-listener \(request.central)")
+            logger.log("Request is for complete text")
+            guard addListener(request.central) else {
+                logger.error("Refusing read text request from non-listener/non-candidate \(request.central)")
                 manager.respondToReadRequest(request: request, withCode: .insufficientAuthorization)
                 return
             }
-            logger.log("Request is for complete text")
             request.value = TextProtocol.ProtocolChunk.acknowledgeRead().toData()
             manager.respondToReadRequest(request: request, withCode: .success)
             sendAllText(listener: request.central)
         } else if request.characteristic.uuid == WhisperData.disconnectUuid {
             if let candidate = candidates.removeValue(forKey: request.central) {
-                logger.log("Dropping candidate \(candidate.deviceId): \(request.central)")
-            } else if listeners[request.central] != nil {
+                logger.log("Request is to drop candidate \(candidate.deviceId): \(request.central)")
+            } else if let listener = listeners[request.central] {
+                logger.log("Request is to drop listener \(listener.deviceId): \(request.central)")
                 removeListener(request.central)
             } else {
                 logger.error("Ignoring unsubscription request from non-candidate, non-listener: \(request.central)")
@@ -313,7 +309,7 @@ final class WhisperViewModel: ObservableObject {
     /// Update listeners on changes in live text
     private func updateListeners() {
         guard !listeners.isEmpty else {
-            logger.debug("No listeners to update, dumping pending changes")
+//            logger.debug("No listeners to update, dumping pending changes")
             pendingChunks.removeAll()
             return
         }
@@ -338,7 +334,7 @@ final class WhisperViewModel: ObservableObject {
                 }
             }
         } else if !pendingChunks.isEmpty {
-            logger.debug("Updating subscribed listeners...")
+            logger.debug("Updating subscribed listeners (\(self.pendingChunks.count) chunks)...")
             while let chunk = pendingChunks.first {
                 let sendOk = manager.updateValue(value: chunk.toData(),
                                                  characteristic: WhisperData.whisperTextCharacteristic)
@@ -406,14 +402,19 @@ final class WhisperViewModel: ObservableObject {
         }
     }
     
-    private func addListener(_ central: CBCentral, deviceId: String, name: String) {
+    private func addListener(_ central: CBCentral) -> Bool {
         guard listeners[central] == nil else {
             // we've already connected this listener
-            return
+            return true
         }
-        listeners[central] = Listener(deviceId: deviceId, name: name)
-        logger.log("Added listener with deviceId \(deviceId), name \(name): \(central)")
+        guard let candidate = candidates.removeValue(forKey: central) else {
+            // can't add this central as a listener: it hasn't completed its handshake with us
+            return false
+        }
+        logger.log("Candidate \(candidate.deviceId) (\(candidate.name)) has become a listener")
+        listeners[central] = candidate
         refreshStatusText()
+        return true
     }
     
     private func removeListener(_ central: CBCentral) {

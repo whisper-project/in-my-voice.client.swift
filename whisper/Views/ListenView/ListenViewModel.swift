@@ -55,6 +55,7 @@ final class ListenViewModel: ObservableObject {
     private var notifySoundInBackground = false
 
     init() {
+        logger.log("Initializing ListenView model")
         manager.peripheralSubject
             .sink{ [weak self] in self?.discoveredWhisperer($0) }
             .store(in: &cancellables)
@@ -92,12 +93,10 @@ final class ListenViewModel: ObservableObject {
             }
             self.notifySoundInBackground = granted
         }
-        logger.log("Start scanning for whisperers")
         startWhisperScan()
     }
     
     func stop() {
-        logger.log("Stop scanning for whisperers")
         manager.stopScan()
         stopAdvertising()
         // disconnect from current whisperer
@@ -120,6 +119,7 @@ final class ListenViewModel: ObservableObject {
         }
         isInBackground = false
         // the timer to stop the scan wouldn't run in the background
+        logger.log("End initial wait for whisperers due to background transition")
         scanInProgress = false
         maybeSetWhisperer()
     }
@@ -141,6 +141,7 @@ final class ListenViewModel: ObservableObject {
             fatalError("Can't set whisperer to: \(to)")
         }
         setWhisperer(new)
+        refreshStatusText()
     }
     
     func readAllText() {
@@ -151,6 +152,7 @@ final class ListenViewModel: ObservableObject {
             logger.log("Got reset during reset, ignoring it")
             return
         }
+        logger.log("Requesting full re-read of text")
         resetInProgress = true
         whisperer!.peripheral.readValue(for: whisperer!.textCharacteristic!)
     }
@@ -159,15 +161,19 @@ final class ListenViewModel: ObservableObject {
     
     /// Called when we see an ad from a potential whisperer
     private func discoveredWhisperer(_ pair: (CBPeripheral, [String: Any])) {
+        guard whisperer == nil else {
+            // ignore ads if we have a whisperer
+            return
+        }
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? Array<CBUUID> {
             if uuids.contains(WhisperData.whisperServiceUuid) {
                 guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
                       let deviceId = adName as? String else {
-                    logger.error("Ignoring advertisement with no listener id")
+                    logger.error("Ignoring advertisement with no device id")
                     return
                 }
                 guard candidates[pair.0] == nil else {
-                    logger.debug("Ignoring repeat ad from candidate \(deviceId)")
+//                    logger.debug("Ignoring repeat ad from candidate \(deviceId)")
                     return
                 }
                 logger.log("Connecting to candidate \(deviceId): \(pair.0)")
@@ -181,10 +187,10 @@ final class ListenViewModel: ObservableObject {
     /// Called when we get a connection established to a potential whisperer
     private func connectedWhisperer(_ pair: (CBPeripheral, [CBService])) {
         guard let candidate = candidates[pair.0] else {
-            fatalError("Connected to whisperer \(pair.0) but didn't request a connection")
+            fatalError("Connected to candidate \(pair.0) but didn't request a connection")
         }
         if let whisperSvc = pair.1.first(where: {svc in svc.uuid == WhisperData.whisperServiceUuid}) {
-            logger.log("Connected to whisperer \(candidate.deviceId), readying...")
+            logger.log("Connected to candidate \(candidate.deviceId), readying...")
             candidate.peripheral.discoverCharacteristics(
                 [
                     WhisperData.listenNameUuid,
@@ -248,7 +254,7 @@ final class ListenViewModel: ObservableObject {
             candidates.removeValue(forKey: candidate.peripheral)
             manager.disconnect(candidate.peripheral)
         } else {
-            // we've successfully paired
+            logger.log("Successfully sent name to \(candidate.deviceId)")
             candidate.sentName = true
             maybeSetWhisperer()
         }
@@ -325,10 +331,12 @@ final class ListenViewModel: ObservableObject {
     private func wasDisconnected(_ peripheral: CBPeripheral) {
         if peripheral == whisperer?.peripheral {
             logger.log("Whisperer has stopped whispering")
+            manager.disconnect(whisperer!.peripheral)
+            whisperer = nil
             wasDropped = true
-        } else if let candidate = candidates[peripheral] {
+        } else if let candidate = candidates.removeValue(forKey: peripheral) {
             logger.log("Candidate \(candidate.deviceId) has stopped whispering")
-            candidates.removeValue(forKey: peripheral)
+            manager.disconnect(candidate.peripheral)
         } else {
             logger.log("Ignoring disconnect from unknown whisperer: \(peripheral)")
         }
@@ -427,12 +435,15 @@ final class ListenViewModel: ObservableObject {
         guard !isInBackground else {
             fatalError("Can't start the listener scan in the background")
         }
+        logger.log("Start scanning for whisperers")
         manager.scan(forServices: [WhisperData.whisperServiceUuid], allow_repeats: true)
+        logger.log("Start initial wait for whisperers")
         scanInProgress = true
-        setStatusText()
+        refreshStatusText()
         liveText = connectingLiveText
         pastText.setFromText(connectingPastText)
-        Timer.scheduledTimer(withTimeInterval: listenerAdTime, repeats: false) { _ in
+        Timer.scheduledTimer(withTimeInterval: listenerWaitTime, repeats: false) { _ in
+            logger.log("End initial wait for whisperers due to timeout")
             self.scanInProgress = false
             self.maybeSetWhisperer()
         }
@@ -451,7 +462,7 @@ final class ListenViewModel: ObservableObject {
             // only 1 whisperer after waiting for the scan
             setWhisperer(eligible[0])
         }
-        setStatusText()
+        refreshStatusText()
     }
     
     /// Set the passed candidate to be the whisperer
@@ -459,6 +470,7 @@ final class ListenViewModel: ObservableObject {
         guard to.canBeWhisperer() else {
             fatalError("Can't set whisperer to \(to.deviceId)")
         }
+        logger.log("Selecting whisperer \(to.deviceId) (\(to.name))")
         // subscribe the whisperer
         whisperer = to
         to.peripheral.setNotifyValue(true, for: to.textCharacteristic!)
@@ -469,13 +481,14 @@ final class ListenViewModel: ObservableObject {
             if candidate === to {
                 continue
             }
+            logger.log("Dropping unused candidate \(candidate.deviceId) (\(candidate.name))")
             candidate.peripheral.readValue(for: candidate.rejectCharacteristic!)
         }
         candidates.removeAll()
     }
 
     
-    private func setStatusText() {
+    private func refreshStatusText() {
         if let whisperer = whisperer {
             statusText = "Listening to \(whisperer.name)"
         } else if scanInProgress {
@@ -486,12 +499,13 @@ final class ListenViewModel: ObservableObject {
                 statusText = "Tap to select your desired whisperer…"
                 showStatusDetail = true
             } else {
-                statusText = "Waiting for whisperers to appear…"
+                statusText = "Waiting for a whisperer to appear…"
             }
         }
     }
     
     private func startAdvertising() {
+        logger.log("Start advertising listener")
         Timer.scheduledTimer(withTimeInterval: listenerAdTime, repeats: false) { _ in
             self.stopAdvertising()
         }
@@ -499,6 +513,7 @@ final class ListenViewModel: ObservableObject {
     }
     
     private func stopAdvertising() {
+        logger.log("Stop advertising listener")
         manager.stopAdvertising()
     }
     

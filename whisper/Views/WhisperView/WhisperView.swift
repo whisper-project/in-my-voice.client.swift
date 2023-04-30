@@ -69,10 +69,14 @@ struct WhisperView: View {
             .lineLimit(nil)
         }
         .onAppear {
+            logger.log("WhisperView appeared")
             self.model.start()
             focusField = "liveText"
         }
-        .onDisappear { self.model.stop() }
+        .onDisappear {
+            logger.log("WhisperView disappeared")
+            self.model.stop()
+        }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
             case .background:
