@@ -32,7 +32,7 @@ let (listenViewBottomPad, whisperViewBottomPad, fontButtonPad): (CGFloat, CGFloa
 
 /// global timeouts
 let listenerAdTime = TimeInterval(2)    // seconds of listener advertising for whisperers
-let listenerWaitTime = TimeInterval(5)  // seconds of listener wait for multiple whisperers to respond
+let listenerWaitTime = TimeInterval(4)  // seconds of listener wait for multiple whisperers to respond
 let whispererAdTime = TimeInterval(2)   // seconds of whisperer advertising to listeners
 
 /// logging
