@@ -8,6 +8,7 @@ import SwiftUI
 struct WhisperView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
+    @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
 
@@ -16,6 +17,7 @@ struct WhisperView: View {
     @StateObject private var model: WhisperViewModel = .init()
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
+    @State private var showStatusDetail: Bool = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -34,6 +36,12 @@ struct WhisperView: View {
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 StatusTextView(text: $model.statusText)
+                    .onTapGesture {
+                        self.showStatusDetail = true
+                    }
+                    .popover(isPresented: $showStatusDetail) {
+                        ListenersView(model: model)
+                    }
                 TextEditor(text: $liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)
@@ -61,10 +69,28 @@ struct WhisperView: View {
             .lineLimit(nil)
         }
         .onAppear {
+            logger.log("WhisperView appeared")
             self.model.start()
             focusField = "liveText"
         }
-        .onDisappear { self.model.stop() }
+        .onDisappear {
+            logger.log("WhisperView disappeared")
+            self.model.stop()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            switch newPhase {
+            case .background:
+                logger.log("Went to background")
+                model.wentToBackground()
+            case .inactive:
+                logger.log("Went inactive")
+            case .active:
+                logger.log("Went to foreground")
+                model.wentToForeground()
+            @unknown default:
+                logger.error("Went to unknown phase: \(String(describing: newPhase))")
+            }
+        }
     }
 }
 

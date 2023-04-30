@@ -13,12 +13,15 @@ final class BluetoothManager: NSObject {
     var stateSubject: CurrentValueSubject<CBManagerState, Never> = .init(.unknown)
     var peripheralSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
     var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
-    var characteristicsSubject: PassthroughSubject<CBService, Never> = .init()
+    var characteristicsSubject: PassthroughSubject<(CBPeripheral, CBService), Never> = .init()
     var centralSubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
     var centralUnsubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
     var readRequestSubject: PassthroughSubject<CBATTRequest, Never> = .init()
+    var writeRequestSubject: PassthroughSubject<[CBATTRequest], Never> = .init()
+    var writeResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
+    var notifyResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
     var readyToUpdateSubject: PassthroughSubject<(), Never> = .init()
-    var receivedValueSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic), Never> = .init()
+    var receivedValueSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
     var disconnectedSubject: PassthroughSubject<CBPeripheral, Never> = .init()
 
     private var centralManager: CBCentralManager!
@@ -48,6 +51,7 @@ final class BluetoothManager: NSObject {
     }
     
     func stopScan() {
+        logger.log("Stop scanning for whisperers")
         centralManager.stopScan()
     }
     
@@ -63,10 +67,11 @@ final class BluetoothManager: NSObject {
         peripheralManager.removeAllServices()
     }
     
-    func advertise(services: [CBUUID], localName: String = WhisperData.deviceName) {
+    func advertise(services: [CBUUID], localName: String = WhisperData.deviceId) {
         guard !services.isEmpty else {
             fatalError("Can't advertise no services")
         }
+        let name = Data(localName.utf8)
         peripheralManager.startAdvertising([
             CBAdvertisementDataServiceUUIDsKey: services,
             CBAdvertisementDataLocalNameKey: localName,
@@ -87,6 +92,10 @@ final class BluetoothManager: NSObject {
     }
     
     func respondToReadRequest(request: CBATTRequest, withCode: CBATTError.Code) {
+        peripheralManager.respond(to: request, withResult: withCode)
+    }
+    
+    func respondToWriteRequest(request: CBATTRequest, withCode: CBATTError.Code) {
         peripheralManager.respond(to: request, withResult: withCode)
     }
     
@@ -156,6 +165,10 @@ extension BluetoothManager: CBPeripheralManagerDelegate {
         readRequestSubject.send(request)
     }
     
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        writeRequestSubject.send(requests)
+    }
+    
     func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
         readyToUpdateSubject.send(())
     }
@@ -175,22 +188,19 @@ extension BluetoothManager: CBPeripheralDelegate {
             logger.error("Error discovering characteristics for \(service) on \(peripheral): \(err)")
             return
         }
-        characteristicsSubject.send(service)
+        characteristicsSubject.send((peripheral, service))
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        writeResultSubject.send((peripheral, characteristic, error))
     }
         
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let err = error {
-            logger.error("Error retrieving value for \(characteristic) on \(peripheral): \(err)")
-            return
-        }
-        receivedValueSubject.send((peripheral, characteristic))
+        receivedValueSubject.send((peripheral, characteristic, error))
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
-        if let err = error {
-            logger.error("Error subscribing or unsubscribing to \(characteristic) on \(peripheral): \(err)")
-            return
-        }
+        notifyResultSubject.send((peripheral, characteristic, error))
     }
     
     func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {

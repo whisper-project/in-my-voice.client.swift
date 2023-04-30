@@ -7,15 +7,16 @@ import SwiftUI
 
 struct ListenView: View {
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.scenePhase) var scenePhase
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
-    
+    @Environment(\.scenePhase) var scenePhase
+
     @Binding var mode: OperatingMode
     
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
+    @State private var showStatusDetail: Bool = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -33,6 +34,12 @@ struct ListenView: View {
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 StatusTextView(text: $model.statusText)
+                    .onTapGesture {
+                        showStatusDetail = true
+                    }
+                    .popover(isPresented: $showStatusDetail) {
+                        WhisperersView(model: model)
+                    }
                 Text(model.liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)
@@ -48,6 +55,16 @@ struct ListenView: View {
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
+        }
+        .alert("Lost Connection", isPresented: $model.wasDropped) {
+            Button("OK") { mode = .ask }
+        } message: {
+            Text("The connection to the listener was lost")
+        }
+        .alert("Communication Error", isPresented: $model.connectionError) {
+            Button("OK") { model.readAllText() }
+        } message: {
+            Text("Some text from the whisperer was lost. It will be re-read.")
         }
         .onAppear {
             logger.log("ListenView appeared")

@@ -8,6 +8,24 @@
 	<array>
 		<dict>
 			<key>Type</key>
+			<string>PSTextFieldSpecifier</string>
+			<key>Title</key>
+			<string>Device name</string>
+			<key>Key</key>
+			<string>device_name_preference</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Listener Authentication</string>
+			<key>Key</key>
+			<string>listener_authentication_preference</string>
+			<key>DefaultValue</key>
+			<false/>
+		</dict>
+		<dict>
+			<key>Type</key>
 			<string>PSMultiValueSpecifier</string>
 			<key>Title</key>
 			<string>Alert Sound</string>
@@ -27,14 +45,6 @@
 				<string>bike-horn</string>
 				<string>bike-bell</string>
 			</array>
-		</dict>
-		<dict>
-			<key>Type</key>
-			<string>PSTextFieldSpecifier</string>
-			<key>Title</key>
-			<string>Device name</string>
-			<key>Key</key>
-			<string>device_name_preference</string>
 		</dict>
 		<dict>
 			<key>Type</key>

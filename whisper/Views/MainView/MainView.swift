@@ -9,23 +9,15 @@ struct MainView: View {
     @State private var currentDeviceName: String = WhisperData.deviceName
     @State private var newDeviceName: String = WhisperData.deviceName
     @StateObject private var model: MainViewModel = .init()
-    
-    private var settingsUrl = UIApplication.openSettingsURLString
-        
+            
     var body: some View {
-        if model.state == .unauthorized {
-            Link("Enable Bluetooth to continue...", destination: URL(string: settingsUrl)!)
-        } else if model.state != .poweredOn {
-            Text("Waiting for Bluetooth before continuing...")
-        } else {
-            switch model.mode {
-            case .ask:
-                choiceView()
-            case .listen:
-                ListenView(mode: $model.mode)
-            case .whisper:
-                WhisperView(mode: $model.mode)
-            }
+        switch model.mode {
+        case .ask:
+            choiceView()
+        case .listen:
+            ListenView(mode: $model.mode)
+        case .whisper:
+            WhisperView(mode: $model.mode)
         }
     }
     
@@ -34,15 +26,16 @@ struct MainView: View {
         VStack(spacing: 60) {
             Form {
                 Section(content: {
-                    TextField("Whisperer Name", text: $newDeviceName, prompt: Text("Required for whispering"))
-                        .onSubmit {
-                            WhisperData.updateDeviceName(self.newDeviceName)
-                            self.currentDeviceName = WhisperData.deviceName
+                    TextField("Your Name & Device", text: $newDeviceName, prompt: Text("Dan on iPhone"))
+                        .onChange(of: newDeviceName) {
+                            WhisperData.updateDeviceName($0)
+                            self.currentDeviceName = $0
                         }
                         .textInputAutocapitalization(TextInputAutocapitalization.never)
                         .disableAutocorrection(true)
+                        .truncationMode(.head)
                 }, header: {
-                    Text("Whisperer Name")
+                    Text("Your Name & Device")
                 })
             }
             .frame(maxWidth: 300, maxHeight: 105)
@@ -76,6 +69,7 @@ struct MainView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
+                    .disabled(currentDeviceName == "")
                     Button(action: { self.model.setMode(.listen, always: true) }) {
                         Text("Always\nListen")
                             .foregroundColor(.white)
@@ -84,6 +78,7 @@ struct MainView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
+                    .disabled(currentDeviceName == "")
                 }
             }
         }
