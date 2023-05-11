@@ -26,7 +26,7 @@ struct MainView: View {
         VStack(spacing: 60) {
             Form {
                 Section(content: {
-                    TextField("Your Name & Device", text: $newDeviceName, prompt: Text("Dan on iPhone"))
+                    TextField("Your Name", text: $newDeviceName, prompt: Text("Dan"))
                         .onChange(of: newDeviceName) {
                             WhisperData.updateDeviceName($0)
                             self.currentDeviceName = $0
