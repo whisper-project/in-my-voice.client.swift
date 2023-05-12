@@ -33,6 +33,7 @@ final class WhisperViewModel: ObservableObject {
     private var droppedListeners: [Listener] = []
     private var whisperService: CBMutableService?
     private var isInBackground = false
+    private var repeatCounter = 0
 
     init() {
         logger.log("Initializing WhisperView model")
@@ -176,7 +177,10 @@ final class WhisperViewModel: ObservableObject {
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(WhisperData.listenServiceUuid) {
                 if let listener = listenAdvertisers[pair.0] {
-//                    logger.debug("Ignoring repeat ad from already-pending listener \(listener.deviceId)")
+                    if repeatCounter % 10 == 0 {
+                        logger.debug("Ignoring repeat ad from already-pending listener \(listener.deviceId)")
+                    }
+                    repeatCounter += 1
                 } else {
                     guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
                           let deviceId = adName as? String else {
@@ -376,6 +380,7 @@ final class WhisperViewModel: ObservableObject {
         logger.log("Stop advertising whisperer")
         manager.stopAdvertising()
         listenAdvertisers.removeAll()
+        repeatCounter = 0
         advertisingInProgress = false
         if let timer = adTimer {
             // manual cancellation: invalidate the running timer
