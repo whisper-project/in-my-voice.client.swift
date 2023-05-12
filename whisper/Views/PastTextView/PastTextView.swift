@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct PastTextView: View {
+    var mode: OperatingMode
     @ObservedObject var model: PastTextViewModel
 
     var body: some View {
@@ -14,23 +15,25 @@ struct PastTextView: View {
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading) {
                         Spacer()
-                        ForEach(model.pastText) {
+                        ForEach(mode == .listen ? model.pastText.reversed() : model.pastText) {
                             Text($0.text)
                                 .id($0.id)
                         }
                     }
                     .frame(minWidth: gp.size.width, minHeight: gp.size.height, alignment: .leading)
                 }
-                .onAppear {
-                    if model.pastText.count > 0 {
-                        sp.scrollTo(model.pastText.count - 1, anchor: .bottom)
-                    }
-                }
-                .onChange(of: model.pastText.count) { _ in
-                    if model.pastText.count > 0 {
-                        sp.scrollTo(model.pastText.count - 1, anchor: .bottom)
-                    }
-                }
+                .onAppear { self.scrollToEnd(sp) }
+                .onChange(of: model.pastText.count) { _ in self.scrollToEnd(sp) }
+            }
+        }
+    }
+    
+    func scrollToEnd(_ sp: ScrollViewProxy) {
+        if model.pastText.count > 0 {
+            if mode == .listen {
+                sp.scrollTo(model.pastText.count - 1, anchor: .top)
+            } else {
+                sp.scrollTo(model.pastText.count - 1, anchor: .bottom)
             }
         }
     }
@@ -45,6 +48,6 @@ struct PastTextView_Previews: PreviewProvider {
     """)
     
     static var previews: some View {
-        PastTextView(model: model)
+        PastTextView(mode: .listen, model: model)
     }
 }

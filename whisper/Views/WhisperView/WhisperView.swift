@@ -24,7 +24,7 @@ struct WhisperView: View {
             VStack(spacing: 10) {
                 ControlView(size: $size, magnify: $magnify, mode: $mode, playSound: model.playSound)
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
-                PastTextView(model: model.pastText)
+                PastTextView(mode: mode, model: model.pastText)
                     .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)

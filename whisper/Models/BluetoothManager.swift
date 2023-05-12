@@ -71,7 +71,6 @@ final class BluetoothManager: NSObject {
         guard !services.isEmpty else {
             fatalError("Can't advertise no services")
         }
-        let name = Data(localName.utf8)
         peripheralManager.startAdvertising([
             CBAdvertisementDataServiceUUIDsKey: services,
             CBAdvertisementDataLocalNameKey: localName,

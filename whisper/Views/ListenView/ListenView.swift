@@ -22,24 +22,6 @@ struct ListenView: View {
         GeometryReader { geometry in
             VStack(spacing: 10) {
                 ControlView(size: $size, magnify: $magnify, mode: $mode)
-                PastTextView(model: model.pastText)
-                    .font(FontSizes.fontFor(size))
-                    .textSelection(.enabled)
-                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                    .padding(10)
-                    .frame(maxWidth: geometry.size.width,
-                           maxHeight: geometry.size.height * pastTextProportion,
-                           alignment: .bottomLeading)
-                    .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-                    .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
-                StatusTextView(text: $model.statusText)
-                    .onTapGesture {
-                        showStatusDetail = true
-                    }
-                    .popover(isPresented: $showStatusDetail) {
-                        WhisperersView(model: model)
-                    }
                 Text(model.liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)
@@ -50,6 +32,24 @@ struct ListenView: View {
                            maxHeight: geometry.size.height * liveTextProportion,
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
+                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
+                StatusTextView(text: $model.statusText)
+                    .onTapGesture {
+                        showStatusDetail = true
+                    }
+                    .popover(isPresented: $showStatusDetail) {
+                        WhisperersView(model: model)
+                    }
+                PastTextView(mode: mode, model: model.pastText)
+                    .font(FontSizes.fontFor(size))
+                    .textSelection(.enabled)
+                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+                    .padding(10)
+                    .frame(maxWidth: geometry.size.width,
+                           maxHeight: geometry.size.height * pastTextProportion,
+                           alignment: .bottomLeading)
+                    .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: 20, bottom: listenViewBottomPad, trailing: 20))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
             }
