@@ -123,6 +123,9 @@ final class WhisperViewModel: ObservableObject {
     
     func playSound() {
         let soundName = WhisperData.alertSound()
+        if speaking {
+            playSoundLocally(soundName)
+        }
         let chunk = TextProtocol.ProtocolChunk.sound(soundName)
         pendingChunks.append(chunk)
         updateListeners()
@@ -325,7 +328,7 @@ final class WhisperViewModel: ObservableObject {
     }
     
     // play the alert sound
-    private func playSound(_ name: String) {
+    private func playSoundLocally(_ name: String) {
         var name = name
         var path = Bundle.main.path(forResource: name, ofType: "caf")
         if path == nil {
