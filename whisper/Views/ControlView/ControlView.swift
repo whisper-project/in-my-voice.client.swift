@@ -11,23 +11,17 @@ struct ControlView: View {
     @Binding var size: FontSizes.FontSize
     @Binding var magnify: Bool
     @Binding var mode: OperatingMode
+    @Binding var speaking: Bool
     var playSound: (() -> ())?
 
     var body: some View {
         HStack(alignment: .center) {
             maybeAlarmButton()
-            Button {
-                self.size = FontSizes.nextTextSmaller(self.size)
-            } label: {
-                fontButtonImage("font-down-button")
+            maybeFontSizeButtons()
+            Toggle(isOn: $speaking) {
+                Text("Speak")
             }
-            .disabled(size == FontSizes.minTextSize)
-            Button {
-                self.size = FontSizes.nextTextLarger(self.size)
-            } label: {
-                fontButtonImage("font-up-button")
-            }
-            .disabled(size == FontSizes.maxTextSize)
+            .frame(maxWidth: 105)
             Spacer()
             maybeFontSizeToggle()
             Button(action: { self.mode = .ask }) {
@@ -36,6 +30,7 @@ struct ControlView: View {
             .background(Color.accentColor)
             .cornerRadius(15)
         }
+        .dynamicTypeSize(.large)
         .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
     }
     
@@ -61,14 +56,34 @@ struct ControlView: View {
             .border(colorScheme == .light ? .black : .white, width: 1)
     }
     
-    @ViewBuilder private func maybeFontSizeToggle() -> some View {
+    @ViewBuilder private func maybeFontSizeButtons() -> some View {
         if isOnPhone() && mode == .whisper {
+            EmptyView()
+        } else {
+            Button {
+                self.size = FontSizes.nextTextSmaller(self.size)
+            } label: {
+                fontButtonImage("font-down-button")
+            }
+            .disabled(size == FontSizes.minTextSize)
+            Button {
+                self.size = FontSizes.nextTextLarger(self.size)
+            } label: {
+                fontButtonImage("font-up-button")
+            }
+            .disabled(size == FontSizes.maxTextSize)
+            Spacer()
+        }
+    }
+    
+    @ViewBuilder private func maybeFontSizeToggle() -> some View {
+        if isOnPhone() {
             EmptyView()
         } else {
             Toggle(isOn: $magnify) {
                 Text("Large Sizes")
             }
-            .frame(maxWidth: 110)
+            .frame(maxWidth: 105)
             Spacer()
         }
     }
@@ -116,11 +131,11 @@ struct ControlView_Previews: PreviewProvider {
             get: { options[i].2 },
             set: { _ = $0 })
     }
-
+    
     static var previews: some View {
         VStack {
             ForEach(0 ..< 10) {
-                ControlView(size: sizeB($0), magnify: magnifyB($0), mode: modeB($0))
+                ControlView(size: sizeB($0), magnify: magnifyB($0), mode: modeB($0), speaking: magnifyB($0))
             }
         }
     }

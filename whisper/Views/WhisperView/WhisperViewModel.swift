@@ -3,6 +3,7 @@
 // All material in this project and repository is licensed under the
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
+import AVFAudio
 import Combine
 import CoreBluetooth
 
@@ -19,6 +20,7 @@ final class WhisperViewModel: ObservableObject {
     
     @Published var statusText: String = ""
     @Published var listeners: [CBCentral: Listener] = [:]
+    @Published var speaking: Bool = false
     var pastText: PastTextViewModel = .init()
 
     private var liveText: String = ""
@@ -34,6 +36,8 @@ final class WhisperViewModel: ObservableObject {
     private var whisperService: CBMutableService?
     private var isInBackground = false
     private var repeatCounter = 0
+    private static let synthesizer = AVSpeechSynthesizer()
+    private var soundEffect: AVAudioPlayer?
 
     init() {
         logger.log("Initializing WhisperView model")
@@ -63,7 +67,8 @@ final class WhisperViewModel: ObservableObject {
     
     // MARK: View entry points
     
-    func start() {
+    func start(speaking: Bool = false) {
+        self.speaking = speaking
         whisperService = WhisperData.whisperService()
         manager.publish(service: whisperService!)
         // look for listeners who are looking for us
@@ -104,6 +109,9 @@ final class WhisperViewModel: ObservableObject {
             pendingChunks.append(chunk)
             if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
+                if speaking {
+                    speak(liveText)
+                }
                 liveText = ""
             } else {
                 liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
@@ -309,6 +317,36 @@ final class WhisperViewModel: ObservableObject {
     }
     
     // MARK: Internal helpers
+    
+    // speak a set of words
+    private func speak(_ text: String) {
+        let utterance = AVSpeechUtterance(string: text)
+        Self.synthesizer.speak(utterance)
+    }
+    
+    // play the alert sound
+    private func playSound(_ name: String) {
+        var name = name
+        var path = Bundle.main.path(forResource: name, ofType: "caf")
+        if path == nil {
+            // try again with default sound
+            name = WhisperData.alertSound()
+            path = Bundle.main.path(forResource: name, ofType: "caf")
+        }
+        guard path != nil else {
+            logger.error("Couldn't find sound file for '\(name)'")
+            return
+        }
+        let url = URL(fileURLWithPath: path!)
+        soundEffect = try? AVAudioPlayer(contentsOf: url)
+        if let player = soundEffect {
+            if !player.play() {
+                logger.error("Couldn't play sound '\(name)'")
+            }
+        } else {
+            logger.error("Couldn't create player for sound '\(name)'")
+        }
+    }
     
     /// Update listeners on changes in live text
     private func updateListeners() {

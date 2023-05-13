@@ -18,14 +18,11 @@ final class MainViewModel: ObservableObject {
     
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
-    private let defaults = UserDefaults.standard
     
     init() {
         manager.stateSubject
             .sink(receiveValue: setState)
             .store(in: &cancellables)
-        let val = defaults.integer(forKey: modePreferenceKey)
-        mode = OperatingMode(rawValue: val) ?? .ask
     }
     
     deinit {
@@ -38,15 +35,6 @@ final class MainViewModel: ObservableObject {
             state = new
         } else {
             logger.log("Bluetooth state remains \(String(describing: new))")
-        }
-    }
-    
-    func setMode(_ mode: OperatingMode, always: Bool = false) {
-        self.mode = mode
-        if always {
-            defaults.set(mode.rawValue, forKey: modePreferenceKey)
-        } else {
-            defaults.set(OperatingMode.ask.rawValue, forKey: modePreferenceKey)
         }
     }
 }

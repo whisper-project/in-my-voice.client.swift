@@ -9,15 +9,29 @@ struct MainView: View {
     @State private var currentDeviceName: String = WhisperData.deviceName
     @State private var newDeviceName: String = WhisperData.deviceName
     @StateObject private var model: MainViewModel = .init()
+    @State var mode: OperatingMode = {
+        let defaults = UserDefaults.standard
+        let val = defaults.integer(forKey: modePreferenceKey)
+        return OperatingMode(rawValue: val) ?? .ask
+    }()
+    @State var speaking: Bool = false
             
+    private var settingsUrl = URL(string: UIApplication.openSettingsURLString)!
+    
     var body: some View {
-        switch model.mode {
-        case .ask:
-            choiceView()
-        case .listen:
-            ListenView(mode: $model.mode)
-        case .whisper:
-            WhisperView(mode: $model.mode)
+        if model.state == .unauthorized {
+            Link("Enable Bluetooth to continue...", destination: settingsUrl)
+        } else if model.state != .poweredOn {
+            Text("Waiting for Bluetooth before continuing...")
+        } else {
+            switch mode {
+            case .ask:
+                choiceView()
+            case .listen:
+                ListenView(mode: $mode, initialSpeaking: speaking)
+            case .whisper:
+                WhisperView(mode: $mode, initialSpeaking: speaking)
+            }
         }
     }
     
@@ -35,13 +49,16 @@ struct MainView: View {
                         .disableAutocorrection(true)
                         .truncationMode(.head)
                 }, header: {
-                    Text("Your Name & Device")
+                    Text("Your Name")
                 })
             }
             .frame(maxWidth: 300, maxHeight: 105)
             HStack(spacing: 60) {
                 VStack(spacing: 60) {
-                    Button(action: { self.model.setMode(.whisper) }) {
+                    Button(action: {
+                        mode = .whisper
+                        speaking = false
+                    }) {
                         Text("Whisper")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
@@ -50,8 +67,11 @@ struct MainView: View {
                     .background(WhisperData.deviceName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
                     .disabled(currentDeviceName == "")
-                    Button(action: { self.model.setMode(.whisper, always: true) }) {
-                        Text("Always\nWhisper")
+                    Button(action: {
+                        mode = .whisper
+                        speaking = true
+                    }) {
+                        Text("Speak")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
                             .padding(10)
@@ -61,26 +81,42 @@ struct MainView: View {
                     .disabled(currentDeviceName == "")
                 }
                 VStack(spacing: 60) {
-                    Button(action: { self.model.setMode(.listen) }) {
+                    Button(action: {
+                        mode = .listen
+                        speaking = false
+                    }) {
                         Text("Listen")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
-                            .padding(EdgeInsets(top: 10, leading: 25, bottom: 10, trailing: 25))
+                            .padding(10)
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
                     .disabled(currentDeviceName == "")
-                    Button(action: { self.model.setMode(.listen, always: true) }) {
-                        Text("Always\nListen")
+                    Button(action: {
+                        mode = .listen
+                        speaking = true
+                    }) {
+                        Text("Hear")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
-                            .padding(EdgeInsets(top: 10, leading: 20, bottom: 10, trailing: 20))
+                            .padding(10)
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
                     .disabled(currentDeviceName == "")
                 }
             }
+            Button(action: {
+                UIApplication.shared.open(settingsUrl)
+            }) {
+                Text("Settings")
+                    .foregroundColor(.white)
+                    .fontWeight(.bold)
+                    .padding(10)
+            }
+            .background(Color.accentColor)
+            .cornerRadius(15)
         }
     }
 }

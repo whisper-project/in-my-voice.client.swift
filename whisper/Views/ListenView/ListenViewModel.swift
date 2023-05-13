@@ -36,6 +36,7 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
+    @Published var speaking: Bool = false
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var wasDropped: Bool = false
@@ -53,6 +54,7 @@ final class ListenViewModel: ObservableObject {
     private var isInBackground = false
     private var soundEffect: AVAudioPlayer?
     private var notifySoundInBackground = false
+    private static let synthesizer = AVSpeechSynthesizer()
 
     init() {
         logger.log("Initializing ListenView model")
@@ -85,7 +87,7 @@ final class ListenViewModel: ObservableObject {
     
     // MARK: View entry points
     
-    func start() {
+    func start(speaking: Bool = false) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if error != nil {
@@ -93,6 +95,7 @@ final class ListenViewModel: ObservableObject {
             }
             self.notifySoundInBackground = granted
         }
+        self.speaking = speaking
         startWhisperScan()
     }
     
@@ -364,6 +367,9 @@ final class ListenViewModel: ObservableObject {
                 liveText = chunk.text
             } else if chunk.isCompleteLine() {
                 logger.log("Got diff: move live text to past text")
+                if !isInBackground && speaking {
+                    speak(liveText)
+                }
                 pastText.addLine(liveText)
                 liveText = ""
             } else if chunk.offset > liveText.count {
@@ -420,6 +426,11 @@ final class ListenViewModel: ObservableObject {
         let request = UNNotificationRequest(identifier: uuid, content: content, trigger: trigger)
         let center = UNUserNotificationCenter.current()
         center.add(request) { error in if error != nil { logger.error("Couldn't notify: \(error!)") } }
+    }
+    
+    private func speak(_ text: String) {
+        let utterance = AVSpeechUtterance(string: text)
+        Self.synthesizer.speak(utterance)
     }
     
     /// Start the scan for a listener.

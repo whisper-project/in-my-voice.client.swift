@@ -11,6 +11,7 @@ struct ListenView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
+    var initialSpeaking: Bool
     
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
@@ -21,7 +22,7 @@ struct ListenView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 10) {
-                ControlView(size: $size, magnify: $magnify, mode: $mode)
+                ControlView(size: $size, magnify: $magnify, mode: $mode, speaking: $model.speaking)
                 Text(model.liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)
@@ -68,7 +69,7 @@ struct ListenView: View {
         }
         .onAppear {
             logger.log("ListenView appeared")
-            self.model.start()
+            self.model.start(speaking: initialSpeaking)
         }
         .onDisappear {
             logger.log("ListenView disappeared")
@@ -95,6 +96,6 @@ struct ListenView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
 
     static var previews: some View {
-        ListenView(mode: mode)
+        ListenView(mode: mode, initialSpeaking: false)
     }
 }
