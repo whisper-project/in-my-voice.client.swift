@@ -61,7 +61,7 @@ struct MainView: View {
                         Text("Whisper")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
-                            .padding(10)
+                            .frame(width: 95, height: 45, alignment: .center)
                     }
                     .background(currentUserName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
@@ -73,7 +73,7 @@ struct MainView: View {
                         Text("Speak")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
-                            .padding(10)
+                            .frame(width: 95, height: 45, alignment: .center)
                     }
                     .background(currentUserName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
@@ -87,7 +87,7 @@ struct MainView: View {
                         Text("Listen")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
-                            .padding(10)
+                            .frame(width: 95, height: 45, alignment: .center)
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
@@ -99,7 +99,7 @@ struct MainView: View {
                         Text("Hear")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
-                            .padding(10)
+                            .frame(width: 95, height: 45, alignment: .center)
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
@@ -112,7 +112,7 @@ struct MainView: View {
                 Text("Settings")
                     .foregroundColor(.white)
                     .fontWeight(.bold)
-                    .padding(10)
+                    .frame(width: 95, height: 45, alignment: .center)
             }
             .background(Color.accentColor)
             .cornerRadius(15)

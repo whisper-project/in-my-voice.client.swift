@@ -90,6 +90,7 @@
 		37B6237529F78AA500213790 /* WhisperersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperersView.swift; sourceTree = "<group>"; };
 		37C5142129CA2B35001A121B /* PastTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastTextView.swift; sourceTree = "<group>"; };
 		37C5142329CA2B44001A121B /* PastTextViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastTextViewModel.swift; sourceTree = "<group>"; };
+		37D553CB2A10717E00C27888 /* SizePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SizePrinter.swift; sourceTree = "<group>"; };
 		37D6B35829BC5DD300F952FE /* WhisperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperView.swift; sourceTree = "<group>"; };
 		37D6B35D29BCF66400F952FE /* ListenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -260,6 +261,7 @@
 			children = (
 				37763D1F29AC4C5B0051CFE5 /* Set+Cancelable.swift */,
 				3712341129E2151100CBF49C /* Binding+Convert.swift */,
+				37D553CB2A10717E00C27888 /* SizePrinter.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
