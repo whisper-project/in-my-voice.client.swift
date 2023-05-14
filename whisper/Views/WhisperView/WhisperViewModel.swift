@@ -247,7 +247,7 @@ final class WhisperViewModel: ObservableObject {
         let characteristic = request.characteristic
         if characteristic.uuid == WhisperData.whisperNameUuid {
             logger.log("Request is for name")
-            request.value = Data(WhisperData.deviceName.utf8)
+            request.value = Data(WhisperData.userName().utf8)
             manager.respondToReadRequest(request: request, withCode: .success)
         } else if characteristic.uuid == WhisperData.textUuid {
             logger.log("Request is for complete text")

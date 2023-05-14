@@ -6,14 +6,12 @@
 import SwiftUI
 
 struct MainView: View {
-    @State private var currentDeviceName: String = WhisperData.deviceName
-    @State private var newDeviceName: String = WhisperData.deviceName
+    @Environment(\.scenePhase) var scenePhase
+    
+    @State private var currentUserName: String = ""
+    @State private var newUserName: String = ""
     @StateObject private var model: MainViewModel = .init()
-    @State var mode: OperatingMode = {
-        let defaults = UserDefaults.standard
-        let val = defaults.integer(forKey: modePreferenceKey)
-        return OperatingMode(rawValue: val) ?? .ask
-    }()
+    @State var mode: OperatingMode = .ask
     @State var speaking: Bool = false
             
     private var settingsUrl = URL(string: UIApplication.openSettingsURLString)!
@@ -40,13 +38,14 @@ struct MainView: View {
         VStack(spacing: 60) {
             Form {
                 Section(content: {
-                    TextField("Your Name", text: $newDeviceName, prompt: Text("Dan"))
-                        .onChange(of: newDeviceName) {
+                    TextField("Your Name", text: $newUserName, prompt: Text("Dan"))
+                        .onChange(of: newUserName) {
                             WhisperData.updateDeviceName($0)
-                            self.currentDeviceName = $0
+                            self.currentUserName = $0
                         }
-                        .textInputAutocapitalization(TextInputAutocapitalization.never)
+                        .textInputAutocapitalization(.words)
                         .disableAutocorrection(true)
+                        .allowsTightening(true)
                         .truncationMode(.head)
                 }, header: {
                     Text("Your Name")
@@ -64,9 +63,9 @@ struct MainView: View {
                             .fontWeight(.bold)
                             .padding(10)
                     }
-                    .background(WhisperData.deviceName == "" ? Color.gray : Color.accentColor)
+                    .background(currentUserName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
-                    .disabled(currentDeviceName == "")
+                    .disabled(currentUserName == "")
                     Button(action: {
                         mode = .whisper
                         speaking = true
@@ -76,9 +75,9 @@ struct MainView: View {
                             .fontWeight(.bold)
                             .padding(10)
                     }
-                    .background(WhisperData.deviceName == "" ? Color.gray : Color.accentColor)
+                    .background(currentUserName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
-                    .disabled(currentDeviceName == "")
+                    .disabled(currentUserName == "")
                 }
                 VStack(spacing: 60) {
                     Button(action: {
@@ -92,7 +91,7 @@ struct MainView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
-                    .disabled(currentDeviceName == "")
+                    .disabled(currentUserName == "")
                     Button(action: {
                         mode = .listen
                         speaking = true
@@ -104,7 +103,7 @@ struct MainView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
-                    .disabled(currentDeviceName == "")
+                    .disabled(currentUserName == "")
                 }
             }
             Button(action: {
@@ -118,6 +117,26 @@ struct MainView: View {
             .background(Color.accentColor)
             .cornerRadius(15)
         }
+        .onAppear { readPreferences() }
+        .onChange(of: scenePhase) { newPhase in
+            switch newPhase {
+            case .active:
+                logger.log("Reread preferences going to choice view foreground")
+                readPreferences()
+            case .background, .inactive:
+                break
+            @unknown default:
+                logger.error("Went to unknown phase: \(String(describing: newPhase))")
+            }
+        }
+    }
+    
+    func readPreferences() {
+        currentUserName = WhisperData.userName()
+        newUserName = WhisperData.userName()
+        let defaults = UserDefaults.standard
+        let val = defaults.integer(forKey: modePreferenceKey)
+        mode = OperatingMode(rawValue: val) ?? .ask
     }
 }
 

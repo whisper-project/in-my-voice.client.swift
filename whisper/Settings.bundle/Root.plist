@@ -13,6 +13,10 @@
 			<string>Device name</string>
 			<key>Key</key>
 			<string>device_name_preference</string>
+			<key>AutocapitalizationType</key>
+			<string>Words</string>
+			<key>AutocorrectionType</key>
+			<string>No</string>
 		</dict>
 		<dict>
 			<key>Type</key>

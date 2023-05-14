@@ -231,7 +231,7 @@ final class ListenViewModel: ObservableObject {
         } else {
             fatalError("Whisper service has no disconnect characteristic")
         }
-        let idAndName = "\(WhisperData.deviceId)|\(WhisperData.deviceName)"
+        let idAndName = "\(WhisperData.deviceId)|\(WhisperData.userName())"
         peripheral.writeValue(Data(idAndName.utf8), for: candidate.listenNameCharacteristic!, type: .withResponse)
         peripheral.readValue(for: candidate.whisperNameCharacteristic!)
     }

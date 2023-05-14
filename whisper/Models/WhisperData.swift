@@ -8,15 +8,14 @@ import UIKit
 
 struct WhisperData {
     // MARK: Preferences
-    static var deviceName = {
+    static func userName() -> String {
         let defaults = UserDefaults.standard
         let name = defaults.string(forKey: "device_name_preference") ?? ""
         return name
-    }()
+    }
     static func updateDeviceName(_ name: String) {
-        deviceName = name
         let defaults = UserDefaults.standard
-        defaults.setValue(deviceName, forKey: "device_name_preference")
+        defaults.setValue(name, forKey: "device_name_preference")
     }
     static func requireAuthentication() -> Bool {
         let defaults = UserDefaults.standard

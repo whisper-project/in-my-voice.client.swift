@@ -17,12 +17,12 @@ struct ControlView: View {
     var body: some View {
         HStack(alignment: .center) {
             maybeAlarmButton()
-            maybeFontSizeButtons()
             Toggle(isOn: $speaking) {
                 Text("Speak")
             }
-            .frame(maxWidth: 105)
+            .frame(maxWidth: 107)
             Spacer()
+            maybeFontSizeButtons()
             maybeFontSizeToggle()
             Button(action: { self.mode = .ask }) {
                 stopButtonLabel()
@@ -31,7 +31,7 @@ struct ControlView: View {
             .cornerRadius(15)
         }
         .dynamicTypeSize(.large)
-        .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+        .font(FontSizes.fontFor(FontSizes.minTextSize))
     }
     
     @ViewBuilder private func maybeAlarmButton() -> some View {
