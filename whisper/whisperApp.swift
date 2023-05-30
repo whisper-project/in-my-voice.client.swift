@@ -3,6 +3,7 @@
 // All material in this project and repository is licensed under the
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
+import AVFAudio
 import SwiftUI
 
 /// global constants for light/dark mode
@@ -44,9 +45,23 @@ let logger = Logger()
 
 @main
 struct whisperApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
         WindowGroup {
             MainView()
         }
+    }
+}
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers])
+        } catch (let err) {
+            logger.error("Failed to set audio session category: \(err)")
+        }
+        return true
     }
 }
