@@ -5,7 +5,6 @@
 
 import Combine
 import CoreBluetooth
-import UIKit
 
 final class BluetoothManager: NSObject {
     static let shared: BluetoothManager = .init()

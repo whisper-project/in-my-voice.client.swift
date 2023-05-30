@@ -10,7 +10,7 @@
 			<key>Type</key>
 			<string>PSTextFieldSpecifier</string>
 			<key>Title</key>
-			<string>Device name</string>
+			<string>Your name</string>
 			<key>Key</key>
 			<string>device_name_preference</string>
 			<key>AutocapitalizationType</key>
@@ -67,7 +67,7 @@
 			</array>
 			<key>Values</key>
 			<array>
-				<string>0</string>
+				<integer>0</integer>
 				<integer>1</integer>
 				<integer>2</integer>
 			</array>

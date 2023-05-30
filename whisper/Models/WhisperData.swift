@@ -4,26 +4,30 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import CoreBluetooth
-import UIKit
+
+enum OperatingMode: Int {
+    case ask = 0, listen = 1, whisper = 2
+}
 
 struct WhisperData {
     // MARK: Preferences
+    private static var defaults = UserDefaults.standard
+    static func initialMode() -> OperatingMode {
+        let val = defaults.integer(forKey: "initial_mode_preference")
+        return OperatingMode(rawValue: val) ?? .ask
+    }
     static func userName() -> String {
-        let defaults = UserDefaults.standard
         let name = defaults.string(forKey: "device_name_preference") ?? ""
         return name
     }
-    static func updateDeviceName(_ name: String) {
-        let defaults = UserDefaults.standard
+    static func updateUserName(_ name: String) {
         defaults.setValue(name, forKey: "device_name_preference")
     }
     static func requireAuthentication() -> Bool {
-        let defaults = UserDefaults.standard
         let result = defaults.bool(forKey: "listener_authentication_preference")
         return result
     }
     static func alertSound() -> String {
-        let defaults = UserDefaults.standard
         return defaults.string(forKey: "alert_sound_preference") ?? "bike-horn"
     }
     

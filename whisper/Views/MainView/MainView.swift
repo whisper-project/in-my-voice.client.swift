@@ -4,6 +4,7 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import SwiftUI
+import UIKit
 
 struct MainView: View {
     @Environment(\.scenePhase) var scenePhase
@@ -11,7 +12,7 @@ struct MainView: View {
     @State private var currentUserName: String = ""
     @State private var newUserName: String = ""
     @StateObject private var model: MainViewModel = .init()
-    @State var mode: OperatingMode = .ask
+    @State var mode: OperatingMode = WhisperData.initialMode()
     @State var speaking: Bool = false
             
     private var settingsUrl = URL(string: UIApplication.openSettingsURLString)!
@@ -40,7 +41,7 @@ struct MainView: View {
                 Section(content: {
                     TextField("Your Name", text: $newUserName, prompt: Text("Dan"))
                         .onChange(of: newUserName) {
-                            WhisperData.updateDeviceName($0)
+                            WhisperData.updateUserName($0)
                             self.currentUserName = $0
                         }
                         .textInputAutocapitalization(.words)
@@ -117,12 +118,12 @@ struct MainView: View {
             .background(Color.accentColor)
             .cornerRadius(15)
         }
-        .onAppear { readPreferences() }
+        .onAppear { updateUserName() }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
             case .active:
                 logger.log("Reread preferences going to choice view foreground")
-                readPreferences()
+                updateUserName()
             case .background, .inactive:
                 break
             @unknown default:
@@ -131,12 +132,9 @@ struct MainView: View {
         }
     }
     
-    func readPreferences() {
+    func updateUserName() {
         currentUserName = WhisperData.userName()
-        newUserName = WhisperData.userName()
-        let defaults = UserDefaults.standard
-        let val = defaults.integer(forKey: modePreferenceKey)
-        mode = OperatingMode(rawValue: val) ?? .ask
+        newUserName = currentUserName
     }
 }
 
