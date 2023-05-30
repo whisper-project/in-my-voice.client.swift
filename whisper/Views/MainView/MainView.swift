@@ -67,18 +67,6 @@ struct MainView: View {
                     .background(currentUserName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
                     .disabled(currentUserName == "")
-                    Button(action: {
-                        mode = .whisper
-                        speaking = true
-                    }) {
-                        Text("Speak")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: 95, height: 45, alignment: .center)
-                    }
-                    .background(currentUserName == "" ? Color.gray : Color.accentColor)
-                    .cornerRadius(15)
-                    .disabled(currentUserName == "")
                 }
                 VStack(spacing: 60) {
                     Button(action: {
@@ -86,18 +74,6 @@ struct MainView: View {
                         speaking = false
                     }) {
                         Text("Listen")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: 95, height: 45, alignment: .center)
-                    }
-                    .background(Color.accentColor)
-                    .cornerRadius(15)
-                    .disabled(currentUserName == "")
-                    Button(action: {
-                        mode = .listen
-                        speaking = true
-                    }) {
-                        Text("Hear")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
                             .frame(width: 95, height: 45, alignment: .center)
