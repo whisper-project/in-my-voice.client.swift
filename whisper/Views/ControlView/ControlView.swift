@@ -17,11 +17,7 @@ struct ControlView: View {
     var body: some View {
         HStack(alignment: .center) {
             maybeAlarmButton()
-            Toggle(isOn: $speaking) {
-                Text("Speak")
-            }
-            .frame(maxWidth: 107)
-            Spacer()
+            speechButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
             Button(action: { self.mode = .ask }) {
@@ -32,6 +28,20 @@ struct ControlView: View {
         }
         .dynamicTypeSize(.large)
         .font(FontSizes.fontFor(FontSizes.minTextSize))
+    }
+    
+    @ViewBuilder private func speechButton() -> some View {
+        Button {
+            speaking = !speaking
+        } label: {
+            Image(speaking ? "voice-over-on" : "voice-over-off")
+                .renderingMode(.template)
+                .resizable()
+                .padding(5)
+                .frame(width: 50, height: 50)
+                .border(colorScheme == .light ? .black : .white, width: 1)
+        }
+        Spacer()
     }
     
     @ViewBuilder private func maybeAlarmButton() -> some View {

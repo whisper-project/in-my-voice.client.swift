@@ -6,15 +6,8 @@
 import Combine
 import CoreBluetooth
 
-enum OperatingMode: Int {
-    case ask = 0, listen = 1, whisper = 2
-}
-
-let modePreferenceKey = "initial_mode_preference"
-
 final class MainViewModel: ObservableObject {
     @Published var state: CBManagerState = .unknown
-    @Published var mode: OperatingMode = .ask
     
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []

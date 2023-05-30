@@ -11,7 +11,6 @@ struct WhisperView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
-    var initialSpeaking: Bool
 
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
@@ -24,7 +23,7 @@ struct WhisperView: View {
         GeometryReader { proxy in
             VStack(spacing: 10) {
                 ControlView(size: $size, magnify: $magnify, mode: $mode, speaking: $model.speaking, playSound: model.playSound)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .padding(EdgeInsets(top: whisperViewTopPad, leading: 20, bottom: 0, trailing: 20))
                 PastTextView(mode: mode, model: model.pastText)
                     .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
@@ -71,7 +70,7 @@ struct WhisperView: View {
         }
         .onAppear {
             logger.log("WhisperView appeared")
-            self.model.start(speaking: initialSpeaking)
+            self.model.start()
             focusField = "liveText"
         }
         .onDisappear {
@@ -99,6 +98,6 @@ struct WhisperView_Previews: PreviewProvider {
     static var mode: Binding<OperatingMode> = Binding(get: { .whisper }, set: { _ = $0 })
 
     static var previews: some View {
-        WhisperView(mode: mode, initialSpeaking: false)
+        WhisperView(mode: mode)
     }
 }

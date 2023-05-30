@@ -20,7 +20,7 @@ final class WhisperViewModel: ObservableObject {
     
     @Published var statusText: String = ""
     @Published var listeners: [CBCentral: Listener] = [:]
-    @Published var speaking: Bool = false
+    @Published var speaking: Bool = WhisperData.startSpeaking()
     var pastText: PastTextViewModel = .init()
 
     private var liveText: String = ""
@@ -62,13 +62,13 @@ final class WhisperViewModel: ObservableObject {
     }
     
     deinit {
+        logger.log("Destroying WhisperView model")
         cancellables.cancel()
     }
     
     // MARK: View entry points
     
-    func start(speaking: Bool = false) {
-        self.speaking = speaking
+    func start() {
         whisperService = WhisperData.whisperService()
         manager.publish(service: whisperService!)
         // look for listeners who are looking for us

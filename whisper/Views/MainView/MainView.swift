@@ -4,6 +4,11 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import SwiftUI
+import UIKit
+
+let choiceButtonWidth = CGFloat(115)
+let choiceButtonHeight = CGFloat(50)
+
 
 struct MainView: View {
     @Environment(\.scenePhase) var scenePhase
@@ -11,8 +16,7 @@ struct MainView: View {
     @State private var currentUserName: String = ""
     @State private var newUserName: String = ""
     @StateObject private var model: MainViewModel = .init()
-    @State var mode: OperatingMode = .ask
-    @State var speaking: Bool = false
+    @State var mode: OperatingMode = WhisperData.initialMode()
             
     private var settingsUrl = URL(string: UIApplication.openSettingsURLString)!
     
@@ -26,9 +30,9 @@ struct MainView: View {
             case .ask:
                 choiceView()
             case .listen:
-                ListenView(mode: $mode, initialSpeaking: speaking)
+                ListenView(mode: $mode)
             case .whisper:
-                WhisperView(mode: $mode, initialSpeaking: speaking)
+                WhisperView(mode: $mode)
             }
         }
     }
@@ -40,7 +44,7 @@ struct MainView: View {
                 Section(content: {
                     TextField("Your Name", text: $newUserName, prompt: Text("Dan"))
                         .onChange(of: newUserName) {
-                            WhisperData.updateDeviceName($0)
+                            WhisperData.updateUserName($0)
                             self.currentUserName = $0
                         }
                         .textInputAutocapitalization(.words)
@@ -56,24 +60,11 @@ struct MainView: View {
                 VStack(spacing: 60) {
                     Button(action: {
                         mode = .whisper
-                        speaking = false
                     }) {
                         Text("Whisper")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
-                            .frame(width: 95, height: 45, alignment: .center)
-                    }
-                    .background(currentUserName == "" ? Color.gray : Color.accentColor)
-                    .cornerRadius(15)
-                    .disabled(currentUserName == "")
-                    Button(action: {
-                        mode = .whisper
-                        speaking = true
-                    }) {
-                        Text("Speak")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: 95, height: 45, alignment: .center)
+                            .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                     }
                     .background(currentUserName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
@@ -82,24 +73,11 @@ struct MainView: View {
                 VStack(spacing: 60) {
                     Button(action: {
                         mode = .listen
-                        speaking = false
                     }) {
                         Text("Listen")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
-                            .frame(width: 95, height: 45, alignment: .center)
-                    }
-                    .background(Color.accentColor)
-                    .cornerRadius(15)
-                    .disabled(currentUserName == "")
-                    Button(action: {
-                        mode = .listen
-                        speaking = true
-                    }) {
-                        Text("Hear")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: 95, height: 45, alignment: .center)
+                            .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
@@ -112,17 +90,17 @@ struct MainView: View {
                 Text("Settings")
                     .foregroundColor(.white)
                     .fontWeight(.bold)
-                    .frame(width: 95, height: 45, alignment: .center)
+                    .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
             }
             .background(Color.accentColor)
             .cornerRadius(15)
         }
-        .onAppear { readPreferences() }
+        .onAppear { updateUserName() }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
             case .active:
                 logger.log("Reread preferences going to choice view foreground")
-                readPreferences()
+                updateUserName()
             case .background, .inactive:
                 break
             @unknown default:
@@ -131,12 +109,9 @@ struct MainView: View {
         }
     }
     
-    func readPreferences() {
+    func updateUserName() {
         currentUserName = WhisperData.userName()
-        newUserName = WhisperData.userName()
-        let defaults = UserDefaults.standard
-        let val = defaults.integer(forKey: modePreferenceKey)
-        mode = OperatingMode(rawValue: val) ?? .ask
+        newUserName = currentUserName
     }
 }
 

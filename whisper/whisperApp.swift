@@ -3,6 +3,7 @@
 // All material in this project and repository is licensed under the
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
+import AVFAudio
 import SwiftUI
 
 /// global constants for light/dark mode
@@ -20,15 +21,17 @@ let pastTextProportion = 4.0/5.0
 let liveTextProportion = 1.0/5.0
 
 /// global constants for platform differentiation
-let (listenViewBottomPad, whisperViewBottomPad, fontButtonPad): (CGFloat, CGFloat, CGFloat) = {
-    if ProcessInfo.processInfo.isiOSAppOnMac {
-        return (20, 20, 20)
-    } else if UIDevice.current.userInterfaceIdiom == .phone {
-        return (0, 5, 5)
-    } else {
-        return (5, 15, 10)
-    }
-}()
+#if targetEnvironment(macCatalyst)
+    let listenViewTopPad = CGFloat(15)
+    let whisperViewTopPad = CGFloat(15)
+    let listenViewBottomPad = CGFloat(5)
+    let whisperViewBottomPad = CGFloat(15)
+#else   // iOS
+    let listenViewTopPad = CGFloat(0)
+    let whisperViewTopPad = CGFloat(0)
+    let listenViewBottomPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(0) : CGFloat(5)
+    let whisperViewBottomPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(5) : CGFloat(15)
+#endif
 
 /// global timeouts
 let listenerAdTime = TimeInterval(2)    // seconds of listener advertising for whisperers
@@ -42,9 +45,23 @@ let logger = Logger()
 
 @main
 struct whisperApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
         WindowGroup {
             MainView()
         }
+    }
+}
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers])
+        } catch (let err) {
+            logger.error("Failed to set audio session category: \(err)")
+        }
+        return true
     }
 }

@@ -5,7 +5,6 @@
 
 import Combine
 import CoreBluetooth
-import UIKit
 
 final class BluetoothManager: NSObject {
     static let shared: BluetoothManager = .init()
@@ -128,7 +127,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        peripheral.discoverServices(nil)
+        peripheral.discoverServices([WhisperData.whisperServiceUuid])
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
