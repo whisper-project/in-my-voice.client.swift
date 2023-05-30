@@ -72,6 +72,16 @@
 				<integer>2</integer>
 			</array>
 		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Read whispers aloud</string>
+			<key>Key</key>
+			<string>read_aloud_preference</string>
+			<key>DefaultValue</key>
+			<false/>
+		</dict>
 	</array>
 </dict>
 </plist>

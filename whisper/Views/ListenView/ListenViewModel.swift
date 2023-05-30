@@ -36,7 +36,7 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    @Published var speaking: Bool = false
+    @Published var speaking: Bool = WhisperData.startSpeaking()
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var wasDropped: Bool = false
@@ -87,7 +87,7 @@ final class ListenViewModel: ObservableObject {
     
     // MARK: View entry points
     
-    func start(speaking: Bool = false) {
+    func start() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if error != nil {
@@ -95,7 +95,6 @@ final class ListenViewModel: ObservableObject {
             }
             self.notifySoundInBackground = granted
         }
-        self.speaking = speaking
         startWhisperScan()
     }
     

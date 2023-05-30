@@ -11,7 +11,6 @@ struct WhisperView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
-    var initialSpeaking: Bool
 
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
@@ -71,7 +70,7 @@ struct WhisperView: View {
         }
         .onAppear {
             logger.log("WhisperView appeared")
-            self.model.start(speaking: initialSpeaking)
+            self.model.start()
             focusField = "liveText"
         }
         .onDisappear {
@@ -99,6 +98,6 @@ struct WhisperView_Previews: PreviewProvider {
     static var mode: Binding<OperatingMode> = Binding(get: { .whisper }, set: { _ = $0 })
 
     static var previews: some View {
-        WhisperView(mode: mode, initialSpeaking: false)
+        WhisperView(mode: mode)
     }
 }

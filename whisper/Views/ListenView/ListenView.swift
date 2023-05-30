@@ -11,7 +11,6 @@ struct ListenView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
-    var initialSpeaking: Bool
     
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel = .init()
@@ -70,7 +69,7 @@ struct ListenView: View {
         }
         .onAppear {
             logger.log("ListenView appeared")
-            self.model.start(speaking: initialSpeaking)
+            self.model.start()
         }
         .onDisappear {
             logger.log("ListenView disappeared")
@@ -97,6 +96,6 @@ struct ListenView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
 
     static var previews: some View {
-        ListenView(mode: mode, initialSpeaking: false)
+        ListenView(mode: mode)
     }
 }

@@ -16,6 +16,9 @@ struct WhisperData {
         let val = defaults.integer(forKey: "initial_mode_preference")
         return OperatingMode(rawValue: val) ?? .ask
     }
+    static func startSpeaking() -> Bool {
+        return defaults.bool(forKey: "read_aloud_preference")
+    }
     static func userName() -> String {
         let name = defaults.string(forKey: "device_name_preference") ?? ""
         return name
