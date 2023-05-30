@@ -23,7 +23,7 @@ struct ListenView: View {
         GeometryReader { geometry in
             VStack(spacing: 10) {
                 ControlView(size: $size, magnify: $magnify, mode: $mode, speaking: $model.speaking)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .padding(EdgeInsets(top: listenViewTopPad, leading: 20, bottom: 0, trailing: 20))
                 Text(model.liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)

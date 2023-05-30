@@ -20,15 +20,17 @@ let pastTextProportion = 4.0/5.0
 let liveTextProportion = 1.0/5.0
 
 /// global constants for platform differentiation
-let (listenViewBottomPad, whisperViewBottomPad, fontButtonPad): (CGFloat, CGFloat, CGFloat) = {
-    if ProcessInfo.processInfo.isiOSAppOnMac {
-        return (20, 20, 20)
-    } else if UIDevice.current.userInterfaceIdiom == .phone {
-        return (0, 5, 5)
-    } else {
-        return (5, 15, 10)
-    }
-}()
+#if targetEnvironment(macCatalyst)
+    let listenViewTopPad = CGFloat(15)
+    let whisperViewTopPad = CGFloat(15)
+    let listenViewBottomPad = CGFloat(5)
+    let whisperViewBottomPad = CGFloat(15)
+#else   // iOS
+    let listenViewTopPad = CGFloat(0)
+    let whisperViewTopPad = CGFloat(0)
+    let listenViewBottomPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(0) : CGFloat(5)
+    let whisperViewBottomPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(5) : CGFloat(15)
+#endif
 
 /// global timeouts
 let listenerAdTime = TimeInterval(2)    // seconds of listener advertising for whisperers
