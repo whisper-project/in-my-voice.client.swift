@@ -72,10 +72,10 @@ struct ChoiceView: View {
             .background(Color.accentColor)
             .cornerRadius(15)
             Button(action: {
-                let vc = SFSafariViewController(url: URL(string: "https://clickonetwo.io/whisper-help")!)
+                let vc = SFSafariViewController(url: URL(string: "https://clickonetwo.github.io/whisper/")!)
                 UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
             }) {
-                Text("Instructions")
+                Text("About")
                     .foregroundColor(.white)
                     .fontWeight(.bold)
                     .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)

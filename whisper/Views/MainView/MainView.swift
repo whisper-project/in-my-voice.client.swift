@@ -28,8 +28,6 @@ struct MainView: View {
                 ListenView(mode: $mode)
             case .whisper:
                 WhisperView(mode: $mode)
-            case .learn:
-                LearnView(mode: $mode)
             }
         }
     }
