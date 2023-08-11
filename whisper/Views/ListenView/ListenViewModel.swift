@@ -49,6 +49,7 @@ final class ListenViewModel: ObservableObject {
     private var manager = BluetoothManager.shared
     private var cancellables: Set<AnyCancellable> = []
     private var scanInProgress = false
+    private var scanRefreshCount = 0
     private var resetInProgress = false
     private var disconnectInProgress = false
     private var isInBackground = false
@@ -442,10 +443,20 @@ final class ListenViewModel: ObservableObject {
         logger.log("Start scanning for whisperers")
         manager.scan(forServices: [WhisperData.whisperServiceUuid], allow_repeats: true)
         logger.log("Start initial wait for whisperers")
-        scanInProgress = true
-        refreshStatusText()
         liveText = connectingLiveText
         pastText.setFromText(connectingPastText)
+        scanInProgress = true
+        scanRefreshCount = Int(listenerWaitTime)
+        refreshStatusText()
+        Timer.scheduledTimer(withTimeInterval: TimeInterval(1), repeats: true) { timer in
+            guard self.scanInProgress && self.scanRefreshCount > 0 else {
+                timer.invalidate()
+                self.scanRefreshCount = 0
+                return
+            }
+            self.scanRefreshCount -= 1
+            self.refreshStatusText()
+        }
         Timer.scheduledTimer(withTimeInterval: listenerWaitTime, repeats: false) { _ in
             logger.log("End initial wait for whisperers due to timeout")
             self.scanInProgress = false
@@ -498,7 +509,8 @@ final class ListenViewModel: ObservableObject {
         if let whisperer = whisperer {
             statusText = "Listening to \(whisperer.name)"
         } else if scanInProgress {
-            statusText = "Looking for whisperers…"
+            let suffix = scanRefreshCount > 0 ? " \(scanRefreshCount)" : ""
+            statusText = "Looking for whisperers…\(suffix)"
         } else {
             let count = candidates.values.filter({ $0.canBeWhisperer() }).count
             if count > 1 {

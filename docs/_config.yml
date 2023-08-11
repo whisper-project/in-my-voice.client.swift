@@ -11,7 +11,7 @@ mermaid:
   version: 10.3
 
 aux_links:
-  "ClickOneTwo Home": 
+  ClickOneTwo: 
     - "https://clickonetwo.io"
 
 aux_links_new_tab: true
