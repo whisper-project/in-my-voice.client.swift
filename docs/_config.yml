@@ -1,0 +1,11 @@
+title: Whisper Documentation
+description: Docs for the Whisper app from clickonetwo.io
+theme: just-the-docs
+
+url: https://clickonetwo.github.io/whisper
+
+plugins:
+  - jekyll-relative-links
+
+mermaid:
+  version: 10.3
