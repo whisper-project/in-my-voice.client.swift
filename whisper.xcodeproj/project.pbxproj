@@ -29,6 +29,7 @@
 		379570CD29EA314A0033CF14 /* air-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CC29EA313D0033CF14 /* air-horn.caf */; };
 		379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CA29EA313D0033CF14 /* bike-bell.caf */; };
 		379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CB29EA313D0033CF14 /* bike-horn.caf */; };
+		3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */; };
 		37B6236F29EF166800213790 /* ListenersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6236E29EF166800213790 /* ListenersView.swift */; };
 		37B6237629F78AA500213790 /* WhisperersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6237529F78AA500213790 /* WhisperersView.swift */; };
 		37C5142229CA2B35001A121B /* PastTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C5142129CA2B35001A121B /* PastTextView.swift */; };
@@ -86,6 +87,7 @@
 		379570CA29EA313D0033CF14 /* bike-bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-bell.caf"; sourceTree = "<group>"; };
 		379570CB29EA313D0033CF14 /* bike-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-horn.caf"; sourceTree = "<group>"; };
 		379570CC29EA313D0033CF14 /* air-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "air-horn.caf"; sourceTree = "<group>"; };
+		3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoiceView.swift; sourceTree = "<group>"; };
 		37B6236E29EF166800213790 /* ListenersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenersView.swift; sourceTree = "<group>"; };
 		37B6237529F78AA500213790 /* WhisperersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperersView.swift; sourceTree = "<group>"; };
 		37C5142129CA2B35001A121B /* PastTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastTextView.swift; sourceTree = "<group>"; };
@@ -273,6 +275,7 @@
 			children = (
 				377646C729BACB73002C411C /* MainView.swift */,
 				377646C529BACB4B002C411C /* MainViewModel.swift */,
+				3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */,
 			);
 			path = MainView;
 			sourceTree = "<group>";
@@ -427,6 +430,7 @@
 				377646CA29BACC16002C411C /* BluetoothManager.swift in Sources */,
 				37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */,
 				37B6236F29EF166800213790 /* ListenersView.swift in Sources */,
+				3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */,
 				37763D1D29AC33230051CFE5 /* WhisperData.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
