@@ -127,6 +127,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        logger.log("Got connect from \(peripheral)")
         peripheral.discoverServices([WhisperData.whisperServiceUuid])
     }
     
