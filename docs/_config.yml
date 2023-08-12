@@ -1,5 +1,5 @@
-title: Whisper Documentation
-description: Docs for the Whisper app from clickonetwo.io
+title: About Whisper
+description: Information about the Whisper app from clickonetwo.io
 theme: just-the-docs
 
 url: https://clickonetwo.github.io/whisper
@@ -9,3 +9,9 @@ plugins:
 
 mermaid:
   version: 10.3
+
+aux_links:
+  ClickOneTwo: 
+    - "https://clickonetwo.io"
+
+aux_links_new_tab: true
