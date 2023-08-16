@@ -16,10 +16,10 @@ struct MainView: View {
     @State var mode: OperatingMode = WhisperData.initialMode()
             
     var body: some View {
-        if model.state == .unauthorized {
-            Link("Enable Bluetooth to continue...", destination: settingsUrl)
-        } else if model.state != .poweredOn {
-            Text("Waiting for Bluetooth before continuing...")
+        if case TransportStatus.disabled(let message) = model.status {
+            Link(message, destination: settingsUrl)
+        } else if case TransportStatus.off(let message) = model.status {
+            Text(message)
         } else {
             switch mode {
             case .ask:

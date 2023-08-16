@@ -38,11 +38,18 @@ import Foundation
 /// the text is a past- completed line.
 /// - An offset of -3 indicates that the packet contains the currently-being-typed
 /// line and is always the last packet received from a direct read.
-/// - An offset of -4 is an empty chunk that is sent to acknowledge a read request,
-/// and indicates that a full replay to the requesting listener is being sent.
+/// - An offset of -4 is a chunk that is sent to acknowledge a read request,
+/// and indicates that a requested replay to the requesting listener is being sent. The
+/// text portion of the chunk is the hint that was received in the read request.
 ///
 /// Sound packets (sent to all listeners) have an offset of -9, and the text
 /// indicates the command being sent.
+///
+/// Control packets can be sent in either direction:
+/// - Offset -5 requests the whisperer to replay past text.  The text
+/// portion is used by the receiver as a hint of how much past text to send,
+/// and is typically "all" (the default), "lines N" meaning the most recent N lines,
+/// or "since N" meaning lines send within the last N seconds.
 final class TextProtocol {
     struct ProtocolChunk {
         var offset: Int
@@ -82,6 +89,10 @@ final class TextProtocol {
             return offset == -4
         }
         
+        func isReplayRequest() -> Bool {
+            return offset == -5
+        }
+        
         func isSound() -> Bool {
             return offset == -9
         }
@@ -94,8 +105,12 @@ final class TextProtocol {
             return ProtocolChunk(offset: -3, text: text)
         }
         
-        static func acknowledgeRead() -> ProtocolChunk {
-            return ProtocolChunk(offset: -4, text: "")
+        static func acknowledgeRead(hint: String) -> ProtocolChunk {
+            return ProtocolChunk(offset: -4, text: hint)
+        }
+        
+        static func replayRequest(hint: String) -> ProtocolChunk {
+            return ProtocolChunk(offset: -5, text: hint)
         }
         
         static func sound(_ text: String) -> ProtocolChunk {

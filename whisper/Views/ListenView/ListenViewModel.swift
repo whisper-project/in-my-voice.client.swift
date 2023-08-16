@@ -46,7 +46,7 @@ final class ListenViewModel: ObservableObject {
     @Published var whisperer: Whisperer?
     var pastText: PastTextViewModel = .init()
     
-    private var manager = BluetoothManager.shared
+    private var manager = BluetoothLayer.shared
     private var cancellables: Set<AnyCancellable> = []
     private var scanInProgress = false
     private var scanRefreshCount = 0

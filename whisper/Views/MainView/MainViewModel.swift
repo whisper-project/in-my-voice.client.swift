@@ -7,14 +7,19 @@ import Combine
 import CoreBluetooth
 
 final class MainViewModel: ObservableObject {
-    @Published var state: CBManagerState = .unknown
+    @Published var status: TransportStatus = .on
     
-    private var manager = BluetoothManager.shared
+    private var autoTransport: (any TransportLayer)!
     private var cancellables: Set<AnyCancellable> = []
     
     init() {
-        manager.stateSubject
-            .sink(receiveValue: setState)
+        #if targetEnvironment(simulator)
+        self.autoTransport = DribbleLayer.shared
+        #else
+        self.autoTransport = BluetoothLayer.shared
+        #endif
+        self.autoTransport.statusSubject
+            .sink(receiveValue: setStatus)
             .store(in: &cancellables)
     }
     
@@ -22,12 +27,7 @@ final class MainViewModel: ObservableObject {
         cancellables.cancel()
     }
     
-    private func setState(_ new: CBManagerState) {
-        if new != state {
-            logger.log("Bluetooth state changes to \(String(describing: new))")
-            state = new
-        } else {
-            logger.log("Bluetooth state remains \(String(describing: new))")
-        }
+    private func setStatus(_ new: TransportStatus) {
+        status = new
     }
 }

@@ -6,10 +6,14 @@
 import Combine
 import CoreBluetooth
 
-final class BluetoothManager: NSObject {
-    static let shared: BluetoothManager = .init()
+final class BluetoothLayer: NSObject, TransportLayer {
+    static let offStatus: TransportStatus = .off("Waiting for Bluetooth before continuing...")
+    static let shared: BluetoothLayer = .init()
         
-    var stateSubject: CurrentValueSubject<CBManagerState, Never> = .init(.unknown)
+    var discoveryType: TransportDiscovery = .automatic
+    
+    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(offStatus)
+    
     var peripheralSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
     var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
     var characteristicsSubject: PassthroughSubject<(CBPeripheral, CBService), Never> = .init()
@@ -105,21 +109,21 @@ final class BluetoothManager: NSObject {
         return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: [central])
     }
     
-    private func composite_state() -> CBManagerState {
+    private func composite_status() -> TransportStatus {
         if central_state == .poweredOn && peripheral_state == .poweredOn {
-            return .poweredOn
+            return .on
         } else if central_state == .unauthorized || peripheral_state == .unauthorized {
-            return .unauthorized
+            return .disabled("Enable Bluetooth to continue...")
         } else {
-            return .unknown
+            return BluetoothLayer.offStatus
         }
     }
 }
 
-extension BluetoothManager: CBCentralManagerDelegate {
+extension BluetoothLayer: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         central_state = central.state
-        stateSubject.send(composite_state())
+        statusSubject.send(composite_status())
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
@@ -139,10 +143,10 @@ extension BluetoothManager: CBCentralManagerDelegate {
     }
 }
 
-extension BluetoothManager: CBPeripheralManagerDelegate {
+extension BluetoothLayer: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         peripheral_state = peripheral.state
-        stateSubject.send(composite_state())
+        statusSubject.send(composite_status())
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
@@ -173,7 +177,7 @@ extension BluetoothManager: CBPeripheralManagerDelegate {
     }
 }
 
-extension BluetoothManager: CBPeripheralDelegate {
+extension BluetoothLayer: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let err = error {
             logger.error("Error discovering services for \(peripheral): \(err)")
