@@ -9,7 +9,5 @@ import Combine
 final class DribbleLayer: TransportLayer {
     static let shared = DribbleLayer()
     
-    var discoveryType: TransportDiscovery = .automatic
-    
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
 }

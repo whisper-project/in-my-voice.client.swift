@@ -18,8 +18,6 @@ enum TransportDiscovery {
 }
 
 protocol TransportLayer {
-    var discoveryType: TransportDiscovery { get }
-    
     var statusSubject: CurrentValueSubject<TransportStatus, Never> { get }
 }
 
@@ -38,8 +36,11 @@ protocol Transport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> { get }
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> { get }
 
-    func start()
+    func start() -> TransportDiscovery
     func stop()
+    
+    func startDiscovery() -> TransportDiscovery
+    func stopDiscovery()
     
     func goToBackground()
     func goToForeground()

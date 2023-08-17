@@ -10,8 +10,6 @@ final class BluetoothLayer: NSObject, TransportLayer {
     static let offStatus: TransportStatus = .off("Waiting for Bluetooth before continuing...")
     static let shared: BluetoothLayer = .init()
         
-    var discoveryType: TransportDiscovery = .automatic
-    
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(offStatus)
     
     var peripheralSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()

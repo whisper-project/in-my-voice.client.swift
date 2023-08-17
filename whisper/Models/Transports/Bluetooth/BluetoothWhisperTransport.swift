@@ -7,65 +7,10 @@ import Combine
 import CoreBluetooth
 
 final class BluetoothWhisperTransport: Transport {
+    // MARK: Protocol properties and methods
+    
     typealias Remote = BluetoothListener
     typealias Layer = BluetoothLayer
-    
-    final class BluetoothListener: TransportRemote {
-        var id: String
-        var name: String
-        
-        fileprivate var central: CBCentral
-        
-        init(central: CBCentral, id: String, name: String = "") {
-            self.central = central
-            self.id = id
-            self.name = name
-        }
-    }
-    
-    private var state: CBManagerState = .unknown
-    private var listeners: [CBCentral: Remote] = [:]
-    private var liveText: String = ""
-    private var pendingChunks: [TextProtocol.ProtocolChunk] = []
-    private var directedChunks: [CBCentral: [TextProtocol.ProtocolChunk]] = [:]
-    private var advertisingInProgress = false
-    private weak var adTimer: Timer?
-    private var cancellables: Set<AnyCancellable> = []
-    private var candidates: [CBCentral: Remote] = [:]
-    private var listenAdvertisers: [CBPeripheral: String] = [:]
-    private var droppedListeners: [String] = []
-    private var whisperService: CBMutableService?
-    private var isInBackground = false
-    private var adRepeatCount = 0
-
-    init() {
-        logger.log("Initializing bluetooth whisper transport")
-        layer.peripheralSubject
-            .sink { [weak self] in self?.noticeAd($0) }
-            .store(in: &cancellables)
-        layer.centralSubscribedSubject
-            .sink { [weak self] in self?.noticeSubscription($0) }
-            .store(in: &cancellables)
-        layer.centralUnsubscribedSubject
-            .sink { [weak self] in self?.noticeUnsubscription($0) }
-            .store(in: &cancellables)
-        layer.readRequestSubject
-            .sink { [weak self] in self?.processReadRequest($0) }
-            .store(in: &cancellables)
-        layer.writeRequestSubject
-            .sink { [weak self] in self?.processWriteRequests($0) }
-            .store(in: &cancellables)
-        layer.readyToUpdateSubject
-            .sink { [weak self] in self?.processReadyToUpdate($0) }
-            .store(in: &cancellables)
-    }
-    
-    deinit {
-        logger.log("Destroying WhisperView model")
-        cancellables.cancel()
-    }
-    
-    // MARK: Protocol properties and methods
     
     var layer = BluetoothLayer.shared
     
@@ -73,17 +18,16 @@ final class BluetoothWhisperTransport: Transport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() {
+    func start() -> TransportDiscovery {
+        logger.log("Starting Bluetooth whisper transport...")
         whisperService = WhisperData.whisperService()
         layer.publish(service: whisperService!)
-        // look for listeners who are looking for us
-        layer.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
-        startAdvertising()
+        return startDiscovery()
     }
     
     func stop() {
-        stopAdvertising()
-        layer.stopScan()
+        logger.log("Stopping Bluetooth whisper transport...")
+        stopDiscovery()
         removeAllListeners()
         if let service = whisperService {
             layer.unpublish(service: service)
@@ -104,6 +48,17 @@ final class BluetoothWhisperTransport: Transport {
             return
         }
         isInBackground = false
+    }
+    
+    func startDiscovery() -> TransportDiscovery {
+        layer.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
+        startAdvertising()
+        return .automatic
+    }
+    
+    func stopDiscovery() {
+        stopAdvertising()
+        layer.stopScan()
     }
     
     func sendChunks(chunks: [TextProtocol.ProtocolChunk]) {
@@ -278,8 +233,63 @@ final class BluetoothWhisperTransport: Transport {
         updateListeners()
     }
     
-    // MARK: Internal helpers
+    // MARK: Internal types, properties, and methods
         
+    final class BluetoothListener: TransportRemote {
+        var id: String
+        var name: String
+        
+        fileprivate var central: CBCentral
+        
+        init(central: CBCentral, id: String, name: String = "") {
+            self.central = central
+            self.id = id
+            self.name = name
+        }
+    }
+    
+    private var state: CBManagerState = .unknown
+    private var listeners: [CBCentral: Remote] = [:]
+    private var liveText: String = ""
+    private var pendingChunks: [TextProtocol.ProtocolChunk] = []
+    private var directedChunks: [CBCentral: [TextProtocol.ProtocolChunk]] = [:]
+    private var advertisingInProgress = false
+    private weak var adTimer: Timer?
+    private var cancellables: Set<AnyCancellable> = []
+    private var candidates: [CBCentral: Remote] = [:]
+    private var listenAdvertisers: [CBPeripheral: String] = [:]
+    private var droppedListeners: [String] = []
+    private var whisperService: CBMutableService?
+    private var isInBackground = false
+    private var adRepeatCount = 0
+    
+    init() {
+        logger.log("Initializing bluetooth whisper transport")
+        layer.peripheralSubject
+            .sink { [weak self] in self?.noticeAd($0) }
+            .store(in: &cancellables)
+        layer.centralSubscribedSubject
+            .sink { [weak self] in self?.noticeSubscription($0) }
+            .store(in: &cancellables)
+        layer.centralUnsubscribedSubject
+            .sink { [weak self] in self?.noticeUnsubscription($0) }
+            .store(in: &cancellables)
+        layer.readRequestSubject
+            .sink { [weak self] in self?.processReadRequest($0) }
+            .store(in: &cancellables)
+        layer.writeRequestSubject
+            .sink { [weak self] in self?.processWriteRequests($0) }
+            .store(in: &cancellables)
+        layer.readyToUpdateSubject
+            .sink { [weak self] in self?.processReadyToUpdate($0) }
+            .store(in: &cancellables)
+    }
+    
+    deinit {
+        logger.log("Destroying WhisperView model")
+        cancellables.cancel()
+    }
+
     /// Send pending chunks to listeners
     private func updateListeners() {
         guard !listeners.isEmpty else {

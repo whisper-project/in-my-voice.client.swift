@@ -49,7 +49,9 @@ final class WhisperViewModel: ObservableObject {
     // MARK: View entry points
     
     func start() {
-        autoTransport.start()
+        guard case .automatic = autoTransport.start() else {
+            fatalError("Expected listener discovery to be automatic!")
+        }
         refreshStatusText()
     }
     
