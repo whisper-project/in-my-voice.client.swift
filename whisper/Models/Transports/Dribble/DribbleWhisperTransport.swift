@@ -79,11 +79,11 @@ final class DribbleWhisperTransport: Transport {
     }
     
     func sendChunks(chunks: [TextProtocol.ProtocolChunk]) {
-        // save the chunk regardless of whether there's a current listener
+        let elapsedTime = lastSendTime == nil ? 0 : Date.now.timeIntervalSince(lastSendTime!)
+        lastSendTime = Date.now
         for chunk in chunks {
-            let elapsedTime = Date.now.timeIntervalSince(self.startTime)
             let chunkString = String(decoding: chunk.toData(), as: UTF8.self)
-            self.chunks.append(TimedChunk(elapsed: elapsedTime, chunk: chunkString))
+            self.chunks.append(TimedChunk(elapsed: Int(elapsedTime * 1000), chunk: chunkString))
         }
     }
     
@@ -114,9 +114,9 @@ final class DribbleWhisperTransport: Transport {
         }
     }
     
-    private var startTime: Date!
+    private var lastSendTime: Date?
     private struct TimedChunk: Encodable {
-        var elapsed: TimeInterval
+        var elapsed: Int    // elapsed time since last packet in milliseconds
         var chunk: String
     }
     private var chunks: [TimedChunk] = []
@@ -141,6 +141,5 @@ final class DribbleWhisperTransport: Transport {
     }
     
     init() {
-        self.startTime = Date()
     }
 }
