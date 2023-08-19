@@ -23,17 +23,17 @@ struct WhisperView: View {
         GeometryReader { proxy in
             VStack(spacing: 10) {
                 ControlView(size: $size, magnify: $magnify, mode: $mode, speaking: $model.speaking, playSound: model.playSound)
-                    .padding(EdgeInsets(top: whisperViewTopPad, leading: 20, bottom: 0, trailing: 20))
+                    .padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
                 PastTextView(mode: mode, model: model.pastText)
                     .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                    .padding()
+                    .padding(innerPad)
                     .frame(maxWidth: proxy.size.width,
                            maxHeight: proxy.size.height * pastTextProportion,
                            alignment: .bottomLeading)
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 StatusTextView(text: $model.statusText)
                     .onTapGesture {
@@ -57,12 +57,12 @@ struct WhisperView: View {
                     }
                     .focused($focusField, equals: "liveText")
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
-                    .padding()
+                    .padding(innerPad)
                     .frame(maxWidth: proxy.size.width,
                            maxHeight: proxy.size.height * liveTextProportion,
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: whisperViewBottomPad, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: sidePad, bottom: whisperViewBottomPad, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
             }
             .multilineTextAlignment(.leading)

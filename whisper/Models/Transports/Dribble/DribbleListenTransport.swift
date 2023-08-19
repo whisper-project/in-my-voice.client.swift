@@ -128,13 +128,20 @@ final class DribbleListenTransport: SubscribeTransport {
                 appropriateFor: nil,
                 create: false
             )
-            let fileURL = folderURL.appendingPathComponent("DribbleTimedChunks.json")
-            let data = try Data(contentsOf: fileURL)
-            let chunks = try JSONDecoder().decode([TimedChunk].self, from: data)
-            return chunks
+            let url = folderURL.appendingPathComponent("DribbleTimedChunks.json")
+            if let data = try? Data(contentsOf: url) {
+                return try JSONDecoder().decode([TimedChunk].self, from: data)
+            }
+            guard let url = Bundle.main.url(forResource: "DribbleTimedChunks", withExtension: "json") else {
+                logger.error("Missing DribbleTimedChunks.json from bundle")
+                return []
+            }
+            let data = try Data(contentsOf: url)
+            return try JSONDecoder().decode([TimedChunk].self, from: data)
         }
         catch(let err) {
-            fatalError("Failed to read DribbleTimedChunks: \(err)")
+            logger.error("Failed to read DribbleTimedChunks: \(err)")
+            return []
         }
     }
     
@@ -142,6 +149,7 @@ final class DribbleListenTransport: SubscribeTransport {
         guard sendTask == nil else {
             fatalError("Received request to send chunks while they are already being sent")
         }
+        logger.log("Starting dribbling...")
         sendTask = Task {
             for chunk in self.chunks {
                 if (Task.isCancelled) {
@@ -170,6 +178,7 @@ final class DribbleListenTransport: SubscribeTransport {
     
     private func stopChunks() {
         if let task = sendTask {
+            logger.log("Stopping dribbling...")
             sendTask = nil
             task.cancel()
         }

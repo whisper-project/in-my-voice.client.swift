@@ -189,10 +189,10 @@ final class ListenViewModel: ObservableObject {
             if !chunk.isDiff() {
                 logger.log("Ignoring non-diff chunk because no read in progress")
             } else if chunk.offset == 0 {
-                logger.debug("Got diff: live text is '\(chunk.text)'")
+//                logger.debug("Got diff: live text is '\(chunk.text)'")
                 liveText = chunk.text
             } else if chunk.isCompleteLine() {
-                logger.log("Got diff: move live text to past text")
+//                logger.log("Got diff: move live text to past text")
                 if !isInBackground && speaking {
                     speak(liveText)
                 }
@@ -203,7 +203,7 @@ final class ListenViewModel: ObservableObject {
                 logger.log("Resetting after missed packet...")
                 connectionError = true
             } else {
-                logger.debug("Got diff: live text[\(chunk.offset)...] updated to '\(chunk.text)'")
+//                logger.debug("Got diff: live text[\(chunk.offset)...] updated to '\(chunk.text)'")
                 liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
             }
         }

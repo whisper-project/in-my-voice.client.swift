@@ -31,6 +31,7 @@
 		377D71062A8C5E17009B416F /* DribbleFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71052A8C5E17009B416F /* DribbleFactory.swift */; };
 		377D71092A8EA8E4009B416F /* DribbleListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71072A8EA451009B416F /* DribbleListenTransport.swift */; };
 		377D710B2A8EBE16009B416F /* BluetoothListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */; };
+		377D710D2A913348009B416F /* DribbleTimedChunks.json in Resources */ = {isa = PBXBuildFile; fileRef = 377D710C2A913303009B416F /* DribbleTimedChunks.json */; };
 		378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378A8E1629C554F20097F15A /* TextProtocol.swift */; };
 		379570CD29EA314A0033CF14 /* air-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CC29EA313D0033CF14 /* air-horn.caf */; };
 		379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CA29EA313D0033CF14 /* bike-bell.caf */; };
@@ -96,6 +97,7 @@
 		377D71052A8C5E17009B416F /* DribbleFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DribbleFactory.swift; sourceTree = "<group>"; };
 		377D71072A8EA451009B416F /* DribbleListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DribbleListenTransport.swift; sourceTree = "<group>"; };
 		377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothListenTransport.swift; sourceTree = "<group>"; };
+		377D710C2A913303009B416F /* DribbleTimedChunks.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DribbleTimedChunks.json; sourceTree = "<group>"; };
 		378A8E1629C554F20097F15A /* TextProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextProtocol.swift; sourceTree = "<group>"; };
 		379570CA29EA313D0033CF14 /* bike-bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-bell.caf"; sourceTree = "<group>"; };
 		379570CB29EA313D0033CF14 /* bike-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-horn.caf"; sourceTree = "<group>"; };
@@ -316,6 +318,7 @@
 		377D71022A8B0343009B416F /* Dribble */ = {
 			isa = PBXGroup;
 			children = (
+				377D710C2A913303009B416F /* DribbleTimedChunks.json */,
 				377D71052A8C5E17009B416F /* DribbleFactory.swift */,
 				377D71032A8B0367009B416F /* DribbleWhisperTransport.swift */,
 				377D71072A8EA451009B416F /* DribbleListenTransport.swift */,
@@ -453,6 +456,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				377D710D2A913348009B416F /* DribbleTimedChunks.json in Resources */,
 				379570CD29EA314A0033CF14 /* air-horn.caf in Resources */,
 				379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */,
 				379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */,

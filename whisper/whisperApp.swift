@@ -29,11 +29,15 @@ let liveTextProportion = 1.0/5.0
 
 /// global constants for platform differentiation
 #if targetEnvironment(macCatalyst)
+    let sidePad = CGFloat(5)
+    let innerPad = CGFloat(5)
     let listenViewTopPad = CGFloat(15)
     let whisperViewTopPad = CGFloat(15)
     let listenViewBottomPad = CGFloat(5)
     let whisperViewBottomPad = CGFloat(15)
 #else   // iOS
+    let sidePad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(5) : CGFloat(10)
+    let innerPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(5) : CGFloat(10)
     let listenViewTopPad = CGFloat(0)
     let whisperViewTopPad = CGFloat(0)
     let listenViewBottomPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(5) : CGFloat(5)
