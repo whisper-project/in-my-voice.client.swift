@@ -33,7 +33,7 @@ final class BluetoothListenTransport: SubscribeTransport {
     
     func startDiscovery() -> TransportDiscovery {
         logger.log("Start scanning for whisperers")
-        factory.scan(forServices: [WhisperData.whisperServiceUuid], allow_repeats: true)
+        factory.scan(forServices: [BluetoothData.whisperServiceUuid], allow_repeats: true)
         startAdvertising()
         return .automatic
     }
@@ -122,7 +122,7 @@ final class BluetoothListenTransport: SubscribeTransport {
             return
         }
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? Array<CBUUID> {
-            if uuids.contains(WhisperData.whisperServiceUuid) {
+            if uuids.contains(BluetoothData.whisperServiceUuid) {
                 guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
                       let id = adName as? String else {
                     logger.error("Ignoring advertisement with no device id")
@@ -145,14 +145,14 @@ final class BluetoothListenTransport: SubscribeTransport {
         guard let remote = remotes[pair.0] else {
             fatalError("Connected to remote \(pair.0) but didn't request a connection")
         }
-        if let whisperSvc = pair.1.first(where: {svc in svc.uuid == WhisperData.whisperServiceUuid}) {
+        if let whisperSvc = pair.1.first(where: {svc in svc.uuid == BluetoothData.whisperServiceUuid}) {
             logger.log("Connected to remote \(remote.id), readying...")
             remote.peripheral.discoverCharacteristics(
                 [
-                    WhisperData.listenNameUuid,
-                    WhisperData.whisperNameUuid,
-                    WhisperData.textUuid,
-                    WhisperData.disconnectUuid,
+                    BluetoothData.listenNameUuid,
+                    BluetoothData.whisperNameUuid,
+                    BluetoothData.textUuid,
+                    BluetoothData.disconnectUuid,
                 ],
                 for: whisperSvc
             )
@@ -187,27 +187,27 @@ final class BluetoothListenTransport: SubscribeTransport {
         }
         logger.log("Trying to pair with connected whisper service on: \(remote.id)...")
         let allCs = service.characteristics!
-        if let listenNameC = allCs.first(where: { $0.uuid == WhisperData.listenNameUuid }) {
+        if let listenNameC = allCs.first(where: { $0.uuid == BluetoothData.listenNameUuid }) {
             remote.listenNameCharacteristic = listenNameC
         } else {
             fatalError("Whisper service has no listener name characteristic")
         }
-        if let whisperNameC = allCs.first(where: { $0.uuid == WhisperData.whisperNameUuid }) {
+        if let whisperNameC = allCs.first(where: { $0.uuid == BluetoothData.whisperNameUuid }) {
             remote.whisperNameCharacteristic = whisperNameC
         } else {
             fatalError("Whisper service has no publisher name characteristic")
         }
-        if let liveTextC = allCs.first(where: { $0.uuid == WhisperData.textUuid }) {
+        if let liveTextC = allCs.first(where: { $0.uuid == BluetoothData.textUuid }) {
             remote.textCharacteristic = liveTextC
         } else {
             fatalError("Whisper service has no text protocol characteristic")
         }
-        if let disconnectC = allCs.first(where: { $0.uuid == WhisperData.disconnectUuid }) {
+        if let disconnectC = allCs.first(where: { $0.uuid == BluetoothData.disconnectUuid }) {
             remote.rejectCharacteristic = disconnectC
         } else {
             fatalError("Whisper service has no disconnect characteristic")
         }
-        let idAndName = "\(WhisperData.deviceId)|\(WhisperData.userName())"
+        let idAndName = "\(BluetoothData.deviceId)|\(PreferenceData.userName())"
         peripheral.writeValue(Data(idAndName.utf8), for: remote.listenNameCharacteristic!, type: .withResponse)
         peripheral.readValue(for: remote.whisperNameCharacteristic!)
     }
@@ -217,7 +217,7 @@ final class BluetoothListenTransport: SubscribeTransport {
         guard let remote = remotes[triple.0] else {
             fatalError("Received write result for a non-remote: \(triple.0)")
         }
-        guard triple.1.uuid == WhisperData.listenNameUuid else {
+        guard triple.1.uuid == BluetoothData.listenNameUuid else {
             fatalError("Received write result for unexpected characteristic: \(triple.1)")
         }
         if triple.2 != nil {
@@ -236,7 +236,7 @@ final class BluetoothListenTransport: SubscribeTransport {
             logger.error("Ignoring subscription result for non-publisher: \(triple.0)")
             return
         }
-        guard triple.1.uuid == WhisperData.textUuid || triple.1.uuid == WhisperData.disconnectUuid else {
+        guard triple.1.uuid == BluetoothData.textUuid || triple.1.uuid == BluetoothData.disconnectUuid else {
             logger.error("Ignoring subscription result for unexpected characteristic: \(triple.1)")
             return
         }
@@ -379,7 +379,7 @@ final class BluetoothListenTransport: SubscribeTransport {
         Timer.scheduledTimer(withTimeInterval: listenerAdTime, repeats: false) { _ in
             self.stopAdvertising()
         }
-        factory.advertise(services: [WhisperData.listenServiceUuid])
+        factory.advertise(services: [BluetoothData.listenServiceUuid])
     }
     
     private func stopAdvertising() {

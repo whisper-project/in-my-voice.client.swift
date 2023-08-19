@@ -18,7 +18,7 @@ final class WhisperViewModel: ObservableObject {
     
     @Published var statusText: String = ""
     @Published var remotes: [String:Remote] = [:]
-    @Published var speaking: Bool = WhisperData.startSpeaking()
+    @Published var speaking: Bool = PreferenceData.startSpeaking()
     var pastText: PastTextViewModel = .init()
 
     private var autoTransport = Transport()
@@ -89,7 +89,7 @@ final class WhisperViewModel: ObservableObject {
     
     /// Play the alert sound to all the listeners
     func playSound() {
-        let soundName = WhisperData.alertSound()
+        let soundName = PreferenceData.alertSound()
         if speaking {
             playSoundLocally(soundName)
         }
@@ -103,7 +103,7 @@ final class WhisperViewModel: ObservableObject {
             logger.log("Ignoring alert request for non-remote: \(remote.id)")
             return
         }
-        let soundName = WhisperData.alertSound()
+        let soundName = PreferenceData.alertSound()
         let chunk = TextProtocol.ProtocolChunk.sound(soundName)
         autoTransport.send(remote: remote, chunks: [chunk])
     }
@@ -170,7 +170,7 @@ final class WhisperViewModel: ObservableObject {
         var path = Bundle.main.path(forResource: name, ofType: "caf")
         if path == nil {
             // try again with default sound
-            name = WhisperData.alertSound()
+            name = PreferenceData.alertSound()
             path = Bundle.main.path(forResource: name, ofType: "caf")
         }
         guard path != nil else {

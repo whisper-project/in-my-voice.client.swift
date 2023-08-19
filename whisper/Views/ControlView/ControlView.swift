@@ -59,7 +59,7 @@ struct ControlView: View {
             Button {
                 playSound?()
             } label: {
-                fontButtonImage(WhisperData.alertSound() + "-icon", pad: 5)
+                fontButtonImage(PreferenceData.alertSound() + "-icon", pad: 5)
             }
             Spacer()
         }

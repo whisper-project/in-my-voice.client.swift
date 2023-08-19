@@ -17,7 +17,7 @@ final class ListenViewModel: ObservableObject {
     typealias Transport = BluetoothFactory.Subscriber
 #endif
 
-    @Published var speaking: Bool = WhisperData.startSpeaking()
+    @Published var speaking: Bool = PreferenceData.startSpeaking()
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var wasDropped: Bool = false
@@ -214,7 +214,7 @@ final class ListenViewModel: ObservableObject {
         var path = Bundle.main.path(forResource: name, ofType: "caf")
         if path == nil {
             // try again with default sound
-            name = WhisperData.alertSound()
+            name = PreferenceData.alertSound()
             path = Bundle.main.path(forResource: name, ofType: "caf")
         }
         guard path != nil else {

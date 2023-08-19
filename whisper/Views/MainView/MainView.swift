@@ -13,7 +13,7 @@ let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
 struct MainView: View {    
     @StateObject private var model: MainViewModel = .init()
-    @State var mode: OperatingMode = WhisperData.initialMode()
+    @State var mode: OperatingMode = PreferenceData.initialMode()
             
     var body: some View {
         if case TransportStatus.disabled(let message) = model.status {

@@ -79,7 +79,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
         peripheralManager.removeAllServices()
     }
     
-    func advertise(services: [CBUUID], localName: String = WhisperData.deviceId) {
+    func advertise(services: [CBUUID], localName: String = BluetoothData.deviceId) {
         guard !services.isEmpty else {
             fatalError("Can't advertise no services")
         }
@@ -141,7 +141,7 @@ extension BluetoothFactory: CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         logger.log("Got connect from \(peripheral)")
-        peripheral.discoverServices([WhisperData.whisperServiceUuid])
+        peripheral.discoverServices([BluetoothData.whisperServiceUuid])
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
@@ -214,7 +214,7 @@ extension BluetoothFactory: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
         logger.log("Lost services \(invalidatedServices) from \(peripheral)")
-        if invalidatedServices.first(where: { $0.uuid == WhisperData.whisperServiceUuid }) != nil {
+        if invalidatedServices.first(where: { $0.uuid == BluetoothData.whisperServiceUuid }) != nil {
             disconnectedSubject.send(peripheral)
         }
     }

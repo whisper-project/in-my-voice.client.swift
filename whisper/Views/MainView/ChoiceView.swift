@@ -21,7 +21,7 @@ struct ChoiceView: View {
                 Section(content: {
                     TextField("Your Name", text: $newUserName, prompt: Text("Dan"))
                         .onChange(of: newUserName) {
-                            WhisperData.updateUserName($0)
+                            PreferenceData.updateUserName($0)
                             self.currentUserName = $0
                         }
                         .textInputAutocapitalization(.words)
@@ -98,7 +98,7 @@ struct ChoiceView: View {
     }
     
     func updateUserName() {
-        currentUserName = WhisperData.userName()
+        currentUserName = PreferenceData.userName()
         newUserName = currentUserName
     }
 }

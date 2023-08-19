@@ -17,7 +17,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     
     func start() -> TransportDiscovery {
         logger.log("Starting Bluetooth whisper transport...")
-        whisperService = WhisperData.whisperService()
+        whisperService = BluetoothData.whisperService()
         factory.publish(service: whisperService!)
         return startDiscovery()
     }
@@ -48,7 +48,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
     
     func startDiscovery() -> TransportDiscovery {
-        factory.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
+        factory.scan(forServices: [BluetoothData.listenServiceUuid], allow_repeats: true)
         startAdvertising()
         return .automatic
     }
@@ -76,7 +76,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         // remember not to re-add this remote
         droppedRemotes.append(removed.id)
         // tell this remote we've dropped it
-        if !factory.updateValue(value: Data(), characteristic: WhisperData.whisperDisconnectCharacteristic, central: removed.central) {
+        if !factory.updateValue(value: Data(), characteristic: BluetoothData.whisperDisconnectCharacteristic, central: removed.central) {
             logger.error("Drop message for remote \(removed.id) failed to central: \(removed.central)")
         }
         dropRemoteSubject.send(removed)
@@ -93,7 +93,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     
     private func noticeAd(_ pair: (CBPeripheral, [String: Any])) {
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
-            if uuids.contains(WhisperData.listenServiceUuid) {
+            if uuids.contains(BluetoothData.listenServiceUuid) {
                 if let _ = advertisers[pair.0] {
 //                    logger.debug("Ignored multiple repeat ads from already-pending listener \(_)")
                 } else {
@@ -116,7 +116,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
     
     private func noticeSubscription(_ pair: (CBCentral, CBCharacteristic)) {
-        guard pair.1.uuid == WhisperData.textUuid || pair.1.uuid == WhisperData.disconnectUuid else {
+        guard pair.1.uuid == BluetoothData.textUuid || pair.1.uuid == BluetoothData.disconnectUuid else {
             logger.error("Ignoring subscribe for unexpected characteristic: \(pair.1)")
             return
         }
@@ -128,7 +128,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
     
     private func noticeUnsubscription(_ pair: (CBCentral, CBCharacteristic)) {
-        guard pair.1.uuid == WhisperData.textUuid || pair.1.uuid == WhisperData.disconnectUuid else {
+        guard pair.1.uuid == BluetoothData.textUuid || pair.1.uuid == BluetoothData.disconnectUuid else {
             logger.error("Ignoring unsubscribe for unexpected characteristic: \(pair.1)")
             return
         }
@@ -150,11 +150,11 @@ final class BluetoothWhisperTransport: PublishTransport {
             return
         }
         let characteristic = request.characteristic
-        if characteristic.uuid == WhisperData.whisperNameUuid {
+        if characteristic.uuid == BluetoothData.whisperNameUuid {
             logger.log("Request is for name")
-            request.value = Data(WhisperData.userName().utf8)
+            request.value = Data(PreferenceData.userName().utf8)
             factory.respondToReadRequest(request: request, withCode: .success)
-        } else if characteristic.uuid == WhisperData.textUuid {
+        } else if characteristic.uuid == BluetoothData.textUuid {
             logger.log("Request is for complete text")
             guard let listener = addListener(request.central) else {
                 logger.error("Refusing read text request from non-listener/non-candidate \(request.central)")
@@ -166,7 +166,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             request.value = TextProtocol.ProtocolChunk.acknowledgeRead(hint: "all").toData()
             factory.respondToReadRequest(request: request, withCode: .success)
             receivedChunkSubject.send((remote: listener, chunk: chunk))
-        } else if request.characteristic.uuid == WhisperData.disconnectUuid {
+        } else if request.characteristic.uuid == BluetoothData.disconnectUuid {
             if let candidate = candidates.removeValue(forKey: request.central) {
                 logger.log("Request is to drop candidate \(candidate.id): \(request.central)")
             } else if let listener = remotes.removeValue(forKey: request.central) {
@@ -193,7 +193,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             factory.respondToWriteRequest(request: request, withCode: .requestNotSupported)
             return
         }
-        guard request.characteristic.uuid == WhisperData.listenNameUuid else {
+        guard request.characteristic.uuid == BluetoothData.listenNameUuid else {
             logger.error("Got a write request for an unexpected characteristic: \(request)")
             factory.respondToWriteRequest(request: request, withCode: .unlikelyError)
             return
@@ -298,7 +298,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             while let (listener, chunks) = directedChunks.first {
                 while let chunk = chunks.first {
                     let sendOk = factory.updateValue(value: chunk.toData(),
-                                                     characteristic: WhisperData.whisperTextCharacteristic,
+                                                     characteristic: BluetoothData.whisperTextCharacteristic,
                                                      central: listener)
                     if sendOk {
                         if chunks.count == 1 {
@@ -315,7 +315,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             logger.debug("Updating subscribed listeners (\(self.pendingChunks.count) chunks)...")
             while let chunk = pendingChunks.first {
                 let sendOk = factory.updateValue(value: chunk.toData(),
-                                               characteristic: WhisperData.whisperTextCharacteristic)
+                                               characteristic: BluetoothData.whisperTextCharacteristic)
                 if sendOk {
                     pendingChunks.removeFirst()
                 } else {
@@ -335,7 +335,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         } else {
             logger.log("Advertising whisperer...")
         }
-        factory.advertise(services: [WhisperData.whisperServiceUuid])
+        factory.advertise(services: [BluetoothData.whisperServiceUuid])
         advertisingInProgress = true
         let interval = max(listenerAdTime, whispererAdTime)
         adTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
