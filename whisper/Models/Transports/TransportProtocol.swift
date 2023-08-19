@@ -17,8 +17,16 @@ enum TransportDiscovery {
     case manual(String)
 }
 
-protocol TransportLayer {
+protocol TransportFactory {
+    associatedtype Publisher: PublishTransport
+    associatedtype Subscriber: SubscribeTransport
+    
+    static var shared: Self { get }
+    
     var statusSubject: CurrentValueSubject<TransportStatus, Never> { get }
+    
+    func publisher() -> Publisher
+    func subscriber() -> Subscriber
 }
 
 protocol TransportRemote: Identifiable {
@@ -28,9 +36,6 @@ protocol TransportRemote: Identifiable {
 
 protocol Transport {
     associatedtype Remote: TransportRemote
-    associatedtype Layer: TransportLayer
-    
-    var layer: Layer { get }
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> { get }
     var dropRemoteSubject: PassthroughSubject<Remote, Never> { get }
@@ -45,8 +50,15 @@ protocol Transport {
     func goToBackground()
     func goToForeground()
     
-    func sendChunks(chunks: [TextProtocol.ProtocolChunk])
-    func sendChunks(remote: Remote, chunks: [TextProtocol.ProtocolChunk])
+    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk])
 
     func drop(remote: Remote)
+}
+
+protocol PublishTransport: Transport {
+    func publish(chunks: [TextProtocol.ProtocolChunk])
+}
+
+protocol SubscribeTransport: Transport {
+    func subscribe(remote: Remote)
 }

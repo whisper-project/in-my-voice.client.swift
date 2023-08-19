@@ -6,13 +6,24 @@
 import Combine
 import CoreBluetooth
 
-final class BluetoothLayer: NSObject, TransportLayer {
-    static let offStatus: TransportStatus = .off("Waiting for Bluetooth before continuing...")
-    static let shared: BluetoothLayer = .init()
+final class BluetoothFactory: NSObject, TransportFactory {
+    typealias Publisher = BluetoothWhisperTransport
+    typealias Subscriber = BluetoothListenTransport
+    
+    static let shared: BluetoothFactory = .init()
         
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(offStatus)
     
-    var peripheralSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
+    func publisher() -> Publisher {
+        return BluetoothWhisperTransport()
+    }
+    
+    func subscriber() -> Subscriber {
+        return BluetoothListenTransport()
+    }
+    
+    static let offStatus: TransportStatus = .off("Waiting for Bluetooth before continuing...")
+    var advertisementSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
     var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
     var characteristicsSubject: PassthroughSubject<(CBPeripheral, CBService), Never> = .init()
     var centralSubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
@@ -113,19 +124,19 @@ final class BluetoothLayer: NSObject, TransportLayer {
         } else if central_state == .unauthorized || peripheral_state == .unauthorized {
             return .disabled("Enable Bluetooth to continue...")
         } else {
-            return BluetoothLayer.offStatus
+            return BluetoothFactory.offStatus
         }
     }
 }
 
-extension BluetoothLayer: CBCentralManagerDelegate {
+extension BluetoothFactory: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         central_state = central.state
         statusSubject.send(composite_status())
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        peripheralSubject.send((peripheral, advertisementData))
+        advertisementSubject.send((peripheral, advertisementData))
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -134,14 +145,11 @@ extension BluetoothLayer: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        if let err = error {
-            logger.error("Failed to disconnect peripheral \(peripheral): \(err)")
-            return
-        }
+        disconnectedSubject.send(peripheral)
     }
 }
 
-extension BluetoothLayer: CBPeripheralManagerDelegate {
+extension BluetoothFactory: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         peripheral_state = peripheral.state
         statusSubject.send(composite_status())
@@ -175,7 +183,7 @@ extension BluetoothLayer: CBPeripheralManagerDelegate {
     }
 }
 
-extension BluetoothLayer: CBPeripheralDelegate {
+extension BluetoothFactory: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let err = error {
             logger.error("Error discovering services for \(peripheral): \(err)")

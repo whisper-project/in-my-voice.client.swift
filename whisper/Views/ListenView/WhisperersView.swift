@@ -12,7 +12,7 @@ struct WhisperersView: View {
     @ObservedObject var model: ListenViewModel
     
     var body: some View {
-        if model.whisperer == nil && candidates().isEmpty {
+        if model.whisperer == nil && model.candidates.isEmpty {
             Text("No Whisperers")
                 .padding()
         } else {
@@ -23,7 +23,7 @@ struct WhisperersView: View {
                         .font(FontSizes.fontFor(FontSizes.minTextSize + 2))
                         .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                         .onTapGesture {
-                            model.setWhisperer(to: row.peripheral)
+                            model.setWhisperer(row.remote)
                             model.showStatusDetail = false
                         }
                 }
@@ -32,30 +32,30 @@ struct WhisperersView: View {
         }
     }
     
-    private struct Row: Identifiable, Comparable {
+    private struct Row: Identifiable, Comparable, Equatable {
         var id: String
-        var peripheral: CBPeripheral
+        var remote: ListenViewModel.Remote
         var isWhisperer: Bool
         
         static func < (lhs: Self, rhs: Self) -> Bool {
             lhs.id < rhs.id
         }
+        
+        static func == (lhs: WhisperersView.Row, rhs: WhisperersView.Row) -> Bool {
+            lhs.remote.id == rhs.remote.id
+        }
     }
     
     private func makeRows() -> [Row] {
         if let whisperer = model.whisperer {
-            return [Row(id: whisperer.name, peripheral: whisperer.peripheral, isWhisperer: true)]
+            return [Row(id: whisperer.name, remote: whisperer, isWhisperer: true)]
         } else {
-            var rows = candidates().map { candidate in
-                Row(id: candidate.name, peripheral: candidate.peripheral, isWhisperer: false)
+            var rows = model.candidates.map { candidate in
+                Row(id: candidate.name, remote: candidate, isWhisperer: false)
             }
             rows.sort()
             return rows
         }
-    }
-    
-    private func candidates() -> [ListenViewModel.Whisperer] {
-        return model.candidates.values.filter { $0.canBeWhisperer() }
     }
 }
 

@@ -6,6 +6,13 @@
 import AVFAudio
 import SwiftUI
 
+/// global strings
+let connectingLiveText = "This is where the line being typed by the whisperer will appear in real time... "
+let connectingPastText = """
+    This is where lines will move after the whisperer hits return.
+    The most recent line will be on the bottom.
+    """
+
 /// global constants for light/dark mode
 let lightLiveTextColor = Color(.black)
 let darkLiveTextColor = Color(.white)
@@ -29,7 +36,7 @@ let liveTextProportion = 1.0/5.0
 #else   // iOS
     let listenViewTopPad = CGFloat(0)
     let whisperViewTopPad = CGFloat(0)
-    let listenViewBottomPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(0) : CGFloat(5)
+    let listenViewBottomPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(5) : CGFloat(5)
     let whisperViewBottomPad = UIDevice.current.userInterfaceIdiom == .phone ? CGFloat(5) : CGFloat(15)
 #endif
 

@@ -9,11 +9,11 @@ import CoreBluetooth
 
 final class WhisperViewModel: ObservableObject {
 #if targetEnvironment(simulator)
-    typealias Remote = DribbleWhisperTransport.Remote
-    typealias Transport = DribbleWhisperTransport
+    typealias Remote = DribbleFactory.Publisher.Remote
+    typealias Transport = DribbleFactory.Publisher
 #else
-    typealias Remote = BluetoothWhisperTransport.Remote
-    typealias Transport = BluetoothWhisperTransport
+    typealias Remote = BluetoothFactory.Publisher.Remote
+    typealias Transport = BluetoothFactory.Publisher
 #endif
     
     @Published var statusText: String = ""
@@ -78,7 +78,7 @@ final class WhisperViewModel: ObservableObject {
                 liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
             }
         }
-        autoTransport.sendChunks(chunks: chunks)
+        autoTransport.publish(chunks: chunks)
         return liveText
     }
     
@@ -94,7 +94,7 @@ final class WhisperViewModel: ObservableObject {
             playSoundLocally(soundName)
         }
         let chunk = TextProtocol.ProtocolChunk.sound(soundName)
-        autoTransport.sendChunks(chunks: [chunk])
+        autoTransport.publish(chunks: [chunk])
     }
     
     /// Send the alert sound to a specific listener
@@ -105,7 +105,7 @@ final class WhisperViewModel: ObservableObject {
         }
         let soundName = WhisperData.alertSound()
         let chunk = TextProtocol.ProtocolChunk.sound(soundName)
-        autoTransport.sendChunks(remote: remote, chunks: [chunk])
+        autoTransport.send(remote: remote, chunks: [chunk])
     }
     
     /// Drop a listener from the authorized list
@@ -155,7 +155,7 @@ final class WhisperViewModel: ObservableObject {
         }
         var chunks = pastText.getLines().map{TextProtocol.ProtocolChunk.fromPastText(text: $0)}
         chunks.append(TextProtocol.ProtocolChunk.fromLiveText(text: liveText))
-        autoTransport.sendChunks(remote: remote, chunks: chunks)
+        autoTransport.send(remote: remote, chunks: chunks)
     }
     
     // speak a set of words

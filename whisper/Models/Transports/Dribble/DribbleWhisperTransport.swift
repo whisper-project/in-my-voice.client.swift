@@ -6,13 +6,11 @@
 import Foundation
 import Combine
 
-final class DribbleWhisperTransport: Transport {
+final class DribbleWhisperTransport: PublishTransport {
     // MARK: protocol properties and methods
     
     typealias Remote = DribbleListener
-    typealias Layer = DribbleLayer
-    
-    var layer: DribbleLayer = DribbleLayer.shared
+    typealias Layer = DribbleFactory
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
@@ -73,26 +71,19 @@ final class DribbleWhisperTransport: Transport {
     }
     
     func goToBackground() {
+        // can't do discovery in the background
+        stopDiscovery()
     }
     
     func goToForeground() {
     }
     
-    func sendChunks(chunks: [TextProtocol.ProtocolChunk]) {
-        let elapsedTime = lastSendTime == nil ? 0 : Date.now.timeIntervalSince(lastSendTime!)
-        lastSendTime = Date.now
-        for chunk in chunks {
-            let chunkString = String(decoding: chunk.toData(), as: UTF8.self)
-            self.chunks.append(TimedChunk(elapsed: Int(elapsedTime * 1000), chunk: chunkString))
-        }
-    }
-    
-    func sendChunks(remote: DribbleListener, chunks: [TextProtocol.ProtocolChunk]) {
+    func send(remote: DribbleListener, chunks: [TextProtocol.ProtocolChunk]) {
         guard let listener = listeners[remote.id] else {
             fatalError("Targeting a remote that's not a listener: \(remote.id)")
         }
         logger.warning("Targeted chunk to \(listener.id) being sent as broadcast")
-        sendChunks(chunks: chunks)
+        publish(chunks: chunks)
     }
     
     func drop(remote: DribbleListener) {
@@ -102,13 +93,23 @@ final class DribbleWhisperTransport: Transport {
         dropRemoteSubject.send(removed)
     }
     
+    func publish(chunks: [TextProtocol.ProtocolChunk]) {
+        var elapsedTime = lastSendTime == nil ? 0 : Date.now.timeIntervalSince(lastSendTime!)
+        lastSendTime = Date.now
+        for chunk in chunks {
+            let chunkString = String(decoding: chunk.toData(), as: UTF8.self)
+            self.chunks.append(TimedChunk(elapsed: UInt64(elapsedTime * 1000), chunk: chunkString))
+            elapsedTime = 0
+        }
+    }
+    
     // MARK: internal types, properties, and methods
     
     final class DribbleListener: TransportRemote {
         let id: String
         var name: String
         
-        init(id: String = "Dribble-1", name: String = "Jenny") {
+        init(id: String, name: String) {
             self.id = id
             self.name = name
         }
@@ -116,7 +117,7 @@ final class DribbleWhisperTransport: Transport {
     
     private var lastSendTime: Date?
     private struct TimedChunk: Encodable {
-        var elapsed: Int    // elapsed time since last packet in milliseconds
+        var elapsed: UInt64    // elapsed time since last packet in milliseconds
         var chunk: String
     }
     private var chunks: [TimedChunk] = []

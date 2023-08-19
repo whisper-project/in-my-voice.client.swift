@@ -13,6 +13,8 @@ struct ControlView: View {
     @Binding var mode: OperatingMode
     @Binding var speaking: Bool
     var playSound: (() -> ())?
+    
+    @State var confirmDisconnect = false
 
     var body: some View {
         HStack(alignment: .center) {
@@ -20,7 +22,7 @@ struct ControlView: View {
             speechButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
-            Button(action: { self.mode = .ask }) {
+            Button(action: { confirmDisconnect = true }) {
                 stopButtonLabel()
             }
             .background(Color.accentColor)
@@ -28,6 +30,12 @@ struct ControlView: View {
         }
         .dynamicTypeSize(.large)
         .font(FontSizes.fontFor(FontSizes.minTextSize))
+        .alert("Confirm Stop", isPresented: $confirmDisconnect) {
+            Button("Stop") { mode = .ask }
+            Button("Don't Stop") { }
+        } message: {
+            Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+        }
     }
     
     @ViewBuilder private func speechButton() -> some View {

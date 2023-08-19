@@ -6,13 +6,10 @@
 import Combine
 import CoreBluetooth
 
-final class BluetoothWhisperTransport: Transport {
+final class BluetoothWhisperTransport: PublishTransport {
     // MARK: Protocol properties and methods
     
-    typealias Remote = BluetoothListener
-    typealias Layer = BluetoothLayer
-    
-    var layer = BluetoothLayer.shared
+    typealias Remote = Subscriber
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
@@ -21,7 +18,7 @@ final class BluetoothWhisperTransport: Transport {
     func start() -> TransportDiscovery {
         logger.log("Starting Bluetooth whisper transport...")
         whisperService = WhisperData.whisperService()
-        layer.publish(service: whisperService!)
+        factory.publish(service: whisperService!)
         return startDiscovery()
     }
     
@@ -30,7 +27,7 @@ final class BluetoothWhisperTransport: Transport {
         stopDiscovery()
         removeAllListeners()
         if let service = whisperService {
-            layer.unpublish(service: service)
+            factory.unpublish(service: service)
             whisperService = nil
         }
     }
@@ -51,24 +48,17 @@ final class BluetoothWhisperTransport: Transport {
     }
     
     func startDiscovery() -> TransportDiscovery {
-        layer.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
+        factory.scan(forServices: [WhisperData.listenServiceUuid], allow_repeats: true)
         startAdvertising()
         return .automatic
     }
     
     func stopDiscovery() {
         stopAdvertising()
-        layer.stopScan()
+        factory.stopScan()
     }
     
-    func sendChunks(chunks: [TextProtocol.ProtocolChunk]) {
-        for chunk in chunks {
-            pendingChunks.append(chunk)
-        }
-        updateListeners()
-    }
-    
-    func sendChunks(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
+    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
         if var existing = directedChunks[remote.central] {
             existing.append(contentsOf: chunks)
         } else {
@@ -78,18 +68,25 @@ final class BluetoothWhisperTransport: Transport {
     }
     
     func drop(remote: Remote) {
-        guard let removed = listeners.removeValue(forKey: remote.central) else {
+        guard let removed = remotes.removeValue(forKey: remote.central) else {
             logger.log("Ignoring drop request for non-listener with id: \(remote.id)")
             return
         }
         logger.notice("Dropping listener \(removed.id) (\(removed.name)): \(removed.central)")
-        // remember not to re-add this listener
-        droppedListeners.append(removed.id)
-        // tell this listener we've dropped it
-        if !layer.updateValue(value: Data(), characteristic: WhisperData.whisperDisconnectCharacteristic, central: removed.central) {
-            logger.error("Drop message failed to central: \(removed.central)")
+        // remember not to re-add this remote
+        droppedRemotes.append(removed.id)
+        // tell this remote we've dropped it
+        if !factory.updateValue(value: Data(), characteristic: WhisperData.whisperDisconnectCharacteristic, central: removed.central) {
+            logger.error("Drop message for remote \(removed.id) failed to central: \(removed.central)")
         }
         dropRemoteSubject.send(removed)
+    }
+    
+    func publish(chunks: [TextProtocol.ProtocolChunk]) {
+        for chunk in chunks {
+            pendingChunks.append(chunk)
+        }
+        updateListeners()
     }
     
     // MARK: Peripheral Event Handlers
@@ -97,11 +94,8 @@ final class BluetoothWhisperTransport: Transport {
     private func noticeAd(_ pair: (CBPeripheral, [String: Any])) {
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(WhisperData.listenServiceUuid) {
-                if let listener = listenAdvertisers[pair.0] {
-                    if adRepeatCount % 10 == 0 {
-                        logger.debug("Ignoring repeat ad from already-pending listener \(listener)")
-                    }
-                    adRepeatCount += 1
+                if let _ = advertisers[pair.0] {
+//                    logger.debug("Ignored multiple repeat ads from already-pending listener \(_)")
                 } else {
                     guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
                           let id = adName as? String
@@ -109,11 +103,11 @@ final class BluetoothWhisperTransport: Transport {
                         logger.error("Ignoring advertisement with no listener id from \(pair.0)")
                         return
                     }
-                    guard !droppedListeners.contains(id) else {
+                    guard !droppedRemotes.contains(id) else {
                         logger.info("Ignoring advertisement from dropped listener \(id)")
                         return
                     }
-                    listenAdvertisers[pair.0] = id
+                    advertisers[pair.0] = id
                     logger.debug("Got first ad from listener \(id): \(pair.0)")
                     startAdvertising()
                 }
@@ -140,11 +134,11 @@ final class BluetoothWhisperTransport: Transport {
         }
         if let candidate = candidates.removeValue(forKey: pair.0) {
             logger.log("Unsubscribe/drop candidate \(candidate.id): \(pair.0)")
-        } else if let listener = listeners.removeValue(forKey: pair.0) {
+        } else if let listener = remotes.removeValue(forKey: pair.0) {
             logger.log("Unsubscribe/drop listener \(listener.id): \(pair.0)")
             dropRemoteSubject.send(listener)
         } else {
-            logger.log("Ignoring unsubscription request from already-dropped candidate or listener: \(pair.0)")
+            logger.error("Ignoring unsubscription request from already-dropped candidate or listener: \(pair.0)")
         }
     }
     
@@ -152,30 +146,30 @@ final class BluetoothWhisperTransport: Transport {
         logger.log("Received read request \(request)...")
         guard request.offset == 0 else {
             logger.log("Read request has non-zero offset, ignoring it")
-            layer.respondToReadRequest(request: request, withCode: .invalidOffset)
+            factory.respondToReadRequest(request: request, withCode: .invalidOffset)
             return
         }
         let characteristic = request.characteristic
         if characteristic.uuid == WhisperData.whisperNameUuid {
             logger.log("Request is for name")
             request.value = Data(WhisperData.userName().utf8)
-            layer.respondToReadRequest(request: request, withCode: .success)
+            factory.respondToReadRequest(request: request, withCode: .success)
         } else if characteristic.uuid == WhisperData.textUuid {
             logger.log("Request is for complete text")
             guard let listener = addListener(request.central) else {
                 logger.error("Refusing read text request from non-listener/non-candidate \(request.central)")
-                layer.respondToReadRequest(request: request, withCode: .insufficientAuthorization)
+                factory.respondToReadRequest(request: request, withCode: .insufficientAuthorization)
                 return
             }
             // in this transport, the "request to read" is interpreted as a fill replay request and acknowledged
             let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "all")
             request.value = TextProtocol.ProtocolChunk.acknowledgeRead(hint: "all").toData()
-            layer.respondToReadRequest(request: request, withCode: .success)
+            factory.respondToReadRequest(request: request, withCode: .success)
             receivedChunkSubject.send((remote: listener, chunk: chunk))
         } else if request.characteristic.uuid == WhisperData.disconnectUuid {
             if let candidate = candidates.removeValue(forKey: request.central) {
                 logger.log("Request is to drop candidate \(candidate.id): \(request.central)")
-            } else if let listener = listeners.removeValue(forKey: request.central) {
+            } else if let listener = remotes.removeValue(forKey: request.central) {
                 logger.log("Request is to drop listener \(listener.id): \(request.central)")
                 dropRemoteSubject.send(listener)
             } else {
@@ -183,10 +177,10 @@ final class BluetoothWhisperTransport: Transport {
                 return
             }
             request.value = Data()
-            layer.respondToReadRequest(request: request, withCode: .success)
+            factory.respondToReadRequest(request: request, withCode: .success)
         } else {
             logger.error("Got a read request for an unexpected characteristic: \(characteristic)")
-            layer.respondToReadRequest(request: request, withCode: .attributeNotFound)
+            factory.respondToReadRequest(request: request, withCode: .attributeNotFound)
         }
     }
     
@@ -196,37 +190,37 @@ final class BluetoothWhisperTransport: Transport {
         }
         guard requests.count == 1 else {
             logger.error("Got multiple listener requests in a batch: \(requests)")
-            layer.respondToWriteRequest(request: request, withCode: .requestNotSupported)
+            factory.respondToWriteRequest(request: request, withCode: .requestNotSupported)
             return
         }
         guard request.characteristic.uuid == WhisperData.listenNameUuid else {
             logger.error("Got a write request for an unexpected characteristic: \(request)")
-            layer.respondToWriteRequest(request: request, withCode: .unlikelyError)
+            factory.respondToWriteRequest(request: request, withCode: .unlikelyError)
             return
         }
         guard let value = request.value,
               let idAndName = String(data: value, encoding: .utf8)
         else {
             logger.error("Got an empty listener name value: \(request)")
-            layer.respondToWriteRequest(request: request, withCode: .invalidAttributeValueLength)
+            factory.respondToWriteRequest(request: request, withCode: .invalidAttributeValueLength)
             return
         }
         let parts = idAndName.split(separator: "|", maxSplits: 1)
         guard parts.count == 2 else {
             logger.error("Got an invalid format for listener name: \(idAndName)")
-            layer.respondToWriteRequest(request: request, withCode: .unlikelyError)
+            factory.respondToWriteRequest(request: request, withCode: .unlikelyError)
             return
         }
         let candidate = Remote(central: request.central, id: String(parts[0]), name: String(parts[1]))
-        guard !droppedListeners.contains(candidate.id) else {
+        guard !droppedRemotes.contains(candidate.id) else {
             // dropped listeners cannot be re-aquired in this session
             logger.log("Refusing name write request from dropped listener \(candidate.id)")
-            layer.respondToWriteRequest(request: request, withCode: .insufficientAuthorization)
+            factory.respondToWriteRequest(request: request, withCode: .insufficientAuthorization)
             return
         }
         candidates[request.central] = candidate
         logger.log("Received id \(candidate.id), name '\(candidate.name)' from candidate \(request.central)")
-        layer.respondToWriteRequest(request: request, withCode: .success)
+        factory.respondToWriteRequest(request: request, withCode: .success)
     }
     
     private func processReadyToUpdate(_ ignore: ()) {
@@ -235,21 +229,21 @@ final class BluetoothWhisperTransport: Transport {
     
     // MARK: Internal types, properties, and methods
         
-    final class BluetoothListener: TransportRemote {
+    final class Subscriber: TransportRemote {
         var id: String
         var name: String
         
         fileprivate var central: CBCentral
         
-        init(central: CBCentral, id: String, name: String = "") {
+        fileprivate init(central: CBCentral, id: String, name: String) {
             self.central = central
             self.id = id
             self.name = name
         }
     }
     
-    private var state: CBManagerState = .unknown
-    private var listeners: [CBCentral: Remote] = [:]
+    private var factory = BluetoothFactory.shared
+    private var remotes: [CBCentral: Remote] = [:]
     private var liveText: String = ""
     private var pendingChunks: [TextProtocol.ProtocolChunk] = []
     private var directedChunks: [CBCentral: [TextProtocol.ProtocolChunk]] = [:]
@@ -257,30 +251,29 @@ final class BluetoothWhisperTransport: Transport {
     private weak var adTimer: Timer?
     private var cancellables: Set<AnyCancellable> = []
     private var candidates: [CBCentral: Remote] = [:]
-    private var listenAdvertisers: [CBPeripheral: String] = [:]
-    private var droppedListeners: [String] = []
+    private var advertisers: [CBPeripheral: String] = [:]
+    private var droppedRemotes: [String] = []
     private var whisperService: CBMutableService?
     private var isInBackground = false
-    private var adRepeatCount = 0
     
     init() {
         logger.log("Initializing bluetooth whisper transport")
-        layer.peripheralSubject
+        factory.advertisementSubject
             .sink { [weak self] in self?.noticeAd($0) }
             .store(in: &cancellables)
-        layer.centralSubscribedSubject
+        factory.centralSubscribedSubject
             .sink { [weak self] in self?.noticeSubscription($0) }
             .store(in: &cancellables)
-        layer.centralUnsubscribedSubject
+        factory.centralUnsubscribedSubject
             .sink { [weak self] in self?.noticeUnsubscription($0) }
             .store(in: &cancellables)
-        layer.readRequestSubject
+        factory.readRequestSubject
             .sink { [weak self] in self?.processReadRequest($0) }
             .store(in: &cancellables)
-        layer.writeRequestSubject
+        factory.writeRequestSubject
             .sink { [weak self] in self?.processWriteRequests($0) }
             .store(in: &cancellables)
-        layer.readyToUpdateSubject
+        factory.readyToUpdateSubject
             .sink { [weak self] in self?.processReadyToUpdate($0) }
             .store(in: &cancellables)
     }
@@ -292,7 +285,7 @@ final class BluetoothWhisperTransport: Transport {
 
     /// Send pending chunks to listeners
     private func updateListeners() {
-        guard !listeners.isEmpty else {
+        guard !remotes.isEmpty else {
             // logger.debug("No listeners to update, dumping pending changes")
             pendingChunks.removeAll()
             directedChunks.removeAll()
@@ -304,7 +297,7 @@ final class BluetoothWhisperTransport: Transport {
             logger.log("Updating reading listeners...")
             while let (listener, chunks) = directedChunks.first {
                 while let chunk = chunks.first {
-                    let sendOk = layer.updateValue(value: chunk.toData(),
+                    let sendOk = factory.updateValue(value: chunk.toData(),
                                                      characteristic: WhisperData.whisperTextCharacteristic,
                                                      central: listener)
                     if sendOk {
@@ -321,7 +314,7 @@ final class BluetoothWhisperTransport: Transport {
         } else if !pendingChunks.isEmpty {
             logger.debug("Updating subscribed listeners (\(self.pendingChunks.count) chunks)...")
             while let chunk = pendingChunks.first {
-                let sendOk = layer.updateValue(value: chunk.toData(),
+                let sendOk = factory.updateValue(value: chunk.toData(),
                                                characteristic: WhisperData.whisperTextCharacteristic)
                 if sendOk {
                     pendingChunks.removeFirst()
@@ -342,7 +335,7 @@ final class BluetoothWhisperTransport: Transport {
         } else {
             logger.log("Advertising whisperer...")
         }
-        layer.advertise(services: [WhisperData.whisperServiceUuid])
+        factory.advertise(services: [WhisperData.whisperServiceUuid])
         advertisingInProgress = true
         let interval = max(listenerAdTime, whispererAdTime)
         adTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
@@ -358,9 +351,8 @@ final class BluetoothWhisperTransport: Transport {
             return
         }
         logger.log("Stop advertising whisperer")
-        layer.stopAdvertising()
-        listenAdvertisers.removeAll()
-        adRepeatCount = 0
+        factory.stopAdvertising()
+        advertisers.removeAll()
         advertisingInProgress = false
         if let timer = adTimer {
             // manual cancellation: invalidate the running timer
@@ -370,7 +362,7 @@ final class BluetoothWhisperTransport: Transport {
     }
     
     private func addListener(_ central: CBCentral) -> Remote? {
-        if let listener = listeners[central] {
+        if let listener = remotes[central] {
             // we've already connected this listener
             return listener
         }
@@ -379,15 +371,15 @@ final class BluetoothWhisperTransport: Transport {
             return nil
         }
         logger.log("Candidate \(candidate.id) (\(candidate.name)) has become a listener")
-        listeners[central] = candidate
+        remotes[central] = candidate
         addRemoteSubject.send(candidate)
         return candidate
     }
     
     private func removeAllListeners() {
-        for listener in listeners.values {
+        for listener in remotes.values {
             dropRemoteSubject.send(listener)
         }
-        listeners.removeAll()
+        remotes.removeAll()
     }
 }
