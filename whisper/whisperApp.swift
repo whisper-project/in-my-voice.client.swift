@@ -82,7 +82,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         logger.info("Received APNs token")
         let value = [
             "clientId": PreferenceData.clientId,
-            "apnsToken": deviceToken.base64EncodedString(),
+            "token": deviceToken.map{ String(format: "%02hhx", $0) }.joined(),
             "deviceId": BluetoothData.deviceId,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
@@ -99,15 +99,21 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             guard error == nil else {
                 fatalError("Failed to post APNs token: \(String(describing: error))")
             }
-            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                fatalError("Received error status on APNs token post: \(String(describing: response))")
+            guard let response = response as? HTTPURLResponse else {
+                fatalError("Received non-HTTP response on APNs token post: \(String(describing: response))")
             }
+            if response.statusCode == 204 {
+                logger.info("Successful post of APNs token")
+                return
+            }
+            logger.error("Received unexpected response on APNs token post: \(response.statusCode)")
             guard let data = data,
                   let body = try? JSONSerialization.jsonObject(with: data),
                   let obj = body as? [String:String] else {
-                fatalError("Can't deserialize JSON body: \(String(describing: data))")
+                logger.error("Can't deserialize APNs token post response body: \(String(describing: data))")
+                return
             }
-            logger.info("Successful post of APNs token: \(obj)")
+            logger.error("Response body of APNs token post: \(obj)")
         }
         logger.info("Posting APNs token to whisper-server")
         task.resume()
@@ -115,5 +121,17 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         logger.error("Failed to get APNs token: \(error)")
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        logger.info("Received APNs background notification")
+        if let value = userInfo["secret"], let secret = value as? String {
+            logger.info("Succesfully saved data from background notification")
+            PreferenceData.updateClientSecret(secret)
+            completionHandler(.newData)
+        } else {
+            logger.error("Background notification has unexpected data: \(String(describing: userInfo))")
+            completionHandler(.noData)
+        }
     }
 }

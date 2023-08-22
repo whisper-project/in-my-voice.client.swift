@@ -13,14 +13,20 @@ struct PreferenceData {
     private static var defaults = UserDefaults.standard
     static var clientId: String = {
         let defaults = UserDefaults.standard
-        if let id = defaults.string(forKey: "whisper_server_id") {
+        if let id = defaults.string(forKey: "whisper_client_id") {
             return id
         } else {
             let id = UUID().uuidString
-            defaults.setValue(id, forKey: "whisper_server_id")
+            defaults.setValue(id, forKey: "whisper_client_id")
             return id
         }
     }()
+    static func clientSecret() -> String? {
+        return defaults.string(forKey: "whisper_client_secret")
+    }
+    static func updateClientSecret(_ secret: String) {
+        defaults.setValue(secret, forKey: "whisper_client_secret")
+    }
     static func initialMode() -> OperatingMode {
         let val = defaults.integer(forKey: "initial_mode_preference")
         return OperatingMode(rawValue: val) ?? .ask
