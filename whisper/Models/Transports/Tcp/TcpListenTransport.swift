@@ -16,12 +16,14 @@ final class TcpListenTransport: SubscribeTransport {
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
     func start() -> TransportDiscovery {
-        logger.info("Starting dribble listen transport...")
+        logger.info("Starting TCP listen transport...")
+        let token = requestToken(mode: .whisper)
+        logger.log("Received token \(String(describing: token))")
         return startDiscovery()
     }
     
     func stop() {
-        logger.info("Stopping dribble listen transport")
+        logger.info("Stopping TCP listen transport")
         stopDiscovery()
         // there can only be one whisperer to drop
         if let whisperer = whisperers.first {

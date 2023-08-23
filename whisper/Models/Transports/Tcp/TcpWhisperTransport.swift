@@ -17,12 +17,14 @@ final class TcpWhisperTransport: PublishTransport {
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
     func start() -> TransportDiscovery {
-        logger.log("Starting Tcp Transport")
+        logger.log("Starting TCP whisper Transport")
+        let token = requestToken(mode: .whisper)
+        logger.log("Received token \(String(describing: token))")
         return startDiscovery()
     }
     
     func stop() {
-        logger.log("Stopping Tcp Transport")
+        logger.log("Stopping TCP whisper Transport")
         stopDiscovery()
         for listener in listeners.values {
             drop(remote: listener)
