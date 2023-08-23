@@ -11,6 +11,7 @@ enum OperatingMode: Int {
 
 struct PreferenceData {
     private static var defaults = UserDefaults.standard
+    static var whisperServer = "https://whisper-server-stage-baa911f67e80.herokuapp.com"
     static var clientId: String = {
         let defaults = UserDefaults.standard
         if let id = defaults.string(forKey: "whisper_client_id") {

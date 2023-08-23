@@ -82,13 +82,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         logger.info("Received APNs token")
         let value = [
             "clientId": PreferenceData.clientId,
-            "token": deviceToken.map{ String(format: "%02hhx", $0) }.joined(),
+            "token": deviceToken.base64EncodedString(),
             "deviceId": BluetoothData.deviceId,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
         }
-        guard let url = URL(string: "https://whisper-server-stage-baa911f67e80.herokuapp.com/apnsToken") else {
+        guard let url = URL(string: PreferenceData.whisperServer + "/apnsToken") else {
             fatalError("Can't create URL for device token call")
         }
         var request = URLRequest(url: url)
