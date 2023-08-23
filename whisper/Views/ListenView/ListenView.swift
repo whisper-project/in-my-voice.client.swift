@@ -16,7 +16,6 @@ struct ListenView: View {
     @StateObject private var model: ListenViewModel = .init()
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
-    @State private var showStatusDetail: Bool = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -37,9 +36,9 @@ struct ListenView: View {
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 StatusTextView(text: $model.statusText)
                     .onTapGesture {
-                        showStatusDetail = true
+                        model.showStatusDetail = true
                     }
-                    .popover(isPresented: $showStatusDetail) {
+                    .popover(isPresented: $model.showStatusDetail) {
                         WhisperersView(model: model)
                     }
                 PastTextView(mode: mode, model: model.pastText)

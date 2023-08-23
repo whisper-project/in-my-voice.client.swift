@@ -38,6 +38,9 @@
 		377D71162A913E8B009B416F /* PreferenceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71142A913E2E009B416F /* PreferenceData.swift */; };
 		377D71192A956B4C009B416F /* SwiftJWT in Frameworks */ = {isa = PBXBuildFile; productRef = 377D71182A956B4C009B416F /* SwiftJWT */; };
 		377D711B2A956C23009B416F /* TokenRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711A2A956C23009B416F /* TokenRequest.swift */; };
+		377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711D2A95CE5E009B416F /* ComboFactory.swift */; };
+		377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */; };
+		377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711F2A95CEAC009B416F /* ComboListenTransport.swift */; };
 		378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378A8E1629C554F20097F15A /* TextProtocol.swift */; };
 		379570CD29EA314A0033CF14 /* air-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CC29EA313D0033CF14 /* air-horn.caf */; };
 		379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CA29EA313D0033CF14 /* bike-bell.caf */; };
@@ -108,6 +111,9 @@
 		377D71102A913BFE009B416F /* TcpFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpFactory.swift; sourceTree = "<group>"; };
 		377D71142A913E2E009B416F /* PreferenceData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceData.swift; sourceTree = "<group>"; };
 		377D711A2A956C23009B416F /* TokenRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenRequest.swift; sourceTree = "<group>"; };
+		377D711D2A95CE5E009B416F /* ComboFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboFactory.swift; sourceTree = "<group>"; };
+		377D711F2A95CEAC009B416F /* ComboListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboListenTransport.swift; sourceTree = "<group>"; };
+		377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboWhisperTransport.swift; sourceTree = "<group>"; };
 		378A8E1629C554F20097F15A /* TextProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextProtocol.swift; sourceTree = "<group>"; };
 		379570CA29EA313D0033CF14 /* bike-bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-bell.caf"; sourceTree = "<group>"; };
 		379570CB29EA313D0033CF14 /* bike-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-horn.caf"; sourceTree = "<group>"; };
@@ -341,6 +347,16 @@
 			path = Dribble;
 			sourceTree = "<group>";
 		};
+		377D711C2A95CE38009B416F /* Combo */ = {
+			isa = PBXGroup;
+			children = (
+				377D711D2A95CE5E009B416F /* ComboFactory.swift */,
+				377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */,
+				377D711F2A95CEAC009B416F /* ComboListenTransport.swift */,
+			);
+			path = Combo;
+			sourceTree = "<group>";
+		};
 		37C5142029CA2B0F001A121B /* PastTextView */ = {
 			isa = PBXGroup;
 			children = (
@@ -354,6 +370,7 @@
 			isa = PBXGroup;
 			children = (
 				37F8C26D2A87DFA7004DED77 /* TransportProtocol.swift */,
+				377D711C2A95CE38009B416F /* Combo */,
 				377D71022A8B0343009B416F /* Dribble */,
 				377D70F62A899C54009B416F /* Tcp */,
 				377D70F42A899C3A009B416F /* Bluetooth */,
@@ -521,6 +538,7 @@
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
 				377D71062A8C5E17009B416F /* DribbleFactory.swift in Sources */,
 				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
+				377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */,
 				37B6237629F78AA500213790 /* WhisperersView.swift in Sources */,
 				37F8C26E2A87DFA7004DED77 /* TransportProtocol.swift in Sources */,
 				378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */,
@@ -530,7 +548,9 @@
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
 				377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */,
 				377D71042A8B0367009B416F /* DribbleWhisperTransport.swift in Sources */,
+				377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */,
 				377D71162A913E8B009B416F /* PreferenceData.swift in Sources */,
+				377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */,
 				37C5142229CA2B35001A121B /* PastTextView.swift in Sources */,
 				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,
 				374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */,

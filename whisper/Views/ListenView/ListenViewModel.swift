@@ -31,6 +31,7 @@ final class ListenViewModel: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
     private var discoveryInProgress = false
     private var discoveryCountDown = 0
+    private var discoveryTimer: Timer?
     private var resetInProgress = false
     private var isInBackground = false
     private var soundEffect: AVAudioPlayer?
@@ -71,6 +72,7 @@ final class ListenViewModel: ObservableObject {
     }
     
     func stop() {
+        cancelDiscovery()
         autoTransport.stop()
         statusText = "Stopped Listening"
     }
@@ -270,20 +272,30 @@ final class ListenViewModel: ObservableObject {
         discoveryInProgress = true
         discoveryCountDown = Int(listenerWaitTime)
         refreshStatusText()
-        Timer.scheduledTimer(withTimeInterval: TimeInterval(1), repeats: true) { timer in
+        discoveryTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(1), repeats: true) { timer in
             guard self.discoveryInProgress && self.discoveryCountDown > 0 else {
+                logger.log("End initial wait for whisperers due to timeout")
                 timer.invalidate()
+                self.discoveryTimer = nil
                 self.discoveryCountDown = 0
+                self.discoveryInProgress = false
+                self.maybeSetWhisperer()
                 return
             }
             self.discoveryCountDown -= 1
             self.refreshStatusText()
         }
-        Timer.scheduledTimer(withTimeInterval: listenerWaitTime, repeats: false) { _ in
-            logger.log("End initial wait for whisperers due to timeout")
-            self.discoveryInProgress = false
-            self.maybeSetWhisperer()
+    }
+    
+    /// Cancel the wait for discovery (only happens on shutdown)
+    private func cancelDiscovery() {
+        guard let timer = discoveryTimer else {
+            return
         }
+        timer.invalidate()
+        discoveryTimer = nil
+        discoveryInProgress = false
+        // don't maybe set whisperer, because we have cancelled discovery
     }
     
     /// We may have found an an eligible whisper candidate.
@@ -294,7 +306,7 @@ final class ListenViewModel: ObservableObject {
             return
         }
         if whisperer == nil {
-            if candidates.count == 1 {
+            if candidates.count == 1 && PreferenceData.doAutoSelect() {
                 // only 1 whisperer after waiting for the scan
                 setWhisperer(candidates[0])
             }
@@ -310,9 +322,8 @@ final class ListenViewModel: ObservableObject {
             statusText = "Looking for whisperers…\(suffix)"
         } else {
             let count = candidates.count
-            if count > 1 {
+            if count > 1 || !PreferenceData.doAutoSelect() {
                 statusText = "Tap to select your desired whisperer…"
-                showStatusDetail = true
             } else {
                 statusText = "Waiting for a whisperer to appear…"
             }
