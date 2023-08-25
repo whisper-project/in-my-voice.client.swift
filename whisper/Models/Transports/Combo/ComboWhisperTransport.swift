@@ -8,139 +8,160 @@ import Combine
 
 final class ComboWhisperTransport: PublishTransport {
     // MARK: protocol properties and methods
-    
-    typealias Remote = ComboListener
-    typealias Layer = ComboFactory
+    typealias Remote = Listener
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> TransportDiscovery {
-        logger.log("Starting Combo Transport")
-        return startDiscovery()
+    func start() -> Bool {
+        logger.log("Starting combo whisper transport")
+        if !autoTransport.start() {
+            return false
+        }
+        if let manual = manualTransport {
+            return manual.start()
+        }
+        return true
     }
     
     func stop() {
-        logger.log("Stopping Combo Transport")
-        stopDiscovery()
-        for listener in listeners.values {
-            drop(remote: listener)
-        }
-        saveChunks()
-    }
-    
-    func startDiscovery() -> TransportDiscovery {
-        guard discoveryTimer == nil else {
-            logger.error("Discovery already in progress, ignoring request to start it")
-            return .automatic
-        }
-        guard listeners.count < 2 else {
-            logger.error("All discovery already completed, ignoring request to start it")
-            return .automatic
-        }
-        logger.log("Starting dribble listener discovery...")
-        discoveryTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { timer in
-            if self.listeners["Listener-1"] == nil {
-                logger.log("Discover dribble listener Seku")
-                let new = ComboListener(id: "Listener-1", name: "Seku")
-                self.listeners[new.id] = new
-                self.addRemoteSubject.send(new)
-            } else if self.listeners["Listener-2"] == nil {
-                logger.log("Discover dribble listener Asha")
-                let new = ComboListener(id: "Listener-2", name: "Asha")
-                self.listeners[new.id] = new
-                self.addRemoteSubject.send(new)
-            } else {
-                logger.log("Combo listener discovery complete")
-                timer.invalidate()
-                self.discoveryTimer = nil
-            }
-        }
-        return .automatic
-    }
-    
-    func stopDiscovery() {
-        guard let timer = discoveryTimer else {
-            logger.error("Combo listener discovery already complete, ignoring request to stop it")
-            return
-        }
-        logger.log("Stopping dribble listener discovery...")
-        timer.invalidate()
-        discoveryTimer = nil
+        logger.log("Stopping combo whisper transport")
+        autoTransport.stop()
+        manualTransport?.stop()
     }
     
     func goToBackground() {
-        // can't do discovery in the background
-        stopDiscovery()
+        autoTransport.goToBackground()
+        manualTransport?.goToBackground()
     }
     
     func goToForeground() {
+        autoTransport.goToForeground()
+        manualTransport?.goToForeground()
     }
     
-    func send(remote: ComboListener, chunks: [TextProtocol.ProtocolChunk]) {
+    func send(remote: Listener, chunks: [TextProtocol.ProtocolChunk]) {
         guard let listener = listeners[remote.id] else {
             fatalError("Targeting a remote that's not a listener: \(remote.id)")
         }
-        logger.warning("Targeted chunk to \(listener.id) being sent as broadcast")
-        publish(chunks: chunks)
+        switch remote.owner {
+        case .auto:
+            autoTransport.drop(remote: remote.inner as! AutoRemote)
+        case .manual:
+            manualTransport?.drop(remote: remote.inner as! ManualRemote)
+        }
     }
     
-    func drop(remote: ComboListener) {
-        guard let removed = listeners.removeValue(forKey: remote.id) else {
+    func drop(remote: Listener) {
+        guard let listener = listeners[remote.id] else {
             fatalError("Dropping a remote that's not a listener: \(remote.id)")
+        }
+        switch remote.owner {
+        case .auto:
+            autoTransport.drop(remote: remote.inner as! AutoRemote)
+        case .manual:
+            manualTransport?.drop(remote: remote.inner as! ManualRemote)
+        }
+    }
+    
+    func publish(chunks: [TextProtocol.ProtocolChunk]) {
+        autoTransport.publish(chunks: chunks)
+        manualTransport?.publish(chunks: chunks)
+    }
+    
+    // MARK: internal types, properties, and initialization
+#if targetEnvironment(simulator)
+    typealias AutoTransport = DribbleWhisperTransport
+    typealias AutoRemote = DribbleWhisperTransport.Remote
+#else
+    typealias AutoTransport = BluetoothWhisperTransport
+    typealias AutoRemote = BluetoothWhisperTransport.Remote
+#endif
+    typealias ManualTransport = TcpWhisperTransport
+    typealias ManualRemote = TcpWhisperTransport.Remote
+
+    enum Owner {
+        case auto
+        case manual
+    }
+    
+    final class Listener: TransportRemote {
+        let id: String
+        var name: String
+        
+        fileprivate var owner: Owner
+        fileprivate var inner: (any TransportRemote)
+        
+        init(owner: Owner, inner: any TransportRemote) {
+            self.owner = owner
+            self.inner = inner
+            self.id = inner.id
+            self.name = inner.name
+        }
+    }
+    
+    private var autoTransport: AutoTransport
+    private var manualTransport: TcpWhisperTransport?
+    private var listeners: [String: Listener] = [:]
+    private var cancellables: Set<AnyCancellable> = []
+
+    init() {
+        logger.log("Initializing combo whisper transport")
+        self.autoTransport = AutoTransport()
+        self.autoTransport.addRemoteSubject
+            .sink { [weak self] in self?.addListener(.auto, remote: $0) }
+            .store(in: &cancellables)
+        self.autoTransport.dropRemoteSubject
+            .sink { [weak self] in self?.removeListener(.auto, remote: $0) }
+            .store(in: &cancellables)
+        self.autoTransport.receivedChunkSubject
+            .sink { [weak self] in self?.receiveChunk($0) }
+            .store(in: &cancellables)
+        if let receipt = PreferenceData.paidReceiptId() {
+            let manualTransport = ManualTransport()
+            self.manualTransport = manualTransport
+            manualTransport.addRemoteSubject
+                .sink { [weak self] in self?.addListener(.manual, remote: $0) }
+                .store(in: &cancellables)
+            manualTransport.dropRemoteSubject
+                .sink { [weak self] in self?.removeListener(.manual, remote: $0) }
+                .store(in: &cancellables)
+            manualTransport.receivedChunkSubject
+                .sink { [weak self] in self?.receiveChunk($0) }
+                .store(in: &cancellables)
+        }
+    }
+    
+    deinit {
+        logger.log("Destroying combo whisper transport")
+        cancellables.cancel()
+    }
+    
+    //MARK: internal methods
+    private func addListener(_ owner: Owner, remote: any TransportRemote) {
+        guard listeners[remote.id] == nil else {
+            logger.error("Ignoring add of existing remote \(remote.id) with name \(remote.name)")
+            return
+        }
+        let listener = Listener(owner: owner, inner: remote)
+        listeners[remote.id] = listener
+        addRemoteSubject.send(listener)
+    }
+    
+    private func removeListener(_ owner: Owner, remote: any TransportRemote) {
+        guard let removed = listeners.removeValue(forKey: remote.id) else {
+            logger.error("Ignoring drop of unknown remote \(remote.id) with name \(remote.name)")
+            return
         }
         dropRemoteSubject.send(removed)
     }
     
-    func publish(chunks: [TextProtocol.ProtocolChunk]) {
-        var elapsedTime = lastSendTime == nil ? 0 : Date.now.timeIntervalSince(lastSendTime!)
-        lastSendTime = Date.now
-        for chunk in chunks {
-            let chunkString = String(decoding: chunk.toData(), as: UTF8.self)
-            self.chunks.append(TimedChunk(elapsed: UInt64(elapsedTime * 1000), chunk: chunkString))
-            elapsedTime = 0
+    private func receiveChunk(_ pair: (remote: any TransportRemote, chunk: TextProtocol.ProtocolChunk)) {
+        guard let listener = listeners[pair.remote.id] else {
+            logger.error("Ignoring chunk from unknown remote \(pair.remote.id) with name \(pair.remote.name)")
+            return
         }
-    }
-    
-    // MARK: internal types, properties, and methods
-    
-    final class ComboListener: TransportRemote {
-        let id: String
-        var name: String
-        
-        init(id: String, name: String) {
-            self.id = id
-            self.name = name
-        }
-    }
-    
-    private var lastSendTime: Date?
-    private struct TimedChunk: Encodable {
-        var elapsed: UInt64    // elapsed time since last packet in milliseconds
-        var chunk: String
-    }
-    private var chunks: [TimedChunk] = []
-    private var listeners: [String: ComboListener] = [:]
-    private var discoveryTimer: Timer?
-    
-    private func saveChunks() {
-        do {
-            let folderURL = try FileManager.default.url(
-                for: .documentDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: false
-            )
-            let fileURL = folderURL.appendingPathComponent("ComboTimedChunks.json")
-            let data = try JSONEncoder().encode(self.chunks)
-            try data.write(to: fileURL)
-        }
-        catch(let err) {
-            logger.error("Failed to write ComboTimedChunks: \(err)")
-        }
-    }
-    
-    init() {
+        receivedChunkSubject.send((remote: listener, chunk: pair.chunk))
     }
 }

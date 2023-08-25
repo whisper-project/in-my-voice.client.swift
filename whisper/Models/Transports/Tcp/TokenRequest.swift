@@ -24,15 +24,16 @@ func createJWT() -> String? {
     return signedJWT
 }
 
-func requestToken(mode: OperatingMode) -> String? {
+func getTokenRequest(mode: OperatingMode, publisherId: String) -> String? {
     guard let jwt = createJWT() else {
         return nil
     }
-    var receivedToken: String? = nil
+    var receivedTokenRequest: String? = nil
     let activity = mode == .whisper ? "publish" : "subscribe"
     let value = [
         "clientId": PreferenceData.clientId,
-        "activity": mode == .whisper ? "publish" : "subscribe"
+        "activity": mode == .whisper ? "publish" : "subscribe",
+        "publisherId": publisherId
     ]
     guard let body = try? JSONSerialization.data(withJSONObject: value) else {
         fatalError("Can't encode body for \(activity) token request call")
@@ -63,14 +64,14 @@ func requestToken(mode: OperatingMode) -> String? {
             logger.error("Can't deserialize \(activity) token response body: \(String(describing: data))")
             return
         }
-        guard let token = obj["token"] else {
-            logger.error("Didn't receive a token value in \(activity) token response body: \(obj)")
+        guard let tokenRequest = obj["tokenRequest"] else {
+            logger.error("Didn't receive a token request value in \(activity) response body: \(obj)")
             return
         }
-        receivedToken = token
+        receivedTokenRequest = tokenRequest
         logger.info("Received \(activity) token from whisper-server")
     }
     logger.info("Posting \(activity) token request to whisper-server")
     task.resume()
-    return receivedToken
+    return receivedTokenRequest
 }

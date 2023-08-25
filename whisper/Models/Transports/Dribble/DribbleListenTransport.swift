@@ -15,45 +15,19 @@ final class DribbleListenTransport: SubscribeTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> TransportDiscovery {
-        logger.info("Starting dribble listen transport...")
-        return startDiscovery()
+    func start() -> Bool {
+        logger.info("Starting Dribble listen transport...")
+        startDiscovery()
+        return true
     }
     
     func stop() {
-        logger.info("Stopping dribble listen transport")
+        logger.info("Stopping Dribble listen transport")
         stopDiscovery()
         // there can only be one whisperer to drop
         if let whisperer = whisperers.first {
             drop(remote: whisperer)
         }
-    }
-    
-    func startDiscovery() -> TransportDiscovery {
-        guard whisperers.isEmpty, discoveryTimer == nil else {
-            logger.log("Ignoring discovery request because discovery in progress or complete.")
-            return .automatic
-        }
-        logger.log("Starting dribble whisper discovery...")
-        discoveryTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
-            if self.whisperers.isEmpty {
-                let whisperer = Remote(id: "Dribbler-1", name: "Seku")
-                self.whisperers.append(whisperer)
-                self.addRemoteSubject.send(whisperer)
-            }
-            self.discoveryTimer = nil
-        }
-        return .automatic
-    }
-    
-    func stopDiscovery() {
-        guard let timer = discoveryTimer else {
-            logger.log("Ignoring discovery cancellation because discovery already complete")
-            return
-        }
-        logger.log("Stopping dribble whisper discovery")
-        timer.invalidate()
-        discoveryTimer = nil
     }
     
     func goToBackground() {
@@ -99,8 +73,7 @@ final class DribbleListenTransport: SubscribeTransport {
         // there aren't any other candidates to drop
     }
     
-    // MARK: Internal types, properties, and methods
-    
+    // MARK: Internal types, properties, and initialization
     final class Whisperer: TransportRemote {
         var id: String
         var name: String
@@ -120,6 +93,37 @@ final class DribbleListenTransport: SubscribeTransport {
     private var discoveryTimer: Timer?
     private var sendTask: Task<Void, Never>?
 
+    init() {
+        self.chunks = readChunks()
+    }
+    
+    //MARK: internal methods
+    private func startDiscovery() {
+        guard whisperers.isEmpty, discoveryTimer == nil else {
+            logger.log("Ignoring discovery request because discovery in progress or complete.")
+            return
+        }
+        logger.log("Starting dribble whisper discovery...")
+        discoveryTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
+            if self.whisperers.isEmpty {
+                let whisperer = Remote(id: "Dribbler-1", name: "Seku")
+                self.whisperers.append(whisperer)
+                self.addRemoteSubject.send(whisperer)
+            }
+            self.discoveryTimer = nil
+        }
+    }
+    
+    private func stopDiscovery() {
+        guard let timer = discoveryTimer else {
+            logger.log("Ignoring discovery cancellation because discovery already complete")
+            return
+        }
+        logger.log("Stopping Dribble whisper discovery")
+        timer.invalidate()
+        discoveryTimer = nil
+    }
+    
     private func readChunks() -> [TimedChunk] {
         do {
             let folderURL = try FileManager.default.url(
@@ -182,9 +186,5 @@ final class DribbleListenTransport: SubscribeTransport {
             sendTask = nil
             task.cancel()
         }
-    }
-
-    init() {
-        self.chunks = readChunks()
     }
 }

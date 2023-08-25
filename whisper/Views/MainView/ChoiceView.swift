@@ -61,6 +61,36 @@ struct ChoiceView: View {
                     .disabled(currentUserName == "")
                 }
             }
+            if (PreferenceData.paidReceiptId() != nil) {
+                HStack(spacing: 60) {
+                    VStack(spacing: 60) {
+                        Button(action: {
+                            mode = .whisper
+                        }) {
+                            Text("Whisper+")
+                                .foregroundColor(.white)
+                                .fontWeight(.bold)
+                                .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+                        }
+                        .background(currentUserName == "" ? Color.gray : Color.accentColor)
+                        .cornerRadius(15)
+                        .disabled(currentUserName == "")
+                    }
+                    VStack(spacing: 60) {
+                        Button(action: {
+                            mode = .listen
+                        }) {
+                            Text("Listen+")
+                                .foregroundColor(.white)
+                                .fontWeight(.bold)
+                                .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+                        }
+                        .background(Color.accentColor)
+                        .cornerRadius(15)
+                        .disabled(currentUserName == "")
+                    }
+                }
+            }
             Button(action: {
                 UIApplication.shared.open(settingsUrl)
             }) {

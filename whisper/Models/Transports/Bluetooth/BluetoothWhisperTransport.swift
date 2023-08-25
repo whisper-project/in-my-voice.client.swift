@@ -8,18 +8,18 @@ import CoreBluetooth
 
 final class BluetoothWhisperTransport: PublishTransport {
     // MARK: Protocol properties and methods
-    
     typealias Remote = Subscriber
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> TransportDiscovery {
+    func start() -> Bool {
         logger.log("Starting Bluetooth whisper transport...")
         whisperService = BluetoothData.whisperService()
         factory.publish(service: whisperService!)
-        return startDiscovery()
+        startDiscovery()
+        return true
     }
     
     func stop() {
@@ -45,17 +45,6 @@ final class BluetoothWhisperTransport: PublishTransport {
             return
         }
         isInBackground = false
-    }
-    
-    func startDiscovery() -> TransportDiscovery {
-        factory.scan(forServices: [BluetoothData.listenServiceUuid], allow_repeats: true)
-        startAdvertising()
-        return .automatic
-    }
-    
-    func stopDiscovery() {
-        stopAdvertising()
-        factory.stopScan()
     }
     
     func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
@@ -227,7 +216,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         updateListeners()
     }
     
-    // MARK: Internal types, properties, and methods
+    // MARK: Internal types, properties, and initialization
         
     final class Subscriber: TransportRemote {
         var id: String
@@ -283,6 +272,17 @@ final class BluetoothWhisperTransport: PublishTransport {
         cancellables.cancel()
     }
 
+    //MARK: internal methods
+    private func startDiscovery() {
+        factory.scan(forServices: [BluetoothData.listenServiceUuid], allow_repeats: true)
+        startAdvertising()
+    }
+    
+    private func stopDiscovery() {
+        stopAdvertising()
+        factory.stopScan()
+    }
+    
     /// Send pending chunks to listeners
     private func updateListeners() {
         guard !remotes.isEmpty else {

@@ -319,8 +319,8 @@
 			children = (
 				37763D1C29AC33230051CFE5 /* BluetoothData.swift */,
 				377646C929BACC16002C411C /* BluetoothFactory.swift */,
-				377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */,
 				377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */,
+				377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */,
 			);
 			path = Bluetooth;
 			sourceTree = "<group>";

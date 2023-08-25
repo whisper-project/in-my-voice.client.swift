@@ -14,12 +14,17 @@ final class BluetoothFactory: NSObject, TransportFactory {
         
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(offStatus)
     
+    var publisherInfo: TransportDiscovery = .automatic
+    
     func publisher() -> Publisher {
-        return BluetoothWhisperTransport()
+        return Publisher()
     }
     
-    func subscriber() -> Subscriber {
-        return BluetoothListenTransport()
+    func subscriber(_ publisherInfo: TransportDiscovery) throws -> Subscriber {
+        guard case .automatic = publisherInfo else {
+            throw PublisherSubscriberMismatch.manualPublisherAutomaticSubscriber
+        }
+        return Subscriber()
     }
     
     static let offStatus: TransportStatus = .off("Waiting for Bluetooth before continuing...")
@@ -118,7 +123,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
         return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: [central])
     }
     
-    private func composite_status() -> TransportStatus {
+    private func compositeStatus() -> TransportStatus {
         if central_state == .poweredOn && peripheral_state == .poweredOn {
             return .on
         } else if central_state == .unauthorized || peripheral_state == .unauthorized {
@@ -132,7 +137,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
 extension BluetoothFactory: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         central_state = central.state
-        statusSubject.send(composite_status())
+        statusSubject.send(compositeStatus())
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
@@ -152,7 +157,7 @@ extension BluetoothFactory: CBCentralManagerDelegate {
 extension BluetoothFactory: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         peripheral_state = peripheral.state
-        statusSubject.send(composite_status())
+        statusSubject.send(compositeStatus())
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {

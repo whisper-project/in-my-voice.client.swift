@@ -16,8 +16,9 @@ final class BluetoothListenTransport: SubscribeTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> TransportDiscovery {
-        return startDiscovery()
+    func start() -> Bool {
+        startDiscovery()
+        return true
     }
     
     func stop() {
@@ -29,19 +30,6 @@ final class BluetoothListenTransport: SubscribeTransport {
                 drop(remote: remote)
             }
         }
-    }
-    
-    func startDiscovery() -> TransportDiscovery {
-        logger.log("Start scanning for whisperers")
-        factory.scan(forServices: [BluetoothData.whisperServiceUuid], allow_repeats: true)
-        startAdvertising()
-        return .automatic
-    }
-    
-    func stopDiscovery() {
-        logger.log("Stop scanning for whisperers")
-        stopAdvertising()
-        factory.stopScan()
     }
     
     func goToBackground() {
@@ -111,7 +99,7 @@ final class BluetoothListenTransport: SubscribeTransport {
         }
         remotes.removeAll()
     }
-
+    
     // MARK: Central event handlers
     
     /// Called when we see an ad from a potential publisher
@@ -303,8 +291,7 @@ final class BluetoothListenTransport: SubscribeTransport {
         }
     }
     
-    // MARK: internal types, properties, and methods
-
+    // MARK: internal types, properties, and initialization
     class Whisperer: TransportRemote {
         var id: String
         var name: String = ""
@@ -363,7 +350,20 @@ final class BluetoothListenTransport: SubscribeTransport {
         logger.log("Destroying Bluetooth whisper transport")
         cancellables.cancel()
     }
-
+    
+    //MARK: internal methods
+    private func startDiscovery() {
+        logger.log("Start scanning for whisperers")
+        factory.scan(forServices: [BluetoothData.whisperServiceUuid], allow_repeats: true)
+        startAdvertising()
+    }
+    
+    private func stopDiscovery() {
+        logger.log("Stop scanning for whisperers")
+        stopAdvertising()
+        factory.stopScan()
+    }
+    
     /// There are several race conditions on qualifying publishers;
     /// this is the gate that resolves them and notifies when appropriate.
     private func maybeAddRemote(remote: Remote) {

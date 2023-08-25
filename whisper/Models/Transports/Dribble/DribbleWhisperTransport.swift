@@ -16,58 +16,19 @@ final class DribbleWhisperTransport: PublishTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> TransportDiscovery {
-        logger.log("Starting Dribble Transport")
-        return startDiscovery()
+    func start() -> Bool {
+        logger.log("Starting Dribble whisper transport")
+        startDiscovery()
+        return true
     }
     
     func stop() {
-        logger.log("Stopping Dribble Transport")
+        logger.log("Stopping Dribble whisper transport")
         stopDiscovery()
         for listener in listeners.values {
             drop(remote: listener)
         }
         saveChunks()
-    }
-    
-    func startDiscovery() -> TransportDiscovery {
-        guard discoveryTimer == nil else {
-            logger.error("Discovery already in progress, ignoring request to start it")
-            return .automatic
-        }
-        guard listeners.count < 2 else {
-            logger.error("All discovery already completed, ignoring request to start it")
-            return .automatic
-        }
-        logger.log("Starting dribble listener discovery...")
-        discoveryTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { timer in
-            if self.listeners["Listener-1"] == nil {
-                logger.log("Discover dribble listener Seku")
-                let new = DribbleListener(id: "Listener-1", name: "Seku")
-                self.listeners[new.id] = new
-                self.addRemoteSubject.send(new)
-            } else if self.listeners["Listener-2"] == nil {
-                logger.log("Discover dribble listener Asha")
-                let new = DribbleListener(id: "Listener-2", name: "Asha")
-                self.listeners[new.id] = new
-                self.addRemoteSubject.send(new)
-            } else {
-                logger.log("Dribble listener discovery complete")
-                timer.invalidate()
-                self.discoveryTimer = nil
-            }
-        }
-        return .automatic
-    }
-    
-    func stopDiscovery() {
-        guard let timer = discoveryTimer else {
-            logger.error("Dribble listener discovery already complete, ignoring request to stop it")
-            return
-        }
-        logger.log("Stopping dribble listener discovery...")
-        timer.invalidate()
-        discoveryTimer = nil
     }
     
     func goToBackground() {
@@ -103,8 +64,7 @@ final class DribbleWhisperTransport: PublishTransport {
         }
     }
     
-    // MARK: internal types, properties, and methods
-    
+    // MARK: internal types, properties, and initialization
     final class DribbleListener: TransportRemote {
         let id: String
         var name: String
@@ -124,6 +84,49 @@ final class DribbleWhisperTransport: PublishTransport {
     private var listeners: [String: DribbleListener] = [:]
     private var discoveryTimer: Timer?
     
+    init() {
+    }
+    
+    // MARK: internal methods
+    private func startDiscovery() {
+        guard discoveryTimer == nil else {
+            logger.error("Discovery already in progress, ignoring request to start it")
+            return
+        }
+        guard listeners.count < 2 else {
+            logger.error("All discovery already completed, ignoring request to start it")
+            return
+        }
+        logger.log("Starting dribble listener discovery...")
+        discoveryTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { timer in
+            if self.listeners["Listener-1"] == nil {
+                logger.log("Discover dribble listener Seku")
+                let new = DribbleListener(id: "Listener-1", name: "Seku")
+                self.listeners[new.id] = new
+                self.addRemoteSubject.send(new)
+            } else if self.listeners["Listener-2"] == nil {
+                logger.log("Discover dribble listener Asha")
+                let new = DribbleListener(id: "Listener-2", name: "Asha")
+                self.listeners[new.id] = new
+                self.addRemoteSubject.send(new)
+            } else {
+                logger.log("Dribble listener discovery complete")
+                timer.invalidate()
+                self.discoveryTimer = nil
+            }
+        }
+    }
+    
+    private func stopDiscovery() {
+        guard let timer = discoveryTimer else {
+            logger.error("Dribble listener discovery already complete, ignoring request to stop it")
+            return
+        }
+        logger.log("Stopping dribble listener discovery...")
+        timer.invalidate()
+        discoveryTimer = nil
+    }
+
     private func saveChunks() {
         do {
             let folderURL = try FileManager.default.url(
@@ -139,8 +142,5 @@ final class DribbleWhisperTransport: PublishTransport {
         catch(let err) {
             logger.error("Failed to write DribbleTimedChunks: \(err)")
         }
-    }
-    
-    init() {
     }
 }

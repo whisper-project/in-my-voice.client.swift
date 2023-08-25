@@ -7,6 +7,7 @@ import Foundation
 import Combine
 
 final class TcpFactory: TransportFactory {
+    // MARK: protocol properties and methods
     typealias Publisher = TcpWhisperTransport
     typealias Subscriber = TcpListenTransport
     
@@ -14,11 +15,22 @@ final class TcpFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
+    static var publishUrl: String = "\(PreferenceData.whisperServer)/subscribe/\(PreferenceData.clientId)"
+    var publisherInfo: TransportDiscovery = .manual(publishUrl)
+    
     func publisher() -> Publisher {
         return TcpWhisperTransport()
     }
     
-    func subscriber() -> Subscriber {
-        return TcpListenTransport()
+    func subscriber(_ publisherInfo: TransportDiscovery) throws -> TcpListenTransport {
+        guard case .manual(let publisher) = publisherInfo else {
+            throw PublisherSubscriberMismatch.automaticPublisherManualSubscriber
+        }
+        guard !publisher.hasSuffix(PreferenceData.clientId) else {
+            throw PublisherSubscriberMismatch.subscriberEqualsPublisher
+        }
+        return TcpListenTransport(publisher)
     }
+    
+    //MARK: private types, properties, and initialization
 }

@@ -66,8 +66,9 @@ final class ListenViewModel: ObservableObject {
             self.notifySoundInBackground = granted
         }
         awaitDiscovery()
-        guard case .automatic = autoTransport.start() else {
-            fatalError("Expected listener discovery to be automatic!")
+        guard autoTransport.start() else {
+            connectionError = true
+            return
         }
     }
     
@@ -95,10 +96,6 @@ final class ListenViewModel: ObservableObject {
         logger.log("End initial wait for whisperers due to background transition")
         discoveryInProgress = false
         maybeSetWhisperer()
-        if whisperer == nil {
-            // keep looking for a whisperer
-            _ = autoTransport.startDiscovery()
-        }
     }
     
     /// Set the passed candidate to be the whisperer

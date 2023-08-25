@@ -52,4 +52,18 @@ struct PreferenceData {
     static func alertSound() -> String {
         return defaults.string(forKey: "alert_sound_preference") ?? "bike-horn"
     }
+    static func paidReceiptId() -> String? {
+        #if DEBUG
+        return defaults.string(forKey: "paid_receipt_id") ?? "debug_build_is_paid"
+        #else
+        return defaults.string(forKey: "paid_receipt_id")
+        #endif
+    }
+    static func updatePaidReceiptId(receiptId: String?) {
+        if let receiptId = receiptId {
+            defaults.setValue(receiptId, forKey: "paid_receipt_id")
+        } else {
+            defaults.removeObject(forKey: "paid_receipt_id")
+        }
+    }
 }

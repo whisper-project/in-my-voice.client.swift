@@ -17,6 +17,7 @@ final class WhisperViewModel: ObservableObject {
 #endif
     
     @Published var statusText: String = ""
+    @Published var connectionError = false
     @Published var remotes: [String:Remote] = [:]
     @Published var speaking: Bool = PreferenceData.startSpeaking()
     var pastText: PastTextViewModel = .init()
@@ -49,10 +50,12 @@ final class WhisperViewModel: ObservableObject {
     // MARK: View entry points
     
     func start() {
-        guard case .automatic = autoTransport.start() else {
-            fatalError("Expected listener discovery to be automatic!")
-        }
         refreshStatusText()
+        guard autoTransport.start() else {
+            logger.error("Underlying transport failed to start")
+            connectionError = true
+            return
+        }
     }
     
     func stop() {

@@ -14,11 +14,16 @@ final class DribbleFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
+    var publisherInfo: TransportDiscovery = .automatic
+    
     func publisher() -> Publisher {
-        return DribbleWhisperTransport()
+        return Publisher()
     }
     
-    func subscriber() -> Subscriber {
-        return DribbleListenTransport()
+    func subscriber(_ publisherInfo: TransportDiscovery) throws -> Subscriber {
+        guard case .automatic = publisherInfo else {
+            throw PublisherSubscriberMismatch.manualPublisherAutomaticSubscriber
+        }
+        return Subscriber()
     }
 }
