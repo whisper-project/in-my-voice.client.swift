@@ -14,9 +14,13 @@ struct ChoiceView: View {
 
     @State private var currentUserName: String = ""
     @State private var newUserName: String = ""
-    
+    @State private var confirmWhisper = false
+    @State private var confirmListen = false
+    @State private var publisherUrl: TransportUrl = ComboFactory.shared.publisherUrl
+    @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
+
     var body: some View {
-        VStack(spacing: 60) {
+        VStack(spacing: 40) {
             Form {
                 Section(content: {
                     TextField("Your Name", text: $newUserName, prompt: Text("Dan"))
@@ -34,39 +38,35 @@ struct ChoiceView: View {
             }
             .frame(maxWidth: 300, maxHeight: 105)
             HStack(spacing: 60) {
-                VStack(spacing: 60) {
-                    Button(action: {
-                        mode = .whisper
-                    }) {
-                        Text("Whisper")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                    }
-                    .background(currentUserName == "" ? Color.gray : Color.accentColor)
-                    .cornerRadius(15)
-                    .disabled(currentUserName == "")
+                Button(action: {
+                    mode = .whisper
+                }) {
+                    Text("Whisper")
+                        .foregroundColor(.white)
+                        .fontWeight(.bold)
+                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                 }
-                VStack(spacing: 60) {
-                    Button(action: {
-                        mode = .listen
-                    }) {
-                        Text("Listen")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                    }
-                    .background(Color.accentColor)
-                    .cornerRadius(15)
-                    .disabled(currentUserName == "")
+                .background(currentUserName == "" ? Color.gray : Color.accentColor)
+                .cornerRadius(15)
+                .disabled(currentUserName == "")
+                Button(action: {
+                    PreferenceData.lastSubscriberUrl = nil
+                    mode = .listen
+                }) {
+                    Text("Listen")
+                        .foregroundColor(.white)
+                        .fontWeight(.bold)
+                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                 }
+                .background(Color.accentColor)
+                .cornerRadius(15)
+                .disabled(currentUserName == "")
             }
-            if (PreferenceData.paidReceiptId() != nil) {
+            if PreferenceData.paidReceiptId() != nil,
+               publisherUrl != nil {
                 HStack(spacing: 60) {
-                    VStack(spacing: 60) {
-                        Button(action: {
-                            mode = .whisper
-                        }) {
+                    VStack {
+                        Button(action: { self.confirmWhisper = true }) {
                             Text("Whisper+")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
@@ -75,11 +75,10 @@ struct ChoiceView: View {
                         .background(currentUserName == "" ? Color.gray : Color.accentColor)
                         .cornerRadius(15)
                         .disabled(currentUserName == "")
+                        ShareLink("URL", item: URL(string: self.publisherUrl!)!)
                     }
-                    VStack(spacing: 60) {
-                        Button(action: {
-                            mode = .listen
-                        }) {
+                    VStack {
+                        Button(action: { confirmListen = true }) {
                             Text("Listen+")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
@@ -87,9 +86,43 @@ struct ChoiceView: View {
                         }
                         .background(Color.accentColor)
                         .cornerRadius(15)
-                        .disabled(currentUserName == "")
+                        .disabled(currentUserName == "" || lastSubscribedUrl == nil)
+                        Button("Paste URL") {
+                            if UIPasteboard.general.hasStrings,
+                               let url = UIPasteboard.general.string
+                            {
+                                if PreferenceData.publisherUrlToClientId(url: url) != nil {
+                                    PreferenceData.lastSubscriberUrl = url
+                                    lastSubscribedUrl = url
+                                } else {
+                                    lastSubscribedUrl = nil
+                                }
+                            }
+                        }
                     }
                 }
+                .alert("Confirm Whisper+", isPresented: $confirmWhisper) {
+                    Button("Whisper+") { mode = .whisper }
+                    Button("Don't Whisper+") { }
+                } message: {
+                    Text("Be sure to share [this link](\(self.publisherUrl!)) with your listeners")
+                    ShareLink(item: URL(string: self.publisherUrl!)!)
+                }
+                .alert("Confirm Listen+", isPresented: $confirmListen) {
+                    Button("Listen+") { mode = .listen }
+                    Button("Don't Listen+") { }
+                } message: {
+                    Text("Listen+ to the last used Whisperer+?")
+                }
+            } else {
+                Button(action: { }) {
+                    Text("Get +")
+                        .foregroundColor(.white)
+                        .fontWeight(.bold)
+                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+                }
+                .background(Color.accentColor)
+                .cornerRadius(15)
             }
             Button(action: {
                 UIApplication.shared.open(settingsUrl)

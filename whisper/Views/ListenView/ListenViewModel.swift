@@ -9,13 +9,8 @@ import CoreBluetooth
 import UserNotifications
 
 final class ListenViewModel: ObservableObject {
-#if targetEnvironment(simulator)
-    typealias Remote = DribbleFactory.Subscriber.Remote
-    typealias Transport = DribbleFactory.Subscriber
-#else
-    typealias Remote = BluetoothFactory.Subscriber.Remote
-    typealias Transport = BluetoothFactory.Subscriber
-#endif
+    typealias Remote = ComboFactory.Subscriber.Remote
+    typealias Transport = ComboFactory.Subscriber
 
     @Published var speaking: Bool = PreferenceData.startSpeaking()
     @Published var statusText: String = ""
@@ -27,7 +22,7 @@ final class ListenViewModel: ObservableObject {
     @Published var whisperer: Remote?
     var pastText: PastTextViewModel = .init()
     
-    private var autoTransport = Transport()
+    private var transport = Transport(PreferenceData.lastSubscriberUrl)
     private var cancellables: Set<AnyCancellable> = []
     private var discoveryInProgress = false
     private var discoveryCountDown = 0
@@ -40,13 +35,13 @@ final class ListenViewModel: ObservableObject {
 
     init() {
         logger.log("Initializing ListenView model")
-        autoTransport.addRemoteSubject
+        transport.addRemoteSubject
             .sink{ [weak self] in self?.addCandidate($0) }
             .store(in: &cancellables)
-        autoTransport.dropRemoteSubject
+        transport.dropRemoteSubject
             .sink{ [weak self] in self?.dropCandidate($0) }
             .store(in: &cancellables)
-        autoTransport.receivedChunkSubject
+        transport.receivedChunkSubject
             .sink{ [weak self] in self?.receiveChunk($0) }
             .store(in: &cancellables)
     }
@@ -56,7 +51,6 @@ final class ListenViewModel: ObservableObject {
     }
     
     // MARK: View entry points
-    
     func start() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
@@ -66,15 +60,12 @@ final class ListenViewModel: ObservableObject {
             self.notifySoundInBackground = granted
         }
         awaitDiscovery()
-        guard autoTransport.start() else {
-            connectionError = true
-            return
-        }
+        transport.start(commFailure: signalConnectionError)
     }
     
     func stop() {
         cancelDiscovery()
-        autoTransport.stop()
+        transport.stop()
         statusText = "Stopped Listening"
     }
     
@@ -83,7 +74,7 @@ final class ListenViewModel: ObservableObject {
             return
         }
         isInBackground = true
-        autoTransport.goToBackground()
+        transport.goToBackground()
     }
     
     func wentToForeground() {
@@ -91,7 +82,7 @@ final class ListenViewModel: ObservableObject {
             return
         }
         isInBackground = false
-        autoTransport.goToForeground()
+        transport.goToForeground()
         // after going to background, assume not waiting any more
         logger.log("End initial wait for whisperers due to background transition")
         discoveryInProgress = false
@@ -107,7 +98,7 @@ final class ListenViewModel: ObservableObject {
         logger.log("Selecting whisperer \(to.id) with name \(to.name)")
         whisperer = to
         // tell the transport we're subscribing (removes all other candidates)
-        autoTransport.subscribe(remote: to)
+        transport.subscribe(remote: to)
         // update the view
         refreshStatusText()
         // get anything we missed from whisperer
@@ -128,7 +119,7 @@ final class ListenViewModel: ObservableObject {
         pastText.clearLines()
         liveText = ""
         let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "all")
-        autoTransport.send(remote: whisperer!, chunks: [chunk])
+        transport.send(remote: whisperer!, chunks: [chunk])
     }
     
     // MARK: Transport subscription handlers
@@ -165,6 +156,9 @@ final class ListenViewModel: ObservableObject {
     }
         
     // MARK: internal helpers
+    private func signalConnectionError() {
+        connectionError = true
+    }
     
     private func processChunk(_ chunk: TextProtocol.ProtocolChunk) {
         if chunk.isSound() {

@@ -14,14 +14,10 @@ final class TcpListenTransport: SubscribeTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> Bool {
+    func start(commFailure: @escaping () -> Void) {
         logger.info("Starting TCP listen transport...")
-        guard let tokenRequest = getTokenRequest(mode: .listen, publisherId: publisherId) else {
-            logger.error("Couldn't obtain token for subscribing")
-            return false
-        }
-        self.tokenRequest = tokenRequest
-        return true
+        self.commFailure = commFailure
+        getTokenRequest(mode: .whisper, publisherId: PreferenceData.clientId, callback: receiveTokenRequest)
     }
     
     func stop() {
@@ -59,14 +55,21 @@ final class TcpListenTransport: SubscribeTransport {
     
     private var publisherId: String!
     private var tokenRequest: String?
+    private var commFailure: (() -> Void)?
 
-    init(_ publisherUrl: String) {
-        let publisherRegex = /https:\/\/whisper.*\/subscribe\/([-a-z0-9]{36})/
-        guard let match = publisherUrl.wholeMatch(of: publisherRegex) else {
-            fatalError("Invalid publisher url: \(publisherUrl)")
+    init(_ url: String) {
+        guard let clientId = PreferenceData.publisherUrlToClientId(url: url) else {
+            fatalError("Invalid TCP listen url: \(url)")
         }
-        self.publisherId = String(match.1)
+        self.publisherId = clientId
     }
     
     //MARK: Internal methods
+    func receiveTokenRequest(_ token: String?) {
+        guard token != nil else {
+            commFailure?()
+            return
+        }
+        self.tokenRequest = token
+    }
 }

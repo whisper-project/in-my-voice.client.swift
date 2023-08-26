@@ -12,6 +12,13 @@ enum OperatingMode: Int {
 struct PreferenceData {
     private static var defaults = UserDefaults.standard
     static var whisperServer = "https://whisper-server-stage-baa911f67e80.herokuapp.com"
+    static func publisherUrlToClientId(url: String) -> String? {
+        let publisherRegex = /https:\/\/whisper[-a-zA-Z0-9:.]*\/subscribe\/([-a-zA-Z0-9]{36})/
+        guard let match = url.wholeMatch(of: publisherRegex) else {
+            return nil
+        }
+        return String(match.1)
+    }
     static var clientId: String = {
         let defaults = UserDefaults.standard
         if let id = defaults.string(forKey: "whisper_client_id") {
@@ -64,6 +71,18 @@ struct PreferenceData {
             defaults.setValue(receiptId, forKey: "paid_receipt_id")
         } else {
             defaults.removeObject(forKey: "paid_receipt_id")
+        }
+    }
+    static var lastSubscriberUrl: String? {
+        get {
+            defaults.string(forKey: "last_subscriber_url")
+        }
+        set(newUrl) {
+            if newUrl != nil {
+                defaults.setValue(newUrl, forKey: "last_subscriber_url")
+            } else {
+                defaults.removeObject(forKey: "last_subscriber_url")
+            }
         }
     }
 }

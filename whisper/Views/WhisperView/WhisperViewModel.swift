@@ -8,13 +8,8 @@ import Combine
 import CoreBluetooth
 
 final class WhisperViewModel: ObservableObject {
-#if targetEnvironment(simulator)
-    typealias Remote = DribbleFactory.Publisher.Remote
-    typealias Transport = DribbleFactory.Publisher
-#else
-    typealias Remote = BluetoothFactory.Publisher.Remote
-    typealias Transport = BluetoothFactory.Publisher
-#endif
+    typealias Remote = ComboFactory.Publisher.Remote
+    typealias Transport = ComboFactory.Publisher
     
     @Published var statusText: String = ""
     @Published var connectionError = false
@@ -22,7 +17,7 @@ final class WhisperViewModel: ObservableObject {
     @Published var speaking: Bool = PreferenceData.startSpeaking()
     var pastText: PastTextViewModel = .init()
 
-    private var autoTransport = Transport()
+    private var transport = Transport(ComboFactory.shared.publisherUrl)
     private var cancellables: Set<AnyCancellable> = []
     
     private var liveText: String = ""
@@ -31,13 +26,13 @@ final class WhisperViewModel: ObservableObject {
 
     init() {
         logger.log("Initializing WhisperView model")
-        self.autoTransport.addRemoteSubject
+        self.transport.addRemoteSubject
             .sink { [weak self] in self?.addListener($0) }
             .store(in: &cancellables)
-        self.autoTransport.dropRemoteSubject
+        self.transport.dropRemoteSubject
             .sink { [weak self] in self?.removeListener($0) }
             .store(in: &cancellables)
-        self.autoTransport.receivedChunkSubject
+        self.transport.receivedChunkSubject
             .sink { [weak self] in self?.sendAllText($0) }
             .store(in: &cancellables)
     }
@@ -51,15 +46,11 @@ final class WhisperViewModel: ObservableObject {
     
     func start() {
         refreshStatusText()
-        guard autoTransport.start() else {
-            logger.error("Underlying transport failed to start")
-            connectionError = true
-            return
-        }
+        transport.start(commFailure: signalConnectionError)
     }
     
     func stop() {
-        autoTransport.stop()
+        transport.stop()
         refreshStatusText()
     }
     
@@ -81,7 +72,7 @@ final class WhisperViewModel: ObservableObject {
                 liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
             }
         }
-        autoTransport.publish(chunks: chunks)
+        transport.publish(chunks: chunks)
         return liveText
     }
     
@@ -97,7 +88,7 @@ final class WhisperViewModel: ObservableObject {
             playSoundLocally(soundName)
         }
         let chunk = TextProtocol.ProtocolChunk.sound(soundName)
-        autoTransport.publish(chunks: [chunk])
+        transport.publish(chunks: [chunk])
     }
     
     /// Send the alert sound to a specific listener
@@ -108,7 +99,7 @@ final class WhisperViewModel: ObservableObject {
         }
         let soundName = PreferenceData.alertSound()
         let chunk = TextProtocol.ProtocolChunk.sound(soundName)
-        autoTransport.send(remote: remote, chunks: [chunk])
+        transport.send(remote: remote, chunks: [chunk])
     }
     
     /// Drop a listener from the authorized list
@@ -118,18 +109,21 @@ final class WhisperViewModel: ObservableObject {
             return
         }
         logger.notice("Dropping remote \(listener.id) with name \(listener.name)")
-        autoTransport.drop(remote: remote)
+        transport.drop(remote: remote)
     }
     
     func wentToBackground() {
-        autoTransport.goToBackground()
+        transport.goToBackground()
     }
     
     func wentToForeground() {
-        autoTransport.goToForeground()
+        transport.goToForeground()
     }
     
     // MARK: Internal helpers
+    private func signalConnectionError() {
+        connectionError = true
+    }
     
     private func addListener(_ remote: Remote) {
         guard remotes[remote.id] == nil else {
@@ -158,7 +152,7 @@ final class WhisperViewModel: ObservableObject {
         }
         var chunks = pastText.getLines().map{TextProtocol.ProtocolChunk.fromPastText(text: $0)}
         chunks.append(TextProtocol.ProtocolChunk.fromLiveText(text: liveText))
-        autoTransport.send(remote: remote, chunks: chunks)
+        transport.send(remote: remote, chunks: chunks)
     }
     
     // speak a set of words

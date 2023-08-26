@@ -14,14 +14,10 @@ final class TcpWhisperTransport: PublishTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> Bool {
+    func start(commFailure: @escaping () -> Void) {
         logger.log("Starting TCP whisper transport")
-        guard let tokenRequest = getTokenRequest(mode: .whisper, publisherId: PreferenceData.clientId) else {
-            logger.error("Couldn't obtain token for publishing")
-            return false
-        }
-        self.tokenRequest = tokenRequest
-        return true
+        self.commFailure = commFailure
+        getTokenRequest(mode: .whisper, publisherId: PreferenceData.clientId, callback: receiveTokenRequest)
     }
     
     func stop() {
@@ -58,9 +54,20 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     private var tokenRequest: String?
+    private var commFailure: (() -> Void)?
 
-    init() {
+    init(_ url: String) {
+        guard url.hasSuffix(PreferenceData.clientId) else {
+            fatalError("Tcp whisper transport can only publish on clientId channel")
+        }
     }
     
     //MARK: Internal methods
+    func receiveTokenRequest(_ token: String?) {
+        guard token != nil else {
+            commFailure?()
+            return
+        }
+        self.tokenRequest = token
+    }
 }

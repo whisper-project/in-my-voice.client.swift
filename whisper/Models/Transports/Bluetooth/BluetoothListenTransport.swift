@@ -16,9 +16,8 @@ final class BluetoothListenTransport: SubscribeTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> Bool {
+    func start(commFailure: @escaping () -> Void) {
         startDiscovery()
-        return true
     }
     
     func stop() {

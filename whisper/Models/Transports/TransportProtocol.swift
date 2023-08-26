@@ -12,16 +12,7 @@ enum TransportStatus {
     case disabled(String)
 }
 
-enum TransportDiscovery {
-    case automatic
-    case manual(String)
-}
-
-enum PublisherSubscriberMismatch: Error {
-    case manualPublisherAutomaticSubscriber
-    case automaticPublisherManualSubscriber
-    case subscriberEqualsPublisher
-}
+typealias TransportUrl = String?
 
 protocol TransportFactory {
     associatedtype Publisher: PublishTransport
@@ -29,12 +20,12 @@ protocol TransportFactory {
     
     static var shared: Self { get }
     
-    var publisherInfo: TransportDiscovery { get }
+    var publisherUrl: TransportUrl { get }
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> { get }
     
-    func publisher() -> Publisher
-    func subscriber(_ publisherInfo: TransportDiscovery) throws -> Subscriber
+    func publisher(_ publisherUrl: TransportUrl) -> Publisher
+    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber
 }
 
 protocol TransportRemote: Identifiable {
@@ -51,7 +42,7 @@ protocol Transport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> { get }
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> { get }
 
-    func start() -> Bool
+    func start(commFailure: @escaping () -> Void)
     func stop()
     
     func goToBackground()

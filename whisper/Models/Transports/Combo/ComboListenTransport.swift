@@ -14,74 +14,66 @@ final class ComboListenTransport: SubscribeTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> Bool {
+    func start(commFailure: @escaping () -> Void) {
         logger.info("Starting combo listen transport")
-        if !autoTransport.start() {
-            return false
+        if let auto = autoTransport {
+            auto.start(commFailure: commFailure)
+        } else {
+            manualTransport!.start(commFailure: commFailure)
         }
-        if let manual = manualTransport {
-            return manual.start()
-        }
-        return true
     }
     
     func stop() {
         logger.info("Stopping combo listen transport")
-        autoTransport.stop()
+        autoTransport?.stop()
         manualTransport?.stop()
     }
     
     func goToBackground() {
-        autoTransport.goToBackground()
+        autoTransport?.goToBackground()
         manualTransport?.goToBackground()
     }
     
     func goToForeground() {
-        autoTransport.goToForeground()
+        autoTransport?.goToForeground()
         manualTransport?.goToForeground()
     }
     
     func send(remote: Whisperer, chunks: [TextProtocol.ProtocolChunk]) {
-        guard let whisperer = whisperers[remote.id] else {
+        guard let remote = whisperers[remote.id] else {
             fatalError("Targeting a remote that's not a whisperer: \(remote.id)")
         }
         switch remote.owner {
         case .auto:
-            autoTransport.drop(remote: remote.inner as! AutoRemote)
+            autoTransport!.drop(remote: remote.inner as! AutoRemote)
         case .manual:
-            manualTransport?.drop(remote: remote.inner as! ManualRemote)
+            manualTransport!.drop(remote: remote.inner as! ManualRemote)
         }
     }
 
     func drop(remote: Whisperer) {
-        guard let whisperer = whisperers[remote.id] else {
+        guard let remote = whisperers[remote.id] else {
             fatalError("Dropping a remote that's not a whisperer: \(remote.id)")
         }
         switch remote.owner {
         case .auto:
-            autoTransport.drop(remote: remote.inner as! AutoRemote)
+            autoTransport!.drop(remote: remote.inner as! AutoRemote)
         case .manual:
-            manualTransport?.drop(remote: remote.inner as! ManualRemote)
+            manualTransport!.drop(remote: remote.inner as! ManualRemote)
         }
     }
 
     func subscribe(remote: Whisperer) {
-        guard let whisperer = whisperers[remote.id] else {
+        guard let remote = whisperers[remote.id] else {
             fatalError("Subscribing to a remote that's not a whisperer: \(remote.id)")
         }
         switch remote.owner {
         case .auto:
             logger.info("Subscribing to an AutoRemote")
-            autoTransport.subscribe(remote: remote.inner as! AutoRemote)
-            for listener in whisperers.values.filter({w in w.owner == .manual}) {
-                drop(remote: listener)
-            }
+            autoTransport!.subscribe(remote: remote.inner as! AutoRemote)
         case .manual:
             logger.info("Subscribing to a ManualRemote")
-            manualTransport?.subscribe(remote: remote.inner as! ManualRemote)
-            for listener in whisperers.values.filter({w in w.owner == .auto}) {
-                drop(remote: listener)
-            }
+            manualTransport!.subscribe(remote: remote.inner as! ManualRemote)
         }
     }
     
@@ -116,26 +108,15 @@ final class ComboListenTransport: SubscribeTransport {
         }
     }
     
-    private var autoTransport: AutoTransport
+    private var autoTransport: AutoTransport?
     private var manualTransport: ManualTransport?
     private var whisperers: [String: Whisperer] = [:]
     private var cancellables: Set<AnyCancellable> = []
     
-    init(_ publisherInfo: TransportDiscovery) {
-        logger.log("Initializing combo whisper transport")
-        self.autoTransport = AutoTransport()
-        self.autoTransport.addRemoteSubject
-            .sink { [weak self] in self?.addListener(.auto, remote: $0) }
-            .store(in: &cancellables)
-        self.autoTransport.dropRemoteSubject
-            .sink { [weak self] in self?.removeListener(.auto, remote: $0) }
-            .store(in: &cancellables)
-        self.autoTransport.receivedChunkSubject
-            .sink { [weak self] in self?.receiveChunk($0) }
-            .store(in: &cancellables)
-        if PreferenceData.paidReceiptId() != nil,
-           case .manual(let publisher) = publisherInfo {
-            let manualTransport = ManualTransport(publisher)
+    init(_ publisherUrl: TransportUrl) {
+        logger.log("Initializing combo listen transport")
+        if let url = publisherUrl {
+            let manualTransport = ManualTransport(url)
             self.manualTransport = manualTransport
             manualTransport.addRemoteSubject
                 .sink { [weak self] in self?.addListener(.manual, remote: $0) }
@@ -146,11 +127,23 @@ final class ComboListenTransport: SubscribeTransport {
             manualTransport.receivedChunkSubject
                 .sink { [weak self] in self?.receiveChunk($0) }
                 .store(in: &cancellables)
+        } else {
+            let autoTransport = AutoTransport()
+            self.autoTransport = autoTransport
+            autoTransport.addRemoteSubject
+                .sink { [weak self] in self?.addListener(.auto, remote: $0) }
+                .store(in: &cancellables)
+            autoTransport.dropRemoteSubject
+                .sink { [weak self] in self?.removeListener(.auto, remote: $0) }
+                .store(in: &cancellables)
+            autoTransport.receivedChunkSubject
+                .sink { [weak self] in self?.receiveChunk($0) }
+                .store(in: &cancellables)
         }
     }
     
     deinit {
-        logger.log("Destroying combo whisper transport")
+        logger.log("Destroying combo listen transport")
         cancellables.cancel()
     }
     

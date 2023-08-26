@@ -14,25 +14,34 @@ final class ComboFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    var publisherInfo: TransportDiscovery {
-        if let receiptId = PreferenceData.paidReceiptId() {
-            return TcpFactory.shared.publisherInfo
+    var publisherUrl: TransportUrl {
+        if PreferenceData.paidReceiptId() != nil {
+            return TcpFactory.shared.publisherUrl
         } else {
-            return BluetoothFactory.shared.publisherInfo
+            return BluetoothFactory.shared.publisherUrl
         }
     }
     
-    func publisher() -> Publisher {
-        return Publisher()
+    func publisher(_ publisherUrl: TransportUrl) -> Publisher {
+        if PreferenceData.paidReceiptId() != nil {
+            return Publisher(publisherUrl)
+        } else {
+            if let url = publisherUrl {
+                logger.warning("Combo factory ignoring publisher URL in unpaid mode: \(url)")
+            }
+            return Publisher(nil)
+        }
     }
     
-    func subscriber(_ publisherInfo: TransportDiscovery) throws -> ComboListenTransport {
-        if let receiptId = PreferenceData.paidReceiptId() {
-            return Subscriber(publisherInfo)
-        } else if case .automatic = publisherInfo {
-            return Subscriber(publisherInfo)
+    func subscriber(_ publisherUrl: TransportUrl) -> ComboListenTransport {
+        if PreferenceData.paidReceiptId() != nil {
+            return Subscriber(publisherUrl)
+        } else {
+            if let url = publisherUrl {
+                logger.warning("Combo factory ignoring subscriber URL in unpaid mode: \(url)")
+            }
+            return Subscriber(nil)
         }
-        throw PublisherSubscriberMismatch.manualPublisherAutomaticSubscriber
     }
     
     //MARK: private types and properties and initialization

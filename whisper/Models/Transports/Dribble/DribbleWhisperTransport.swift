@@ -16,10 +16,9 @@ final class DribbleWhisperTransport: PublishTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> Bool {
+    func start(commFailure: @escaping () -> Void) {
         logger.log("Starting Dribble whisper transport")
         startDiscovery()
-        return true
     }
     
     func stop() {

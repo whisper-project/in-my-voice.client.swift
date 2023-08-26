@@ -9,11 +9,11 @@ import CoreBluetooth
 final class MainViewModel: ObservableObject {
     @Published var status: TransportStatus = .on
     
-    private var transport = ComboFactory.shared
+    private var factory = ComboFactory.shared
     private var cancellables: Set<AnyCancellable> = []
     
     init() {
-        self.transport.statusSubject
+        self.factory.statusSubject
             .sink(receiveValue: setStatus)
             .store(in: &cancellables)
     }

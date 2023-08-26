@@ -14,15 +14,12 @@ final class ComboWhisperTransport: PublishTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start() -> Bool {
+    func start(commFailure: @escaping () -> Void) {
         logger.log("Starting combo whisper transport")
-        if !autoTransport.start() {
-            return false
-        }
+        autoTransport.start(commFailure: commFailure)
         if let manual = manualTransport {
-            return manual.start()
+            manual.start(commFailure: commFailure)
         }
-        return true
     }
     
     func stop() {
@@ -47,9 +44,9 @@ final class ComboWhisperTransport: PublishTransport {
         }
         switch remote.owner {
         case .auto:
-            autoTransport.drop(remote: remote.inner as! AutoRemote)
+            autoTransport.drop(remote: listener.inner as! AutoRemote)
         case .manual:
-            manualTransport?.drop(remote: remote.inner as! ManualRemote)
+            manualTransport?.drop(remote: listener.inner as! ManualRemote)
         }
     }
     
@@ -59,9 +56,9 @@ final class ComboWhisperTransport: PublishTransport {
         }
         switch remote.owner {
         case .auto:
-            autoTransport.drop(remote: remote.inner as! AutoRemote)
+            autoTransport.drop(remote: listener.inner as! AutoRemote)
         case .manual:
-            manualTransport?.drop(remote: remote.inner as! ManualRemote)
+            manualTransport?.drop(remote: listener.inner as! ManualRemote)
         }
     }
     
@@ -106,7 +103,7 @@ final class ComboWhisperTransport: PublishTransport {
     private var listeners: [String: Listener] = [:]
     private var cancellables: Set<AnyCancellable> = []
 
-    init() {
+    init(_ publisherUrl: TransportUrl) {
         logger.log("Initializing combo whisper transport")
         self.autoTransport = AutoTransport()
         self.autoTransport.addRemoteSubject
@@ -118,8 +115,8 @@ final class ComboWhisperTransport: PublishTransport {
         self.autoTransport.receivedChunkSubject
             .sink { [weak self] in self?.receiveChunk($0) }
             .store(in: &cancellables)
-        if let receipt = PreferenceData.paidReceiptId() {
-            let manualTransport = ManualTransport()
+        if let url = publisherUrl {
+            let manualTransport = ManualTransport(url)
             self.manualTransport = manualTransport
             manualTransport.addRemoteSubject
                 .sink { [weak self] in self?.addListener(.manual, remote: $0) }

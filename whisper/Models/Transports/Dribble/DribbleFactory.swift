@@ -14,15 +14,18 @@ final class DribbleFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    var publisherInfo: TransportDiscovery = .automatic
+    var publisherUrl: TransportUrl = nil
     
-    func publisher() -> Publisher {
+    func publisher(_ publisherUrl: TransportUrl) -> Publisher {
+        if publisherUrl != nil {
+            logger.warning("Ignoring the publisher URL given to the Dribble whisper transport")
+        }
         return Publisher()
     }
     
-    func subscriber(_ publisherInfo: TransportDiscovery) throws -> Subscriber {
-        guard case .automatic = publisherInfo else {
-            throw PublisherSubscriberMismatch.manualPublisherAutomaticSubscriber
+    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber {
+        if publisherUrl != nil {
+            logger.warning("Ignoring the publisher URL given to the Dribble listen transport")
         }
         return Subscriber()
     }

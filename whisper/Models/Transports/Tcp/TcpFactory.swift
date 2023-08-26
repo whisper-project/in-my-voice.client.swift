@@ -15,21 +15,23 @@ final class TcpFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    static var publishUrl: String = "\(PreferenceData.whisperServer)/subscribe/\(PreferenceData.clientId)"
-    var publisherInfo: TransportDiscovery = .manual(publishUrl)
+    var publisherUrl: TransportUrl = "\(PreferenceData.whisperServer)/subscribe/\(PreferenceData.clientId)"
     
-    func publisher() -> Publisher {
-        return TcpWhisperTransport()
+    func publisher(_ publisherUrl: TransportUrl) -> Publisher {
+        guard publisherUrl == self.publisherUrl else {
+            fatalError("This client's TCP publisherUrl is not \(String(describing: publisherUrl))")
+        }
+        return TcpWhisperTransport(publisherUrl!)
     }
     
-    func subscriber(_ publisherInfo: TransportDiscovery) throws -> TcpListenTransport {
-        guard case .manual(let publisher) = publisherInfo else {
-            throw PublisherSubscriberMismatch.automaticPublisherManualSubscriber
+    func subscriber(_ publisherUrl: TransportUrl) -> TcpListenTransport {
+        guard let url = publisherUrl else {
+            fatalError("TCP listen transport requires a whisper URL")
         }
-        guard !publisher.hasSuffix(PreferenceData.clientId) else {
-            throw PublisherSubscriberMismatch.subscriberEqualsPublisher
+        guard !url.hasSuffix(PreferenceData.clientId) else {
+            fatalError("TCP listen transport cannot listen to itself")
         }
-        return TcpListenTransport(publisher)
+        return TcpListenTransport(url)
     }
     
     //MARK: private types, properties, and initialization

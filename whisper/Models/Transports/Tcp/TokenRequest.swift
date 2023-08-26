@@ -24,11 +24,12 @@ func createJWT() -> String? {
     return signedJWT
 }
 
-func getTokenRequest(mode: OperatingMode, publisherId: String) -> String? {
+func getTokenRequest(mode: OperatingMode, publisherId: String, callback: @escaping (String?) -> ()) {
     guard let jwt = createJWT() else {
-        return nil
+        logger.error("Couldn't create JWT to post token request")
+        callback(nil)
+        return
     }
-    var receivedTokenRequest: String? = nil
     let activity = mode == .whisper ? "publish" : "subscribe"
     let value = [
         "clientId": PreferenceData.clientId,
@@ -49,29 +50,32 @@ func getTokenRequest(mode: OperatingMode, publisherId: String) -> String? {
     let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
         guard error == nil else {
             logger.error("Failed to post \(activity) token request: \(String(describing: error))")
+            callback(nil)
             return
         }
         guard let response = response as? HTTPURLResponse else {
             logger.error("Received non-HTTP response on \(activity) token request: \(String(describing: response))")
+            callback(nil)
             return
         }
         if response.statusCode != 200 {
-            logger.error("Received unexpected response on \(activity) token request: \(response.statusCode)")
+            logger.warning("Received unexpected response status on \(activity) token request: \(response.statusCode)")
         }
         guard let data = data,
               let body = try? JSONSerialization.jsonObject(with: data),
               let obj = body as? [String:String] else {
             logger.error("Can't deserialize \(activity) token response body: \(String(describing: data))")
+            callback(nil)
             return
         }
         guard let tokenRequest = obj["tokenRequest"] else {
             logger.error("Didn't receive a token request value in \(activity) response body: \(obj)")
+            callback(nil)
             return
         }
-        receivedTokenRequest = tokenRequest
         logger.info("Received \(activity) token from whisper-server")
+        callback(tokenRequest)
     }
     logger.info("Posting \(activity) token request to whisper-server")
     task.resume()
-    return receivedTokenRequest
 }
