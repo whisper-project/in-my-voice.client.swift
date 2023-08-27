@@ -42,7 +42,7 @@ protocol Transport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> { get }
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> { get }
 
-    func start(commFailure: @escaping () -> Void)
+    func start(failureCallback: @escaping (String) -> Void)
     func stop()
     
     func goToBackground()

@@ -37,7 +37,7 @@
 		377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710E2A913BFE009B416F /* TcpListenTransport.swift */; };
 		377D71162A913E8B009B416F /* PreferenceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71142A913E2E009B416F /* PreferenceData.swift */; };
 		377D71192A956B4C009B416F /* SwiftJWT in Frameworks */ = {isa = PBXBuildFile; productRef = 377D71182A956B4C009B416F /* SwiftJWT */; };
-		377D711B2A956C23009B416F /* TokenRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711A2A956C23009B416F /* TokenRequest.swift */; };
+		377D711B2A956C23009B416F /* TcpAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711A2A956C23009B416F /* TcpAuthenticator.swift */; };
 		377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711D2A95CE5E009B416F /* ComboFactory.swift */; };
 		377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */; };
 		377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711F2A95CEAC009B416F /* ComboListenTransport.swift */; };
@@ -110,7 +110,7 @@
 		377D710F2A913BFE009B416F /* TcpWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpWhisperTransport.swift; sourceTree = "<group>"; };
 		377D71102A913BFE009B416F /* TcpFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpFactory.swift; sourceTree = "<group>"; };
 		377D71142A913E2E009B416F /* PreferenceData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceData.swift; sourceTree = "<group>"; };
-		377D711A2A956C23009B416F /* TokenRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenRequest.swift; sourceTree = "<group>"; };
+		377D711A2A956C23009B416F /* TcpAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpAuthenticator.swift; sourceTree = "<group>"; };
 		377D711D2A95CE5E009B416F /* ComboFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboFactory.swift; sourceTree = "<group>"; };
 		377D711F2A95CEAC009B416F /* ComboListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboListenTransport.swift; sourceTree = "<group>"; };
 		377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboWhisperTransport.swift; sourceTree = "<group>"; };
@@ -331,7 +331,7 @@
 				377D71102A913BFE009B416F /* TcpFactory.swift */,
 				377D710F2A913BFE009B416F /* TcpWhisperTransport.swift */,
 				377D710E2A913BFE009B416F /* TcpListenTransport.swift */,
-				377D711A2A956C23009B416F /* TokenRequest.swift */,
+				377D711A2A956C23009B416F /* TcpAuthenticator.swift */,
 			);
 			path = Tcp;
 			sourceTree = "<group>";
@@ -527,7 +527,7 @@
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
 				377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */,
 				37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */,
-				377D711B2A956C23009B416F /* TokenRequest.swift in Sources */,
+				377D711B2A956C23009B416F /* TcpAuthenticator.swift in Sources */,
 				37B6236F29EF166800213790 /* ListenersView.swift in Sources */,
 				377D71112A913C5C009B416F /* TcpFactory.swift in Sources */,
 				3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */,

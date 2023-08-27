@@ -56,15 +56,10 @@ struct ListenView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
-        .alert("Lost Connection", isPresented: $model.wasDropped) {
+        .alert("Communication Error", isPresented: $model.connectionError) {
             Button("OK") { mode = .ask }
         } message: {
-            Text("The connection to the listener was lost")
-        }
-        .alert("Communication Error", isPresented: $model.connectionError) {
-            Button("OK") { model.readAllText() }
-        } message: {
-            Text("Some text from the whisperer was lost. It will be re-read.")
+            Text(model.connectionErrorDescription)
         }
         .onAppear {
             logger.log("ListenView appeared")

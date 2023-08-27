@@ -18,6 +18,9 @@ struct ChoiceView: View {
     @State private var confirmListen = false
     @State private var publisherUrl: TransportUrl = ComboFactory.shared.publisherUrl
     @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
+    
+    let choiceButtonWidth = CGFloat(140)
+    let choiceButtonHeight = CGFloat(50)
 
     var body: some View {
         VStack(spacing: 40) {
@@ -37,7 +40,7 @@ struct ChoiceView: View {
                 })
             }
             .frame(maxWidth: 300, maxHeight: 105)
-            HStack(spacing: 60) {
+            HStack(spacing: 40) {
                 Button(action: {
                     mode = .whisper
                 }) {
@@ -64,10 +67,10 @@ struct ChoiceView: View {
             }
             if PreferenceData.paidReceiptId() != nil,
                publisherUrl != nil {
-                HStack(spacing: 60) {
+                HStack(spacing: 40) {
                     VStack {
                         Button(action: { self.confirmWhisper = true }) {
-                            Text("Whisper+")
+                            Text("Whisper \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
                                 .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
@@ -79,7 +82,7 @@ struct ChoiceView: View {
                     }
                     VStack {
                         Button(action: { confirmListen = true }) {
-                            Text("Listen+")
+                            Text("Listen \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
                                 .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
@@ -87,7 +90,7 @@ struct ChoiceView: View {
                         .background(Color.accentColor)
                         .cornerRadius(15)
                         .disabled(currentUserName == "" || lastSubscribedUrl == nil)
-                        Button("Paste URL") {
+                        Button("\(Image(systemName: "square.and.arrow.down")) URL") {
                             if UIPasteboard.general.hasStrings,
                                let url = UIPasteboard.general.string
                             {
@@ -101,22 +104,22 @@ struct ChoiceView: View {
                         }
                     }
                 }
-                .alert("Confirm Whisper+", isPresented: $confirmWhisper) {
-                    Button("Whisper+") { mode = .whisper }
-                    Button("Don't Whisper+") { }
+                .alert("Confirm Internet Whisper", isPresented: $confirmWhisper) {
+                    Button("Whisper") { mode = .whisper }
+                    Button("Don't Whisper") { }
                 } message: {
-                    Text("Be sure to share [this link](\(self.publisherUrl!)) with your listeners")
+                    Text("Be sure your listeners have the link")
                     ShareLink(item: URL(string: self.publisherUrl!)!)
                 }
-                .alert("Confirm Listen+", isPresented: $confirmListen) {
-                    Button("Listen+") { mode = .listen }
-                    Button("Don't Listen+") { }
+                .alert("Confirm Internet Listen", isPresented: $confirmListen) {
+                    Button("Listen") { mode = .listen }
+                    Button("Don't Listen") { }
                 } message: {
-                    Text("Listen+ to the last used Whisperer+?")
+                    Text("This will use the last received link")
                 }
             } else {
                 Button(action: { }) {
-                    Text("Get +")
+                    Text("Upgrade to \(Image(systemName: "network"))")
                         .foregroundColor(.white)
                         .fontWeight(.bold)
                         .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
@@ -176,7 +179,7 @@ extension UIApplication {
 }
 
 struct ChoiceView_Previews: PreviewProvider {
-    static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
+    static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
 
     static var previews: some View {
         ChoiceView(mode: mode)

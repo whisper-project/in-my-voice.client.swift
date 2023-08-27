@@ -15,8 +15,8 @@ final class ListenViewModel: ObservableObject {
     @Published var speaking: Bool = PreferenceData.startSpeaking()
     @Published var statusText: String = ""
     @Published var liveText: String = ""
-    @Published var wasDropped: Bool = false
     @Published var connectionError: Bool = false
+    @Published var connectionErrorDescription: String = "The connection to the whisperer was lost"
     @Published var showStatusDetail: Bool = false
     @Published var candidates: [Remote] = []
     @Published var whisperer: Remote?
@@ -60,7 +60,7 @@ final class ListenViewModel: ObservableObject {
             self.notifySoundInBackground = granted
         }
         awaitDiscovery()
-        transport.start(commFailure: signalConnectionError)
+        transport.start(failureCallback: signalConnectionError)
     }
     
     func stop() {
@@ -141,7 +141,7 @@ final class ListenViewModel: ObservableObject {
         if removed === whisperer {
             logger.info("Dropped the whisperer \(removed.id)")
             whisperer = nil
-            wasDropped = true
+            connectionError = true
         } else {
             logger.info("Dropped candidate \(removed.id) with name \(removed.name)")
         }
@@ -156,8 +156,9 @@ final class ListenViewModel: ObservableObject {
     }
         
     // MARK: internal helpers
-    private func signalConnectionError() {
+    private func signalConnectionError(_ reason: String) {
         connectionError = true
+        connectionErrorDescription = reason
     }
     
     private func processChunk(_ chunk: TextProtocol.ProtocolChunk) {

@@ -5,6 +5,7 @@
 
 import Foundation
 import Combine
+import Ably
 
 final class TcpWhisperTransport: PublishTransport {
     // MARK: protocol properties and methods
@@ -14,10 +15,9 @@ final class TcpWhisperTransport: PublishTransport {
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
-    func start(commFailure: @escaping () -> Void) {
+    func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP whisper transport")
-        self.commFailure = commFailure
-        getTokenRequest(mode: .whisper, publisherId: PreferenceData.clientId, callback: receiveTokenRequest)
+        self.failureCallback = failureCallback
     }
     
     func stop() {
@@ -54,18 +54,29 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     private var tokenRequest: String?
-    private var commFailure: (() -> Void)?
+    private var failureCallback: ((String) -> Void)?
+    private var authenticator: TcpAuthenticator
+    private var client: ARTRealtime
 
     init(_ url: String) {
-        guard url.hasSuffix(PreferenceData.clientId) else {
+        let clientId = PreferenceData.clientId
+        guard url.hasSuffix(clientId) else {
             fatalError("Tcp whisper transport can only publish on clientId channel")
+        }
+        self.authenticator = TcpAuthenticator(mode: .whisper, publisherId: clientId)
+        self.client = self.authenticator.getClient()
+        self.client.connection.on(.connected) { _ in
+            logger.log("TCP whisper transport realtime client has connected")
+        }
+        self.client.connection.on(.disconnected) { _ in
+            logger.log("TCP whisper transport realtime client has disconnected")
         }
     }
     
     //MARK: Internal methods
     func receiveTokenRequest(_ token: String?) {
         guard token != nil else {
-            commFailure?()
+            failureCallback?("Couldn't get authorization to use the internet")
             return
         }
         self.tokenRequest = token

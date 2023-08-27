@@ -57,10 +57,21 @@ let logger = Logger()
 @main
 struct whisperApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @State var mode: OperatingMode = PreferenceData.initialMode()
 
     var body: some Scene {
         WindowGroup {
-            MainView()
+            MainView(mode: $mode)
+                .onOpenURL { urlObj in
+                    let url = urlObj.absoluteString
+                    if PreferenceData.publisherUrlToClientId(url: url) != nil {
+                        logger.log("Handling valid universal URL: \(url)")
+                        PreferenceData.lastSubscriberUrl = url
+                        mode = .listen
+                    } else {
+                        logger.warning("Ignoring invalid universal URL: \(url)")
+                    }
+                }
         }
     }
 }

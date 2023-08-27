@@ -13,6 +13,7 @@ final class WhisperViewModel: ObservableObject {
     
     @Published var statusText: String = ""
     @Published var connectionError = false
+    @Published var connectionErrorDescription: String = ""
     @Published var remotes: [String:Remote] = [:]
     @Published var speaking: Bool = PreferenceData.startSpeaking()
     var pastText: PastTextViewModel = .init()
@@ -46,7 +47,7 @@ final class WhisperViewModel: ObservableObject {
     
     func start() {
         refreshStatusText()
-        transport.start(commFailure: signalConnectionError)
+        transport.start(failureCallback: signalConnectionError)
     }
     
     func stop() {
@@ -121,8 +122,11 @@ final class WhisperViewModel: ObservableObject {
     }
     
     // MARK: Internal helpers
-    private func signalConnectionError() {
-        connectionError = true
+    private func signalConnectionError(_ reason: String) {
+        Task { @MainActor in
+            connectionError = true
+            connectionErrorDescription = reason
+        }
     }
     
     private func addListener(_ remote: Remote) {

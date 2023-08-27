@@ -6,14 +6,12 @@
 import SwiftUI
 import UIKit
 
-let choiceButtonWidth = CGFloat(115)
-let choiceButtonHeight = CGFloat(50)
-
 let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
-struct MainView: View {    
+struct MainView: View {
+    @Binding var mode: OperatingMode
+    
     @StateObject private var model: MainViewModel = .init()
-    @State private var mode: OperatingMode = PreferenceData.initialMode()
             
     var body: some View {
         if case TransportStatus.disabled(let message) = model.status {
@@ -34,7 +32,9 @@ struct MainView: View {
 }
 
 struct MainView_Previews: PreviewProvider {
+    static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
+
     static var previews: some View {
-        MainView()
+        MainView(mode: mode)
     }
 }
