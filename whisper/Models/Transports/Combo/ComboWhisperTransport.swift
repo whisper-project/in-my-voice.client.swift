@@ -39,14 +39,14 @@ final class ComboWhisperTransport: PublishTransport {
     }
     
     func send(remote: Listener, chunks: [TextProtocol.ProtocolChunk]) {
-        guard let listener = listeners[remote.id] else {
+        guard let remote = listeners[remote.id] else {
             fatalError("Targeting a remote that's not a listener: \(remote.id)")
         }
         switch remote.owner {
         case .auto:
-            autoTransport.drop(remote: listener.inner as! AutoRemote)
+            autoTransport.send(remote: remote.inner as! AutoRemote, chunks: chunks)
         case .manual:
-            manualTransport?.drop(remote: listener.inner as! ManualRemote)
+            manualTransport!.send(remote: remote.inner as! ManualRemote, chunks: chunks)
         }
     }
     

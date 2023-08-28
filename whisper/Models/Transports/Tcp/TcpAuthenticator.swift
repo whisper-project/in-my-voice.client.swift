@@ -31,6 +31,7 @@ final class TcpAuthenticator {
         options.clientId = self.clientId
         options.authCallback = getTokenRequest
         options.autoConnect = true
+        options.echoMessages = false
         let client = ARTRealtime(options: options)
         self.client = client
         return client

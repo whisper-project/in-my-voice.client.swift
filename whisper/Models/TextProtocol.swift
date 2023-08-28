@@ -45,23 +45,29 @@ import Foundation
 /// Sound packets (sent to all listeners) have an offset of -9, and the text
 /// indicates the command being sent.
 ///
-/// Control packets can be sent in either direction:
-/// - Offset -5 requests the whisperer to replay past text.  The text
+/// Control packets communicate requests rather than :
+/// - Offset -20 requests the whisperer to replay past text.  The text
 /// portion is used by the receiver as a hint of how much past text to send,
 /// and is typically "all" (the default), "lines N" meaning the most recent N lines,
 /// or "since N" meaning lines send within the last N seconds.
+/// - Offset -21 is the whisperer telling the listener to stop listening.  The
+/// text is the id of the listener it's meant for.  It's how dropping a listener works
+/// over the network.
 final class TextProtocol {
     struct ProtocolChunk {
         var offset: Int
         var text: String
         
-        func toData() -> Data {
-            let string: String = "\(offset)|" + text
-            return Data(string.utf8)
+        func toString() -> String {
+            return "\(offset)|" + text
         }
         
-        static func fromData(_ data: Data) -> ProtocolChunk? {
-            let parts = String(decoding: data, as: UTF8.self).split(separator: "|", maxSplits: 1)
+        func toData() -> Data {
+            return Data(self.toString().utf8)
+        }
+        
+        static func fromString(_ string: String) -> ProtocolChunk? {
+            let parts = string.split(separator: "|", maxSplits: 1)
             if parts.count == 0 {
                 // data packets with no "|" character are malformed
                 return nil
@@ -71,6 +77,10 @@ final class TextProtocol {
                 // data packets with no int before the "|" are malformed
                 return nil
             }
+        }
+        
+        static func fromData(_ data: Data) -> ProtocolChunk? {
+            return fromString(String(decoding: data, as: UTF8.self))
         }
 
         func isDiff() -> Bool {
@@ -89,12 +99,16 @@ final class TextProtocol {
             return offset == -4
         }
         
-        func isReplayRequest() -> Bool {
-            return offset == -5
-        }
-        
         func isSound() -> Bool {
             return offset == -9
+        }
+        
+        func isReplayRequest() -> Bool {
+            return offset == -20
+        }
+        
+        func isDropRequest() -> Bool {
+            return offset == -21
         }
         
         static func fromPastText(text: String) -> ProtocolChunk {
@@ -109,12 +123,16 @@ final class TextProtocol {
             return ProtocolChunk(offset: -4, text: hint)
         }
         
-        static func replayRequest(hint: String) -> ProtocolChunk {
-            return ProtocolChunk(offset: -5, text: hint)
-        }
-        
         static func sound(_ text: String) -> ProtocolChunk {
             return ProtocolChunk(offset: -9, text: text)
+        }
+        
+        static func replayRequest(hint: String) -> ProtocolChunk {
+            return ProtocolChunk(offset: -20, text: hint)
+        }
+        
+        static func dropRequest(id: String) -> ProtocolChunk {
+            return ProtocolChunk(offset: -21, text: id)
         }
         
         static func fromLiveTyping(text: String, start: Int) -> [ProtocolChunk] {

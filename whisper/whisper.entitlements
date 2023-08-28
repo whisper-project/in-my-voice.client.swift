@@ -9,6 +9,8 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:whisper-server-stage-baa911f67e80.herokuapp.com</string>
+		<string>applinks:whisper.clickonetwo.io</string>
+		<string>applinks:whisper-server-prod-88e292f6797e.herokuapp.com</string>
 	</array>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>

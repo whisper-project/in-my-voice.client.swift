@@ -18,10 +18,22 @@ final class TcpWhisperTransport: PublishTransport {
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP whisper transport")
         self.failureCallback = failureCallback
+        whisperChannel = client.channels.get(channelName)
+        whisperChannel?.on(.attached) { stateChange in
+            logger.log("TCP whisper transport realtime client has attached the whisper channel")
+        }
+        whisperChannel?.on(.detached) { stateChange in
+            logger.log("TCP whisper transport realtime client has detached the whisper channel")
+        }
+        whisperChannel?.attach()
+        whisperChannel?.subscribe(clientId, callback: receiveMessage)
+        whisperChannel?.presence.subscribe(receivePresence)
+        whisperChannel?.presence.enter(PreferenceData.userName())
     }
     
     func stop() {
         logger.log("Stopping TCP whisper Transport")
+        whisperChannel?.detach()
     }
     
     func goToBackground() {
@@ -30,16 +42,30 @@ final class TcpWhisperTransport: PublishTransport {
     func goToForeground() {
     }
     
-    func send(remote: Listener, chunks: [TextProtocol.ProtocolChunk]) {
-        fatalError("'send' not yet implemented")
+    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
+        guard let remote = listeners[remote.id] else {
+            logger.error("Ignoring request to send chunk to a non-listener: \(remote.id)")
+            return
+        }
+        for chunk in chunks {
+            whisperChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
+        }
     }
     
-    func drop(remote: Listener) {
-        fatalError("'drop' not yet implemented")
+    func drop(remote: Remote) {
+        guard let remote = listeners[remote.id] else {
+            logger.error("Ignoring request to drop a non-listener: \(remote.id)")
+            return
+        }
+        let chunk = TextProtocol.ProtocolChunk.dropRequest(id: remote.id)
+        whisperChannel?.publish(remote.id, data: chunk, callback: receiveErrorInfo)
+        droppedListeners.insert(remote.id)
     }
     
     func publish(chunks: [TextProtocol.ProtocolChunk]) {
-        fatalError("'publish' not yet implemented")
+        for chunk in chunks {
+            whisperChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
+        }
     }
     
     // MARK: Internal types, properties, and initialization
@@ -53,16 +79,21 @@ final class TcpWhisperTransport: PublishTransport {
         }
     }
     
-    private var tokenRequest: String?
     private var failureCallback: ((String) -> Void)?
+    private var clientId: String
     private var authenticator: TcpAuthenticator
     private var client: ARTRealtime
+    private var channelName: String
+    private var whisperChannel: ARTRealtimeChannel?
+    private var listeners: [String:Remote] = [:]
+    private var droppedListeners: Set<String> = []
 
     init(_ url: String) {
-        let clientId = PreferenceData.clientId
+        self.clientId = PreferenceData.clientId
         guard url.hasSuffix(clientId) else {
             fatalError("Tcp whisper transport can only publish on clientId channel")
         }
+        self.channelName = "\(clientId):whisper"
         self.authenticator = TcpAuthenticator(mode: .whisper, publisherId: clientId)
         self.client = self.authenticator.getClient()
         self.client.connection.on(.connected) { _ in
@@ -74,11 +105,77 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     //MARK: Internal methods
-    func receiveTokenRequest(_ token: String?) {
-        guard token != nil else {
-            failureCallback?("Couldn't get authorization to use the internet")
+    func receiveErrorInfo(_ error: ARTErrorInfo?) {
+        if let error = error {
+            failureCallback?(error.message)
+        }
+    }
+    
+    func receiveMessage(message: ARTMessage) {
+        guard let name = message.name, name == clientId else {
+            logger.error("Ignoring a message not intended for this client: \(String(describing: message))")
             return
         }
-        self.tokenRequest = token
+        guard let sender = message.clientId,
+              let remote = listeners[sender] else {
+            logger.error("Ignoring a message from an unknown sender: \(String(describing: message))")
+            return
+        }
+        guard let payload = message.data as? String,
+              let chunk = TextProtocol.ProtocolChunk.fromString(payload)
+        else {
+            logger.error("Ignoring a message with a non-chunk payload: \(String(describing: message))")
+            return
+        }
+        if chunk.isReplayRequest() {
+            logger.info("Received replay request from \(sender)")
+            receivedChunkSubject.send((remote: remote, chunk: chunk))
+        } else {
+            logger.error("Ignoring non-replay request from \(sender): \(payload)")
+        }
+    }
+    
+    func receivePresence(message: ARTPresenceMessage) {
+        guard let remoteId = message.clientId, let name = message.data as? String else {
+            logger.error("Ignoring a presence message missing client or info: \(String(describing: message))")
+            return
+        }
+        guard remoteId != clientId else {
+            logger.log("Ignoring a presence message about this client")
+            return
+        }
+        switch message.action {
+        case .present, .enter:
+            guard listeners[remoteId] == nil else {
+                logger.warning("Ignoring present/enter event for existing listener \(remoteId)")
+                return
+            }
+            let remote = Remote(id: remoteId, name: name)
+            listeners[remoteId] = remote
+            addRemoteSubject.send(remote)
+            if droppedListeners.contains(remoteId) {
+                // they should not have come back!
+                drop(remote: remote)
+            }
+        case .leave:
+            guard let remote = listeners.removeValue(forKey: remoteId) else {
+                logger.warning("Ignoring leave event for non-listener \(remoteId)")
+                return
+            }
+            dropRemoteSubject.send(remote)
+        case .update:
+            guard let listener = listeners[remoteId] else {
+                logger.warning("Ignoring update event for non-listener \(remoteId)")
+                return
+            }
+            guard listener.name == name else {
+                logger.error("Ignoring disallowed name update for \(remoteId) from \(listener.name) to \(name)")
+                return
+            }
+        case .absent:
+            logger.warning("Ignoring absent presence message for \(remoteId): \(String(describing: message))")
+        @unknown default:
+            logger.warning("Ignoring unknown presence message for \(remoteId): \(String(describing: message))")
+        }
     }
 }

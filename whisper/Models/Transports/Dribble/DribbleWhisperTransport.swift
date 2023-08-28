@@ -57,7 +57,7 @@ final class DribbleWhisperTransport: PublishTransport {
         var elapsedTime = lastSendTime == nil ? 0 : Date.now.timeIntervalSince(lastSendTime!)
         lastSendTime = Date.now
         for chunk in chunks {
-            let chunkString = String(decoding: chunk.toData(), as: UTF8.self)
+            let chunkString = chunk.toString()
             self.chunks.append(TimedChunk(elapsed: UInt64(elapsedTime * 1000), chunk: chunkString))
             elapsedTime = 0
         }

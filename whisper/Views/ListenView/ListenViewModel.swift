@@ -22,7 +22,8 @@ final class ListenViewModel: ObservableObject {
     @Published var whisperer: Remote?
     var pastText: PastTextViewModel = .init()
     
-    private var transport = Transport(PreferenceData.lastSubscriberUrl)
+    private var transport: Transport
+    private var manualWhisperer: Bool
     private var cancellables: Set<AnyCancellable> = []
     private var discoveryInProgress = false
     private var discoveryCountDown = 0
@@ -35,6 +36,8 @@ final class ListenViewModel: ObservableObject {
 
     init() {
         logger.log("Initializing ListenView model")
+        transport = Transport(PreferenceData.lastSubscriberUrl)
+        manualWhisperer = PreferenceData.lastSubscriberUrl != nil
         transport.addRemoteSubject
             .sink{ [weak self] in self?.addCandidate($0) }
             .store(in: &cancellables)
@@ -59,7 +62,12 @@ final class ListenViewModel: ObservableObject {
             }
             self.notifySoundInBackground = granted
         }
-        awaitDiscovery()
+        liveText = connectingLiveText
+        pastText.setFromText(connectingPastText)
+        if !manualWhisperer {
+            awaitDiscovery()
+        }
+        refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
     }
     
@@ -157,8 +165,10 @@ final class ListenViewModel: ObservableObject {
         
     // MARK: internal helpers
     private func signalConnectionError(_ reason: String) {
-        connectionError = true
-        connectionErrorDescription = reason
+        Task { @MainActor in
+            connectionError = true
+            connectionErrorDescription = reason
+        }
     }
     
     private func processChunk(_ chunk: TextProtocol.ProtocolChunk) {
@@ -259,11 +269,8 @@ final class ListenViewModel: ObservableObject {
             fatalError("Can't start the listener scan in the background")
         }
         logger.log("Start initial wait for whisperers")
-        liveText = connectingLiveText
-        pastText.setFromText(connectingPastText)
         discoveryInProgress = true
         discoveryCountDown = Int(listenerWaitTime)
-        refreshStatusText()
         discoveryTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(1), repeats: true) { timer in
             guard self.discoveryInProgress && self.discoveryCountDown > 0 else {
                 logger.log("End initial wait for whisperers due to timeout")
@@ -298,7 +305,7 @@ final class ListenViewModel: ObservableObject {
             return
         }
         if whisperer == nil {
-            if candidates.count == 1 && PreferenceData.doAutoSelect() {
+            if candidates.count == 1 && (manualWhisperer || PreferenceData.doAutoSelect()) {
                 // only 1 whisperer after waiting for the scan
                 setWhisperer(candidates[0])
             }
@@ -314,10 +321,10 @@ final class ListenViewModel: ObservableObject {
             statusText = "Looking for whisperers…\(suffix)"
         } else {
             let count = candidates.count
-            if count > 1 || !PreferenceData.doAutoSelect() {
-                statusText = "Tap to select your desired whisperer…"
-            } else {
+            if count == 0 {
                 statusText = "Waiting for a whisperer to appear…"
+            } else {
+                statusText = "Tap to select your desired whisperer…"
             }
         }
     }

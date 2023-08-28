@@ -45,9 +45,9 @@ final class ComboListenTransport: SubscribeTransport {
         }
         switch remote.owner {
         case .auto:
-            autoTransport!.drop(remote: remote.inner as! AutoRemote)
+            autoTransport!.send(remote: remote.inner as! AutoRemote, chunks: chunks)
         case .manual:
-            manualTransport!.drop(remote: remote.inner as! ManualRemote)
+            manualTransport!.send(remote: remote.inner as! ManualRemote, chunks: chunks)
         }
     }
 

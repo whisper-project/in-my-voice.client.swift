@@ -165,7 +165,7 @@ final class DribbleListenTransport: SubscribeTransport {
                     return
                 }
                 if let remote = self.whisperers.first {
-                    if let chunk = TextProtocol.ProtocolChunk.fromData(Data(chunk.chunk.utf8)) {
+                    if let chunk = TextProtocol.ProtocolChunk.fromString(chunk.chunk) {
                         DispatchQueue.main.async {
                             self.receivedChunkSubject.send((remote: remote, chunk: chunk))
                         }
