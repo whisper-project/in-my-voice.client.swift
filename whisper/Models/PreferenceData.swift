@@ -67,7 +67,7 @@ struct PreferenceData {
         #if DEBUG
         return defaults.string(forKey: "paid_receipt_id") ?? "debug_build_is_paid"
         #else
-        return defaults.string(forKey: "paid_receipt_id")
+        return defaults.string(forKey: "paid_receipt_id") ?? "testing_build_is_paid"
         #endif
     }
     static func updatePaidReceiptId(receiptId: String?) {

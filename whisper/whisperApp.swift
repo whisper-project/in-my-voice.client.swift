@@ -99,7 +99,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
         }
-        guard let url = URL(string: PreferenceData.whisperServer + "/apnsToken") else {
+        guard let url = URL(string: PreferenceData.whisperServer + "/api/apnsToken") else {
             fatalError("Can't create URL for device token call")
         }
         var request = URLRequest(url: url)
@@ -139,10 +139,39 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         if let value = userInfo["secret"], let secret = value as? String {
             logger.info("Succesfully saved data from background notification")
             PreferenceData.updateClientSecret(secret)
-            completionHandler(.newData)
+            let value = [
+                "clientId": PreferenceData.clientId,
+            ]
+            guard let body = try? JSONSerialization.data(withJSONObject: value) else {
+                fatalError("Can't encode body for notification confirmation call")
+            }
+            guard let url = URL(string: PreferenceData.whisperServer + "/api/apnsReceivedNotification") else {
+                fatalError("Can't create URL for notification confirmation call")
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = body
+            let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+                guard error == nil else {
+                    fatalError("Failed to post notification confirmation: \(String(describing: error))")
+                }
+                guard let response = response as? HTTPURLResponse else {
+                    fatalError("Received non-HTTP response on notification confirmation: \(String(describing: response))")
+                }
+                if response.statusCode == 204 {
+                    logger.info("Successful post of notification confirmation")
+                    completionHandler(.newData)
+                    return
+                }
+                logger.error("Received unexpected response on notification confirmation post: \(response.statusCode)")
+                completionHandler(.failed)
+            }
+            logger.info("Posting notification confirmation to whisper-server")
+            task.resume()
         } else {
             logger.error("Background notification has unexpected data: \(String(describing: userInfo))")
-            completionHandler(.noData)
+            completionHandler(.failed)
         }
     }
 }

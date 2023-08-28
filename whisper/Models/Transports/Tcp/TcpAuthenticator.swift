@@ -17,10 +17,12 @@ final class TcpAuthenticator {
     private var publisherId: String
     private var clientId = PreferenceData.clientId
     private var client: ARTRealtime?
+    private var failureCallback: (String) -> Void
     
-    init(mode: OperatingMode, publisherId: String) {
+    init(mode: OperatingMode, publisherId: String, callback: @escaping (String) -> Void) {
         self.mode = mode
         self.publisherId = publisherId
+        self.failureCallback = callback
     }
     
     func getClient() -> ARTRealtime {
@@ -46,6 +48,7 @@ final class TcpAuthenticator {
         guard let secret = PreferenceData.clientSecret(),
               let secretData = Data(base64Encoded: Data(secret.utf8)) else {
             logger.error("No secret data received from whisper-server")
+            failureCallback("Can't receive notifications from the whisper server.  Please quit and restart the app.")
             return nil
         }
         let claims = ClientClaims(iss: clientId, exp: Date(timeIntervalSinceNow: 3600))
@@ -75,7 +78,7 @@ final class TcpAuthenticator {
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for \(activity) token request call")
         }
-        guard let url = URL(string: PreferenceData.whisperServer + "/pubSubTokenRequest") else {
+        guard let url = URL(string: PreferenceData.whisperServer + "/api/pubSubTokenRequest") else {
             fatalError("Can't create URL for \(activity) token request call")
         }
         var request = URLRequest(url: url)
@@ -86,12 +89,19 @@ final class TcpAuthenticator {
         let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
             guard error == nil else {
                 logger.error("Failed to post \(activity) token request: \(String(describing: error))")
+                self.failureCallback("Can't contact the whisper server.  Please make sure your network is working and restart the app.")
                 callback(nil, error)
                 return
             }
             guard let response = response as? HTTPURLResponse else {
                 logger.error("Received non-HTTP response on \(activity) token request: \(String(describing: response))")
+                self.failureCallback("Having trouble with the whisper server.  Please try again.")
                 callback(nil, TcpAuthenticatorError.server("Non-HTTP response"))
+                return
+            }
+            if response.statusCode == 403 {
+                logger.error("Received forbidden response status on \(activity) token request.")
+                self.failureCallback("Can't authenticate with the whisper server.  Please uninstall and reinstall the app.")
                 return
             }
             if response.statusCode != 200 {
@@ -101,16 +111,19 @@ final class TcpAuthenticator {
                   let body = try? JSONSerialization.jsonObject(with: data),
                   let obj = body as? [String:String] else {
                 logger.error("Can't deserialize \(activity) token response body: \(String(describing: data))")
+                self.failureCallback("Having trouble with the whisper server.  Please try again later.")
                 callback(nil, TcpAuthenticatorError.server("Non-JSON response to token request"))
                 return
             }
             guard let tokenRequestString = obj["tokenRequest"] else {
                 logger.error("Didn't receive a token request value in \(activity) response body: \(obj)")
+                self.failureCallback("Having trouble with the whisper server.  Please try again later.")
                 callback(nil, TcpAuthenticatorError.server("No token request in response"))
                 return
             }
             guard let tokenRequest = try? ARTTokenRequest.fromJson(tokenRequestString as ARTJsonCompatible) else {
                 logger.error("Can't deserialize token request JSON: \(tokenRequestString)")
+                self.failureCallback("Having trouble with the whisper server.  Please try again later.")
                 callback(nil, TcpAuthenticatorError.server("Token request is not expected format: \(tokenRequestString)"))
                 return
             }

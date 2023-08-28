@@ -18,6 +18,14 @@ final class TcpListenTransport: SubscribeTransport {
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP candidate transport")
         self.failureCallback = failureCallback
+        self.authenticator = TcpAuthenticator(mode: .listen, publisherId: publisherId, callback: failureCallback)
+        self.client = self.authenticator.getClient()
+        self.client.connection.on(.connected) { _ in
+            logger.log("TCP listen transport realtime client has connected")
+        }
+        self.client.connection.on(.disconnected) { _ in
+            logger.log("TCP listen transport realtime client has disconnected")
+        }
         whisperChannel = client.channels.get(channelName)
         whisperChannel?.on(.attached) { stateChange in
             logger.log("TCP listen transport realtime client has attached the whisper channel")
@@ -83,8 +91,8 @@ final class TcpListenTransport: SubscribeTransport {
     private var failureCallback: ((String) -> Void)?
     private var clientId: String
     private var publisherId: String
-    private var authenticator: TcpAuthenticator
-    private var client: ARTRealtime
+    private var authenticator: TcpAuthenticator!
+    private var client: ARTRealtime!
     private var channelName: String
     private var whisperChannel: ARTRealtimeChannel?
     private var candidates: [String:Remote] = [:]
@@ -96,14 +104,6 @@ final class TcpListenTransport: SubscribeTransport {
         }
         self.publisherId = remoteId
         self.channelName = "\(publisherId):whisper"
-        self.authenticator = TcpAuthenticator(mode: .listen, publisherId: publisherId)
-        self.client = self.authenticator.getClient()
-        self.client.connection.on(.connected) { _ in
-            logger.log("TCP listen transport realtime client has connected")
-        }
-        self.client.connection.on(.disconnected) { _ in
-            logger.log("TCP listen transport realtime client has disconnected")
-        }
     }
     
     //MARK: Internal methods
