@@ -16,6 +16,7 @@ struct ChoiceView: View {
     @State private var newUserName: String = ""
     @State private var confirmWhisper = false
     @State private var confirmListen = false
+    @State private var credentialsMissing = false
     @State private var publisherUrl: TransportUrl = ComboFactory.shared.publisherUrl
     @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
     
@@ -69,7 +70,7 @@ struct ChoiceView: View {
                publisherUrl != nil {
                 HStack(spacing: 40) {
                     VStack {
-                        Button(action: { self.confirmWhisper = true }) {
+                        Button(action: { self.checkCredentials(.whisper) }) {
                             Text("Whisper \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
@@ -81,7 +82,7 @@ struct ChoiceView: View {
                         ShareLink("URL", item: URL(string: self.publisherUrl!)!)
                     }
                     VStack {
-                        Button(action: { confirmListen = true }) {
+                        Button(action: { self.checkCredentials(.listen) }) {
                             Text("Listen \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
@@ -109,7 +110,6 @@ struct ChoiceView: View {
                     Button("Don't Whisper") { }
                 } message: {
                     Text("Be sure your listeners have the link")
-                    ShareLink(item: URL(string: self.publisherUrl!)!)
                 }
                 .alert("Confirm Internet Listen", isPresented: $confirmListen) {
                     Button("Listen") { mode = .listen }
@@ -149,6 +149,11 @@ struct ChoiceView: View {
             .background(Color.accentColor)
             .cornerRadius(15)
         }
+        .alert("First Launch", isPresented: $credentialsMissing) {
+            Button("OK") { }
+        } message: {
+            Text("Sorry, but on its first launch after installation the app needs a few minutes to connect to the whisper server. Please try again.")
+        }
         .onAppear { updateUserName() }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
@@ -166,6 +171,18 @@ struct ChoiceView: View {
     func updateUserName() {
         currentUserName = PreferenceData.userName()
         newUserName = currentUserName
+    }
+    
+    func checkCredentials(_ mode: OperatingMode) {
+        guard PreferenceData.clientSecret() != nil else {
+            credentialsMissing = true
+            return
+        }
+        if case .listen = mode {
+            confirmListen = true
+        } else {
+            confirmWhisper = true
+        }
     }
 }
 
