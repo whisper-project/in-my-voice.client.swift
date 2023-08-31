@@ -61,6 +61,6 @@ struct WhisperersView: View {
 
 struct WhisperersView_Previews: PreviewProvider {
     static var previews: some View {
-        WhisperersView(model: ListenViewModel())
+        WhisperersView(model: ListenViewModel(nil))
     }
 }

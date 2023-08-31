@@ -46,7 +46,7 @@ let liveTextProportion = 1.0/5.0
 
 /// global timeouts
 let listenerAdTime = TimeInterval(2)    // seconds of listener advertising for whisperers
-let listenerWaitTime = TimeInterval(4)  // seconds of listener wait for multiple whisperers to respond
+let listenerWaitTime = TimeInterval(3)  // seconds of listener wait for multiple whisperers to respond
 let whispererAdTime = TimeInterval(2)   // seconds of whisperer advertising to listeners
 
 /// logging
@@ -58,20 +58,35 @@ let logger = Logger()
 struct whisperApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State var mode: OperatingMode = PreferenceData.initialMode()
+    @State var publisherUrl: TransportUrl = nil
+    @State var showWarning: Bool = false
+    @State var warningMessage: String = ""
 
     var body: some Scene {
         WindowGroup {
-            MainView(mode: $mode)
+            MainView(mode: $mode, publisherUrl: $publisherUrl)
+                .onAppear { if (mode == .ask) { publisherUrl = nil } }
                 .onOpenURL { urlObj in
                     let url = urlObj.absoluteString
                     if PreferenceData.publisherUrlToClientId(url: url) != nil {
                         logger.log("Handling valid universal URL: \(url)")
-                        PreferenceData.lastSubscriberUrl = url
-                        mode = .listen
+                        if PreferenceData.paidReceiptId() != nil {
+                            PreferenceData.lastSubscriberUrl = url
+                            publisherUrl = url
+                            mode = .listen
+                        } else {
+                            logger.error("Ignoring universal URL because not paid")
+                            warningMessage = "You must upgrade to use the internet"
+                            showWarning = true
+                        }
                     } else {
                         logger.warning("Ignoring invalid universal URL: \(url)")
+                        warningMessage = "That is not a valid Whisper link"
+                        showWarning = true
                     }
                 }
+                .alert("Cannot Listen", isPresented: $showWarning,
+                       actions: { Button("OK", action: { })}, message: { Text(warningMessage) })
         }
     }
 }

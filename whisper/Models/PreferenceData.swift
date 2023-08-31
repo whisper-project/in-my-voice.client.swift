@@ -43,9 +43,6 @@ struct PreferenceData {
         let val = defaults.integer(forKey: "initial_mode_preference")
         return OperatingMode(rawValue: val) ?? .ask
     }
-    static func doAutoSelect() -> Bool {
-        return defaults.bool(forKey: "auto_select_preference")
-    }
     static func startSpeaking() -> Bool {
         return defaults.bool(forKey: "read_aloud_preference")
     }

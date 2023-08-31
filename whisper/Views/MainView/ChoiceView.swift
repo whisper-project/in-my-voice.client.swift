@@ -11,13 +11,13 @@ struct ChoiceView: View {
     @Environment(\.scenePhase) var scenePhase
     
     @Binding var mode: OperatingMode
+    @Binding var publisherUrl: TransportUrl
 
     @State private var currentUserName: String = ""
     @State private var newUserName: String = ""
     @State private var confirmWhisper = false
     @State private var confirmListen = false
     @State private var credentialsMissing = false
-    @State private var publisherUrl: TransportUrl = ComboFactory.shared.publisherUrl
     @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
     
     let choiceButtonWidth = CGFloat(140)
@@ -43,6 +43,7 @@ struct ChoiceView: View {
             .frame(maxWidth: 300, maxHeight: 105)
             HStack(spacing: 40) {
                 Button(action: {
+                    publisherUrl = nil
                     mode = .whisper
                 }) {
                     Text("Whisper")
@@ -54,7 +55,7 @@ struct ChoiceView: View {
                 .cornerRadius(15)
                 .disabled(currentUserName == "")
                 Button(action: {
-                    PreferenceData.lastSubscriberUrl = nil
+                    publisherUrl = nil
                     mode = .listen
                 }) {
                     Text("Listen")
@@ -66,11 +67,13 @@ struct ChoiceView: View {
                 .cornerRadius(15)
                 .disabled(currentUserName == "")
             }
-            if PreferenceData.paidReceiptId() != nil,
-               publisherUrl != nil {
+            if PreferenceData.paidReceiptId() != nil {
                 HStack(spacing: 40) {
                     VStack {
-                        Button(action: { self.checkCredentials(.whisper) }) {
+                        Button(action: {
+                            publisherUrl = ComboFactory.shared.publisherUrl
+                            self.checkCredentials(.whisper)
+                        }) {
                             Text("Whisper \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
@@ -79,10 +82,13 @@ struct ChoiceView: View {
                         .background(currentUserName == "" ? Color.gray : Color.accentColor)
                         .cornerRadius(15)
                         .disabled(currentUserName == "")
-                        ShareLink("URL", item: URL(string: self.publisherUrl!)!)
+                        ShareLink("URL", item: URL(string: ComboFactory.shared.publisherUrl!)!)
                     }
                     VStack {
-                        Button(action: { self.checkCredentials(.listen) }) {
+                        Button(action: {
+                            publisherUrl = lastSubscribedUrl
+                            self.checkCredentials(.listen)
+                        }) {
                             Text("Listen \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
@@ -197,8 +203,9 @@ extension UIApplication {
 
 struct ChoiceView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
+    static let publisherUrl = Binding<TransportUrl>(get: { nil }, set: { _ = $0 })
 
     static var previews: some View {
-        ChoiceView(mode: mode)
+        ChoiceView(mode: mode, publisherUrl: publisherUrl)
     }
 }

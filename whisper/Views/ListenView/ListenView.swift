@@ -11,11 +11,18 @@ struct ListenView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
+    var publisherUrl: TransportUrl
     
     @FocusState var focusField: Bool
-    @StateObject private var model: ListenViewModel = .init()
+    @StateObject private var model: ListenViewModel
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
+    
+    init(mode: Binding<OperatingMode>, publisherUrl: TransportUrl) {
+        self._mode = mode
+        self.publisherUrl = publisherUrl
+        self._model = StateObject(wrappedValue: ListenViewModel(publisherUrl))
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -34,7 +41,7 @@ struct ListenView: View {
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
-                StatusTextView(text: $model.statusText)
+                StatusTextView(text: $model.statusText, publisherUrl: nil)
                     .onTapGesture {
                         model.showStatusDetail = true
                     }
@@ -90,6 +97,6 @@ struct ListenView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
 
     static var previews: some View {
-        ListenView(mode: mode)
+        ListenView(mode: mode, publisherUrl: nil)
     }
 }

@@ -33,7 +33,7 @@ final class ComboFactory: TransportFactory {
         }
     }
     
-    func subscriber(_ publisherUrl: TransportUrl) -> ComboListenTransport {
+    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber {
         if PreferenceData.paidReceiptId() != nil {
             return Subscriber(publisherUrl)
         } else {

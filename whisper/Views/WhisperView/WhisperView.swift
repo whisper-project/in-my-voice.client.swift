@@ -11,13 +11,20 @@ struct WhisperView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
+    var publisherUrl: TransportUrl
 
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
-    @StateObject private var model: WhisperViewModel = .init()
+    @StateObject private var model: WhisperViewModel
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
     @State private var showStatusDetail: Bool = false
+    
+    init(mode: Binding<OperatingMode>, publisherUrl: TransportUrl) {
+        self._mode = mode
+        self.publisherUrl = publisherUrl
+        self._model = StateObject(wrappedValue: WhisperViewModel(publisherUrl))
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -35,7 +42,7 @@ struct WhisperView: View {
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
-                StatusTextView(text: $model.statusText)
+                StatusTextView(text: $model.statusText, publisherUrl: publisherUrl)
                     .onTapGesture {
                         self.showStatusDetail = true
                     }
@@ -98,6 +105,6 @@ struct WhisperView_Previews: PreviewProvider {
     static var mode: Binding<OperatingMode> = Binding(get: { .whisper }, set: { _ = $0 })
 
     static var previews: some View {
-        WhisperView(mode: mode)
+        WhisperView(mode: mode, publisherUrl: nil)
     }
 }

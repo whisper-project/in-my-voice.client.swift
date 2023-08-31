@@ -16,17 +16,19 @@ final class WhisperViewModel: ObservableObject {
     @Published var connectionErrorDescription: String = ""
     @Published var remotes: [String:Remote] = [:]
     @Published var speaking: Bool = PreferenceData.startSpeaking()
-    var pastText: PastTextViewModel = .init()
+    @Published var pastText: PastTextViewModel
 
-    private var transport = Transport(ComboFactory.shared.publisherUrl)
+    private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
     
     private var liveText: String = ""
     private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
-    init() {
+    init(_ publisherUrl: TransportUrl) {
         logger.log("Initializing WhisperView model")
+        self.pastText = .init()
+        self.transport = ComboFactory.shared.publisher(publisherUrl)
         self.transport.addRemoteSubject
             .sink { [weak self] in self?.addListener($0) }
             .store(in: &cancellables)

@@ -20,7 +20,7 @@ final class ListenViewModel: ObservableObject {
     @Published var showStatusDetail: Bool = false
     @Published var candidates: [Remote] = []
     @Published var whisperer: Remote?
-    var pastText: PastTextViewModel = .init()
+    @Published var pastText: PastTextViewModel
     
     private var transport: Transport
     private var manualWhisperer: Bool
@@ -34,10 +34,11 @@ final class ListenViewModel: ObservableObject {
     private var notifySoundInBackground = false
     private static let synthesizer = AVSpeechSynthesizer()
 
-    init() {
+    init(_ publisherUrl: TransportUrl) {
         logger.log("Initializing ListenView model")
-        transport = Transport(PreferenceData.lastSubscriberUrl)
-        manualWhisperer = PreferenceData.lastSubscriberUrl != nil
+        self.pastText = .init()
+        manualWhisperer = publisherUrl != nil
+        transport = ComboFactory.shared.subscriber(publisherUrl)
         transport.addRemoteSubject
             .sink{ [weak self] in self?.addCandidate($0) }
             .store(in: &cancellables)
@@ -305,7 +306,7 @@ final class ListenViewModel: ObservableObject {
             return
         }
         if whisperer == nil {
-            if candidates.count == 1 && (manualWhisperer || PreferenceData.doAutoSelect()) {
+            if candidates.count == 1 {
                 // only 1 whisperer after waiting for the scan
                 setWhisperer(candidates[0])
             }

@@ -10,6 +10,7 @@ let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
 struct MainView: View {
     @Binding var mode: OperatingMode
+    @Binding var publisherUrl: TransportUrl
     
     @StateObject private var model: MainViewModel = .init()
             
@@ -21,11 +22,11 @@ struct MainView: View {
         } else {
             switch mode {
             case .ask:
-                ChoiceView(mode: $mode)
+                ChoiceView(mode: $mode, publisherUrl: $publisherUrl)
             case .listen:
-                ListenView(mode: $mode)
+                ListenView(mode: $mode, publisherUrl: publisherUrl)
             case .whisper:
-                WhisperView(mode: $mode)
+                WhisperView(mode: $mode, publisherUrl: publisherUrl)
             }
         }
     }
@@ -33,8 +34,9 @@ struct MainView: View {
 
 struct MainView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
+    static let publisherUrl = Binding<TransportUrl>(get: { nil }, set: { _ = $0 })
 
     static var previews: some View {
-        MainView(mode: mode)
+        MainView(mode: mode, publisherUrl: publisherUrl)
     }
 }

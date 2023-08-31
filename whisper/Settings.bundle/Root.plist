@@ -22,16 +22,6 @@
 			<key>Type</key>
 			<string>PSToggleSwitchSpecifier</string>
 			<key>Title</key>
-			<string>Auto-select single whisperer</string>
-			<key>Key</key>
-			<string>auto_select_preference</string>
-			<key>DefaultValue</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>Type</key>
-			<string>PSToggleSwitchSpecifier</string>
-			<key>Title</key>
 			<string>Require listeners to pair</string>
 			<key>Key</key>
 			<string>listener_authentication_preference</string>

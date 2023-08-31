@@ -149,7 +149,7 @@ final class BluetoothWhisperTransport: PublishTransport {
                 factory.respondToReadRequest(request: request, withCode: .insufficientAuthorization)
                 return
             }
-            // in this transport, the "request to read" is interpreted as a fill replay request and acknowledged
+            // in this transport, the "request to read" is interpreted as a full replay request and acknowledged
             let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "all")
             request.value = TextProtocol.ProtocolChunk.acknowledgeRead(hint: "all").toData()
             factory.respondToReadRequest(request: request, withCode: .success)
