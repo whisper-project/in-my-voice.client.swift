@@ -86,8 +86,8 @@ final class ComboWhisperTransport: PublishTransport {
     final class Listener: TransportRemote {
         let id: String
         var name: String
-        
-        fileprivate var owner: Owner
+        var owner: Owner
+
         fileprivate var inner: (any TransportRemote)
         
         init(owner: Owner, inner: any TransportRemote) {

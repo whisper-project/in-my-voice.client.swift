@@ -19,7 +19,10 @@ struct ListenersView: View {
                 ForEach(makeRows()) { row in
                     HStack(spacing: 5) {
                         Text(row.id)
-                        Spacer()
+                        if (row.remote.owner == .manual) {
+                            Image(systemName: "network")
+                        }
+                        Spacer(minLength: 25)
                         Button(action: { model.playSound(row.remote) }, label: { Image(systemName: "speaker.wave.2") })
                             .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10))
                         Button(action: { model.dropListener(row.remote) }, label: { Image(systemName: "delete.left") })

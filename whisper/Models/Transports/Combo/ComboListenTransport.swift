@@ -96,8 +96,8 @@ final class ComboListenTransport: SubscribeTransport {
     final class Whisperer: TransportRemote {
         let id: String
         var name: String
+        var owner: Owner
         
-        fileprivate var owner: Owner
         fileprivate var inner: (any TransportRemote)
         
         init(owner: Owner, inner: any TransportRemote) {

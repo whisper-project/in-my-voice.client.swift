@@ -110,6 +110,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             "clientId": PreferenceData.clientId,
             "token": deviceToken.base64EncodedString(),
             "deviceId": BluetoothData.deviceId,
+            "lastSecret": PreferenceData.lastClientSecret()
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")

@@ -4,6 +4,7 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import CoreBluetooth
+import CryptoKit
 
 enum OperatingMode: Int {
     case ask = 0, listen = 1, whisper = 2
@@ -24,7 +25,6 @@ struct PreferenceData {
         return String(match.1)
     }
     static var clientId: String = {
-        let defaults = UserDefaults.standard
         if let id = defaults.string(forKey: "whisper_client_id") {
             return id
         } else {
@@ -33,10 +33,37 @@ struct PreferenceData {
             return id
         }
     }()
+    // Secrets rotate.  The client generates its first secret, and always
+    // sets that as both the current and prior secret.  After that, every
+    // time the server sends a new secret, the current secret rotates to
+    // be the prior secret.  We send the prior secret with every launch,
+    // because this allows the server to know when we've gone out of sync
+    // (for example, when a client moves from apns dev to apns prod),
+    // and it rotates the secret when that happens.  We sign auth requests
+    // with the current secret, but the server allows use of the prior
+    // secret as a one-time fallback when we've gone out of sync.
+    static func lastClientSecret() -> String? {
+        if let prior = defaults.string(forKey: "whisper_last_client_secret") {
+            return prior
+        } else {
+            let prior = Data(ChaChaPoly.Nonce()).base64EncodedString()
+            defaults.setValue(prior, forKey: "whisper_last_client_secret")
+            return prior
+        }
+    }
     static func clientSecret() -> String? {
-        return defaults.string(forKey: "whisper_client_secret")
+        if let current = defaults.string(forKey: "whisper_client_secret") {
+            return current
+        } else {
+            let prior = lastClientSecret()
+            defaults.setValue(prior, forKey: "whisper_client_secret")
+            return prior
+        }
     }
     static func updateClientSecret(_ secret: String) {
+        if let current = defaults.string(forKey: "whisper_client_secret") {
+            defaults.setValue(current, forKey: "whisper_last_client_secret")
+        }
         defaults.setValue(secret, forKey: "whisper_client_secret")
     }
     static func initialMode() -> OperatingMode {

@@ -72,7 +72,7 @@ struct ChoiceView: View {
                     VStack {
                         Button(action: {
                             publisherUrl = ComboFactory.shared.publisherUrl
-                            self.checkCredentials(.whisper)
+                            confirmWhisper = true
                         }) {
                             Text("Whisper \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
@@ -87,7 +87,7 @@ struct ChoiceView: View {
                     VStack {
                         Button(action: {
                             publisherUrl = lastSubscribedUrl
-                            self.checkCredentials(.listen)
+                            confirmListen = true
                         }) {
                             Text("Listen \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
@@ -177,18 +177,6 @@ struct ChoiceView: View {
     func updateUserName() {
         currentUserName = PreferenceData.userName()
         newUserName = currentUserName
-    }
-    
-    func checkCredentials(_ mode: OperatingMode) {
-        guard PreferenceData.clientSecret() != nil else {
-            credentialsMissing = true
-            return
-        }
-        if case .listen = mode {
-            confirmListen = true
-        } else {
-            confirmWhisper = true
-        }
     }
 }
 

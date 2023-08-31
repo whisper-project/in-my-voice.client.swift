@@ -18,14 +18,20 @@ struct WhisperersView: View {
         } else {
             VStack(alignment: .leading, spacing: 20) {
                 ForEach(makeRows()) { row in
-                    Text(row.id)
-                        .bold(row.isWhisperer)
-                        .font(FontSizes.fontFor(FontSizes.minTextSize + 2))
-                        .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                        .onTapGesture {
-                            model.setWhisperer(row.remote)
-                            model.showStatusDetail = false
+                    HStack(spacing: 5) {
+                        Text(row.id)
+                        if (row.remote.owner == .manual) {
+                            Image(systemName: "network")
                         }
+                    }
+                    .frame(minWidth: 300)
+                    .bold(row.isWhisperer)
+                    .font(FontSizes.fontFor(FontSizes.minTextSize + 2))
+                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+                    .onTapGesture {
+                        model.setWhisperer(row.remote)
+                        model.showStatusDetail = false
+                    }
                 }
             }
             .padding()

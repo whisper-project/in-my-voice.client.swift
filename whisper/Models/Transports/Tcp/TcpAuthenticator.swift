@@ -51,11 +51,15 @@ final class TcpAuthenticator {
             failureCallback("Can't receive notifications from the whisper server.  Please quit and restart the app.")
             return nil
         }
-        let claims = ClientClaims(iss: clientId, exp: Date(timeIntervalSinceNow: 3600))
+        let claims = ClientClaims(iss: clientId, exp: Date(timeIntervalSinceNow: 300))
         var jwt = JWT(claims: claims)
         let signer = JWTSigner.hs256(key: secretData)
-        let signedJWT = try? jwt.sign(using: signer)
-        return signedJWT
+        do {
+            return try jwt.sign(using: signer)
+        }
+        catch let error {
+            fatalError("Can't create JWT for authentication: \(error)")
+        }
     }
     
     func getTokenRequest(params: ARTTokenParams, callback: @escaping ARTTokenDetailsCompatibleCallback) {
@@ -102,6 +106,7 @@ final class TcpAuthenticator {
             if response.statusCode == 403 {
                 logger.error("Received forbidden response status on \(activity) token request.")
                 self.failureCallback("Can't authenticate with the whisper server.  Please uninstall and reinstall the app.")
+                callback(nil, TcpAuthenticatorError.local("Authentication failed."))
                 return
             }
             if response.statusCode != 200 {
