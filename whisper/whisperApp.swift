@@ -157,6 +157,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             PreferenceData.updateClientSecret(secret)
             let value = [
                 "clientId": PreferenceData.clientId,
+                "lastSecret": PreferenceData.lastClientSecret()
             ]
             guard let body = try? JSONSerialization.data(withJSONObject: value) else {
                 fatalError("Can't encode body for notification confirmation call")

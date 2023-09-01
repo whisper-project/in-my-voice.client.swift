@@ -1,0 +1,45 @@
+BUILD 18:
+OK, Whisper fans, it's the moment you've been waiting for: Whisper can now talk over the internet!!  That's definitely what you will want to try out on this build.  (There are a few other small improvements, but they are not as important.) In the released version on the App Store, whispering over the internet will be a paid feature (because the cloud infrastructure it uses has to be rented), but as my greatly valued testers you can all try it for free!
+
+You will see a new row of buttons for whispering or listening over the internet (look for the network symbol on the buttons). Under the Whisper to internet button you will see a "Share URL" button - that's the URL you need to give to your internet listeners so they can connect - messaging them works well.  (Bluetooth listeners don't need the URL, of course, and yes you are whispering over both Bluetooth and the internet at the same time.) Under the Listen to Internet button you will see a "Retrieve URL" button - that looks for a whisper URL on the clipboard and copies to the app so it can be listened to.
+
+People with the whisper app should not need to do the copy/paste thing in order to listen: just clicking on the URL in a message (or anywhere) should launch the Whisper app and start it listening.  But if you have Chrome as your default browser you might need to copy the URL and then do the paste thing in the Whisper app.
+
+There is a single "Whisper URL" for each device, so once you've shared your device's link with someone else they can always use it to listen to your device.  But of course messaging them again will let them know you're ready to whisper.
+
+Please give it a try and let me know what you think.  Feel free to text me your whisper URL and we can connect.
+
+
+BUILD 19:
+This is a bug-fix build that addresses some of the issues noticed in the first internet-capable build.  Here are the issues that are definitely fixed:
+
+- the one where you had to manually select a whisperer in Bluetooth mode.
+
+- the one where you couldn't share the Whisper URL once you had started to Whisper (now you can share it from the status line).
+
+Here is the big issue that is *maybe, finally fixed*:
+
+- the one where the listener would see ghost past text from prior sessions
+
+Please report ASAP if you are seeing sudden connection drops for what appears to be no reason.
+
+Here is a repeat of the testing instructions for internet-based use:
+
+You will see a new row of buttons for whispering or listening over the internet (look for the network symbol on the buttons). Under the Whisper to internet button you will see a "Share URL" button - that's the URL you need to give to your internet listeners so they can connect - messaging them works well.  (Bluetooth listeners don't need the URL, of course, and yes you are whispering over both Bluetooth and the internet at the same time.) Under the Listen to Internet button you will see a "Retrieve URL" button - that looks for a whisper URL on the clipboard and copies to the app so it can be listened to.
+
+People with the whisper app should not need to do the copy/paste thing in order to listen: just clicking on the URL in a message (or anywhere) should launch the Whisper app and start it listening.  But if you have Chrome as your default browser you might need to copy the URL and then do the paste thing in the Whisper app.
+
+There is a single "Whisper URL" for each device, so once you've shared your device's link with someone else they can always use it to listen to your device.  But of course messaging them again will let them know you're ready to whisper.
+
+BUILD 22:
+IMPORTANT NOTE FOR TESTERS: Delete your current build of Whisper before you install this one!!  On MacOS, that means not only deleting the application but also going into your ~/Library/Containers directory and deleting the Whisper item found there.
+
+This is a bug-fix build that addresses the flakiness in internet connectivity noticed on some devices.  In addition, the whisperer and listener views show whether the remote is connected via internet or bluetooth.
+
+Here is a repeat of the testing instructions for internet-based use:
+
+You will see a new row of buttons for whispering or listening over the internet (look for the network symbol on the buttons). Under the Whisper to internet button you will see a "Share URL" button - that's the URL you need to give to your internet listeners so they can connect - messaging them works well.  (Bluetooth listeners don't need the URL, of course, and yes you are whispering over both Bluetooth and the internet at the same time.) Under the Listen to Internet button you will see a "Retrieve URL" button - that looks for a whisper URL on the clipboard and copies to the app so it can be listened to.
+
+People with the whisper app should not need to do the copy/paste thing in order to listen: just clicking on the URL in a message (or anywhere) should launch the Whisper app and start it listening.  But if you have Chrome as your default browser you might need to copy the URL and then do the paste thing in the Whisper app.
+
+There is a single "Whisper URL" for each device, so once you've shared your device's link with someone else they can always use it to listen to your device.  But of course messaging them again will let them know you're ready to whisper.

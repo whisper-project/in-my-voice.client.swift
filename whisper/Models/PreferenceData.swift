@@ -46,7 +46,7 @@ struct PreferenceData {
         if let prior = defaults.string(forKey: "whisper_last_client_secret") {
             return prior
         } else {
-            let prior = Data(ChaChaPoly.Nonce()).base64EncodedString()
+            let prior = makeSecret()
             defaults.setValue(prior, forKey: "whisper_last_client_secret")
             return prior
         }
@@ -61,10 +61,19 @@ struct PreferenceData {
         }
     }
     static func updateClientSecret(_ secret: String) {
-        if let current = defaults.string(forKey: "whisper_client_secret") {
+        // if the new secret is different than the old secret, save the old secret
+        if let current = defaults.string(forKey: "whisper_client_secret"), secret != current {
             defaults.setValue(current, forKey: "whisper_last_client_secret")
         }
         defaults.setValue(secret, forKey: "whisper_client_secret")
+    }
+    static func makeSecret() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        guard result == errSecSuccess else {
+            fatalError("Couldn't generate random bytes")
+        }
+        return Data(bytes).base64EncodedString()
     }
     static func initialMode() -> OperatingMode {
         let val = defaults.integer(forKey: "initial_mode_preference")

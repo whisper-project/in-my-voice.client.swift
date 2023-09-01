@@ -18,30 +18,13 @@ final class TcpWhisperTransport: PublishTransport {
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP whisper transport")
         self.failureCallback = failureCallback
-        self.authenticator = TcpAuthenticator(mode: .whisper, publisherId: clientId, callback: failureCallback)
-        self.client = self.authenticator.getClient()
-        self.client.connection.on(.connected) { _ in
-            logger.log("TCP whisper transport realtime client has connected")
-        }
-        self.client.connection.on(.disconnected) { _ in
-            logger.log("TCP whisper transport realtime client has disconnected")
-        }
-        whisperChannel = client.channels.get(channelName)
-        whisperChannel?.on(.attached) { stateChange in
-            logger.log("TCP whisper transport realtime client has attached the whisper channel")
-        }
-        whisperChannel?.on(.detached) { stateChange in
-            logger.log("TCP whisper transport realtime client has detached the whisper channel")
-        }
-        whisperChannel?.attach()
-        whisperChannel?.subscribe(clientId, callback: receiveMessage)
-        whisperChannel?.presence.subscribe(receivePresence)
-        whisperChannel?.presence.enter(PreferenceData.userName())
+        self.authenticator = TcpAuthenticator(mode: .whisper, publisherId: clientId, callback: receiveAuthError)
+        openChannel()
     }
     
     func stop() {
         logger.log("Stopping TCP whisper Transport")
-        whisperChannel?.detach()
+        closeChannel()
     }
     
     func goToBackground() {
@@ -90,7 +73,7 @@ final class TcpWhisperTransport: PublishTransport {
     private var failureCallback: ((String) -> Void)?
     private var clientId: String
     private var authenticator: TcpAuthenticator!
-    private var client: ARTRealtime!
+    private var client: ARTRealtime?
     private var channelName: String
     private var whisperChannel: ARTRealtimeChannel?
     private var listeners: [String:Remote] = [:]
@@ -105,13 +88,47 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     //MARK: Internal methods
-    func receiveErrorInfo(_ error: ARTErrorInfo?) {
+    private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
             failureCallback?(error.message)
         }
     }
     
-    func receiveMessage(message: ARTMessage) {
+    private func receiveAuthError(_ reason: String) {
+        failureCallback?(reason)
+        closeChannel()
+    }
+    
+    private func openChannel() {
+        client = self.authenticator.getClient()
+        client?.connection.on(.connected) { _ in
+            logger.log("TCP whisper transport realtime client has connected")
+        }
+        client?.connection.on(.disconnected) { _ in
+            logger.log("TCP whisper transport realtime client has disconnected")
+        }
+        whisperChannel = client?.channels.get(channelName)
+        whisperChannel?.on(.attached) { stateChange in
+            logger.log("TCP whisper transport realtime client has attached the whisper channel")
+        }
+        whisperChannel?.on(.detached) { stateChange in
+            logger.log("TCP whisper transport realtime client has detached the whisper channel")
+        }
+        whisperChannel?.attach()
+        whisperChannel?.subscribe(clientId, callback: receiveMessage)
+        whisperChannel?.presence.subscribe(receivePresence)
+        whisperChannel?.presence.enter(PreferenceData.userName())
+    }
+    
+    private func closeChannel() {
+        whisperChannel?.presence.leave(PreferenceData.userName())
+        whisperChannel?.detach()
+        whisperChannel = nil
+        client?.close()
+        client = nil
+    }
+    
+    private func receiveMessage(message: ARTMessage) {
         guard let name = message.name, name == clientId else {
             logger.error("Ignoring a message not intended for this client: \(String(describing: message))")
             return

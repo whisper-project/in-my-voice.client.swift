@@ -106,7 +106,7 @@ final class TcpAuthenticator {
             if response.statusCode == 403 {
                 logger.error("Received forbidden response status on \(activity) token request.")
                 self.failureCallback("Can't authenticate with the whisper server.  Please uninstall and reinstall the app.")
-                callback(nil, TcpAuthenticatorError.local("Authentication failed."))
+                callback(nil, TcpAuthenticatorError.server("Authentication failed."))
                 return
             }
             if response.statusCode != 200 {

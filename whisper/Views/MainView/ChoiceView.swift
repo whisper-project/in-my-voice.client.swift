@@ -20,8 +20,8 @@ struct ChoiceView: View {
     @State private var credentialsMissing = false
     @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
     
-    let choiceButtonWidth = CGFloat(140)
-    let choiceButtonHeight = CGFloat(50)
+    let choiceButtonWidth = CGFloat(130)
+    let choiceButtonHeight = CGFloat(45)
 
     var body: some View {
         VStack(spacing: 40) {
@@ -115,13 +115,13 @@ struct ChoiceView: View {
                     Button("Whisper") { mode = .whisper }
                     Button("Don't Whisper") { }
                 } message: {
-                    Text("Be sure your listeners have the link")
+                    Text("Send your listeners the link with the share button")
                 }
                 .alert("Confirm Internet Listen", isPresented: $confirmListen) {
                     Button("Listen") { mode = .listen }
                     Button("Don't Listen") { }
                 } message: {
-                    Text("This will use the last received link")
+                    Text("This will connect to the last received whisperer link")
                 }
             } else {
                 Button(action: { }) {
