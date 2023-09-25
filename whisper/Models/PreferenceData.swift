@@ -13,16 +13,16 @@ enum OperatingMode: Int {
 struct PreferenceData {
     private static var defaults = UserDefaults.standard
     #if DEBUG
-    static var whisperServer = "https://whisper-server-stage-baa911f67e80.herokuapp.com"
+    static var whisperServer = "https://stage.whisper.clickonetwo.io"
     #else
     static var whisperServer = "https://whisper.clickonetwo.io"
     #endif
     static func publisherUrlToClientId(url: String) -> String? {
-        let publisherRegex = /https:\/\/whisper[-a-zA-Z0-9:.]*\/subscribe\/([-a-zA-Z0-9]{36})/
+        let publisherRegex = /https:\/\/(stage\.)?whisper.clickonetwo.io\/subscribe\/([-a-zA-Z0-9]{36})/
         guard let match = url.wholeMatch(of: publisherRegex) else {
             return nil
         }
-        return String(match.1)
+        return String(match.2)
     }
     static var clientId: String = {
         if let id = defaults.string(forKey: "whisper_client_id") {
