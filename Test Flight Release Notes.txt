@@ -44,7 +44,7 @@ People with the whisper app should not need to do the copy/paste thing in order 
 
 There is a single "Whisper URL" for each device, so once you've shared your device's link with someone else they can always use it to listen to your device.  But of course messaging them again will let them know you're ready to whisper.
 
-BUILD 30:
+BUILDS 30 (internal) & 31 (external):
 This is a cosmetic improvement and bug fix release:
 
 1. Hopefully it addresses the "nonny is gay" bug.  But I've been wrong about that before :).
