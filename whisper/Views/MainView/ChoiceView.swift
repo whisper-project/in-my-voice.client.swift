@@ -11,17 +11,25 @@ struct ChoiceView: View {
     @Environment(\.scenePhase) var scenePhase
     
     @Binding var mode: OperatingMode
+    @Binding var publisherUrl: TransportUrl
 
     @State private var currentUserName: String = ""
     @State private var newUserName: String = ""
+    @State private var confirmWhisper = false
+    @State private var confirmListen = false
+    @State private var credentialsMissing = false
+    @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
     
+    let choiceButtonWidth = CGFloat(140)
+    let choiceButtonHeight = CGFloat(45)
+
     var body: some View {
-        VStack(spacing: 60) {
+        VStack(spacing: 40) {
             Form {
                 Section(content: {
                     TextField("Your Name", text: $newUserName, prompt: Text("Dan"))
                         .onChange(of: newUserName) {
-                            WhisperData.updateUserName($0)
+                            PreferenceData.updateUserName($0)
                             self.currentUserName = $0
                         }
                         .textInputAutocapitalization(.words)
@@ -33,33 +41,99 @@ struct ChoiceView: View {
                 })
             }
             .frame(maxWidth: 300, maxHeight: 105)
-            HStack(spacing: 60) {
-                VStack(spacing: 60) {
-                    Button(action: {
-                        mode = .whisper
-                    }) {
-                        Text("Whisper")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                    }
-                    .background(currentUserName == "" ? Color.gray : Color.accentColor)
-                    .cornerRadius(15)
-                    .disabled(currentUserName == "")
+            HStack(spacing: 30) {
+                Button(action: {
+                    publisherUrl = nil
+                    mode = .whisper
+                }) {
+                    Text("Whisper")
+                        .foregroundColor(.white)
+                        .fontWeight(.bold)
+                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                 }
-                VStack(spacing: 60) {
-                    Button(action: {
-                        mode = .listen
-                    }) {
-                        Text("Listen")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                    }
-                    .background(Color.accentColor)
-                    .cornerRadius(15)
-                    .disabled(currentUserName == "")
+                .background(currentUserName == "" ? Color.gray : Color.accentColor)
+                .cornerRadius(15)
+                .disabled(currentUserName == "")
+                Button(action: {
+                    publisherUrl = nil
+                    mode = .listen
+                }) {
+                    Text("Listen")
+                        .foregroundColor(.white)
+                        .fontWeight(.bold)
+                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                 }
+                .background(Color.accentColor)
+                .cornerRadius(15)
+                .disabled(currentUserName == "")
+            }
+            if PreferenceData.paidReceiptId() != nil {
+                HStack(spacing: 30) {
+                    VStack {
+                        Button(action: {
+                            publisherUrl = ComboFactory.shared.publisherUrl
+                            confirmWhisper = true
+                        }) {
+                            Text("Whisper \(Image(systemName: "network"))")
+                                .foregroundColor(.white)
+                                .fontWeight(.bold)
+                                .allowsTightening(true)
+                                .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+                        }
+                        .background(currentUserName == "" ? Color.gray : Color.accentColor)
+                        .cornerRadius(15)
+                        .disabled(currentUserName == "")
+                        ShareLink("URL", item: URL(string: ComboFactory.shared.publisherUrl!)!)
+                    }
+                    VStack {
+                        Button(action: {
+                            publisherUrl = lastSubscribedUrl
+                            confirmListen = true
+                        }) {
+                            Text("Listen \(Image(systemName: "network"))")
+                                .foregroundColor(.white)
+                                .fontWeight(.bold)
+                                .allowsTightening(true)
+                                .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+                        }
+                        .background(Color.accentColor)
+                        .cornerRadius(15)
+                        .disabled(currentUserName == "" || lastSubscribedUrl == nil)
+                        Button("\(Image(systemName: "square.and.arrow.down")) URL") {
+                            if UIPasteboard.general.hasStrings,
+                               let url = UIPasteboard.general.string
+                            {
+                                if PreferenceData.publisherUrlToClientId(url: url) != nil {
+                                    PreferenceData.lastSubscriberUrl = url
+                                    lastSubscribedUrl = url
+                                } else {
+                                    lastSubscribedUrl = nil
+                                }
+                            }
+                        }
+                    }
+                }
+                .alert("Confirm Internet Whisper", isPresented: $confirmWhisper) {
+                    Button("Whisper") { mode = .whisper }
+                    Button("Don't Whisper") { }
+                } message: {
+                    Text("Send your listeners the link with the share button")
+                }
+                .alert("Confirm Internet Listen", isPresented: $confirmListen) {
+                    Button("Listen") { mode = .listen }
+                    Button("Don't Listen") { }
+                } message: {
+                    Text("This will connect to the last received whisperer link")
+                }
+            } else {
+                Button(action: { }) {
+                    Text("Upgrade to \(Image(systemName: "network"))")
+                        .foregroundColor(.white)
+                        .fontWeight(.bold)
+                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+                }
+                .background(Color.accentColor)
+                .cornerRadius(15)
             }
             Button(action: {
                 UIApplication.shared.open(settingsUrl)
@@ -83,6 +157,11 @@ struct ChoiceView: View {
             .background(Color.accentColor)
             .cornerRadius(15)
         }
+        .alert("First Launch", isPresented: $credentialsMissing) {
+            Button("OK") { }
+        } message: {
+            Text("Sorry, but on its first launch after installation the app needs a few minutes to connect to the whisper server. Please try again.")
+        }
         .onAppear { updateUserName() }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
@@ -98,7 +177,7 @@ struct ChoiceView: View {
     }
     
     func updateUserName() {
-        currentUserName = WhisperData.userName()
+        currentUserName = PreferenceData.userName()
         newUserName = currentUserName
     }
 }
@@ -113,9 +192,10 @@ extension UIApplication {
 }
 
 struct ChoiceView_Previews: PreviewProvider {
-    static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
+    static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
+    static let publisherUrl = Binding<TransportUrl>(get: { nil }, set: { _ = $0 })
 
     static var previews: some View {
-        ChoiceView(mode: mode)
+        ChoiceView(mode: mode, publisherUrl: publisherUrl)
     }
 }

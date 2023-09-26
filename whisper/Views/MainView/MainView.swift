@@ -6,35 +6,37 @@
 import SwiftUI
 import UIKit
 
-let choiceButtonWidth = CGFloat(115)
-let choiceButtonHeight = CGFloat(50)
-
 let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
-struct MainView: View {    
+struct MainView: View {
+    @Binding var mode: OperatingMode
+    @Binding var publisherUrl: TransportUrl
+    
     @StateObject private var model: MainViewModel = .init()
-    @State var mode: OperatingMode = WhisperData.initialMode()
             
     var body: some View {
-        if model.state == .unauthorized {
-            Link("Enable Bluetooth to continue...", destination: settingsUrl)
-        } else if model.state != .poweredOn {
-            Text("Waiting for Bluetooth before continuing...")
+        if case TransportStatus.disabled(let message) = model.status {
+            Link(message, destination: settingsUrl)
+        } else if case TransportStatus.off(let message) = model.status {
+            Text(message)
         } else {
             switch mode {
             case .ask:
-                ChoiceView(mode: $mode)
+                ChoiceView(mode: $mode, publisherUrl: $publisherUrl)
             case .listen:
-                ListenView(mode: $mode)
+                ListenView(mode: $mode, publisherUrl: publisherUrl)
             case .whisper:
-                WhisperView(mode: $mode)
+                WhisperView(mode: $mode, publisherUrl: publisherUrl)
             }
         }
     }
 }
 
 struct MainView_Previews: PreviewProvider {
+    static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
+    static let publisherUrl = Binding<TransportUrl>(get: { nil }, set: { _ = $0 })
+
     static var previews: some View {
-        MainView()
+        MainView(mode: mode, publisherUrl: publisherUrl)
     }
 }

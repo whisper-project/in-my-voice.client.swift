@@ -11,12 +11,14 @@ struct PastTextLine: Identifiable {
 }
 
 final class PastTextViewModel: ObservableObject {
-    @Published var pastText: [PastTextLine] = []
+    @Published var pastText: [PastTextLine]
     
     init() {
+        self.pastText = []
     }
     
     init(initialText: String) {
+        self.pastText = []
         self.setFromText(initialText)
     }
     
@@ -29,7 +31,7 @@ final class PastTextViewModel: ObservableObject {
     }
     
     func clearLines() {
-        pastText.removeAll()
+        pastText = []
     }
     
     func setFromText(_ text: String) {

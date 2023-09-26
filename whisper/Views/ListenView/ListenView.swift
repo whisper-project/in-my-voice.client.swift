@@ -11,61 +11,62 @@ struct ListenView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
+    var publisherUrl: TransportUrl
     
     @FocusState var focusField: Bool
-    @StateObject private var model: ListenViewModel = .init()
+    @StateObject private var model: ListenViewModel
     @State private var size = FontSizes.FontName.normal.rawValue
     @State private var magnify: Bool = false
-    @State private var showStatusDetail: Bool = false
+    
+    init(mode: Binding<OperatingMode>, publisherUrl: TransportUrl) {
+        self._mode = mode
+        self.publisherUrl = publisherUrl
+        self._model = StateObject(wrappedValue: ListenViewModel(publisherUrl))
+    }
 
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 10) {
                 ControlView(size: $size, magnify: $magnify, mode: $mode, speaking: $model.speaking)
-                    .padding(EdgeInsets(top: listenViewTopPad, leading: 20, bottom: 0, trailing: 20))
+                    .padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
                 Text(model.liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
-                    .padding()
+                    .padding(innerPad)
                     .frame(maxWidth: geometry.size.width,
                            maxHeight: geometry.size.height * liveTextProportion,
                            alignment: .topLeading)
                     .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
-                StatusTextView(text: $model.statusText)
+                StatusTextView(text: $model.statusText, publisherUrl: nil)
                     .onTapGesture {
-                        showStatusDetail = true
+                        model.showStatusDetail = true
                     }
-                    .popover(isPresented: $showStatusDetail) {
+                    .popover(isPresented: $model.showStatusDetail) {
                         WhisperersView(model: model)
                     }
                 PastTextView(mode: mode, model: model.pastText)
                     .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                    .padding(10)
+                    .padding(innerPad)
                     .frame(maxWidth: geometry.size.width,
                            maxHeight: geometry.size.height * pastTextProportion,
                            alignment: .bottomLeading)
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
-                    .padding(EdgeInsets(top: 0, leading: 20, bottom: listenViewBottomPad, trailing: 20))
+                    .padding(EdgeInsets(top: 0, leading: sidePad, bottom: listenViewBottomPad, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
-        .alert("Lost Connection", isPresented: $model.wasDropped) {
+        .alert("Communication Error", isPresented: $model.connectionError) {
             Button("OK") { mode = .ask }
         } message: {
-            Text("The connection to the listener was lost")
-        }
-        .alert("Communication Error", isPresented: $model.connectionError) {
-            Button("OK") { model.readAllText() }
-        } message: {
-            Text("Some text from the whisperer was lost. It will be re-read.")
+            Text(model.connectionErrorDescription)
         }
         .onAppear {
             logger.log("ListenView appeared")
@@ -96,6 +97,6 @@ struct ListenView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
 
     static var previews: some View {
-        ListenView(mode: mode)
+        ListenView(mode: mode, publisherUrl: nil)
     }
 }

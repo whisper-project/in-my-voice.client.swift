@@ -6,11 +6,32 @@
 import Combine
 import CoreBluetooth
 
-final class BluetoothManager: NSObject {
-    static let shared: BluetoothManager = .init()
+final class BluetoothFactory: NSObject, TransportFactory {
+    typealias Publisher = BluetoothWhisperTransport
+    typealias Subscriber = BluetoothListenTransport
+    
+    static let shared: BluetoothFactory = .init()
         
-    var stateSubject: CurrentValueSubject<CBManagerState, Never> = .init(.unknown)
-    var peripheralSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
+    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(offStatus)
+    
+    var publisherUrl: TransportUrl = nil
+    
+    func publisher(_ publisherUrl: TransportUrl) -> Publisher {
+        if publisherUrl != nil {
+            logger.warning("Ignoring the publisher URL given to the Bluetooth whisper transport")
+        }
+        return Publisher()
+    }
+    
+    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber {
+        if publisherUrl != nil {
+            logger.warning("Ignoring the publisher URL given to the Bluetooth listen transport")
+        }
+        return Subscriber()
+    }
+    
+    static let offStatus: TransportStatus = .off("Waiting for Bluetooth before continuing...")
+    var advertisementSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
     var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
     var characteristicsSubject: PassthroughSubject<(CBPeripheral, CBService), Never> = .init()
     var centralSubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
@@ -66,7 +87,7 @@ final class BluetoothManager: NSObject {
         peripheralManager.removeAllServices()
     }
     
-    func advertise(services: [CBUUID], localName: String = WhisperData.deviceId) {
+    func advertise(services: [CBUUID], localName: String = BluetoothData.deviceId) {
         guard !services.isEmpty else {
             fatalError("Can't advertise no services")
         }
@@ -105,44 +126,41 @@ final class BluetoothManager: NSObject {
         return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: [central])
     }
     
-    private func composite_state() -> CBManagerState {
+    private func compositeStatus() -> TransportStatus {
         if central_state == .poweredOn && peripheral_state == .poweredOn {
-            return .poweredOn
+            return .on
         } else if central_state == .unauthorized || peripheral_state == .unauthorized {
-            return .unauthorized
+            return .disabled("Enable Bluetooth to continue...")
         } else {
-            return .unknown
+            return BluetoothFactory.offStatus
         }
     }
 }
 
-extension BluetoothManager: CBCentralManagerDelegate {
+extension BluetoothFactory: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         central_state = central.state
-        stateSubject.send(composite_state())
+        statusSubject.send(compositeStatus())
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        peripheralSubject.send((peripheral, advertisementData))
+        advertisementSubject.send((peripheral, advertisementData))
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         logger.log("Got connect from \(peripheral)")
-        peripheral.discoverServices([WhisperData.whisperServiceUuid])
+        peripheral.discoverServices([BluetoothData.whisperServiceUuid])
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        if let err = error {
-            logger.error("Failed to disconnect peripheral \(peripheral): \(err)")
-            return
-        }
+        disconnectedSubject.send(peripheral)
     }
 }
 
-extension BluetoothManager: CBPeripheralManagerDelegate {
+extension BluetoothFactory: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         peripheral_state = peripheral.state
-        stateSubject.send(composite_state())
+        statusSubject.send(compositeStatus())
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
@@ -173,7 +191,7 @@ extension BluetoothManager: CBPeripheralManagerDelegate {
     }
 }
 
-extension BluetoothManager: CBPeripheralDelegate {
+extension BluetoothFactory: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let err = error {
             logger.error("Error discovering services for \(peripheral): \(err)")
@@ -204,7 +222,7 @@ extension BluetoothManager: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
         logger.log("Lost services \(invalidatedServices) from \(peripheral)")
-        if invalidatedServices.first(where: { $0.uuid == WhisperData.whisperServiceUuid }) != nil {
+        if invalidatedServices.first(where: { $0.uuid == BluetoothData.whisperServiceUuid }) != nil {
             disconnectedSubject.send(peripheral)
         }
     }

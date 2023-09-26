@@ -19,16 +19,32 @@
 		37763D0029AAC1E60051CFE5 /* whisperUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CFF29AAC1E60051CFE5 /* whisperUITests.swift */; };
 		37763D0229AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D0129AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift */; };
 		37763D1729AC2F710051CFE5 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 37763D1629AC2F710051CFE5 /* LICENSE */; };
-		37763D1D29AC33230051CFE5 /* WhisperData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D1C29AC33230051CFE5 /* WhisperData.swift */; };
+		37763D1D29AC33230051CFE5 /* BluetoothData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D1C29AC33230051CFE5 /* BluetoothData.swift */; };
 		37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D1F29AC4C5B0051CFE5 /* Set+Cancelable.swift */; };
 		37763D2629AC8D550051CFE5 /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763D2529AC8D550051CFE5 /* ListenView.swift */; };
 		377646C629BACB4B002C411C /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C529BACB4B002C411C /* MainViewModel.swift */; };
 		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
-		377646CA29BACC16002C411C /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothManager.swift */; };
+		377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothFactory.swift */; };
+		377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */; };
+		377D71042A8B0367009B416F /* DribbleWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71032A8B0367009B416F /* DribbleWhisperTransport.swift */; };
+		377D71062A8C5E17009B416F /* DribbleFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71052A8C5E17009B416F /* DribbleFactory.swift */; };
+		377D71092A8EA8E4009B416F /* DribbleListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71072A8EA451009B416F /* DribbleListenTransport.swift */; };
+		377D710B2A8EBE16009B416F /* BluetoothListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */; };
+		377D710D2A913348009B416F /* DribbleTimedChunks.json in Resources */ = {isa = PBXBuildFile; fileRef = 377D710C2A913303009B416F /* DribbleTimedChunks.json */; };
+		377D71112A913C5C009B416F /* TcpFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71102A913BFE009B416F /* TcpFactory.swift */; };
+		377D71122A913C8F009B416F /* TcpWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710F2A913BFE009B416F /* TcpWhisperTransport.swift */; };
+		377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710E2A913BFE009B416F /* TcpListenTransport.swift */; };
+		377D71162A913E8B009B416F /* PreferenceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71142A913E2E009B416F /* PreferenceData.swift */; };
+		377D71192A956B4C009B416F /* SwiftJWT in Frameworks */ = {isa = PBXBuildFile; productRef = 377D71182A956B4C009B416F /* SwiftJWT */; };
+		377D711B2A956C23009B416F /* TcpAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711A2A956C23009B416F /* TcpAuthenticator.swift */; };
+		377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711D2A95CE5E009B416F /* ComboFactory.swift */; };
+		377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */; };
+		377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711F2A95CEAC009B416F /* ComboListenTransport.swift */; };
 		378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378A8E1629C554F20097F15A /* TextProtocol.swift */; };
 		379570CD29EA314A0033CF14 /* air-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CC29EA313D0033CF14 /* air-horn.caf */; };
 		379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CA29EA313D0033CF14 /* bike-bell.caf */; };
 		379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CB29EA313D0033CF14 /* bike-horn.caf */; };
+		3796EF6D2AA12986009C716F /* Ably in Frameworks */ = {isa = PBXBuildFile; productRef = 3796EF6C2AA12986009C716F /* Ably */; };
 		3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */; };
 		37B6236F29EF166800213790 /* ListenersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6236E29EF166800213790 /* ListenersView.swift */; };
 		37B6237629F78AA500213790 /* WhisperersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6237529F78AA500213790 /* WhisperersView.swift */; };
@@ -36,6 +52,7 @@
 		37C5142429CA2B44001A121B /* PastTextViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C5142329CA2B44001A121B /* PastTextViewModel.swift */; };
 		37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35829BC5DD300F952FE /* WhisperView.swift */; };
 		37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35D29BCF66400F952FE /* ListenViewModel.swift */; };
+		37F8C26E2A87DFA7004DED77 /* TransportProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F8C26D2A87DFA7004DED77 /* TransportProtocol.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,12 +94,26 @@
 		37763D0129AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		37763D0E29AB3D5A0051CFE5 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		37763D1629AC2F710051CFE5 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		37763D1C29AC33230051CFE5 /* WhisperData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperData.swift; sourceTree = "<group>"; };
+		37763D1C29AC33230051CFE5 /* BluetoothData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothData.swift; sourceTree = "<group>"; };
 		37763D1F29AC4C5B0051CFE5 /* Set+Cancelable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Set+Cancelable.swift"; sourceTree = "<group>"; };
 		37763D2529AC8D550051CFE5 /* ListenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenView.swift; sourceTree = "<group>"; };
 		377646C529BACB4B002C411C /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
 		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
-		377646C929BACC16002C411C /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
+		377646C929BACC16002C411C /* BluetoothFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothFactory.swift; sourceTree = "<group>"; };
+		377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothWhisperTransport.swift; sourceTree = "<group>"; };
+		377D71032A8B0367009B416F /* DribbleWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DribbleWhisperTransport.swift; sourceTree = "<group>"; };
+		377D71052A8C5E17009B416F /* DribbleFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DribbleFactory.swift; sourceTree = "<group>"; };
+		377D71072A8EA451009B416F /* DribbleListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DribbleListenTransport.swift; sourceTree = "<group>"; };
+		377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothListenTransport.swift; sourceTree = "<group>"; };
+		377D710C2A913303009B416F /* DribbleTimedChunks.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DribbleTimedChunks.json; sourceTree = "<group>"; };
+		377D710E2A913BFE009B416F /* TcpListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpListenTransport.swift; sourceTree = "<group>"; };
+		377D710F2A913BFE009B416F /* TcpWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpWhisperTransport.swift; sourceTree = "<group>"; };
+		377D71102A913BFE009B416F /* TcpFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpFactory.swift; sourceTree = "<group>"; };
+		377D71142A913E2E009B416F /* PreferenceData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceData.swift; sourceTree = "<group>"; };
+		377D711A2A956C23009B416F /* TcpAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpAuthenticator.swift; sourceTree = "<group>"; };
+		377D711D2A95CE5E009B416F /* ComboFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboFactory.swift; sourceTree = "<group>"; };
+		377D711F2A95CEAC009B416F /* ComboListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboListenTransport.swift; sourceTree = "<group>"; };
+		377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboWhisperTransport.swift; sourceTree = "<group>"; };
 		378A8E1629C554F20097F15A /* TextProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextProtocol.swift; sourceTree = "<group>"; };
 		379570CA29EA313D0033CF14 /* bike-bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-bell.caf"; sourceTree = "<group>"; };
 		379570CB29EA313D0033CF14 /* bike-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-horn.caf"; sourceTree = "<group>"; };
@@ -96,6 +127,7 @@
 		37D6B35829BC5DD300F952FE /* WhisperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperView.swift; sourceTree = "<group>"; };
 		37D6B35D29BCF66400F952FE /* ListenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenViewModel.swift; sourceTree = "<group>"; };
 		37ED7A812A24FB8C007A0EA7 /* whisper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = whisper.entitlements; sourceTree = "<group>"; };
+		37F8C26D2A87DFA7004DED77 /* TransportProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransportProtocol.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +135,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3796EF6D2AA12986009C716F /* Ably in Frameworks */,
+				377D71192A956B4C009B416F /* SwiftJWT in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -161,6 +195,7 @@
 				37763CF429AAC1E60051CFE5 /* whisperTests */,
 				37763CFE29AAC1E60051CFE5 /* whisperUITests */,
 				37763CE229AAC1E50051CFE5 /* Products */,
+				3796EF6B2AA12986009C716F /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -252,10 +287,10 @@
 		37763D1329AC034B0051CFE5 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				377646C929BACC16002C411C /* BluetoothManager.swift */,
-				37763D1C29AC33230051CFE5 /* WhisperData.swift */,
+				377D71142A913E2E009B416F /* PreferenceData.swift */,
 				378A8E1629C554F20097F15A /* TextProtocol.swift */,
 				3771F83429DD2F900011419E /* FontSizes.swift */,
+				37F8C26C2A87DF23004DED77 /* Transports */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -280,6 +315,56 @@
 			path = MainView;
 			sourceTree = "<group>";
 		};
+		377D70F42A899C3A009B416F /* Bluetooth */ = {
+			isa = PBXGroup;
+			children = (
+				37763D1C29AC33230051CFE5 /* BluetoothData.swift */,
+				377646C929BACC16002C411C /* BluetoothFactory.swift */,
+				377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */,
+				377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */,
+			);
+			path = Bluetooth;
+			sourceTree = "<group>";
+		};
+		377D70F62A899C54009B416F /* Tcp */ = {
+			isa = PBXGroup;
+			children = (
+				377D71102A913BFE009B416F /* TcpFactory.swift */,
+				377D710F2A913BFE009B416F /* TcpWhisperTransport.swift */,
+				377D710E2A913BFE009B416F /* TcpListenTransport.swift */,
+				377D711A2A956C23009B416F /* TcpAuthenticator.swift */,
+			);
+			path = Tcp;
+			sourceTree = "<group>";
+		};
+		377D71022A8B0343009B416F /* Dribble */ = {
+			isa = PBXGroup;
+			children = (
+				377D710C2A913303009B416F /* DribbleTimedChunks.json */,
+				377D71052A8C5E17009B416F /* DribbleFactory.swift */,
+				377D71032A8B0367009B416F /* DribbleWhisperTransport.swift */,
+				377D71072A8EA451009B416F /* DribbleListenTransport.swift */,
+			);
+			path = Dribble;
+			sourceTree = "<group>";
+		};
+		377D711C2A95CE38009B416F /* Combo */ = {
+			isa = PBXGroup;
+			children = (
+				377D711D2A95CE5E009B416F /* ComboFactory.swift */,
+				377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */,
+				377D711F2A95CEAC009B416F /* ComboListenTransport.swift */,
+			);
+			path = Combo;
+			sourceTree = "<group>";
+		};
+		3796EF6B2AA12986009C716F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		37C5142029CA2B0F001A121B /* PastTextView */ = {
 			isa = PBXGroup;
 			children = (
@@ -287,6 +372,18 @@
 				37C5142329CA2B44001A121B /* PastTextViewModel.swift */,
 			);
 			path = PastTextView;
+			sourceTree = "<group>";
+		};
+		37F8C26C2A87DF23004DED77 /* Transports */ = {
+			isa = PBXGroup;
+			children = (
+				37F8C26D2A87DFA7004DED77 /* TransportProtocol.swift */,
+				377D711C2A95CE38009B416F /* Combo */,
+				377D71022A8B0343009B416F /* Dribble */,
+				377D70F62A899C54009B416F /* Tcp */,
+				377D70F42A899C3A009B416F /* Bluetooth */,
+			);
+			path = Transports;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -305,6 +402,10 @@
 			dependencies = (
 			);
 			name = whisper;
+			packageProductDependencies = (
+				377D71182A956B4C009B416F /* SwiftJWT */,
+				3796EF6C2AA12986009C716F /* Ably */,
+			);
 			productName = whisper;
 			productReference = 37763CE129AAC1E50051CFE5 /* whisper.app */;
 			productType = "com.apple.product-type.application";
@@ -353,7 +454,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1420;
-				LastUpgradeCheck = 1420;
+				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					37763CE029AAC1E50051CFE5 = {
 						CreatedOnToolsVersion = 14.2;
@@ -377,6 +478,10 @@
 				Base,
 			);
 			mainGroup = 37763CD829AAC1E50051CFE5;
+			packageReferences = (
+				377D70F12A899B07009B416F /* XCRemoteSwiftPackageReference "ably-cocoa" */,
+				377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */,
+			);
 			productRefGroup = 37763CE229AAC1E50051CFE5 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -393,6 +498,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				377D710D2A913348009B416F /* DribbleTimedChunks.json in Resources */,
 				379570CD29EA314A0033CF14 /* air-horn.caf in Resources */,
 				379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */,
 				379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */,
@@ -427,18 +533,32 @@
 				376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */,
 				377646C829BACB73002C411C /* MainView.swift in Sources */,
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
-				377646CA29BACC16002C411C /* BluetoothManager.swift in Sources */,
+				377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */,
 				37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */,
+				377D711B2A956C23009B416F /* TcpAuthenticator.swift in Sources */,
 				37B6236F29EF166800213790 /* ListenersView.swift in Sources */,
+				377D71112A913C5C009B416F /* TcpFactory.swift in Sources */,
 				3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */,
-				37763D1D29AC33230051CFE5 /* WhisperData.swift in Sources */,
+				377D71092A8EA8E4009B416F /* DribbleListenTransport.swift in Sources */,
+				37763D1D29AC33230051CFE5 /* BluetoothData.swift in Sources */,
+				377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
+				377D71062A8C5E17009B416F /* DribbleFactory.swift in Sources */,
 				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
+				377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */,
 				37B6237629F78AA500213790 /* WhisperersView.swift in Sources */,
+				37F8C26E2A87DFA7004DED77 /* TransportProtocol.swift in Sources */,
 				378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */,
 				37763D2629AC8D550051CFE5 /* ListenView.swift in Sources */,
+				377D710B2A8EBE16009B416F /* BluetoothListenTransport.swift in Sources */,
+				377D71122A913C8F009B416F /* TcpWhisperTransport.swift in Sources */,
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
+				377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */,
+				377D71042A8B0367009B416F /* DribbleWhisperTransport.swift in Sources */,
+				377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */,
+				377D71162A913E8B009B416F /* PreferenceData.swift in Sources */,
+				377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */,
 				37C5142229CA2B35001A121B /* PastTextView.swift in Sources */,
 				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,
 				374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */,
@@ -515,6 +635,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -576,6 +697,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -601,8 +723,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -622,9 +745,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -640,8 +764,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -661,9 +786,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -789,6 +915,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		377D70F12A899B07009B416F /* XCRemoteSwiftPackageReference "ably-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ably/ably-cocoa";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
+		377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Kitura/Swift-JWT.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		377D71182A956B4C009B416F /* SwiftJWT */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */;
+			productName = SwiftJWT;
+		};
+		3796EF6C2AA12986009C716F /* Ably */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 377D70F12A899B07009B416F /* XCRemoteSwiftPackageReference "ably-cocoa" */;
+			productName = Ably;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 37763CD929AAC1E50051CFE5 /* Project object */;
 }

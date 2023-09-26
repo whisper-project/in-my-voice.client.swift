@@ -5,35 +5,7 @@
 
 import CoreBluetooth
 
-enum OperatingMode: Int {
-    case ask = 0, listen = 1, whisper = 2
-}
-
-struct WhisperData {
-    // MARK: Preferences
-    private static var defaults = UserDefaults.standard
-    static func initialMode() -> OperatingMode {
-        let val = defaults.integer(forKey: "initial_mode_preference")
-        return OperatingMode(rawValue: val) ?? .ask
-    }
-    static func startSpeaking() -> Bool {
-        return defaults.bool(forKey: "read_aloud_preference")
-    }
-    static func userName() -> String {
-        let name = defaults.string(forKey: "device_name_preference") ?? ""
-        return name
-    }
-    static func updateUserName(_ name: String) {
-        defaults.setValue(name, forKey: "device_name_preference")
-    }
-    static func requireAuthentication() -> Bool {
-        let result = defaults.bool(forKey: "listener_authentication_preference")
-        return result
-    }
-    static func alertSound() -> String {
-        return defaults.string(forKey: "alert_sound_preference") ?? "bike-horn"
-    }
-    
+struct BluetoothData {
     // MARK: UUIDs
     static var deviceId: String = {
         let defaults = UserDefaults.standard
@@ -57,7 +29,7 @@ struct WhisperData {
     static func listenNameCharacteristic() -> CBMutableCharacteristic {
         var props: CBCharacteristicProperties = .write
         var perms: CBAttributePermissions = .writeable
-        if requireAuthentication() {
+        if PreferenceData.requireAuthentication() {
             props = [.write, .authenticatedSignedWrites]
             perms = .writeEncryptionRequired
         }

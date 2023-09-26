@@ -12,17 +12,20 @@ struct ListenersView: View {
     @ObservedObject var model: WhisperViewModel
     
     var body: some View {
-        if model.listeners.isEmpty {
+        if model.remotes.isEmpty {
             Text("No Listeners")
         } else {
             VStack(alignment: .leading) {
                 ForEach(makeRows()) { row in
                     HStack(spacing: 5) {
                         Text(row.id)
-                        Spacer()
-                        Button(action: { model.alertListener(row.central) }, label: { Image(systemName: "speaker.wave.2") })
+                        if (row.remote.owner == .manual) {
+                            Image(systemName: "network")
+                        }
+                        Spacer(minLength: 25)
+                        Button(action: { model.playSound(row.remote) }, label: { Image(systemName: "speaker.wave.2") })
                             .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10))
-                        Button(action: { model.dropListener(row.central) }, label: { Image(systemName: "delete.left") })
+                        Button(action: { model.dropListener(row.remote) }, label: { Image(systemName: "delete.left") })
                     }
                     .font(FontSizes.fontFor(FontSizes.minTextSize))
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
@@ -32,10 +35,14 @@ struct ListenersView: View {
         }
     }
     
-    private struct Row: Identifiable, Comparable {
+    private struct Row: Identifiable, Comparable, Equatable {
         var id: String
-        var central: CBCentral
+        var remote: WhisperViewModel.Remote
 
+        static func == (lhs: Row, rhs: Row) -> Bool {
+            lhs.id == rhs.id
+        }
+        
         static func < (lhs: Self, rhs: Self) -> Bool {
             lhs.id < rhs.id
         }
@@ -43,8 +50,8 @@ struct ListenersView: View {
     
     private func makeRows() -> [Row] {
         var rows: [Row] = []
-        for (central, listener) in model.listeners {
-            rows.append(Row(id: listener.name, central: central))
+        for remote in model.remotes.values {
+            rows.append(Row(id: remote.name, remote: remote))
         }
         rows.sort()
         return rows
@@ -53,6 +60,6 @@ struct ListenersView: View {
 
 struct ListenersView_Previews: PreviewProvider {
     static var previews: some View {
-        ListenersView(model: WhisperViewModel())
+        ListenersView(model: WhisperViewModel(nil))
     }
 }

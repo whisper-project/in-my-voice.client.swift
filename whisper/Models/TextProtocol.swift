@@ -38,23 +38,36 @@ import Foundation
 /// the text is a past- completed line.
 /// - An offset of -3 indicates that the packet contains the currently-being-typed
 /// line and is always the last packet received from a direct read.
-/// - An offset of -4 is an empty chunk that is sent to acknowledge a read request,
-/// and indicates that a full replay to the requesting listener is being sent.
+/// - An offset of -4 is a chunk that is sent to acknowledge a read request,
+/// and indicates that a requested replay to the requesting listener is being sent. The
+/// text portion of the chunk is the hint that was received in the read request.
 ///
 /// Sound packets (sent to all listeners) have an offset of -9, and the text
 /// indicates the command being sent.
+///
+/// Control packets communicate requests rather than :
+/// - Offset -20 requests the whisperer to replay past text.  The text
+/// portion is used by the receiver as a hint of how much past text to send,
+/// and is typically "all" (the default), "lines N" meaning the most recent N lines,
+/// or "since N" meaning lines send within the last N seconds.
+/// - Offset -21 is the whisperer telling the listener to stop listening.  The
+/// text is the id of the listener it's meant for.  It's how dropping a listener works
+/// over the network.
 final class TextProtocol {
     struct ProtocolChunk {
         var offset: Int
         var text: String
         
-        func toData() -> Data {
-            let string: String = "\(offset)|" + text
-            return Data(string.utf8)
+        func toString() -> String {
+            return "\(offset)|" + text
         }
         
-        static func fromData(_ data: Data) -> ProtocolChunk? {
-            let parts = String(decoding: data, as: UTF8.self).split(separator: "|", maxSplits: 1)
+        func toData() -> Data {
+            return Data(self.toString().utf8)
+        }
+        
+        static func fromString(_ string: String) -> ProtocolChunk? {
+            let parts = string.split(separator: "|", maxSplits: 1)
             if parts.count == 0 {
                 // data packets with no "|" character are malformed
                 return nil
@@ -64,6 +77,10 @@ final class TextProtocol {
                 // data packets with no int before the "|" are malformed
                 return nil
             }
+        }
+        
+        static func fromData(_ data: Data) -> ProtocolChunk? {
+            return fromString(String(decoding: data, as: UTF8.self))
         }
 
         func isDiff() -> Bool {
@@ -86,6 +103,14 @@ final class TextProtocol {
             return offset == -9
         }
         
+        func isReplayRequest() -> Bool {
+            return offset == -20
+        }
+        
+        func isDropRequest() -> Bool {
+            return offset == -21
+        }
+        
         static func fromPastText(text: String) -> ProtocolChunk {
             return ProtocolChunk(offset: -2, text: text)
         }
@@ -94,12 +119,20 @@ final class TextProtocol {
             return ProtocolChunk(offset: -3, text: text)
         }
         
-        static func acknowledgeRead() -> ProtocolChunk {
-            return ProtocolChunk(offset: -4, text: "")
+        static func acknowledgeRead(hint: String) -> ProtocolChunk {
+            return ProtocolChunk(offset: -4, text: hint)
         }
         
         static func sound(_ text: String) -> ProtocolChunk {
             return ProtocolChunk(offset: -9, text: text)
+        }
+        
+        static func replayRequest(hint: String) -> ProtocolChunk {
+            return ProtocolChunk(offset: -20, text: hint)
+        }
+        
+        static func dropRequest(id: String) -> ProtocolChunk {
+            return ProtocolChunk(offset: -21, text: id)
         }
         
         static func fromLiveTyping(text: String, start: Int) -> [ProtocolChunk] {

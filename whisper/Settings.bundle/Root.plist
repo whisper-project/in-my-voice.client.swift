@@ -22,9 +22,19 @@
 			<key>Type</key>
 			<string>PSToggleSwitchSpecifier</string>
 			<key>Title</key>
-			<string>Listener Authentication</string>
+			<string>Require listeners to pair</string>
 			<key>Key</key>
 			<string>listener_authentication_preference</string>
+			<key>DefaultValue</key>
+			<false/>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Read whispers aloud</string>
+			<key>Key</key>
+			<string>read_aloud_preference</string>
 			<key>DefaultValue</key>
 			<false/>
 		</dict>
@@ -71,16 +81,6 @@
 				<integer>1</integer>
 				<integer>2</integer>
 			</array>
-		</dict>
-		<dict>
-			<key>Type</key>
-			<string>PSToggleSwitchSpecifier</string>
-			<key>Title</key>
-			<string>Read whispers aloud</string>
-			<key>Key</key>
-			<string>read_aloud_preference</string>
-			<key>DefaultValue</key>
-			<false/>
 		</dict>
 	</array>
 </dict>
