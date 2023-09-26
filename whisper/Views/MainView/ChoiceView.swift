@@ -20,7 +20,7 @@ struct ChoiceView: View {
     @State private var credentialsMissing = false
     @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
     
-    let choiceButtonWidth = CGFloat(130)
+    let choiceButtonWidth = CGFloat(140)
     let choiceButtonHeight = CGFloat(45)
 
     var body: some View {
@@ -41,7 +41,7 @@ struct ChoiceView: View {
                 })
             }
             .frame(maxWidth: 300, maxHeight: 105)
-            HStack(spacing: 40) {
+            HStack(spacing: 30) {
                 Button(action: {
                     publisherUrl = nil
                     mode = .whisper
@@ -68,7 +68,7 @@ struct ChoiceView: View {
                 .disabled(currentUserName == "")
             }
             if PreferenceData.paidReceiptId() != nil {
-                HStack(spacing: 40) {
+                HStack(spacing: 30) {
                     VStack {
                         Button(action: {
                             publisherUrl = ComboFactory.shared.publisherUrl
@@ -77,6 +77,7 @@ struct ChoiceView: View {
                             Text("Whisper \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
+                                .allowsTightening(true)
                                 .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                         }
                         .background(currentUserName == "" ? Color.gray : Color.accentColor)
@@ -92,6 +93,7 @@ struct ChoiceView: View {
                             Text("Listen \(Image(systemName: "network"))")
                                 .foregroundColor(.white)
                                 .fontWeight(.bold)
+                                .allowsTightening(true)
                                 .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                         }
                         .background(Color.accentColor)
