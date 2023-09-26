@@ -43,3 +43,11 @@ You will see a new row of buttons for whispering or listening over the internet 
 People with the whisper app should not need to do the copy/paste thing in order to listen: just clicking on the URL in a message (or anywhere) should launch the Whisper app and start it listening.  But if you have Chrome as your default browser you might need to copy the URL and then do the paste thing in the Whisper app.
 
 There is a single "Whisper URL" for each device, so once you've shared your device's link with someone else they can always use it to listen to your device.  But of course messaging them again will let them know you're ready to whisper.
+
+BUILD 30:
+This is a cosmetic improvement and bug fix release:
+
+1. Hopefully it addresses the "nonny is gay" bug.  But I've been wrong about that before :).
+2. The buttons accomodate larger-size text on iPhones for us old folks.
+3. I'm collecting a bit more diagnostic data to help track down bugs.  This data is never associated with user's identities in any way.
+4. Internet listening will more reliably show the name of the whisperer.
