@@ -146,6 +146,10 @@ final class TcpWhisperTransport: PublishTransport {
         }
         if chunk.isReplayRequest() {
             logger.info("Received replay request from \(sender)")
+            // acknowledge the read request (always done at the transport level)
+            let response = TextProtocol.ProtocolChunk.acknowledgeRead(hint: chunk.text)
+            send(remote: remote, chunks: [response])
+            // pass the request on to the whisperer
             receivedChunkSubject.send((remote: remote, chunk: chunk))
         } else {
             logger.error("Ignoring non-replay request from \(sender): \(payload)")
