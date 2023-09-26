@@ -77,7 +77,8 @@ final class TcpAuthenticator {
         let value = [
             "clientId": clientId,
             "activity": mode == .whisper ? "publish" : "subscribe",
-            "publisherId": publisherId
+            "publisherId": publisherId,
+            "userName": PreferenceData.userName(),
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for \(activity) token request call")

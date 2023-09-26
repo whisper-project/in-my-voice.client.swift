@@ -6,6 +6,18 @@
 import AVFAudio
 import SwiftUI
 
+/// build information
+#if targetEnvironment(simulator)
+let platformInfo = "simulator"
+#elseif targetEnvironment(macCatalyst)
+let platformInfo = "mac"
+#else
+let platformInfo = UIDevice.current.userInterfaceIdiom == .phone ? "phone" : "pad"
+#endif
+let versionInfo = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "??"
+let buildInfo = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "??"
+
+
 /// global strings
 let connectingLiveText = "This is where the line being typed by the whisperer will appear in real time... "
 let connectingPastText = """
@@ -110,7 +122,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             "clientId": PreferenceData.clientId,
             "token": deviceToken.base64EncodedString(),
             "deviceId": BluetoothData.deviceId,
-            "lastSecret": PreferenceData.lastClientSecret()
+            "userName": PreferenceData.userName(),
+            "lastSecret": PreferenceData.lastClientSecret(),
+            "appInfo": "\(platformInfo)|\(versionInfo).\(buildInfo)",
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
