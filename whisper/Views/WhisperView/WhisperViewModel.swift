@@ -16,7 +16,7 @@ final class WhisperViewModel: ObservableObject {
     @Published var connectionErrorDescription: String = ""
     @Published var remotes: [String:Remote] = [:]
     @Published var speaking: Bool = PreferenceData.startSpeaking()
-    @Published var pastText: PastTextViewModel
+    @Published var pastText: PastTextViewModel = .init()
 
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
@@ -27,7 +27,6 @@ final class WhisperViewModel: ObservableObject {
 
     init(_ publisherUrl: TransportUrl) {
         logger.log("Initializing WhisperView model")
-        self.pastText = .init()
         self.transport = ComboFactory.shared.publisher(publisherUrl)
         self.transport.addRemoteSubject
             .sink { [weak self] in self?.addListener($0) }
@@ -48,12 +47,14 @@ final class WhisperViewModel: ObservableObject {
     // MARK: View entry points
     
     func start() {
+        resetText()
         refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
     }
     
     func stop() {
         transport.stop()
+        resetText()
         refreshStatusText()
     }
     
@@ -124,6 +125,11 @@ final class WhisperViewModel: ObservableObject {
     }
     
     // MARK: Internal helpers
+    private func resetText() {
+        self.pastText.clearLines()
+        self.liveText = ""
+    }
+    
     private func signalConnectionError(_ reason: String) {
         Task { @MainActor in
             connectionError = true

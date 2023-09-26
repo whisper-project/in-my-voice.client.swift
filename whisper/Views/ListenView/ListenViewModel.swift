@@ -20,7 +20,7 @@ final class ListenViewModel: ObservableObject {
     @Published var showStatusDetail: Bool = false
     @Published var candidates: [Remote] = []
     @Published var whisperer: Remote?
-    @Published var pastText: PastTextViewModel
+    @Published var pastText: PastTextViewModel = .init()
     
     private var transport: Transport
     private var manualWhisperer: Bool
@@ -36,7 +36,6 @@ final class ListenViewModel: ObservableObject {
 
     init(_ publisherUrl: TransportUrl) {
         logger.log("Initializing ListenView model")
-        self.pastText = .init()
         manualWhisperer = publisherUrl != nil
         transport = ComboFactory.shared.subscriber(publisherUrl)
         transport.addRemoteSubject
@@ -125,14 +124,12 @@ final class ListenViewModel: ObservableObject {
         }
         logger.log("Requesting full re-read of text")
         resetInProgress = true
-        pastText.clearLines()
-        liveText = ""
+        resetText()
         let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "all")
         transport.send(remote: whisperer!, chunks: [chunk])
     }
     
     // MARK: Transport subscription handlers
-    
     private func addCandidate(_ remote: Remote) {
         guard !candidates.contains(where: { $0 === remote }) else {
             logger.error("Ignoring add of unnecessary or duplicate remote \(remote.id)")
@@ -165,6 +162,11 @@ final class ListenViewModel: ObservableObject {
     }
         
     // MARK: internal helpers
+    private func resetText() {
+        self.pastText.clearLines()
+        self.liveText = ""
+    }
+    
     private func signalConnectionError(_ reason: String) {
         Task { @MainActor in
             connectionError = true
@@ -178,8 +180,8 @@ final class ListenViewModel: ObservableObject {
             playSound(chunk.text)
         } else if resetInProgress {
             if chunk.isFirstRead() {
-                logger.log("Received reset acknowledgement from whisperer, clearing past text")
-                pastText.clearLines()
+                logger.log("Received reset acknowledgement from whisperer, resetting all text")
+                resetText()
             } else if chunk.isDiff() {
                 logger.log("Ignoring diff chunk because a read is in progress")
             } else if chunk.isCompleteLine() {
