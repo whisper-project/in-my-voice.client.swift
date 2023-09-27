@@ -37,6 +37,8 @@ final class BluetoothListenTransport: SubscribeTransport {
     }
     
     func goToForeground() {
+        // resume discovery
+        startDiscovery()
     }
     
     func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
@@ -352,6 +354,10 @@ final class BluetoothListenTransport: SubscribeTransport {
     
     //MARK: internal methods
     private func startDiscovery() {
+        guard publisher == nil else {
+            // we don't discover if we have a publisher
+            return
+        }
         logger.log("Start scanning for whisperers")
         factory.scan(forServices: [BluetoothData.whisperServiceUuid], allow_repeats: true)
         startAdvertising()
