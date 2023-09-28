@@ -48,9 +48,8 @@ struct ListenView: View {
                     .popover(isPresented: $model.showStatusDetail) {
                         WhisperersView(model: model)
                     }
-                PastTextView(mode: mode, model: model.pastText)
+                PastTextView(model: model.pastText)
                     .font(FontSizes.fontFor(size))
-                    .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     .padding(innerPad)
                     .frame(maxWidth: geometry.size.width,
@@ -59,6 +58,7 @@ struct ListenView: View {
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: sidePad, bottom: listenViewBottomPad, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
+                    .textSelection(.enabled)
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)

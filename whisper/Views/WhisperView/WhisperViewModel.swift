@@ -16,7 +16,7 @@ final class WhisperViewModel: ObservableObject {
     @Published var connectionErrorDescription: String = ""
     @Published var remotes: [String:Remote] = [:]
     @Published var speaking: Bool = PreferenceData.startSpeaking()
-    @Published var pastText: PastTextViewModel = .init()
+    @Published var pastText: PastTextViewModel = .init(mode: .whisper)
 
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []

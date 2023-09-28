@@ -36,8 +36,9 @@ let lightPastBorderColor = Color(.darkGray)
 let darkPastBorderColor = Color(.lightGray)
 
 /// global constants for relative view sizes
-let pastTextProportion = 4.0/5.0
-let liveTextProportion = 1.0/5.0
+let liveTextFifths = UIDevice.current.userInterfaceIdiom == .phone ? 2.0 : 1.0
+let pastTextProportion = (5.0 - liveTextFifths)/5.0
+let liveTextProportion = liveTextFifths/5.0
 
 /// global constants for platform differentiation
 #if targetEnvironment(macCatalyst)
