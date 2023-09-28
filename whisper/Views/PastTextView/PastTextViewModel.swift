@@ -11,7 +11,7 @@ struct PastTextLine: Identifiable {
 }
 
 final class PastTextViewModel: ObservableObject {
-    @Published private(set) var pastText: String
+    @Published var pastText: String
     @Published private(set) var addLinesAtTop = false
     
     init(mode: OperatingMode, initialText: String = "") {

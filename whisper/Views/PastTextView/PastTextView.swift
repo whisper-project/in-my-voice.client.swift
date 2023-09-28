@@ -17,9 +17,7 @@ struct PastTextView: View {
                             Spacer()
                                 .id(0)
                         }
-                        Text(model.pastText)
-                            .lineLimit(nil)
-                            .fixedSize(horizontal: false, vertical: true)
+                        TextEditor(text: $model.pastText)
                             .id(1)
                         if model.addLinesAtTop {
                             Spacer()
