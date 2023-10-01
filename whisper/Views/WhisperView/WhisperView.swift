@@ -75,6 +75,11 @@ struct WhisperView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
+        .alert("Connection Failure", isPresented: $model.connectionError) {
+            Button("OK") { mode = .ask }
+        } message: {
+            Text("Unable to establish a connection, please try again.\n(Detailed error: \(self.model.connectionErrorDescription)")
+        }
         .onAppear {
             logger.log("WhisperView appeared")
             self.model.start()

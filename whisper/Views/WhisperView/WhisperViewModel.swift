@@ -156,14 +156,13 @@ final class WhisperViewModel: ObservableObject {
         refreshStatusText()
     }
 
-    // send all the text to a specific listener who requests it
+    // send live text to a specific listener who requests it
     private func sendAllText(_ pair: (remote: Remote, chunk: TextProtocol.ProtocolChunk)) {
         guard let remote = remotes[pair.remote.id] else {
             logger.warning("Read requested by unknown remote \(pair.remote.id)")
             return
         }
-        var chunks = pastText.getLines().map{TextProtocol.ProtocolChunk.fromPastText(text: $0)}
-        chunks.append(TextProtocol.ProtocolChunk.fromLiveText(text: liveText))
+        let chunks = [TextProtocol.ProtocolChunk.fromLiveText(text: liveText)]
         transport.send(remote: remote, chunks: chunks)
     }
     

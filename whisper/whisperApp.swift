@@ -83,15 +83,9 @@ struct whisperApp: App {
                     let url = urlObj.absoluteString
                     if PreferenceData.publisherUrlToClientId(url: url) != nil {
                         logger.log("Handling valid universal URL: \(url)")
-                        if PreferenceData.paidReceiptId() != nil {
-                            PreferenceData.lastSubscriberUrl = url
-                            publisherUrl = url
-                            mode = .listen
-                        } else {
-                            logger.error("Ignoring universal URL because not paid")
-                            warningMessage = "You must upgrade to use the internet"
-                            showWarning = true
-                        }
+                        PreferenceData.lastSubscriberUrl = url
+                        publisherUrl = url
+                        mode = .listen
                     } else {
                         logger.warning("Ignoring invalid universal URL: \(url)")
                         warningMessage = "That is not a valid Whisper link"
@@ -119,13 +113,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         logger.info("Received APNs token")
-        let value = [
+        let value: [String: Any] = [
             "clientId": PreferenceData.clientId,
             "token": deviceToken.base64EncodedString(),
             "deviceId": BluetoothData.deviceId,
             "userName": PreferenceData.userName(),
             "lastSecret": PreferenceData.lastClientSecret(),
             "appInfo": "\(platformInfo)|\(versionInfo).\(buildInfo)",
+            "droppedErrorCount": PreferenceData.droppedErrorCount,
+            "tcpErrorCount": PreferenceData.tcpErrorCount,
+            "authenticationErrorCount": PreferenceData.authenticationErrorCount,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
@@ -146,6 +143,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             }
             if response.statusCode == 204 {
                 logger.info("Successful post of APNs token")
+                // if server has received error data, reset it
+                PreferenceData.droppedErrorCount = 0
+                PreferenceData.tcpErrorCount = 0
+                PreferenceData.authenticationErrorCount = 0
                 return
             }
             logger.error("Received unexpected response on APNs token post: \(response.statusCode)")

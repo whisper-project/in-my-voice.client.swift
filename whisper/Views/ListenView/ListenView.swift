@@ -63,10 +63,10 @@ struct ListenView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
         }
-        .alert("Communication Error", isPresented: $model.connectionError) {
+        .alert("Connection Failure", isPresented: $model.connectionError) {
             Button("OK") { mode = .ask }
         } message: {
-            Text(model.connectionErrorDescription)
+            Text("Unable to establish a connection, please try again.\n(Detailed error: \(self.model.connectionErrorDescription)")
         }
         .onAppear {
             logger.log("ListenView appeared")

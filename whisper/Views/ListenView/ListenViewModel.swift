@@ -29,6 +29,7 @@ final class ListenViewModel: ObservableObject {
     private var discoveryCountDown = 0
     private var discoveryTimer: Timer?
     private var resetInProgress = false
+    private var isFirstConnect = true
     private var isInBackground = false
     private var soundEffect: AVAudioPlayer?
     private var notifySoundInBackground = false
@@ -62,8 +63,10 @@ final class ListenViewModel: ObservableObject {
             }
             self.notifySoundInBackground = granted
         }
-        liveText = connectingLiveText
-        pastText.setFromText(connectingPastText)
+        if isFirstConnect {
+            liveText = connectingLiveText
+            pastText.setFromText(connectingPastText)
+        }
         if !manualWhisperer {
             awaitDiscovery()
         }
@@ -109,6 +112,12 @@ final class ListenViewModel: ObservableObject {
         transport.subscribe(remote: to)
         // update the view
         refreshStatusText()
+        if isFirstConnect {
+            isFirstConnect = false
+            resetText()
+        } else {
+            liveText = connectingLiveText
+        }
         // get anything we missed from whisperer
         readAllText()
     }
@@ -122,10 +131,9 @@ final class ListenViewModel: ObservableObject {
             logger.log("Got reset during reset, ignoring it")
             return
         }
-        logger.log("Requesting full re-read of text")
+        logger.log("Requesting full re-read of text, requesting live text only")
         resetInProgress = true
-        resetText()
-        let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "all")
+        let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "live")
         transport.send(remote: whisperer!, chunks: [chunk])
     }
     
@@ -147,7 +155,6 @@ final class ListenViewModel: ObservableObject {
         if removed === whisperer {
             logger.info("Dropped the whisperer \(removed.id)")
             whisperer = nil
-            connectionError = true
         } else {
             logger.info("Dropped candidate \(removed.id) with name \(removed.name)")
         }
@@ -180,8 +187,7 @@ final class ListenViewModel: ObservableObject {
             playSound(chunk.text)
         } else if resetInProgress {
             if chunk.isFirstRead() {
-                logger.log("Received reset acknowledgement from whisperer, resetting all text")
-                resetText()
+                logger.log("Received reset acknowledgement from whisperer")
             } else if chunk.isDiff() {
                 logger.log("Ignoring diff chunk because a read is in progress")
             } else if chunk.isCompleteLine() {
@@ -207,8 +213,9 @@ final class ListenViewModel: ObservableObject {
                 liveText = ""
             } else if chunk.offset > liveText.count {
                 // we must have missed a packet, read the full state to reset
-                logger.log("Resetting after missed packet...")
-                connectionError = true
+                PreferenceData.droppedErrorCount += 1
+                logger.log("Resetting live text after missed packet...")
+                readAllText()
             } else {
 //                logger.debug("Got diff: live text[\(chunk.offset)...] updated to '\(chunk.text)'")
                 liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
