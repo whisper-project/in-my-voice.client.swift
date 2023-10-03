@@ -24,7 +24,7 @@ final class TcpListenTransport: SubscribeTransport {
     
     func stop() {
         logger.info("Stopping TCP listen transport")
-        whisperChannel?.detach()
+        closeChannel()
     }
     
     func goToBackground() {
@@ -182,8 +182,8 @@ final class TcpListenTransport: SubscribeTransport {
                 logger.warning("Ignoring leave event for non-candidate \(remoteId)")
                 return
             }
+            logger.info("The whisperer has left the building")
             dropRemoteSubject.send(remote)
-            failureCallback?("The whisperer disconnected")
         case .update:
             guard let candidate = candidates[remoteId] else {
                 logger.warning("Ignoring update event for non-candidate \(remoteId)")

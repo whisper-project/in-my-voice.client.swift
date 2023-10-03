@@ -63,10 +63,7 @@ final class ListenViewModel: ObservableObject {
             }
             self.notifySoundInBackground = granted
         }
-        if isFirstConnect {
-            liveText = connectingLiveText
-            pastText.setFromText(connectingPastText)
-        }
+        resetTextForConnection()
         if !manualWhisperer {
             awaitDiscovery()
         }
@@ -114,16 +111,15 @@ final class ListenViewModel: ObservableObject {
         refreshStatusText()
         if isFirstConnect {
             isFirstConnect = false
-            resetText()
-        } else {
-            liveText = connectingLiveText
+            pastText.clearLines()
         }
+        liveText = ""
         // get anything we missed from whisperer
-        readAllText()
+        readLiveText()
     }
     
     // re-read the whispered text
-    func readAllText() {
+    func readLiveText() {
         guard whisperer != nil else {
             return
         }
@@ -131,7 +127,7 @@ final class ListenViewModel: ObservableObject {
             logger.log("Got reset during reset, ignoring it")
             return
         }
-        logger.log("Requesting full re-read of text, requesting live text only")
+        logger.log("Requesting re-read of live text")
         resetInProgress = true
         let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "live")
         transport.send(remote: whisperer!, chunks: [chunk])
@@ -148,13 +144,17 @@ final class ListenViewModel: ObservableObject {
     }
     
     private func dropCandidate(_ remote: Remote) {
-        guard let removed = candidates.first(where: { $0 === remote }) else {
+        guard let position = candidates.firstIndex(where: { $0 === remote }) else {
             logger.error("Ignoring dropped non-candidate \(remote.id)")
             return
         }
+        let removed = candidates.remove(at: position)
         if removed === whisperer {
             logger.info("Dropped the whisperer \(removed.id)")
             whisperer = nil
+            // we have lost the whisperer, transport will start looking for a new one
+            resetTextForConnection()
+            refreshStatusText()
         } else {
             logger.info("Dropped candidate \(removed.id) with name \(removed.name)")
         }
@@ -169,9 +169,13 @@ final class ListenViewModel: ObservableObject {
     }
         
     // MARK: internal helpers
-    private func resetText() {
-        self.pastText.clearLines()
-        self.liveText = ""
+    private func resetTextForConnection() {
+        if isFirstConnect {
+            liveText = connectingLiveText
+            pastText.setFromText(connectingPastText)
+        } else {
+            self.liveText = connectingLiveText
+        }
     }
     
     private func signalConnectionError(_ reason: String) {
@@ -194,7 +198,7 @@ final class ListenViewModel: ObservableObject {
                 logger.debug("Got past line \(self.pastText.pastText.count) in read")
                 pastText.addLine(chunk.text)
             } else if chunk.isLastRead() {
-                logger.log("Reset completes with \(self.pastText.pastText.count) past lines & \(chunk.text.count) live characters")
+                logger.log("Reset completes with \(chunk.text.count) live characters")
                 liveText = chunk.text
                 resetInProgress = false
             }
@@ -215,7 +219,7 @@ final class ListenViewModel: ObservableObject {
                 // we must have missed a packet, read the full state to reset
                 PreferenceData.droppedErrorCount += 1
                 logger.log("Resetting live text after missed packet...")
-                readAllText()
+                readLiveText()
             } else {
 //                logger.debug("Got diff: live text[\(chunk.offset)...] updated to '\(chunk.text)'")
                 liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
