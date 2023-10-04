@@ -34,9 +34,13 @@ final class BluetoothListenTransport: SubscribeTransport {
     func goToBackground() {
         // can't do discovery in background
         stopDiscovery()
+        isInBackground = true
     }
     
     func goToForeground() {
+        isInBackground = false
+        // resume discovery if necessary
+        startDiscovery()
     }
     
     func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
@@ -154,10 +158,14 @@ final class BluetoothListenTransport: SubscribeTransport {
             logger.info("Completed drop of remote \(remote.id) with name \(remote.name)")
         } else if peripheral == publisher?.peripheral {
             logger.log("Publisher \(self.publisher!.id) has stopped publishing")
-            drop(remote: publisher!)
-        } else if let remote = remotes[peripheral] {
+            remotes.removeValue(forKey: peripheral)
+            dropRemoteSubject.send(publisher!)
+            publisher = nil
+            // lost our whisperer, look again
+            startDiscovery()
+        } else if let remote = remotes.removeValue(forKey: peripheral) {
             logger.log("Remote \(remote.id) has stopped publishing")
-            drop(remote: remote)
+            dropRemoteSubject.send(remote)
         } else {
             logger.error("Ignoring disconnect from unknown peripheral: \(peripheral)")
         }
@@ -317,6 +325,7 @@ final class BluetoothListenTransport: SubscribeTransport {
     private var remotes: [CBPeripheral: Whisperer] = [:]
     private var publisher: Remote?
     private var cancellables: Set<AnyCancellable> = []
+    private var isInBackground = false
     private var scanRefreshCount = 0
     private var disconnectsInProgress: [CBPeripheral: Remote] = [:]
     
@@ -352,6 +361,14 @@ final class BluetoothListenTransport: SubscribeTransport {
     
     //MARK: internal methods
     private func startDiscovery() {
+        guard !isInBackground else {
+            // can't do discovery in the background
+            return
+        }
+        guard publisher == nil else {
+            // we don't discover if we have a publisher
+            return
+        }
         logger.log("Start scanning for whisperers")
         factory.scan(forServices: [BluetoothData.whisperServiceUuid], allow_repeats: true)
         startAdvertising()

@@ -16,7 +16,7 @@ final class WhisperViewModel: ObservableObject {
     @Published var connectionErrorDescription: String = ""
     @Published var remotes: [String:Remote] = [:]
     @Published var speaking: Bool = PreferenceData.startSpeaking()
-    @Published var pastText: PastTextViewModel = .init()
+    @Published var pastText: PastTextViewModel = .init(mode: .whisper)
 
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
@@ -156,14 +156,13 @@ final class WhisperViewModel: ObservableObject {
         refreshStatusText()
     }
 
-    // send all the text to a specific listener who requests it
+    // send live text to a specific listener who requests it
     private func sendAllText(_ pair: (remote: Remote, chunk: TextProtocol.ProtocolChunk)) {
         guard let remote = remotes[pair.remote.id] else {
             logger.warning("Read requested by unknown remote \(pair.remote.id)")
             return
         }
-        var chunks = pastText.getLines().map{TextProtocol.ProtocolChunk.fromPastText(text: $0)}
-        chunks.append(TextProtocol.ProtocolChunk.fromLiveText(text: liveText))
+        let chunks = [TextProtocol.ProtocolChunk.fromLiveText(text: liveText)]
         transport.send(remote: remote, chunks: chunks)
     }
     

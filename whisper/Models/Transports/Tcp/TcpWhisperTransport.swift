@@ -90,12 +90,14 @@ final class TcpWhisperTransport: PublishTransport {
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
-            failureCallback?(error.message)
+            logger.error("TCP Send/Receive Error: \(error.message)")
+            PreferenceData.tcpErrorCount += 1
         }
     }
     
     private func receiveAuthError(_ reason: String) {
         failureCallback?(reason)
+        PreferenceData.authenticationErrorCount += 1
         closeChannel()
     }
     

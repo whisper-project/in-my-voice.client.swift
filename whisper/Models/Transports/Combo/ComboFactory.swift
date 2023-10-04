@@ -15,33 +15,15 @@ final class ComboFactory: TransportFactory {
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
     var publisherUrl: TransportUrl {
-        if PreferenceData.paidReceiptId() != nil {
-            return TcpFactory.shared.publisherUrl
-        } else {
-            return BluetoothFactory.shared.publisherUrl
-        }
+        return TcpFactory.shared.publisherUrl
     }
     
     func publisher(_ publisherUrl: TransportUrl) -> Publisher {
-        if PreferenceData.paidReceiptId() != nil {
-            return Publisher(publisherUrl)
-        } else {
-            if let url = publisherUrl {
-                logger.warning("Combo factory ignoring publisher URL in unpaid mode: \(url)")
-            }
-            return Publisher(nil)
-        }
+        return Publisher(publisherUrl)
     }
     
     func subscriber(_ publisherUrl: TransportUrl) -> Subscriber {
-        if PreferenceData.paidReceiptId() != nil {
-            return Subscriber(publisherUrl)
-        } else {
-            if let url = publisherUrl {
-                logger.warning("Combo factory ignoring subscriber URL in unpaid mode: \(url)")
-            }
-            return Subscriber(nil)
-        }
+        return Subscriber(publisherUrl)
     }
     
     //MARK: private types and properties and initialization

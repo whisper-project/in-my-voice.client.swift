@@ -51,3 +51,14 @@ This is a cosmetic improvement and bug fix release:
 2. The buttons accomodate larger-size text on iPhones for us old folks.
 3. I'm collecting a bit more diagnostic data to help track down bugs.  This data is never associated with user's identities in any way.
 4. Internet listening will more reliably show the name of the whisperer.
+
+BUILDS 32 (internal) & 33 (external):
+This build introduces several changes:
+
+1. Listeners don't stop when they disconnect from a whisperer.  Instead they try to reconnect.  So connections are much more stable.
+2. When a listener connects to a whisperer, they don't get any of the whisperer's past text, just the current live text (if any).
+3. The whisperer can edit all their past text, and can copy and paste it.
+4. Listeners cannot edit or copy past text (just like a conversation).
+5. Listeners can choose whether they want live text on the top (as it has been) or on the bottom (the way the whisperer sees it).
+
+NOTE: If you get a message when internet whispering about not being able to authenticate, try quitting and restarting the app.  If that doesn't work, delete and then reinstall the app.

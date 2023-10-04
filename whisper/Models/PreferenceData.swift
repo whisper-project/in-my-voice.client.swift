@@ -33,6 +33,9 @@ struct PreferenceData {
             return id
         }
     }()
+    static func listenerMatchesWhisperer() -> Bool {
+        return defaults.bool(forKey: "listener_matches_whisperer_preference")
+    }
     // Secrets rotate.  The client generates its first secret, and always
     // sets that as both the current and prior secret.  After that, every
     // time the server sends a new secret, the current secret rotates to
@@ -42,7 +45,7 @@ struct PreferenceData {
     // and it rotates the secret when that happens.  We sign auth requests
     // with the current secret, but the server allows use of the prior
     // secret as a one-time fallback when we've gone out of sync.
-    static func lastClientSecret() -> String? {
+    static func lastClientSecret() -> String {
         if let prior = defaults.string(forKey: "whisper_last_client_secret") {
             return prior
         } else {
@@ -96,20 +99,6 @@ struct PreferenceData {
     static func alertSound() -> String {
         return defaults.string(forKey: "alert_sound_preference") ?? "bike-horn"
     }
-    static func paidReceiptId() -> String? {
-        #if DEBUG
-        return defaults.string(forKey: "paid_receipt_id") ?? "debug_build_is_paid"
-        #else
-        return defaults.string(forKey: "paid_receipt_id") ?? "testing_build_is_paid"
-        #endif
-    }
-    static func updatePaidReceiptId(receiptId: String?) {
-        if let receiptId = receiptId {
-            defaults.setValue(receiptId, forKey: "paid_receipt_id")
-        } else {
-            defaults.removeObject(forKey: "paid_receipt_id")
-        }
-    }
     static var lastSubscriberUrl: String? {
         get {
             defaults.string(forKey: "last_subscriber_url")
@@ -120,6 +109,30 @@ struct PreferenceData {
             } else {
                 defaults.removeObject(forKey: "last_subscriber_url")
             }
+        }
+    }
+    static var droppedErrorCount: Int {
+        get {
+            defaults.integer(forKey: "dropped_error_count")
+        }
+        set(newVal) {
+            defaults.setValue(newVal, forKey: "dropped_error_count")
+        }
+    }
+    static var tcpErrorCount: Int {
+        get {
+            defaults.integer(forKey: "tcp_error_count")
+        }
+        set(newVal) {
+            defaults.setValue(newVal, forKey: "tcp_error_count")
+        }
+    }
+    static var authenticationErrorCount: Int {
+        get {
+            defaults.integer(forKey: "authentication_error_count")
+        }
+        set(newVal) {
+            defaults.setValue(newVal, forKey: "authentication_error_count")
         }
     }
 }

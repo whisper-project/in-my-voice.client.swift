@@ -31,7 +31,7 @@ struct WhisperView: View {
             VStack(spacing: 10) {
                 ControlView(size: $size, magnify: $magnify, mode: $mode, speaking: $model.speaking, playSound: model.playSound)
                     .padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
-                PastTextView(mode: mode, model: model.pastText)
+                PastTextView(mode: .whisper, model: model.pastText)
                     .font(FontSizes.fontFor(size))
                     .textSelection(.enabled)
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
@@ -74,6 +74,11 @@ struct WhisperView: View {
             }
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
+        }
+        .alert("Connection Failure", isPresented: $model.connectionError) {
+            Button("OK") { mode = .ask }
+        } message: {
+            Text("Unable to establish a connection, please try again.\n(Detailed error: \(self.model.connectionErrorDescription)")
         }
         .onAppear {
             logger.log("WhisperView appeared")
