@@ -15,7 +15,7 @@ final class PastTextViewModel: ObservableObject {
     @Published private(set) var addLinesAtTop = false
     
     init(mode: OperatingMode, initialText: String = "") {
-        if mode == .listen {
+        if mode == .listen && !PreferenceData.listenerMatchesWhisperer() {
             addLinesAtTop = true
         }
         self.pastText = initialText

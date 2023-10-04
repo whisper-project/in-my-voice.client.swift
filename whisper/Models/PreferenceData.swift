@@ -33,6 +33,9 @@ struct PreferenceData {
             return id
         }
     }()
+    static func listenerMatchesWhisperer() -> Bool {
+        return defaults.bool(forKey: "listener_matches_whisperer_preference")
+    }
     // Secrets rotate.  The client generates its first secret, and always
     // sets that as both the current and prior secret.  After that, every
     // time the server sends a new secret, the current secret rotates to
