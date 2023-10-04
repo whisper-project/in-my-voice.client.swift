@@ -60,3 +60,5 @@ This build introduces several changes:
 3. The whisperer can edit all their past text, and can copy and paste it.
 4. Listeners cannot edit or copy past text (just like a conversation).
 5. Listeners can choose whether they want live text on the top (as it has been) or on the bottom (the way the whisperer sees it).
+
+NOTE: If you get a message when internet whispering about not being able to authenticate, try quitting and restarting the app.  If that doesn't work, delete and then reinstall the app.
