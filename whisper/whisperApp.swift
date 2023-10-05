@@ -136,10 +136,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         request.httpBody = body
         let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
             guard error == nil else {
-                fatalError("Failed to post APNs token: \(String(describing: error))")
+                logger.error("Failed to post APNs token: \(String(describing: error))")
+                return
             }
             guard let response = response as? HTTPURLResponse else {
-                fatalError("Received non-HTTP response on APNs token post: \(String(describing: response))")
+                logger.error("Received non-HTTP response on APNs token post: \(String(describing: response))")
+                return
             }
             if response.statusCode == 204 {
                 logger.info("Successful post of APNs token")
