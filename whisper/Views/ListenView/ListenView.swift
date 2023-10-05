@@ -54,7 +54,7 @@ struct ListenView: View {
                                maxHeight: geometry.size.height * pastTextProportion,
                                alignment: .bottomLeading)
                         .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
-                        .padding(EdgeInsets(top: 0, leading: sidePad, bottom: listenViewBottomPad, trailing: sidePad))
+                        .padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
                         .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                         .textSelection(.enabled)
                 }
@@ -76,7 +76,7 @@ struct ListenView: View {
                                maxHeight: geometry.size.height * liveTextProportion,
                                alignment: .topLeading)
                         .border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
-                        .padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
+                        .padding(EdgeInsets(top: 0, leading: sidePad, bottom: listenViewBottomPad, trailing: sidePad))
                         .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 } else {
                     PastTextView(mode: .listen, model: model.pastText)
