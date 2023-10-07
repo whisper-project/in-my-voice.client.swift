@@ -87,7 +87,7 @@ final class WhisperViewModel: ObservableObject {
     
     /// Play the alert sound to all the listeners
     func playSound() {
-        let soundName = PreferenceData.alertSound()
+        let soundName = PreferenceData.alertSound
         if speaking {
             playSoundLocally(soundName)
         }
@@ -101,7 +101,7 @@ final class WhisperViewModel: ObservableObject {
             logger.log("Ignoring alert request for non-remote: \(remote.id)")
             return
         }
-        let soundName = PreferenceData.alertSound()
+        let soundName = PreferenceData.alertSound
         let chunk = TextProtocol.ProtocolChunk.sound(soundName)
         transport.send(remote: remote, chunks: [chunk])
     }
@@ -178,7 +178,7 @@ final class WhisperViewModel: ObservableObject {
         var path = Bundle.main.path(forResource: name, ofType: "caf")
         if path == nil {
             // try again with default sound
-            name = PreferenceData.alertSound()
+            name = PreferenceData.alertSound
             path = Bundle.main.path(forResource: name, ofType: "caf")
         }
         guard path != nil else {
