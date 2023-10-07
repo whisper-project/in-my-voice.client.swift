@@ -202,7 +202,7 @@ final class WhisperViewModel: ObservableObject {
             return
         }
         if remotes.count == 1 {
-            statusText = "Whispering to 1 listener"
+            statusText = "Whispering to \(remotes.first!.value.name)"
         } else {
             statusText = "Whispering to \(remotes.count) listeners"
         }
