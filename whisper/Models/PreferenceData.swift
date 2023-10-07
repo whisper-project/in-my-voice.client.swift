@@ -34,7 +34,7 @@ struct PreferenceData {
         }
     }()
     static func listenerMatchesWhisperer() -> Bool {
-        return defaults.bool(forKey: "listener_matches_whisperer_preference")
+        return defaults.string(forKey: "newest_whisper_location_preference") == "bottom"
     }
     // Secrets rotate.  The client generates its first secret, and always
     // sets that as both the current and prior secret.  After that, every
@@ -78,19 +78,31 @@ struct PreferenceData {
         }
         return Data(bytes).base64EncodedString()
     }
-    static func initialMode() -> OperatingMode {
-        let val = defaults.integer(forKey: "initial_mode_preference")
-        return OperatingMode(rawValue: val) ?? .ask
-    }
     static func startSpeaking() -> Bool {
         return defaults.bool(forKey: "read_aloud_preference")
     }
+    private static var session_name: String = ""
     static func userName() -> String {
-        let name = defaults.string(forKey: "device_name_preference") ?? ""
+        var name = session_name
+        if name.isEmpty {
+            if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
+                name = defaults.string(forKey: "session_name") ?? ""
+            }
+        } else {
+            // this might seem unnecessary, but it's needed in case the setting was changed
+            // *after* the session name was set.  In that case we need to save the current
+            // session name for the next session.
+            if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
+                defaults.setValue(name, forKey: "session_name")
+            }
+        }
         return name
     }
     static func updateUserName(_ name: String) {
-        defaults.setValue(name, forKey: "device_name_preference")
+        session_name = name
+        if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
+            defaults.setValue(name, forKey: "session_name")
+        }
     }
     static func requireAuthentication() -> Bool {
         let result = defaults.bool(forKey: "listener_authentication_preference")

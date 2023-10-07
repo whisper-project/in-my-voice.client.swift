@@ -70,7 +70,7 @@ let logger = Logger()
 @main
 struct whisperApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @State var mode: OperatingMode = PreferenceData.initialMode()
+    @State var mode: OperatingMode = .ask
     @State var publisherUrl: TransportUrl = nil
     @State var showWarning: Bool = false
     @State var warningMessage: String = ""
