@@ -62,3 +62,22 @@ This build introduces several changes:
 5. Listeners can choose whether they want live text on the top (as it has been) or on the bottom (the way the whisperer sees it).
 
 NOTE: If you get a message when internet whispering about not being able to authenticate, try quitting and restarting the app.  If that doesn't work, delete and then reinstall the app.
+
+BUILD 35 (external):
+Another cosmetic improvement and bug fix release:
+
+1. Past text should now scroll correctly (so the most recent line is always visible).
+
+2. For the listener, past text is never selectable (so it can't be copied).
+
+3. For the whisperer, past text is not selectable by default, so accidental clicks don't shift focus to that area.  But the whisperer can explicitly start and end edit sessions over past text, in case they want to copy and paste portions into the live text area.
+
+4. The preferences have been revamped to be more useful and more understandable:
+
+    a. You can no longer set your name in the preferences (because you can do that in the app), but you can now choose not to remember your name from session to session (for use on shared devices).
+    b. The app now always starts with the choice screen (no preference for starting as a listener or a whisperer).
+    c. The listener can now choose whether they want the live text window on top or bottom of the screen.
+
+5. The whisperer can now change the alert sound while in a session.  Long-pressing the alert button brings up a menu of the available sounds.
+
+6. When there is only one listener, the whisper status text shows their name.

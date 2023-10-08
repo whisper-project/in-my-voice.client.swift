@@ -232,7 +232,7 @@ final class ListenViewModel: ObservableObject {
         var path = Bundle.main.path(forResource: name, ofType: "caf")
         if path == nil {
             // try again with default sound
-            name = PreferenceData.alertSound()
+            name = PreferenceData.alertSound
             path = Bundle.main.path(forResource: name, ofType: "caf")
         }
         guard path != nil else {

@@ -8,21 +8,19 @@
 	<array>
 		<dict>
 			<key>Type</key>
-			<string>PSTextFieldSpecifier</string>
+			<string>PSToggleSwitchSpecifier</string>
 			<key>Title</key>
-			<string>Your name</string>
+			<string>Remember name from last session</string>
 			<key>Key</key>
-			<string>device_name_preference</string>
-			<key>AutocapitalizationType</key>
-			<string>Words</string>
-			<key>AutocorrectionType</key>
-			<string>No</string>
+			<string>remember_name_preference</string>
+			<key>DefaultValue</key>
+			<true/>
 		</dict>
 		<dict>
 			<key>Type</key>
 			<string>PSToggleSwitchSpecifier</string>
 			<key>Title</key>
-			<string>Require listeners to pair</string>
+			<string>Require Bluetooth listeners to pair</string>
 			<key>Key</key>
 			<string>listener_authentication_preference</string>
 			<key>DefaultValue</key>
@@ -40,13 +38,23 @@
 		</dict>
 		<dict>
 			<key>Type</key>
-			<string>PSToggleSwitchSpecifier</string>
+			<string>PSMultiValueSpecifier</string>
 			<key>Title</key>
-			<string>Listener layout matches whisperer</string>
+			<string>Listener sees newest whisper in</string>
 			<key>Key</key>
-			<string>listener_matches_whisperer_preference</string>
+			<string>newest_whisper_location_preference</string>
 			<key>DefaultValue</key>
-			<false/>
+			<string>top</string>
+			<key>Values</key>
+			<array>
+				<string>top</string>
+				<string>bottom</string>
+			</array>
+			<key>Titles</key>
+			<array>
+				<string>Top window</string>
+				<string>Bottom window</string>
+			</array>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -68,28 +76,6 @@
 				<string>air-horn</string>
 				<string>bike-horn</string>
 				<string>bike-bell</string>
-			</array>
-		</dict>
-		<dict>
-			<key>Type</key>
-			<string>PSMultiValueSpecifier</string>
-			<key>Title</key>
-			<string>Initial Mode</string>
-			<key>Key</key>
-			<string>initial_mode_preference</string>
-			<key>DefaultValue</key>
-			<real>0</real>
-			<key>Titles</key>
-			<array>
-				<string>Ask</string>
-				<string>Listen</string>
-				<string>Whisper</string>
-			</array>
-			<key>Values</key>
-			<array>
-				<integer>0</integer>
-				<integer>1</integer>
-				<integer>2</integer>
 			</array>
 		</dict>
 	</array>

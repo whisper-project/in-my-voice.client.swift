@@ -15,6 +15,7 @@ struct ControlView: View {
     var playSound: (() -> ())?
     
     @State var confirmDisconnect = false
+    @State var alertSound = PreferenceData.alertSound
 
     var body: some View {
         HStack(alignment: .center) {
@@ -56,16 +57,25 @@ struct ControlView: View {
         if mode == .listen {
             EmptyView()
         } else {
-            Button {
-                playSound?()
+            Menu {
+                ForEach(PreferenceData.alertSoundChoices) { choice in
+                    Button {
+                        alertSound = choice.id
+                        PreferenceData.alertSound = choice.id
+                    } label: {
+                        Label(choice.name, image: choice.id + "-icon")
+                    }
+                }
             } label: {
-                fontButtonImage(PreferenceData.alertSound() + "-icon", pad: 5)
+                buttonImage(alertSound + "-icon", pad: 5)
+            } primaryAction: {
+                playSound?()
             }
             Spacer()
         }
     }
 
-    private func fontButtonImage(_ name: String, pad: CGFloat = 0) -> some View {
+    private func buttonImage(_ name: String, pad: CGFloat = 0) -> some View {
         Image(name)
             .renderingMode(.template)
             .resizable()
@@ -81,13 +91,13 @@ struct ControlView: View {
             Button {
                 self.size = FontSizes.nextTextSmaller(self.size)
             } label: {
-                fontButtonImage("font-down-button")
+                buttonImage("font-down-button")
             }
             .disabled(size == FontSizes.minTextSize)
             Button {
                 self.size = FontSizes.nextTextLarger(self.size)
             } label: {
-                fontButtonImage("font-up-button")
+                buttonImage("font-up-button")
             }
             .disabled(size == FontSizes.maxTextSize)
             Spacer()
