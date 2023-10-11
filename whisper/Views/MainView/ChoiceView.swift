@@ -51,7 +51,7 @@ struct ChoiceView: View {
             if (showWhisperButtons) {
                 HStack(spacing: 30) {
                     Button(action: {
-                        publisherUrl = nil
+                        publisherUrl = ComboFactory.shared.publisherUrl
                         mode = .whisper
                     }) {
                         Text("Whisper")
@@ -74,63 +74,6 @@ struct ChoiceView: View {
                     .cornerRadius(15)
                 }
                 .transition(.scale)
-                HStack(spacing: 30) {
-                    VStack {
-                        Button(action: {
-                            publisherUrl = ComboFactory.shared.publisherUrl
-                            confirmWhisper = true
-                        }) {
-                            Text("Whisper \(Image(systemName: "network"))")
-                                .foregroundColor(.white)
-                                .fontWeight(.bold)
-                                .allowsTightening(true)
-                                .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                        }
-                        .background(currentUserName == "" ? Color.gray : Color.accentColor)
-                        .cornerRadius(15)
-                        ShareLink("URL", item: URL(string: ComboFactory.shared.publisherUrl!)!)
-                    }
-                    VStack {
-                        Button(action: {
-                            publisherUrl = lastSubscribedUrl
-                            confirmListen = true
-                        }) {
-                            Text("Listen \(Image(systemName: "network"))")
-                                .foregroundColor(.white)
-                                .fontWeight(.bold)
-                                .allowsTightening(true)
-                                .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                        }
-                        .background(Color.accentColor)
-                        .cornerRadius(15)
-                        .disabled(lastSubscribedUrl == nil)
-                        Button("\(Image(systemName: "square.and.arrow.down")) URL") {
-                            if UIPasteboard.general.hasStrings,
-                               let url = UIPasteboard.general.string
-                            {
-                                if PreferenceData.publisherUrlToClientId(url: url) != nil {
-                                    PreferenceData.lastSubscriberUrl = url
-                                    lastSubscribedUrl = url
-                                } else {
-                                    lastSubscribedUrl = nil
-                                }
-                            }
-                        }
-                    }
-                }
-                .transition(.scale)
-                .alert("Confirm Internet Whisper", isPresented: $confirmWhisper) {
-                    Button("Whisper") { mode = .whisper }
-                    Button("Don't Whisper") { }
-                } message: {
-                    Text("Send your listeners the link with the share button")
-                }
-                .alert("Confirm Internet Listen", isPresented: $confirmListen) {
-                    Button("Listen") { mode = .listen }
-                    Button("Don't Listen") { }
-                } message: {
-                    Text("This will connect to the last received whisperer link")
-                }
             }
             Button(action: {
                 UIApplication.shared.open(settingsUrl)

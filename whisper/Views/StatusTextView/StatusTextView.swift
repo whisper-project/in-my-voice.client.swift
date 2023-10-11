@@ -9,18 +9,21 @@ struct StatusTextView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Binding var text: String
+    var mode: OperatingMode
     var publisherUrl: TransportUrl
     
     var body: some View {
-        if publisherUrl == nil {
-            HStack {
-                Text(text)
-                    .font(FontSizes.fontFor(name: .xsmall))
-                    .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
-            }
+        if mode == .listen {
+            HStack { Text(text) }
+                .font(FontSizes.fontFor(name: .xsmall))
+                .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
         } else {
             HStack (spacing: 20) {
-                ShareLink("URL", item: URL(string: publisherUrl!)!)
+                let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
+                let url = publisherUrl ?? "https://localhost"
+                ShareLink(linkText, item: URL(string: url)!)
+                    .disabled(publisherUrl == nil)
+                    .font(FontSizes.fontFor(name: .xsmall))
                 Text(text)
                     .font(FontSizes.fontFor(name: .xsmall))
                     .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
@@ -34,8 +37,9 @@ struct StatusTextViewModel_Previews: PreviewProvider {
     
     static var previews: some View {
         VStack {
-            StatusTextView(text: text, publisherUrl: nil)
-            StatusTextView(text: text, publisherUrl: "https://localhost/fake")
+            StatusTextView(text: text, mode: .whisper, publisherUrl: nil)
+            StatusTextView(text: text, mode: .whisper, publisherUrl: "https://localhost/fake")
+            StatusTextView(text: text, mode: .listen, publisherUrl: "https://localhost/fake")
         }
     }
 }

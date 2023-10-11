@@ -58,7 +58,7 @@ struct ListenView: View {
                         .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                         .textSelection(.enabled)
                 }
-                StatusTextView(text: $model.statusText, publisherUrl: nil)
+                StatusTextView(text: $model.statusText, mode: .listen, publisherUrl: nil)
                     .onTapGesture {
                         model.showStatusDetail = true
                     }
