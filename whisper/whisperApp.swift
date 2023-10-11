@@ -80,6 +80,12 @@ struct whisperApp: App {
             MainView(mode: $mode, publisherUrl: $publisherUrl)
                 .onAppear { if (mode == .ask) { publisherUrl = nil } }
                 .onOpenURL { urlObj in
+                    guard mode == .ask else {
+                        let activity = mode == .whisper ? "whispering" : "listening"
+                        warningMessage = "Already \(activity) to someone else.  Stop \(activity) and click the link again."
+                        showWarning = true
+                        return
+                    }
                     let url = urlObj.absoluteString
                     if PreferenceData.publisherUrlToClientId(url: url) != nil {
                         logger.log("Handling valid universal URL: \(url)")
