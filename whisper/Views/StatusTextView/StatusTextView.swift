@@ -12,6 +12,8 @@ struct StatusTextView: View {
     var mode: OperatingMode
     var publisherUrl: TransportUrl
     
+    private let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
+    
     var body: some View {
         if mode == .listen {
             HStack { Text(text) }
@@ -19,9 +21,7 @@ struct StatusTextView: View {
                 .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
         } else {
             HStack (spacing: 20) {
-                let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
-                let url = publisherUrl ?? "https://localhost"
-                ShareLink(linkText, item: URL(string: url)!)
+                ShareLink(linkText, item: URL(string: publisherUrl ?? "https://localhost")!)
                     .disabled(publisherUrl == nil)
                     .font(FontSizes.fontFor(name: .xsmall))
                 Text(text)
