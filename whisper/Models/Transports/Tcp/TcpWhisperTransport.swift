@@ -54,6 +54,10 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     func publish(chunks: [TextProtocol.ProtocolChunk]) {
+        guard !listeners.isEmpty else {
+            // no one to publish to
+            return
+        }
         for chunk in chunks {
             whisperChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         }
