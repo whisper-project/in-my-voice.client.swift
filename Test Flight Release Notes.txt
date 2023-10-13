@@ -81,3 +81,6 @@ Another cosmetic improvement and bug fix release:
 5. The whisperer can now change the alert sound while in a session.  Long-pressing the alert button brings up a menu of the available sounds.
 
 6. When there is only one listener, the whisper status text shows their name.
+
+BUILD 36 (external):
+This build simplifies the choice screen: there is now just one Whisper button and one Listen button.  The Whisper button always sends whispers both via bluetooth and the internet, but the Listen button only listens via bluetooth. This means the only way to Listen via the internet is to click on a "Listen to ..." link sent from the whisperer, which will start a "listen to internet" session.
