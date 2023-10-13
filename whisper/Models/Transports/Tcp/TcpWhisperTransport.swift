@@ -120,6 +120,12 @@ final class TcpWhisperTransport: PublishTransport {
         whisperChannel?.on(.detached) { stateChange in
             logger.log("TCP whisper transport realtime client has detached the whisper channel")
         }
+        whisperChannel?.on(.suspended) { stateChange in
+            logger.warning("TCP whisper transport realtime client: the connection is suspended")
+        }
+        whisperChannel?.on(.failed) { stateChange in
+            logger.error("TCP whisper transport realtime client: there is a channel failure")
+        }
         whisperChannel?.attach()
         whisperChannel?.subscribe(clientId, callback: receiveMessage)
         whisperChannel?.presence.subscribe(receivePresence)
