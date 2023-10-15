@@ -78,8 +78,14 @@ struct whisperApp: App {
     var body: some Scene {
         WindowGroup {
             MainView(mode: $mode, publisherUrl: $publisherUrl)
-                .onAppear { if (mode == .ask) { publisherUrl = nil } }
+                .onAppear { if (mode != .listen) { publisherUrl = nil } }
                 .onOpenURL { urlObj in
+                    guard mode == .ask else {
+                        let activity = mode == .whisper ? "whispering" : "listening"
+                        warningMessage = "Already \(activity) to someone else. Stop \(activity) and click the link again."
+                        showWarning = true
+                        return
+                    }
                     let url = urlObj.absoluteString
                     if PreferenceData.publisherUrlToClientId(url: url) != nil {
                         logger.log("Handling valid universal URL: \(url)")
@@ -88,7 +94,7 @@ struct whisperApp: App {
                         mode = .listen
                     } else {
                         logger.warning("Ignoring invalid universal URL: \(url)")
-                        warningMessage = "That is not a valid Whisper link"
+                        warningMessage = "There is no whisperer at that link. Please get a new link and try again."
                         showWarning = true
                     }
                 }

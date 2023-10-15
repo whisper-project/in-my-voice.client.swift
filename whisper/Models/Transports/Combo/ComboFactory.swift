@@ -15,7 +15,7 @@ final class ComboFactory: TransportFactory {
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
     var publisherUrl: TransportUrl {
-        return TcpFactory.shared.publisherUrl
+        get { return TcpFactory.shared.publisherUrl }
     }
     
     func publisher(_ publisherUrl: TransportUrl) -> Publisher {
@@ -64,20 +64,6 @@ final class ComboFactory: TransportFactory {
     }
     
     private func compositeStatus() -> TransportStatus {
-        switch autoStatus {
-        case .off(let message):
-            return .off(message)
-        case .disabled(let message):
-            return .disabled(message)
-        case .on:
-            switch manualStatus {
-            case .off(let message):
-                return .off(message)
-            case .disabled(let message):
-                return .disabled(message)
-            case .on:
-                return .on
-            }
-        }
+        return autoStatus
     }
 }

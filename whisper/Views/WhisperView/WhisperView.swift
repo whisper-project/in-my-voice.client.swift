@@ -42,7 +42,7 @@ struct WhisperView: View {
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
-                StatusTextView(text: $model.statusText, publisherUrl: publisherUrl)
+                StatusTextView(text: $model.statusText, mode: .whisper, publisherUrl: publisherUrl)
                     .onTapGesture {
                         self.showStatusDetail = true
                     }
@@ -78,7 +78,7 @@ struct WhisperView: View {
         .alert("Connection Failure", isPresented: $model.connectionError) {
             Button("OK") { mode = .ask }
         } message: {
-            Text("Unable to establish a connection, please try again.\n(Detailed error: \(self.model.connectionErrorDescription)")
+            Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
         }
         .onAppear {
             logger.log("WhisperView appeared")

@@ -58,7 +58,7 @@ struct ListenView: View {
                         .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                         .textSelection(.enabled)
                 }
-                StatusTextView(text: $model.statusText, publisherUrl: nil)
+                StatusTextView(text: $model.statusText, mode: .listen, publisherUrl: nil)
                     .onTapGesture {
                         model.showStatusDetail = true
                     }
@@ -98,7 +98,7 @@ struct ListenView: View {
         .alert("Connection Failure", isPresented: $model.connectionError) {
             Button("OK") { mode = .ask }
         } message: {
-            Text("Unable to establish a connection, please try again.\n(Detailed error: \(self.model.connectionErrorDescription)")
+            Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
         }
         .onAppear {
             logger.log("ListenView appeared")
