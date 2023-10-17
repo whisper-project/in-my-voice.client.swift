@@ -6,82 +6,84 @@ nav_order: 2
 
 # Instructions
 
-The Whisper app is available through the App Store on both iOS and macOS. Listeners without Apple devices can use a web browser for their half of the conversation (see **Listening on the Web** below).
+The Whisper app is available through the App Store on both iOS and macOS. You must have the app in order to *whisper*. It's possible to *listen* on any device with a web browser (see [How to Listen - From link](#from-link) below). 
 
-## Quick Start ##
+NOTE: there can only be one Whispererer in each conversation, but there is no limit on Listeners.
 
-NOTE: these instructions are for using Whisper when all participants have Apple devices and are within earshot in one location. For set-up in other situations, instructions can be found [here](instructions.md).
+## Quick Start (app) ##
 
-1. Each participant installs Whisper from the app store onto their personal devices.
-2. Each participant launches Whisper, allows it to use Bluetooth, and enters their name.
-3. The whisperer then hits the Whisper button while the listeners all hit the Listen button.
+On your Apple device (iOS or macOS), follow these steps:
 
-After a few seconds, the status messages in the app will show that the listeners are listening to the whisperer, and that the whisperer is whispering to the listeners.  Whatever the whisperer types will be shown immediately to all the listeners.
+1. Install Whisper from the app store
+2. Launch Whisper on your device
+3. Allow the app to use Bluetooth
+4. Enter your name (you can choose whether the app remembers your name in [Settings](#settings))
+5. You can now either [whisper](#how-to-whisper) or [listen](#how-to-listen)
 
-**More instructions can be found [here](instructions.md).**
+## How to Whisper ##
 
+After following the steps in [Quick Start](#quick-start) above:
 
+1. Click the Whisper button
+2. OPTIONAL: change your Whisperer settings ([see below](#whisperer-settings)).
+3. Bluetooth listeners can join your conversation automatically (in person) by pressing their Listen button. To invite listeners with a link, click the Share Listener Link button
+   * On iPhone, the button looks like [PIC]
+   * On iPad or macOS, the button looks like [PIC]
+4. You're ready to go!
 
-## Getting Started ##
+### Tips for whispering: ###
 
-1. Open the Whisper app on iOS or Mac desktop
-2. Type in your name (you can choose whether your name is remembered from the last session in [Settings](#settings))
-3. Choose whether to Whisper or Listen. The top row of buttons will keep you in the app. The lower row of buttons, marked with 🌐, will take you the web version of Whisper.
+* Listeners will only be able to read whispers sent *after* they join. Listeners who join later will not see any of the past conversation.
+* When whispering in person, you don't necessarily need listeners to connect via their devices. You can simply turn on "Read aloud" on your screen and the listener(s) will hear your whispers.
+* To repeat yourself, you can copy and paste from your previous whispers.
+* You can change your [Whisperer settings](#whisperer-settings) at any point during the conversation.
 
-There are three easy steps to getting your first conversation started with Whisper:
+## How to Listen ##
 
-1. Each participant installs Whisper from the app store onto their personal devices.
-2. Each participant launches Whisper, allows it to use Bluetooth, and enters their name.
-3. The whisperer then hits the Whisper button while the listeners all hit the Listen button.
+### Over Bluetooth ##
 
-After a few seconds, the status messages in the app will show that the listeners are listening to the whisperer, and that the whisperer is whispering to the listeners.  Whatever the whisperer types will be shown immediately to all the listeners.
+Bluetooth listening is only available to those using the app. When you are in person with the Whisperer, your app will connect to their conversation automatically over Bluetooth. If there is more than one Whisperer near you, you will be asked to choose which conversation you are joining.
 
-## For Whisperers ##
+After following the steps in [Quick Start](#quick-start) above:
 
-### Via Bluetooth ###
+1. Click the Listen button
+2. OPTIONAL: change your Listener settings ([see below](#listener-settings)).
+3. You're ready to go!
 
-### Via Internet ###
+### From link ###
 
+1. Wait to receive a URL link from the Whisperer over text, email, or any other messaging format.
 
+2. Click the link to open it:
 
-## For Listeners
+   * If you have the app it will automatically put you in that conversation in the app.
 
-Bluetooth: within earshot, with apple device
+   * If you don't have the app, the link will open in your browser and automatically put you in the conversation. If this is the first time you've listened via browser, you may be prompted to enter your name before you can join.
 
-Browser: WITHOUT apple device, any distance
+3. You're ready to go!
 
-Over internet: with apple device, over distance
+### Tips for listening: ###
 
-### On an Apple device ###
-
-
-
-### Without an Apple device ##
-
-
-
-
-
-### Over Phone/Video Call on Apple Device (Internet) ###
-
-### In a  ##
-
-
-
-
+1. Whisper is designed for conversations where everyone can hear, so you can speak aloud as normal. 
+2. Be a good listener! Make sure to read everything the Whisperer sends so you're sure of what they're saying.
+3. Don't speak *over* the Whisperer. Even though they're typing and you're using your voice, you're still interrupting if you talk while they're talking. Remember: hearing people are wired to pay attention to spoken words. That means that, even with the best intentions on all sides, you will naturally drown out the Whisperer by interrupting aloud.
+4. The average person can speak aloud a lot faster than they can type (especially if the typist has physical restrictions!). Remind yourself that this affects the pace of the conversation. It may feel a little awkward (at least at first), but that's okay—awkwardness happens! And it's a very minor price to pay for being able to have full conversations with the Whisperer(s) in your life.
+5. It might make the most sense in some situations for the Whisperer to have their device read their contributions aloud, so be ready to listen with your eyes, your ears, or both as needed.
 
 ## Settings ##
 
+### App Settings ###
 
+### Whisperer Settings ###
 
---------
+### Listener Settings ###
 
-FOR ME:
+## Uninstalling the Whisper app
 
-Go into Terminal and type:
+### Uninstall on iPhone or iPad
 
-cd ~/Documents/GitHub/whisper/docs
+From the home screen or your App Library, press and hold the Whisper app icon. A pop up reading Remove "Whisper"? will appear with three options. Choose the first option, "Delete App." At that point, an alert will appear warning you that deleting the app will also delete its data. Choose "Delete" to fully uninstall the app and remove your preferences, including your name.
 
- bundle exec jekyll serve
+### Uninstall on Mac computer
 
-Open browser to shown URL
+Open Finder and go to your Applications folder. Find Whisper in your list of Applications and drag it to the Trash. This will fully uninstall the app and remove your preferences, including your name.
