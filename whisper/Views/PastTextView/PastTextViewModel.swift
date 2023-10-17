@@ -11,37 +11,44 @@ struct PastTextLine: Identifiable {
 }
 
 final class PastTextViewModel: ObservableObject {
-    @Published var pastText: [PastTextLine]
+    @Published var pastText: String
+    @Published private(set) var addLinesAtTop = false
     
-    init() {
-        self.pastText = []
-    }
-    
-    init(initialText: String) {
-        self.pastText = []
-        self.setFromText(initialText)
-    }
-    
-    func getLines() -> [String] {
-        return pastText.map({ $0.text })
+    init(mode: OperatingMode, initialText: String = "") {
+        if mode == .listen && !PreferenceData.listenerMatchesWhisperer() {
+            addLinesAtTop = true
+        }
+        self.pastText = initialText
     }
     
     func addLine(_ line: String) {
-        pastText.append(PastTextLine(text: line, id: pastText.count))
-    }
-    
-    func clearLines() {
-        pastText = []
-    }
-    
-    func setFromText(_ text: String) {
-        pastText = []
-        for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
-            pastText.append(PastTextLine(text: String(line), id: pastText.count))
+        if addLinesAtTop {
+            pastText = line + "\n" + pastText
+        } else {
+            pastText += "\n" + line
         }
     }
     
-    func getAsText() -> String {
-        return pastText.map({ $0.text }).joined(separator: "\n")
+    func clearLines() {
+        pastText = ""
+    }
+    
+    func getLines() -> [String] {
+        var lines = pastText.split(separator: "\n", omittingEmptySubsequences: false)
+        if addLinesAtTop {
+            lines.reverse()
+        }
+        return lines.map{ String($0) }
+    }
+    
+    func addText(_ text: String) {
+        for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
+            addLine(String(line))
+        }
+    }
+    
+    func setFromText(_ text: String) {
+        clearLines()
+        addText(text)
     }
 }

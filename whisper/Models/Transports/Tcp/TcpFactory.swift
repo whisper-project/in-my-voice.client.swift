@@ -15,7 +15,15 @@ final class TcpFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    var publisherUrl: TransportUrl = "\(PreferenceData.whisperServer)/subscribe/\(PreferenceData.clientId)"
+    var publisherUrl: TransportUrl {
+        get {
+            if case .on = status {
+                return "\(PreferenceData.whisperServer)/subscribe/\(PreferenceData.clientId)"
+            } else {
+                return nil
+            }
+        }
+    }
     
     func publisher(_ publisherUrl: TransportUrl) -> Publisher {
         guard publisherUrl == self.publisherUrl else {
@@ -35,4 +43,22 @@ final class TcpFactory: TransportFactory {
     }
     
     //MARK: private types, properties, and initialization
+    private var status: TransportStatus = .on
+    private var tcpMonitor = TcpMonitor()
+    private var cancellables: Set<AnyCancellable> = []
+
+    init() {
+        tcpMonitor.statusSubject
+            .sink(receiveValue: setStatus)
+            .store(in: &cancellables)
+    }
+    
+    deinit {
+        cancellables.cancel()
+    }
+    
+    private func setStatus(_ status: TransportStatus) {
+        self.status = status
+        statusSubject.send(status)
+    }
 }

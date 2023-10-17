@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3712340E29E20BD700CBF49C /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712340D29E20BD700CBF49C /* ControlView.swift */; };
+		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
 		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
@@ -75,6 +76,7 @@
 /* Begin PBXFileReference section */
 		3712340D29E20BD700CBF49C /* ControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlView.swift; sourceTree = "<group>"; };
 		3712341129E2151100CBF49C /* Binding+Convert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Binding+Convert.swift"; sourceTree = "<group>"; };
+		373748782AD66D150053858B /* TcpMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpMonitor.swift; sourceTree = "<group>"; };
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
 		3758F3E929E7D9F50072F7A8 /* air-horn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "air-horn.mp3"; sourceTree = "<group>"; };
 		3758F3EB29E8C2C00072F7A8 /* bike-horn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "bike-horn.mp3"; sourceTree = "<group>"; };
@@ -333,6 +335,7 @@
 				377D710F2A913BFE009B416F /* TcpWhisperTransport.swift */,
 				377D710E2A913BFE009B416F /* TcpListenTransport.swift */,
 				377D711A2A956C23009B416F /* TcpAuthenticator.swift */,
+				373748782AD66D150053858B /* TcpMonitor.swift */,
 			);
 			path = Tcp;
 			sourceTree = "<group>";
@@ -554,6 +557,7 @@
 				377D710B2A8EBE16009B416F /* BluetoothListenTransport.swift in Sources */,
 				377D71122A913C8F009B416F /* TcpWhisperTransport.swift in Sources */,
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
+				373748792AD66D150053858B /* TcpMonitor.swift in Sources */,
 				377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */,
 				377D71042A8B0367009B416F /* DribbleWhisperTransport.swift in Sources */,
 				377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */,
@@ -725,7 +729,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -766,7 +770,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;

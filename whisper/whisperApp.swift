@@ -36,8 +36,9 @@ let lightPastBorderColor = Color(.darkGray)
 let darkPastBorderColor = Color(.lightGray)
 
 /// global constants for relative view sizes
-let pastTextProportion = 4.0/5.0
-let liveTextProportion = 1.0/5.0
+let liveTextFifths = UIDevice.current.userInterfaceIdiom == .phone ? 2.0 : 1.0
+let pastTextProportion = (5.0 - liveTextFifths)/5.0
+let liveTextProportion = liveTextFifths/5.0
 
 /// global constants for platform differentiation
 #if targetEnvironment(macCatalyst)
@@ -69,7 +70,7 @@ let logger = Logger()
 @main
 struct whisperApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @State var mode: OperatingMode = PreferenceData.initialMode()
+    @State var mode: OperatingMode = .ask
     @State var publisherUrl: TransportUrl = nil
     @State var showWarning: Bool = false
     @State var warningMessage: String = ""
@@ -77,23 +78,23 @@ struct whisperApp: App {
     var body: some Scene {
         WindowGroup {
             MainView(mode: $mode, publisherUrl: $publisherUrl)
-                .onAppear { if (mode == .ask) { publisherUrl = nil } }
+                .onAppear { if (mode != .listen) { publisherUrl = nil } }
                 .onOpenURL { urlObj in
+                    guard mode == .ask else {
+                        let activity = mode == .whisper ? "whispering" : "listening"
+                        warningMessage = "Already \(activity) to someone else. Stop \(activity) and click the link again."
+                        showWarning = true
+                        return
+                    }
                     let url = urlObj.absoluteString
                     if PreferenceData.publisherUrlToClientId(url: url) != nil {
                         logger.log("Handling valid universal URL: \(url)")
-                        if PreferenceData.paidReceiptId() != nil {
-                            PreferenceData.lastSubscriberUrl = url
-                            publisherUrl = url
-                            mode = .listen
-                        } else {
-                            logger.error("Ignoring universal URL because not paid")
-                            warningMessage = "You must upgrade to use the internet"
-                            showWarning = true
-                        }
+                        PreferenceData.lastSubscriberUrl = url
+                        publisherUrl = url
+                        mode = .listen
                     } else {
                         logger.warning("Ignoring invalid universal URL: \(url)")
-                        warningMessage = "That is not a valid Whisper link"
+                        warningMessage = "There is no whisperer at that link. Please get a new link and try again."
                         showWarning = true
                     }
                 }
@@ -118,13 +119,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         logger.info("Received APNs token")
-        let value = [
+        let value: [String: Any] = [
             "clientId": PreferenceData.clientId,
             "token": deviceToken.base64EncodedString(),
             "deviceId": BluetoothData.deviceId,
             "userName": PreferenceData.userName(),
             "lastSecret": PreferenceData.lastClientSecret(),
             "appInfo": "\(platformInfo)|\(versionInfo).\(buildInfo)",
+            "droppedErrorCount": PreferenceData.droppedErrorCount,
+            "tcpErrorCount": PreferenceData.tcpErrorCount,
+            "authenticationErrorCount": PreferenceData.authenticationErrorCount,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
@@ -138,13 +142,19 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         request.httpBody = body
         let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
             guard error == nil else {
-                fatalError("Failed to post APNs token: \(String(describing: error))")
+                logger.error("Failed to post APNs token: \(String(describing: error))")
+                return
             }
             guard let response = response as? HTTPURLResponse else {
-                fatalError("Received non-HTTP response on APNs token post: \(String(describing: response))")
+                logger.error("Received non-HTTP response on APNs token post: \(String(describing: response))")
+                return
             }
             if response.statusCode == 204 {
                 logger.info("Successful post of APNs token")
+                // if server has received error data, reset it
+                PreferenceData.droppedErrorCount = 0
+                PreferenceData.tcpErrorCount = 0
+                PreferenceData.authenticationErrorCount = 0
                 return
             }
             logger.error("Received unexpected response on APNs token post: \(response.statusCode)")

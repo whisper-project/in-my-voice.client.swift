@@ -18,31 +18,13 @@ final class TcpListenTransport: SubscribeTransport {
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP candidate transport")
         self.failureCallback = failureCallback
-        self.authenticator = TcpAuthenticator(mode: .listen, publisherId: publisherId, callback: failureCallback)
-        self.client = self.authenticator.getClient()
-        self.client.connection.on(.connected) { _ in
-            logger.log("TCP listen transport realtime client has connected")
-        }
-        self.client.connection.on(.disconnected) { _ in
-            logger.log("TCP listen transport realtime client has disconnected")
-        }
-        whisperChannel = client.channels.get(channelName)
-        whisperChannel?.on(.attached) { stateChange in
-            logger.log("TCP listen transport realtime client has attached the whisper channel")
-        }
-        whisperChannel?.on(.detached) { stateChange in
-            logger.log("TCP listen transport realtime client has detached the whisper channel")
-        }
-        whisperChannel?.attach()
-        whisperChannel?.subscribe(clientId, callback: receiveMessage)
-        whisperChannel?.subscribe("all", callback: receiveMessage)
-        whisperChannel?.presence.subscribe(receivePresence)
-        whisperChannel?.presence.enter(PreferenceData.userName())
+        self.authenticator = TcpAuthenticator(mode: .listen, publisherId: publisherId, callback: receiveAuthError)
+        openChannel()
     }
     
     func stop() {
         logger.info("Stopping TCP listen transport")
-        whisperChannel?.detach()
+        closeChannel()
     }
     
     func goToBackground() {
@@ -68,7 +50,7 @@ final class TcpListenTransport: SubscribeTransport {
         }
         // we only ever have one candidate and that's the whisperer.
         // Dropping the whisperer is a mistake.
-        failureCallback?("User requested to disconnect")
+        failureCallback?("Whisperer requested a disconnect")
     }
     
     func subscribe(remote: Remote) {
@@ -107,10 +89,45 @@ final class TcpListenTransport: SubscribeTransport {
     }
     
     //MARK: Internal methods
-    func receiveErrorInfo(_ error: ARTErrorInfo?) {
+    private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
-            failureCallback?(error.message)
+            logger.error("TCP Listener: \(error.message)")
         }
+    }
+    
+    private func receiveAuthError(_ reason: String) {
+        failureCallback?(reason)
+        closeChannel()
+    }
+    
+    private func openChannel() {
+        self.client = self.authenticator.getClient()
+        self.client.connection.on(.connected) { _ in
+            logger.log("TCP listen transport realtime client has connected")
+        }
+        self.client.connection.on(.disconnected) { _ in
+            logger.log("TCP listen transport realtime client has disconnected")
+        }
+        whisperChannel = client.channels.get(channelName)
+        whisperChannel?.on(.attached) { stateChange in
+            logger.log("TCP listen transport realtime client has attached the whisper channel")
+        }
+        whisperChannel?.on(.detached) { stateChange in
+            logger.log("TCP listen transport realtime client has detached the whisper channel")
+        }
+        whisperChannel?.attach()
+        whisperChannel?.subscribe(clientId, callback: receiveMessage)
+        whisperChannel?.subscribe("all", callback: receiveMessage)
+        whisperChannel?.presence.subscribe(receivePresence)
+        whisperChannel?.presence.enter(PreferenceData.userName())
+    }
+    
+    private func closeChannel() {
+        whisperChannel?.presence.leave(PreferenceData.userName())
+        whisperChannel?.detach()
+        whisperChannel = nil
+        client?.close()
+        client = nil
     }
     
     func receiveMessage(message: ARTMessage) {
@@ -165,8 +182,8 @@ final class TcpListenTransport: SubscribeTransport {
                 logger.warning("Ignoring leave event for non-candidate \(remoteId)")
                 return
             }
+            logger.info("The whisperer has left the building")
             dropRemoteSubject.send(remote)
-            failureCallback?("The whisperer disconnected")
         case .update:
             guard let candidate = candidates[remoteId] else {
                 logger.warning("Ignoring update event for non-candidate \(remoteId)")

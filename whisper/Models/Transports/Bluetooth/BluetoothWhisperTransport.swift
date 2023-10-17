@@ -36,7 +36,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             return
         }
         isInBackground = true
-        stopAdvertising()
+        stopDiscovery()
     }
     
     func goToForeground() {
@@ -44,6 +44,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             return
         }
         isInBackground = false
+        startDiscovery()
     }
     
     func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {

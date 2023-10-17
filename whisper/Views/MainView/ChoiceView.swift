@@ -15,10 +15,12 @@ struct ChoiceView: View {
 
     @State private var currentUserName: String = ""
     @State private var newUserName: String = ""
+    @State private var showWhisperButtons = false
     @State private var confirmWhisper = false
     @State private var confirmListen = false
     @State private var credentialsMissing = false
     @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
+    @FocusState private var nameEdit: Bool
     
     let choiceButtonWidth = CGFloat(140)
     let choiceButtonHeight = CGFloat(45)
@@ -27,113 +29,51 @@ struct ChoiceView: View {
         VStack(spacing: 40) {
             Form {
                 Section(content: {
-                    TextField("Your Name", text: $newUserName, prompt: Text("Dan"))
-                        .onChange(of: newUserName) {
-                            PreferenceData.updateUserName($0)
-                            self.currentUserName = $0
+                    TextField("Your Name", text: $newUserName, prompt: Text("Fill in to continue…"))
+                        .submitLabel(.done)
+                        .onSubmit { 
+                            newUserName = newUserName.trimmingCharacters(in: .whitespaces)
+                            PreferenceData.updateUserName(newUserName)
+                            currentUserName = newUserName
+                            withAnimation {
+                                self.showWhisperButtons = !currentUserName.isEmpty
+                            }
                         }
+                        .focused($nameEdit)
                         .textInputAutocapitalization(.words)
                         .disableAutocorrection(true)
                         .allowsTightening(true)
-                        .truncationMode(.head)
                 }, header: {
                     Text("Your Name")
                 })
             }
-            .frame(maxWidth: 300, maxHeight: 105)
-            HStack(spacing: 30) {
-                Button(action: {
-                    publisherUrl = nil
-                    mode = .whisper
-                }) {
-                    Text("Whisper")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                }
-                .background(currentUserName == "" ? Color.gray : Color.accentColor)
-                .cornerRadius(15)
-                .disabled(currentUserName == "")
-                Button(action: {
-                    publisherUrl = nil
-                    mode = .listen
-                }) {
-                    Text("Listen")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                }
-                .background(Color.accentColor)
-                .cornerRadius(15)
-                .disabled(currentUserName == "")
-            }
-            if PreferenceData.paidReceiptId() != nil {
+            .frame(maxWidth: 350, maxHeight: 105)
+            if (showWhisperButtons) {
                 HStack(spacing: 30) {
-                    VStack {
-                        Button(action: {
-                            publisherUrl = ComboFactory.shared.publisherUrl
-                            confirmWhisper = true
-                        }) {
-                            Text("Whisper \(Image(systemName: "network"))")
-                                .foregroundColor(.white)
-                                .fontWeight(.bold)
-                                .allowsTightening(true)
-                                .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                        }
-                        .background(currentUserName == "" ? Color.gray : Color.accentColor)
-                        .cornerRadius(15)
-                        .disabled(currentUserName == "")
-                        ShareLink("URL", item: URL(string: ComboFactory.shared.publisherUrl!)!)
+                    Button(action: {
+                        publisherUrl = ComboFactory.shared.publisherUrl
+                        mode = .whisper
+                    }) {
+                        Text("Whisper")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                            .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                     }
-                    VStack {
-                        Button(action: {
-                            publisherUrl = lastSubscribedUrl
-                            confirmListen = true
-                        }) {
-                            Text("Listen \(Image(systemName: "network"))")
-                                .foregroundColor(.white)
-                                .fontWeight(.bold)
-                                .allowsTightening(true)
-                                .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                        }
-                        .background(Color.accentColor)
-                        .cornerRadius(15)
-                        .disabled(currentUserName == "" || lastSubscribedUrl == nil)
-                        Button("\(Image(systemName: "square.and.arrow.down")) URL") {
-                            if UIPasteboard.general.hasStrings,
-                               let url = UIPasteboard.general.string
-                            {
-                                if PreferenceData.publisherUrlToClientId(url: url) != nil {
-                                    PreferenceData.lastSubscriberUrl = url
-                                    lastSubscribedUrl = url
-                                } else {
-                                    lastSubscribedUrl = nil
-                                }
-                            }
-                        }
+                    .background(currentUserName == "" ? Color.gray : Color.accentColor)
+                    .cornerRadius(15)
+                    Button(action: {
+                        publisherUrl = nil
+                        mode = .listen
+                    }) {
+                        Text("Listen")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                            .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                     }
+                    .background(Color.accentColor)
+                    .cornerRadius(15)
                 }
-                .alert("Confirm Internet Whisper", isPresented: $confirmWhisper) {
-                    Button("Whisper") { mode = .whisper }
-                    Button("Don't Whisper") { }
-                } message: {
-                    Text("Send your listeners the link with the share button")
-                }
-                .alert("Confirm Internet Listen", isPresented: $confirmListen) {
-                    Button("Listen") { mode = .listen }
-                    Button("Don't Listen") { }
-                } message: {
-                    Text("This will connect to the last received whisperer link")
-                }
-            } else {
-                Button(action: { }) {
-                    Text("Upgrade to \(Image(systemName: "network"))")
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-                }
-                .background(Color.accentColor)
-                .cornerRadius(15)
+                .transition(.scale)
             }
             Button(action: {
                 UIApplication.shared.open(settingsUrl)
@@ -162,12 +102,21 @@ struct ChoiceView: View {
         } message: {
             Text("Sorry, but on its first launch after installation the app needs a few minutes to connect to the whisper server. Please try again.")
         }
-        .onAppear { updateUserName() }
+        .onAppear { updateUserNameOnAppear() }
+        .onChange(of: nameEdit) { isEditing in
+            withAnimation {
+                if isEditing {
+                    showWhisperButtons = false
+                } else {
+                    showWhisperButtons = !currentUserName.isEmpty
+                }
+            }
+        }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
             case .active:
-                logger.log("Reread preferences going to choice view foreground")
-                updateUserName()
+                logger.log("Reread user name going to choice view foreground")
+                updateUserNameOnAppear()
             case .background, .inactive:
                 break
             @unknown default:
@@ -176,9 +125,11 @@ struct ChoiceView: View {
         }
     }
     
-    func updateUserName() {
+    func updateUserNameOnAppear() {
         currentUserName = PreferenceData.userName()
         newUserName = currentUserName
+        showWhisperButtons = !currentUserName.isEmpty
+        nameEdit = currentUserName.isEmpty
     }
 }
 

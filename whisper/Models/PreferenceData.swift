@@ -12,6 +12,8 @@ enum OperatingMode: Int {
 
 struct PreferenceData {
     private static var defaults = UserDefaults.standard
+    
+    // publisher URLs
     #if DEBUG
     static var whisperServer = "https://stage.whisper.clickonetwo.io"
     #else
@@ -24,6 +26,8 @@ struct PreferenceData {
         }
         return String(match.2)
     }
+    
+    // client IDs for TCP transport
     static var clientId: String = {
         if let id = defaults.string(forKey: "whisper_client_id") {
             return id
@@ -33,6 +37,9 @@ struct PreferenceData {
             return id
         }
     }()
+    
+    // client secrets for TCP transport
+    //
     // Secrets rotate.  The client generates its first secret, and always
     // sets that as both the current and prior secret.  After that, every
     // time the server sends a new secret, the current secret rotates to
@@ -42,7 +49,7 @@ struct PreferenceData {
     // and it rotates the secret when that happens.  We sign auth requests
     // with the current secret, but the server allows use of the prior
     // secret as a one-time fallback when we've gone out of sync.
-    static func lastClientSecret() -> String? {
+    static func lastClientSecret() -> String {
         if let prior = defaults.string(forKey: "whisper_last_client_secret") {
             return prior
         } else {
@@ -75,41 +82,68 @@ struct PreferenceData {
         }
         return Data(bytes).base64EncodedString()
     }
-    static func initialMode() -> OperatingMode {
-        let val = defaults.integer(forKey: "initial_mode_preference")
-        return OperatingMode(rawValue: val) ?? .ask
+    
+    // layout control of listeners
+    static func listenerMatchesWhisperer() -> Bool {
+        return defaults.string(forKey: "newest_whisper_location_preference") == "bottom"
     }
+    
+    // whether to speak past text
     static func startSpeaking() -> Bool {
         return defaults.bool(forKey: "read_aloud_preference")
     }
+    
+    // user name and session memory
+    private static var session_name: String = ""
     static func userName() -> String {
-        let name = defaults.string(forKey: "device_name_preference") ?? ""
+        var name = session_name
+        if name.isEmpty {
+            if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
+                name = defaults.string(forKey: "session_name") ?? ""
+            }
+        } else {
+            // this might seem unnecessary, but it's needed in case the setting was changed
+            // *after* the session name was set.  In that case we need to save the current
+            // session name for the next session.
+            if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
+                defaults.setValue(name, forKey: "session_name")
+            }
+        }
         return name
     }
     static func updateUserName(_ name: String) {
-        defaults.setValue(name, forKey: "device_name_preference")
+        session_name = name
+        if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
+            defaults.setValue(name, forKey: "session_name")
+        }
     }
+    
+    // require Bluetooth listeners to pair?
     static func requireAuthentication() -> Bool {
         let result = defaults.bool(forKey: "listener_authentication_preference")
         return result
     }
-    static func alertSound() -> String {
-        return defaults.string(forKey: "alert_sound_preference") ?? "bike-horn"
+    
+    // alert sounds
+    struct AlertSoundChoice: Identifiable {
+        var id: String
+        var name: String
     }
-    static func paidReceiptId() -> String? {
-        #if DEBUG
-        return defaults.string(forKey: "paid_receipt_id") ?? "debug_build_is_paid"
-        #else
-        return defaults.string(forKey: "paid_receipt_id") ?? "testing_build_is_paid"
-        #endif
-    }
-    static func updatePaidReceiptId(receiptId: String?) {
-        if let receiptId = receiptId {
-            defaults.setValue(receiptId, forKey: "paid_receipt_id")
-        } else {
-            defaults.removeObject(forKey: "paid_receipt_id")
+    static let alertSoundChoices: [AlertSoundChoice] = [
+        AlertSoundChoice(id: "air-horn", name: "Air Horn"),
+        AlertSoundChoice(id: "bike-horn", name: "Bicycle Horn"),
+        AlertSoundChoice(id: "bike-bell", name: "Bicycle Bell"),
+    ]
+    static var alertSound: String {
+        get {
+            return defaults.string(forKey: "alert_sound_preference") ?? "bike-horn"
+        }
+        set(new) {
+            defaults.setValue(new, forKey: "alert_sound_preference")
         }
     }
+    
+    // last used listener URL
     static var lastSubscriberUrl: String? {
         get {
             defaults.string(forKey: "last_subscriber_url")
@@ -120,6 +154,32 @@ struct PreferenceData {
             } else {
                 defaults.removeObject(forKey: "last_subscriber_url")
             }
+        }
+    }
+    
+    // metrics of errors to send in diagnostics to server
+    static var droppedErrorCount: Int {
+        get {
+            defaults.integer(forKey: "dropped_error_count")
+        }
+        set(newVal) {
+            defaults.setValue(newVal, forKey: "dropped_error_count")
+        }
+    }
+    static var tcpErrorCount: Int {
+        get {
+            defaults.integer(forKey: "tcp_error_count")
+        }
+        set(newVal) {
+            defaults.setValue(newVal, forKey: "tcp_error_count")
+        }
+    }
+    static var authenticationErrorCount: Int {
+        get {
+            defaults.integer(forKey: "authentication_error_count")
+        }
+        set(newVal) {
+            defaults.setValue(newVal, forKey: "authentication_error_count")
         }
     }
 }

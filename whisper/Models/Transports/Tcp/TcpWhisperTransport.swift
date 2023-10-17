@@ -54,6 +54,10 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     func publish(chunks: [TextProtocol.ProtocolChunk]) {
+        guard !listeners.isEmpty else {
+            // no one to publish to
+            return
+        }
         for chunk in chunks {
             whisperChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         }
@@ -90,12 +94,14 @@ final class TcpWhisperTransport: PublishTransport {
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
-            failureCallback?(error.message)
+            logger.error("TCP Send/Receive Error: \(error.message)")
+            PreferenceData.tcpErrorCount += 1
         }
     }
     
     private func receiveAuthError(_ reason: String) {
         failureCallback?(reason)
+        PreferenceData.authenticationErrorCount += 1
         closeChannel()
     }
     
@@ -113,6 +119,12 @@ final class TcpWhisperTransport: PublishTransport {
         }
         whisperChannel?.on(.detached) { stateChange in
             logger.log("TCP whisper transport realtime client has detached the whisper channel")
+        }
+        whisperChannel?.on(.suspended) { stateChange in
+            logger.warning("TCP whisper transport realtime client: the connection is suspended")
+        }
+        whisperChannel?.on(.failed) { stateChange in
+            logger.error("TCP whisper transport realtime client: there is a channel failure")
         }
         whisperChannel?.attach()
         whisperChannel?.subscribe(clientId, callback: receiveMessage)
