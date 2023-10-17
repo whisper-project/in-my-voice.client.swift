@@ -84,3 +84,6 @@ Another cosmetic improvement and bug fix release:
 
 BUILD 36 (external):
 This build simplifies the choice screen: there is now just one Whisper button and one Listen button.  The Whisper button always sends whispers both via bluetooth and the internet, but the Listen button only listens via bluetooth. This means the only way to Listen via the internet is to click on a "Listen to ..." link sent from the whisperer, which will start a "listen to internet" session.
+
+BUILD 37 (internal):
+This build moves us to three documentation buttons: How To Use, About, and Support.
