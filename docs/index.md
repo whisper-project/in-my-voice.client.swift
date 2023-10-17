@@ -6,19 +6,23 @@ nav_order: 1
 
 # Whisper
 
-Whisper allows someone who can’t speak to participate in a conversation with others who can.  The *whisperer* uses a iOS device to type their part of the conversation.  The *listeners* then see what the whisperer is saying on their own iOS devices.  The listeners then speak their responses to the whisperer and to each other.
+Whisper is an app that allows someone who can’t speak aloud to participate in a conversation with others who can. The *Whisperer* uses the app to type their part of the conversation. The *Listeners* use either the app or a browser to see what the Whisperer is saying. The Listeners speak their responses aloud to the Whisperer and to each other.
 
-## Our Story ##
+To learn how to use the app, visit [Instructions](instructions.md). For help, visit [Support](support.md).
 
-[Do you want a thing here about you and Bill and the purpose of this app?]
+## Privacy
 
+[ClickOneTwo](https://clickonetwo.io) (the maker of Whisper) does not collect, store, or process any data about individuals who use its applications.
 
+The contents of conversations held through Whisper are not stored *anywhere*, even on your local device. The Whisperer can copy and paste what they have typed in the app, but Listeners cannot copy any text from the app. (Whisperers should be aware that browser Listeners can copy and paste text from the conversation. If this is undesirable, converse only via Bluetooth.)
 
-## Need Help? ##
+The Whisper app and your browser (if used for listening) store your name and other preferences locally. This is so that you do not have to reenter your name and change your preferences every time you enter a conversation. None of this locally stored information is available to the Whisper server.
 
-If you're having trouble with Whisper, please read the [FAQ](faq.md) and see if you can find the help you need. If you still need assistance, then contact us through **THIS FORM**(link).
+Whisper collects and sends to its server the following diagnostic and device identifier data, which is used ONLY to improve the app's behavior:
 
-
+* A count of crashes and other errors that interrupt conversations in the Whisper app.
+* Identifiers created by the app specific to the device. The identifiers are random strings of characters that are different on each device using the app and are not connected to any personally identifable information.
+* The entered names of the Whisperer and Listeners for every conversation (in both the app and browser). This data is sent to the server only so that the Whisperer can know who is listening and vice versa. That data is *removed* from our server one week after the conversation ends, and is never connected to your Apple account, device, or any personally identifiable information about you.
 
 ## Copyright
 
