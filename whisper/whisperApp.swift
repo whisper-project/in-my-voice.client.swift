@@ -16,6 +16,7 @@ let platformInfo = UIDevice.current.userInterfaceIdiom == .phone ? "phone" : "pa
 #endif
 let versionInfo = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "??"
 let buildInfo = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "??"
+let versionString = "\(versionInfo).\(buildInfo)"
 
 
 /// global strings
@@ -125,7 +126,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             "deviceId": BluetoothData.deviceId,
             "userName": PreferenceData.userName(),
             "lastSecret": PreferenceData.lastClientSecret(),
-            "appInfo": "\(platformInfo)|\(versionInfo).\(buildInfo)",
+            "appInfo": "\(platformInfo)|\(versionString)",
             "droppedErrorCount": PreferenceData.droppedErrorCount,
             "tcpErrorCount": PreferenceData.tcpErrorCount,
             "authenticationErrorCount": PreferenceData.authenticationErrorCount,

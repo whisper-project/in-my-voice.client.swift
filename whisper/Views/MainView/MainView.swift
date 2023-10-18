@@ -9,6 +9,8 @@ import UIKit
 let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
 struct MainView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     @Binding var mode: OperatingMode
     @Binding var publisherUrl: TransportUrl
     
@@ -22,7 +24,15 @@ struct MainView: View {
         } else {
             switch mode {
             case .ask:
-                ChoiceView(mode: $mode, publisherUrl: $publisherUrl)
+                VStack {
+                    Spacer()
+                    ChoiceView(mode: $mode, publisherUrl: $publisherUrl)
+                    Spacer()
+                    Text("v\(versionString)")
+                        .font(FontSizes.fontFor(name: .xxxsmall))
+                        .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+                        .padding()
+                }
             case .listen:
                 ListenView(mode: $mode, publisherUrl: publisherUrl)
             case .whisper:
