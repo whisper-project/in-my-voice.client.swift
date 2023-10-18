@@ -90,3 +90,14 @@ This build moves us to three documentation buttons: How To Use, About, and Suppo
 
 BUILD 38 (internal):
 This build adds a version string to the main screen and updates the app icon.
+
+BUILD 39 (external):
+This build improves the documentation and support options:
+
+- There are now How To Use, About, and Support buttons, which display appropriate info in a browser.
+
+- The webpage for the Support button links to a Google Form which allows for reporting bugs to, asking questions of, and providing direct feedback to the development team.
+
+- The bottom of the main screen shows the application version, for use in feedback.
+
+In addition, the app icon has been revamped to use a white dashed line, which is both prettier and more readable than the prior black dashed line.
