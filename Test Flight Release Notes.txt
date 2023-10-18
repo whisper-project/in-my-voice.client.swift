@@ -87,3 +87,6 @@ This build simplifies the choice screen: there is now just one Whisper button an
 
 BUILD 37 (internal):
 This build moves us to three documentation buttons: How To Use, About, and Support.
+
+BUILD 38 (internal):
+This build adds a version string to the main screen and updates the app icon.
