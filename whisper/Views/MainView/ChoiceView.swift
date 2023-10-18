@@ -9,7 +9,7 @@ import SafariServices
 
 struct ChoiceView: View {
     @Environment(\.scenePhase) var scenePhase
-    
+
     @Binding var mode: OperatingMode
     @Binding var publisherUrl: TransportUrl
 
@@ -111,7 +111,7 @@ struct ChoiceView: View {
                     Spacer().frame(width: choiceButtonWidth/3)
                     HStack {
                         Button("Support", action: {
-                            let vc = SFSafariViewController(url: URL(string: "\(website)FAQ.html")!)
+                            let vc = SFSafariViewController(url: URL(string: "\(website)support.html")!)
                             UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
                         })
                         Spacer()
