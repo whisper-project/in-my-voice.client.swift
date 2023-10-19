@@ -9,7 +9,7 @@ import SafariServices
 
 struct ChoiceView: View {
     @Environment(\.scenePhase) var scenePhase
-    
+
     @Binding var mode: OperatingMode
     @Binding var publisherUrl: TransportUrl
 
@@ -22,8 +22,11 @@ struct ChoiceView: View {
     @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
     @FocusState private var nameEdit: Bool
     
+    let nameWidth = CGFloat(350)
+    let nameHeight = CGFloat(105)
     let choiceButtonWidth = CGFloat(140)
     let choiceButtonHeight = CGFloat(45)
+    let website = "https://clickonetwo.github.io/whisper/"
 
     var body: some View {
         VStack(spacing: 40) {
@@ -40,14 +43,14 @@ struct ChoiceView: View {
                             }
                         }
                         .focused($nameEdit)
-                        .textInputAutocapitalization(.words)
+                        .textInputAutocapitalization(.never)
                         .disableAutocorrection(true)
                         .allowsTightening(true)
                 }, header: {
                     Text("Your Name")
                 })
             }
-            .frame(maxWidth: 350, maxHeight: 105)
+            .frame(maxWidth: nameWidth, maxHeight: nameHeight)
             if (showWhisperButtons) {
                 HStack(spacing: 30) {
                     Button(action: {
@@ -85,17 +88,36 @@ struct ChoiceView: View {
             }
             .background(Color.accentColor)
             .cornerRadius(15)
-            Button(action: {
-                let vc = SFSafariViewController(url: URL(string: "https://clickonetwo.github.io/whisper/")!)
-                UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
-            }) {
-                Text("About")
-                    .foregroundColor(.white)
-                    .fontWeight(.bold)
-                    .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+            VStack (spacing: 10) {
+                Button(action: {
+                    let vc = SFSafariViewController(url: URL(string: "\(website)instructions.html")!)
+                    UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
+                }) {
+                    Text("How To Use")
+                        .foregroundColor(.white)
+                        .fontWeight(.bold)
+                        .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+                }
+                .background(Color.accentColor)
+                .cornerRadius(15)
+                HStack {
+                    HStack {
+                        Spacer()
+                        Button("About", action: {
+                            let vc = SFSafariViewController(url: URL(string: website)!)
+                            UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
+                        })
+                    }.frame(width: choiceButtonWidth)
+                    Spacer().frame(width: choiceButtonWidth/3)
+                    HStack {
+                        Button("Support", action: {
+                            let vc = SFSafariViewController(url: URL(string: "\(website)support.html")!)
+                            UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
+                        })
+                        Spacer()
+                    }.frame(width: choiceButtonWidth)
+                }
             }
-            .background(Color.accentColor)
-            .cornerRadius(15)
         }
         .alert("First Launch", isPresented: $credentialsMissing) {
             Button("OK") { }
