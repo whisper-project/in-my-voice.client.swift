@@ -18,11 +18,11 @@ The contents of conversations held through Whisper are not stored *anywhere*, ev
 
 The Whisper app and your browser (if used for listening) store your name and other preferences locally. This is so that you do not have to reenter your name and change your preferences every time you enter a conversation. None of this locally stored information is available to the Whisper server.
 
-Whisper collects and sends to its server the following diagnostic and device identifier data, which is used ONLY to improve the app's behavior:
+Whisper collects and sends to its server the following diagnostic, device, and conversation identifier data, which is used ONLY to improve the app's behavior:
 
 * A count of crashes and other errors that interrupt conversations in the Whisper app.
 * Identifiers created by the app specific to the device. The identifiers are random strings of characters that are different on each device using the app and are not connected to any personally identifable information.
-* The entered names of the Whisperer and Listeners for every conversation (in both the app and browser). This data is sent to the server only so that the Whisperer can know who is listening and vice versa. That data is *removed* from our server one week after the conversation ends, and is never connected to your Apple account, device, or any personally identifiable information about you.
+* The entered names of the Whisperer and Listeners for every conversation (in both the app and browser). This data is sent to the server only so that the Whisperer can know who is listening and vice versa. This data is *removed* from our server one week after the conversation ends, and is never connected to your Apple account, device, or any personally identifiable information about you.
 
 ## Copyright
 

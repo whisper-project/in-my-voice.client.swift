@@ -24,7 +24,7 @@ Yes, you can still listen using your browser. Just click on the link sent to you
 
 ### Why is my browser asking me for my name?
 
-If this is the first time you've used your browser to listen, you will be prompted to put in your name before joining the conversation. If this is NOT the first time you've listened in this browser, it means that your Whisper-related cookies have been cleared since the last time you listened.
+You’re being asked for your name so the Whisperer can know who is listening.  This only gets asked once, at which point your browser saves the name on your local machine (via a cookie) for use in later conversations.  If you want to change your name, clear your cookies for the site [whisper-server.clickonetwo.io](http://whisper-server.clickonetwo.io/).  You will be asked again the next time you listen.
 
 ### Does Whisper store my conversations?
 
