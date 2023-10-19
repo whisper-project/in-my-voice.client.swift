@@ -6,7 +6,7 @@ nav_order: 2
 
 # Instructions
 
-The Whisper app is available through the App Store on both iOS and macOS. You must have the app in order to *whisper*. It's possible to *listen* on any device with a web browser (see [How to Listen - From link](#from-link) below). 
+The Whisper app is available through the App Store on both iOS and macOS. You must have the app in order to *whisper*. It's possible to *listen* on any device with a web browser (see [below](#via-link)).
 
 NOTE: there can only be one Whispererer in each conversation, but there is no limit on Listeners.
 
@@ -22,37 +22,38 @@ On your Apple device (iOS or macOS), follow these steps:
 
 ## How to Whisper ##
 
-After following the steps in [Quick Start](#quick-start) above:
+After following the steps in [Quick Start](#quick-start-app) above:
 
 1. Click the Whisper button
 2. OPTIONAL: change your Whisperer settings ([see below](#whisperer-settings)).
-3. Bluetooth listeners can join your conversation automatically (in person) by pressing their Listen button. To invite listeners with a link, click the Share Listener Link button
-   * On iPhone, the button looks like [PIC]
-   * On iPad or macOS, the button looks like [PIC]
+3. Nearby (Bluetooth) listeners can join your conversation automatically (in person) by pressing their Listen button. To invite distant (internet) listeners with a link, click the *Send Listen Link* button.
+   * On iPhone, the button looks like this:<br /> <img src="./phone-share-link.png" alt="iPhone Share Link" style="zoom: 40%;" />
+   * On iPad or macOS, the button looks like this:<br />
+     <img src="./pad-share-link.png" alt="pad-share-link" style="zoom: 26%;" />
 4. You're ready to go!
 
 ### Tips for whispering: ###
 
-* Listeners will only be able to read whispers sent *after* they join. Listeners who join later will not see any of the past conversation.
-* When whispering in person, you don't necessarily need listeners to connect via their devices. You can simply turn on "Read aloud" on your screen and the listener(s) will hear your whispers.
+* Listeners will only be able to read whispers sent *after* they join. Listeners who join later will not see any of the prior conversation.
+* When whispering in person, you don't necessarily need listeners to connect via their devices. You can simply turn on "Read aloud" on your screen and the listener(s) will hear your whispers whenever you type the return key.
 * To repeat yourself, you can copy and paste from your previous whispers.
 * You can change your [Whisperer settings](#whisperer-settings) at any point during the conversation.
 
 ## How to Listen ##
 
-### Over Bluetooth ##
+### via Bluetooth
 
 Bluetooth listening is only available to those using the app. When you are in person with the Whisperer, your app will connect to their conversation automatically over Bluetooth. If there is more than one Whisperer near you, you will be asked to choose which conversation you are joining.
 
-After following the steps in [Quick Start](#quick-start) above:
+After following the steps in [Quick Start](#quick-start-app) above:
 
 1. Click the Listen button
 2. OPTIONAL: change your Listener settings ([see below](#listener-settings)).
 3. You're ready to go!
 
-### From link ###
+### via Link
 
-1. Wait to receive a URL link from the Whisperer over text, email, or any other messaging format.
+1. Wait to receive a link (also known as a URL) from the Whisperer over text, email, or any other messaging format.
 
 2. Click the link to open it:
 
