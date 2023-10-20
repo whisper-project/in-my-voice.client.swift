@@ -29,6 +29,7 @@ struct MainView: View {
                     ChoiceView(mode: $mode, publisherUrl: $publisherUrl)
                     Spacer()
                     Text("v\(versionString)")
+                        .textSelection(.enabled)
                         .font(FontSizes.fontFor(name: .xxxsmall))
                         .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                         .padding()
