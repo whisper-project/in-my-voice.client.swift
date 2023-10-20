@@ -11,3 +11,7 @@ vendor/
 
 # Ignore website pieces needed for site validation
 /favicon.ico
+
+# Ignore draft and future files
+Draft*
+Future*
