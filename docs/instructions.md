@@ -8,7 +8,7 @@ nav_order: 2
 
 The Whisper app is available through the App Store on both iOS and macOS. You must have the app in order to *whisper*. It's possible to *listen* on any device with a web browser (see [below](#via-link)).
 
-NOTE: there can only be one Whispererer in each conversation, but there is no limit on Listeners.
+NOTE: there can only be one Whisperer in each conversation, but there is no limit on Listeners.
 
 ## Quick Start (app) ##
 
