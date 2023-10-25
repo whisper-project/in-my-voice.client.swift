@@ -101,3 +101,12 @@ This build improves the documentation and support options:
 - The bottom of the main screen shows the application version, for use in feedback.
 
 In addition, the app icon has been revamped to use a white dashed line, which is both prettier and more readable than the prior black dashed line.
+
+BUILD 40 (internal):
+This build makes preference changes recommended by the docs writer:
+
+- Make the whisper alert sound only changeable from the whisper view.
+
+- Make the in-session controls for reading whispers aloud be the only controls for it, and separate the whisper and listener values so they are remembered separately.
+
+- Reword the bluetooth pairing setting so it's clearer that it is controlled by the Whisperer.
