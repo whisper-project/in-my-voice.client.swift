@@ -20,7 +20,7 @@
 			<key>Type</key>
 			<string>PSToggleSwitchSpecifier</string>
 			<key>Title</key>
-			<string>Require Bluetooth listeners to pair</string>
+			<string>Whisperer requires Bluetooth listeners to pair</string>
 			<key>Key</key>
 			<string>listener_authentication_preference</string>
 			<key>DefaultValue</key>
