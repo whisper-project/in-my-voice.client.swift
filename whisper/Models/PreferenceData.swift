@@ -89,10 +89,15 @@ struct PreferenceData {
     }
     
     // whether to speak past text
-    static func startSpeaking() -> Bool {
-        return defaults.bool(forKey: "read_aloud_preference")
+    static var speakWhenWhispering: Bool {
+        get { defaults.bool(forKey: "speak_when_whispering_setting") }
+        set (new) { defaults.setValue(new, forKey: "speak_when_whispering_setting") }
     }
-    
+    static var speakWhenListening: Bool {
+        get { defaults.bool(forKey: "speak_when_listening_setting") }
+        set (new) { defaults.setValue(new, forKey: "speak_when_listening_setting") }
+    }
+
     // user name and session memory
     private static var session_name: String = ""
     static func userName() -> String {

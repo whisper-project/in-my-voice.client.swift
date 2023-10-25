@@ -30,7 +30,7 @@ struct ListenView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 10) {
-                ControlView(size: $size, magnify: $magnify, mode: $mode, speaking: $model.speaking)
+                ControlView(size: $size, magnify: $magnify, mode: $mode)
                     .padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
                 if (listenerLiveTextOnTop) {
                     Text(model.liveText)

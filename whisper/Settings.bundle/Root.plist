@@ -28,16 +28,6 @@
 		</dict>
 		<dict>
 			<key>Type</key>
-			<string>PSToggleSwitchSpecifier</string>
-			<key>Title</key>
-			<string>Read whispers aloud</string>
-			<key>Key</key>
-			<string>read_aloud_preference</string>
-			<key>DefaultValue</key>
-			<false/>
-		</dict>
-		<dict>
-			<key>Type</key>
 			<string>PSMultiValueSpecifier</string>
 			<key>Title</key>
 			<string>Listener sees newest whisper in</string>
@@ -54,28 +44,6 @@
 			<array>
 				<string>Top window</string>
 				<string>Bottom window</string>
-			</array>
-		</dict>
-		<dict>
-			<key>Type</key>
-			<string>PSMultiValueSpecifier</string>
-			<key>Title</key>
-			<string>Alert Sound</string>
-			<key>Key</key>
-			<string>alert_sound_preference</string>
-			<key>DefaultValue</key>
-			<string>bike-horn</string>
-			<key>Titles</key>
-			<array>
-				<string>Air Horn</string>
-				<string>Bicycle Horn</string>
-				<string>Bicycle Bell</string>
-			</array>
-			<key>Values</key>
-			<array>
-				<string>air-horn</string>
-				<string>bike-horn</string>
-				<string>bike-bell</string>
 			</array>
 		</dict>
 	</array>
