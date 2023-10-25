@@ -15,8 +15,7 @@ final class WhisperViewModel: ObservableObject {
     @Published var connectionError = false
     @Published var connectionErrorDescription: String = ""
     @Published var remotes: [String:Remote] = [:]
-    @Published var speaking: Bool = PreferenceData.startSpeaking()
-    @Published var pastText: PastTextViewModel = .init(mode: .whisper)
+    @Published var pastText: PastTextModel = .init(mode: .whisper)
 
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
@@ -68,7 +67,7 @@ final class WhisperViewModel: ObservableObject {
         for chunk in chunks {
             if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
-                if speaking {
+                if PreferenceData.speakWhenWhispering {
                     speak(liveText)
                 }
                 liveText = ""
@@ -88,7 +87,7 @@ final class WhisperViewModel: ObservableObject {
     /// Play the alert sound to all the listeners
     func playSound() {
         let soundName = PreferenceData.alertSound
-        if speaking {
+        if PreferenceData.speakWhenWhispering {
             playSoundLocally(soundName)
         }
         let chunk = TextProtocol.ProtocolChunk.sound(soundName)

@@ -7,7 +7,7 @@ import SwiftUI
 
 struct PastTextView: View {
     var mode: OperatingMode
-    @ObservedObject var model: PastTextViewModel
+    @ObservedObject var model: PastTextModel
     
     @FocusState private var isEditing: Bool
     @State private var editing = false
@@ -102,13 +102,13 @@ struct ViewHeightKey: PreferenceKey {
 }
 
 struct PastTextView_Previews: PreviewProvider {
-    static var model1 = PastTextViewModel(mode: .whisper, initialText: """
+    static var model1 = PastTextModel(mode: .whisper, initialText: """
     Line 1 is short
     Line 2 is a bit longer
     Line 3 is extremely, long and\nit wraps
     Line 4 is short, getting descenders
     """)
-    static var model2 = PastTextViewModel(mode: .listen, initialText: """
+    static var model2 = PastTextModel(mode: .listen, initialText: """
     Line 1 is short
     Line 2 is a bit longer
     Line 3 is extremely, long and\nit wraps

@@ -50,7 +50,7 @@
 		37B6236F29EF166800213790 /* ListenersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6236E29EF166800213790 /* ListenersView.swift */; };
 		37B6237629F78AA500213790 /* WhisperersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6237529F78AA500213790 /* WhisperersView.swift */; };
 		37C5142229CA2B35001A121B /* PastTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C5142129CA2B35001A121B /* PastTextView.swift */; };
-		37C5142429CA2B44001A121B /* PastTextViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C5142329CA2B44001A121B /* PastTextViewModel.swift */; };
+		37C5142429CA2B44001A121B /* PastTextModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C5142329CA2B44001A121B /* PastTextModel.swift */; };
 		37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35829BC5DD300F952FE /* WhisperView.swift */; };
 		37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35D29BCF66400F952FE /* ListenViewModel.swift */; };
 		37F8C26E2A87DFA7004DED77 /* TransportProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F8C26D2A87DFA7004DED77 /* TransportProtocol.swift */; };
@@ -124,7 +124,7 @@
 		37B6236E29EF166800213790 /* ListenersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenersView.swift; sourceTree = "<group>"; };
 		37B6237529F78AA500213790 /* WhisperersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperersView.swift; sourceTree = "<group>"; };
 		37C5142129CA2B35001A121B /* PastTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastTextView.swift; sourceTree = "<group>"; };
-		37C5142329CA2B44001A121B /* PastTextViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastTextViewModel.swift; sourceTree = "<group>"; };
+		37C5142329CA2B44001A121B /* PastTextModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastTextModel.swift; sourceTree = "<group>"; };
 		37D553CB2A10717E00C27888 /* SizePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SizePrinter.swift; sourceTree = "<group>"; };
 		37D6B35829BC5DD300F952FE /* WhisperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperView.swift; sourceTree = "<group>"; };
 		37D6B35D29BCF66400F952FE /* ListenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenViewModel.swift; sourceTree = "<group>"; };
@@ -290,6 +290,7 @@
 			isa = PBXGroup;
 			children = (
 				377D71142A913E2E009B416F /* PreferenceData.swift */,
+				37C5142329CA2B44001A121B /* PastTextModel.swift */,
 				378A8E1629C554F20097F15A /* TextProtocol.swift */,
 				3771F83429DD2F900011419E /* FontSizes.swift */,
 				37F8C26C2A87DF23004DED77 /* Transports */,
@@ -372,7 +373,6 @@
 			isa = PBXGroup;
 			children = (
 				37C5142129CA2B35001A121B /* PastTextView.swift */,
-				37C5142329CA2B44001A121B /* PastTextViewModel.swift */,
 			);
 			path = PastTextView;
 			sourceTree = "<group>";
@@ -566,7 +566,7 @@
 				37C5142229CA2B35001A121B /* PastTextView.swift in Sources */,
 				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,
 				374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */,
-				37C5142429CA2B44001A121B /* PastTextViewModel.swift in Sources */,
+				37C5142429CA2B44001A121B /* PastTextModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -729,7 +729,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 40;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -770,7 +770,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 40;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;

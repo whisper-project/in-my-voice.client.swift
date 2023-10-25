@@ -12,7 +12,6 @@ final class ListenViewModel: ObservableObject {
     typealias Remote = ComboFactory.Subscriber.Remote
     typealias Transport = ComboFactory.Subscriber
 
-    @Published var speaking: Bool = PreferenceData.startSpeaking()
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var connectionError: Bool = false
@@ -20,7 +19,7 @@ final class ListenViewModel: ObservableObject {
     @Published var showStatusDetail: Bool = false
     @Published var candidates: [Remote] = []
     @Published var whisperer: Remote?
-    @Published var pastText: PastTextViewModel = .init(mode: .listen)
+    @Published var pastText: PastTextModel = .init(mode: .listen)
     
     private var transport: Transport
     private var manualWhisperer: Bool
@@ -210,7 +209,7 @@ final class ListenViewModel: ObservableObject {
                 liveText = chunk.text
             } else if chunk.isCompleteLine() {
 //                logger.log("Got diff: move live text to past text")
-                if !isInBackground && speaking {
+                if !isInBackground && PreferenceData.speakWhenListening {
                     speak(liveText)
                 }
                 pastText.addLine(liveText)
