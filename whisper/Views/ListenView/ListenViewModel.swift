@@ -20,7 +20,7 @@ final class ListenViewModel: ObservableObject {
     @Published var showStatusDetail: Bool = false
     @Published var candidates: [Remote] = []
     @Published var whisperer: Remote?
-    @Published var pastText: PastTextViewModel = .init(mode: .listen)
+    @Published var pastText: PastTextModel = .init(mode: .listen)
     
     private var transport: Transport
     private var manualWhisperer: Bool
