@@ -74,35 +74,9 @@ After following the steps in [Quick Start](#quick-start-app) above:
 
 ### App Settings ###
 
-#### iOS
+On both the macOS and the iOS app, you'll find a Settings button on the start screen. When you click that, you'll be presented with a menu of options that let you control how the app behaves; the menu is displayed as a pop-up window on computers and as a page in the Settings app on iOS devices. (In iOS, you will also see an Apple-generated menu called "Allow Whisper to Access," which controls how Whisper interacts with other features of your device.)
 
-To change your general settings for the Whisper app, click the Settings button on the start screen. You will be automatically redirected to the Whisper section of your device's Settings app, which contains two lists of options. The first, "Allow Whisper to Access," lets you control how the app interacts with other features on your device. The second, "Whisper Settings," lets you control how the app itself behaves. 
 
-**Allow Whisper to Access** has four sections:
-
-* **Bluetooth** — allowing Whisper access to Bluetooth is what lets you start and join in-person conversations automatically when you tap Whisper or Listen. We highly recommend allowing Bluetooth access!
-* **Siri & Search** — tapping this option brings you to a menu where you can refine how much access Apple has to how you use Whisper, as well as whether you can use the built-in voice command functions to find and open Whisper
-* **Notifications** — tapping this option brings you to a menu where you can change what notifications (if any) the Whisper app will give you, the style of those notifications, and whether you'll see whispers on your lock screen
-  * This is where you choose whether the app alerts you with a sound when a new whisper comes in; to choose a particular alert sound, go to "Alert Sound" in Whisper Settings
-* **Background App Refresh** — this option is permanently set to on [explanation from Dad]
-
- **Whisper Settings** has five sections:
-
-* **Remember name from last session** — turning this option on means you don't have to type in your name every time you join a conversation in the app. If multiple people use Whisper on the same device, it may make more sense to turn this option off so no one accidentally joins a conversation under the wrong name.
-* **Require Bluetooth listeners to pair** — [[I don't know what this means]]
-* **Read whisper aloud** — turning this option on means your device will read incoming whispers aloud — [[DAD IS THIS OPTION NECESSARY NOW?]]
-* **Listener sees newest whisper in** — tap on this option to choose whether new whispers appear above (top window) or below (bottom window) earlier whispers from the same conversation
-* **Alert Sound** — tap on this option to choose one of three sounds to alert you to incoming whispers. If you don't want any alert sounds, go into "Notifications" in Allow Whisper to Access and turn off the "Sounds" option
-
-#### macOS
-
-To change your general settings for the Whisper app, click the Settings button on the start screen. A pop-up titled "Whisper Settings" will appear with the following options:
-
-* **Remember name from last session** — turning this option on means you don't have to type in your name every time you join a conversation in the app. If multiple people use Whisper on the same device, it may make more sense to turn this option off so no one accidentally joins a conversation under the wrong name.
-* **Require Bluetooth listeners to pair** — [[I don't know what this means]]
-* **Read whisper aloud** — turning this option on means your device will read incoming whispers aloud — [[DAD IS THIS OPTION NECESSARY NOW?]]
-* **Listener sees newest whisper in** — tap on this option to choose whether new whispers appear above (top window) or below (bottom window) earlier whispers from the same conversation
-* **Alert Sound** — tap on this option to choose one of three sounds to alert you to incoming whispers -- [[HOW DO YOU TURN OFF SOUNDS ON THE COMPUTER?]]
 
 ### Whisperer Settings ###
 
