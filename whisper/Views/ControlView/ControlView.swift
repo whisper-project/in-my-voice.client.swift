@@ -11,11 +11,11 @@ struct ControlView: View {
     @Binding var size: FontSizes.FontSize
     @Binding var magnify: Bool
     @Binding var mode: OperatingMode
-    @Binding var speaking: Bool
     var playSound: (() -> ())?
     
     @State var confirmDisconnect = false
     @State var alertSound = PreferenceData.alertSound
+    @State var speaking: Bool = false
 
     var body: some View {
         HStack(alignment: .center) {
@@ -37,11 +37,19 @@ struct ControlView: View {
         } message: {
             Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
         }
+        .onAppear {
+            speaking = mode == .listen ? PreferenceData.speakWhenListening : PreferenceData.speakWhenWhispering
+        }
     }
     
     @ViewBuilder private func speechButton() -> some View {
         Button {
-            speaking = !speaking
+            speaking.toggle()
+            if mode == .listen {
+                PreferenceData.speakWhenListening = speaking
+            } else {
+                PreferenceData.speakWhenWhispering = speaking
+            }
         } label: {
             Image(speaking ? "voice-over-on" : "voice-over-off")
                 .renderingMode(.template)
@@ -163,7 +171,7 @@ struct ControlView_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
             ForEach(0 ..< 10) {
-                ControlView(size: sizeB($0), magnify: magnifyB($0), mode: modeB($0), speaking: magnifyB($0))
+                ControlView(size: sizeB($0), magnify: magnifyB($0), mode: modeB($0))
             }
         }
     }

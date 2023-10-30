@@ -5,12 +5,7 @@
 
 import Foundation
 
-struct PastTextLine: Identifiable {
-    var text: String
-    var id: Int     // line number
-}
-
-final class PastTextViewModel: ObservableObject {
+final class PastTextModel: ObservableObject {
     @Published var pastText: String
     @Published private(set) var addLinesAtTop = false
     
