@@ -12,7 +12,7 @@ import Combine
 final class TcpMonitor {
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(offStatus)
 
-    static let offStatus: TransportStatus = .off("Internet is turned off")
+    static let offStatus: TransportStatus = .off
     private var monitor: NWPathMonitor
     
     init() {

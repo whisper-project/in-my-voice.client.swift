@@ -7,9 +7,10 @@ import Foundation
 import Combine
 
 enum TransportStatus {
-    case off(String)
+    case off
+    case disabled
+    case waiting
     case on
-    case disabled(String)
 }
 
 typealias TransportUrl = String?

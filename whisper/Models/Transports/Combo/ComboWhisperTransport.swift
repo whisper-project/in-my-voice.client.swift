@@ -68,13 +68,8 @@ final class ComboWhisperTransport: PublishTransport {
     }
     
     // MARK: internal types, properties, and initialization
-#if targetEnvironment(simulator)
-    typealias AutoTransport = DribbleWhisperTransport
-    typealias AutoRemote = DribbleWhisperTransport.Remote
-#else
     typealias AutoTransport = BluetoothWhisperTransport
     typealias AutoRemote = BluetoothWhisperTransport.Remote
-#endif
     typealias ManualTransport = TcpWhisperTransport
     typealias ManualRemote = TcpWhisperTransport.Remote
 

@@ -27,11 +27,7 @@ final class ComboFactory: TransportFactory {
     }
     
     //MARK: private types and properties and initialization
-#if targetEnvironment(simulator)
-    private var autoFactory = DribbleFactory.shared
-#else
     private var autoFactory = BluetoothFactory.shared
-#endif
     private var manualFactory = TcpFactory.shared
     
     private var autoStatus: TransportStatus = .on
@@ -64,6 +60,28 @@ final class ComboFactory: TransportFactory {
     }
     
     private func compositeStatus() -> TransportStatus {
-        return autoStatus
+        switch autoStatus {
+        case .off, .waiting:
+            if case .on = manualStatus {
+                #if targetEnvironment(simulator)
+                // the simulator always has Bluetooth off,
+                // so can't take accurate screenshots
+                // unless we ignore this status
+                return .on
+                #else
+                return .waiting
+                #endif
+            } else {
+                return .off
+            }
+        case .disabled:
+            if case .on = manualStatus {
+                return .disabled
+            } else {
+                return .off
+            }
+        case .on:
+            return .on
+        }
     }
 }
