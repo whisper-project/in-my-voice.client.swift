@@ -88,7 +88,7 @@ struct whisperApp: App {
                         return
                     }
                     let url = urlObj.absoluteString
-                    if PreferenceData.publisherUrlToClientId(url: url) != nil {
+                    if PreferenceData.publisherUrlToSessionId(url: url) != nil {
                         logger.log("Handling valid universal URL: \(url)")
                         PreferenceData.lastSubscriberUrl = url
                         publisherUrl = url

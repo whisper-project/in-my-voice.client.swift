@@ -14,16 +14,21 @@ final class ComboFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    var publisherUrl: TransportUrl {
-        get { return TcpFactory.shared.publisherUrl }
-    }
-    
     func publisher(_ publisherUrl: TransportUrl) -> Publisher {
         return Publisher(publisherUrl)
     }
     
     func subscriber(_ publisherUrl: TransportUrl) -> Subscriber {
         return Subscriber(publisherUrl)
+    }
+    
+    //MARK: public auxiliary functions
+    func publisherForm(_ url: String) -> TransportUrl {
+        if manualStatus == .on {
+            return url
+        } else {
+            return nil
+        }
     }
     
     //MARK: private types and properties and initialization

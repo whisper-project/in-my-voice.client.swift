@@ -21,8 +21,6 @@ protocol TransportFactory {
     
     static var shared: Self { get }
     
-    var publisherUrl: TransportUrl { get }
-    
     var statusSubject: CurrentValueSubject<TransportStatus, Never> { get }
     
     func publisher(_ publisherUrl: TransportUrl) -> Publisher

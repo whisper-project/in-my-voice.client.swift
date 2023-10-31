@@ -71,7 +71,7 @@ struct ChoiceView: View {
                 }
                 HStack(spacing: 30) {
                     Button(action: {
-                        publisherUrl = ComboFactory.shared.publisherUrl
+                        publisherUrl = ComboFactory.shared.publisherForm(PreferenceData.personalPublisherUrl)
                         mode = .whisper
                     }) {
                         Text("Whisper")
