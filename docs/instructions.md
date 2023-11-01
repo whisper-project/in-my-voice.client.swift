@@ -17,8 +17,8 @@ On your Apple device (iOS or macOS), follow these steps:
 1. Install Whisper from the app store
 2. Launch Whisper on your device
 3. Allow the app to use Bluetooth
-4. Enter your name (you can choose whether the app remembers your name in [Settings](#settings))
-5. You can now either [whisper](#how-to-whisper) or [listen](#how-to-listen)
+4. Enter your name (you can choose whether the app remembers your name in [Settings](#settings)), then tap "done" (iOS) or hit return
+5. Two new buttons will appear: [Whisper](#how-to-whisper) and [Listen](#how-to-listen); your app is now set up and you can use either function.
 
 ## How to Whisper ##
 
@@ -76,13 +76,39 @@ After following the steps in [Quick Start](#quick-start-app) above:
 
 On both the macOS and the iOS app, you'll find a Settings button on the start screen. When you click that, you'll be presented with a menu of options that let you control how the app behaves; the menu is displayed as a pop-up window on computers and as a page in the Settings app on iOS devices. (In iOS, you will also see an Apple-generated menu called "Allow Whisper to Access," which controls how Whisper interacts with other features of your device.)
 
+### iOS
 
+To access the app settings on iOS, tap the Settings button on the start screen. You will be automatically redirected to the Whisper section of your device's Settings app, which contains two lists of options. The first, "Allow Whisper to Access," is an Apple-generated list of options for how the app interacts with other features on your device. The second, "Whisper Settings," is what lets you control how the app itself behaves. 
+
+**Allow Whisper to Access** has the following sections:
+
+* **Bluetooth** — allowing Bluetooth access means you can have in-person conversations without using a Listen link
+* **Siri & Search** — tapping this option brings you to a menu where you can refine how much access Apple has to how you use Whisper, as well as whether you can use the built-in voice command functions to find and open Whisper.
+* **Notifications** — tapping this option brings you to a menu where you can change what notifications (if any) the Whisper app will give you, the style of those notifications, and whether you'll see whispers on your lock screen
+
+ Your **Whisper Settings** has three sections:
+
+* **Remember name from last session** — turning this option on means you don't have to type in your name every time you launch the app. If multiple people use Whisper on the same device, it may make more sense to turn this option off so no one accidentally joins a conversation under the wrong name.
+* **Whisperer requires Bluetooth Listeners to pair** — this setting will determine how your app functions when you are the Whisperer. If you turn this option to on, your Listeners will have to use Bluetooth to pair their device with yours before joining your conversations.
+* **Listener sees newest whisper in** — this setting will determine how your app functions when you are a Listener. You can choose whether new whispers appear above (top window) or below (bottom window) earlier whispers from the same conversation. If you choose for them to appear in the top window, you will see previous whispers in order from newest to oldest; putting whispers in the bottom window display put them in order from oldest to newest. For both options, the newest whisper is always next to the most recent one before it.
+
+#### macOS
+
+To change your general settings for the Whisper app, click the Settings button on the start screen. A pop-up titled "Whisper Settings" will appear with the following options:
+
+* **Remember name from last session** — turning this option on means you don't have to type in your name every time you launch the app. If multiple people use Whisper on the same device, it may make more sense to turn this option off so no one accidentally joins a conversation under the wrong name.
+* **Whisperer requires Bluetooth Listeners to pair** — this setting will determine how your app functions when you are the Whisperer. If you turn this option to on, your Listeners will have to use Bluetooth to pair their device with yours before joining your conversations.
+* **Listener sees newest whisper in** — this setting will determine how your app functions when you are a Listener. You can choose whether new whispers appear above (top window) or below (bottom window) earlier whispers from the same conversation. If you choose for them to appear in the top window, you will see previous whispers in order from newest to oldest; putting whispers in the bottom window display put them in order from oldest to newest. For both options, the newest whisper is always next to the most recent one before it.
 
 ### Whisperer Settings ###
+
+Once you are in the Whisper screen, you will see a number of options for Whisperer-specific settings. Each is marked with an icon:
 
 
 
 ### Listener Settings ###
+
+Once you are in the Listen screen, you will see a number of options for Listener-specific settings. Each is marked with an icon:
 
 
 
@@ -90,7 +116,7 @@ On both the macOS and the iOS app, you'll find a Settings button on the start sc
 
 ### Uninstall on iPhone or iPad
 
-From the home screen or your App Library, press and hold the Whisper app icon. A pop up reading Remove "Whisper"? will appear with three options. Choose the first option, "Delete App." At that point, an alert will appear warning you that deleting the app will also delete its data. Choose "Delete" to fully uninstall the app and remove your preferences, including your name.
+From the home screen or your App Library, press and hold the Whisper app icon. A pop up reading *Remove "Whisper"*? will appear with three options. Choose the first option, "Delete App." At that point, an alert will appear warning you that deleting the app will also delete its data. Choose "Delete" to fully uninstall the app and remove your preferences, including your name.
 
 ### Uninstall on Mac computer
 
