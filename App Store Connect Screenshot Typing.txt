@@ -1,0 +1,32 @@
+Text for Screenshots for App Store:
+
+LISTENING on iPhone:
+This is what the listen screen looks like on an iPhone.
+The past text appears in the bottom window.
+The current text appears in the top window. (If you prefer, you can swap the windows so past text appears in the top window and current text in the bottom window.)
+
+WHISPERING on iPhone:
+This is what the whisper screen looks like on an iPhone.
+The past text appears in the top window.
+The current text appears in the bottom window.
+
+LISTENING on iPad:
+This is what the listen screen looks like on an iPad.
+The past text appears in the bottom window.
+The current text appears in the top window. (If you prefer, you can swap the windows so past text appears in the top window and current text in the bottom window.)
+
+WHISPERING on iPad:
+This is what the whisper screen looks like on an iPad.
+The past text appears in the top window.
+The current text appears in the bottom window.
+
+LISTENING on Mac:
+This is what the listen screen looks like on a Mac.
+The past text appears in the bottom window.
+The current text appears in the top window. (If you prefer, you can swap the windows so past text appears in the top window and current text in the bottom window.)
+
+WHISPERING on iPhone:
+This is what the whisper screen looks like on a Mac.
+The past text appears in the top window.
+The current text appears in the bottom window.
+

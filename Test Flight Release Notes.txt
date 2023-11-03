@@ -122,7 +122,7 @@ This build makes preference changes recommended by the docs writer:
 
 This build also drops the background app refresh capability, which is not needed.
 
-BUILD 42 (external):
+BUILD 42 (withdrawn) and 43 (external):
 This build makes preference changes recommended by the docs writer:
 
 - Make the whisper alert sound only changeable from the whisper view.
@@ -131,4 +131,4 @@ This build makes preference changes recommended by the docs writer:
 
 - Reword the bluetooth pairing setting so it's clearer that it is controlled by the Whisperer.
 
-In addition, Bluetooth is no longer required in order to use Whisper.  If it's not available, the Listen button is disabled and a message is shown explaining why.  If neither Bluetooth nor internet is available, both Whisper and Listen are disabled and a message is shown explaining why.  If Bluetooth is available but internet is not, no message is shown but the "Share Listen Link" button is disabled when whispering.
+In addition, Bluetooth is no longer required in order to use Whisper.  If it's not available, the Listen button is disabled and a message is shown explaining why.  If neither Bluetooth nor Internet are available, both Whisper and Listen are disabled and a message is shown explaining why.  If Bluetooth is available but internet is not, no message is shown but the "Share Listen Link" button is disabled when whispering.
