@@ -78,13 +78,8 @@ final class ComboListenTransport: SubscribeTransport {
     }
     
     // MARK: Internal types, properties, and initialization
-#if targetEnvironment(simulator)
-    typealias AutoTransport = DribbleListenTransport
-    typealias AutoRemote = DribbleListenTransport.Remote
-#else
     typealias AutoTransport = BluetoothListenTransport
     typealias AutoRemote = BluetoothListenTransport.Remote
-#endif
     typealias ManualTransport = TcpListenTransport
     typealias ManualRemote = TcpListenTransport.Remote
     

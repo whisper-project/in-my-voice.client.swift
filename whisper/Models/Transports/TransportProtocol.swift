@@ -7,9 +7,10 @@ import Foundation
 import Combine
 
 enum TransportStatus {
-    case off(String)
+    case off
+    case disabled
+    case waiting
     case on
-    case disabled(String)
 }
 
 typealias TransportUrl = String?
@@ -19,8 +20,6 @@ protocol TransportFactory {
     associatedtype Subscriber: SubscribeTransport
     
     static var shared: Self { get }
-    
-    var publisherUrl: TransportUrl { get }
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> { get }
     

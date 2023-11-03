@@ -17,28 +17,22 @@ struct MainView: View {
     @StateObject private var model: MainViewModel = .init()
             
     var body: some View {
-        if case TransportStatus.disabled(let message) = model.status {
-            Link(message, destination: settingsUrl)
-        } else if case TransportStatus.off(let message) = model.status {
-            Text(message)
-        } else {
-            switch mode {
-            case .ask:
-                VStack {
-                    Spacer()
-                    ChoiceView(mode: $mode, publisherUrl: $publisherUrl)
-                    Spacer()
-                    Text("v\(versionString)")
-                        .textSelection(.enabled)
-                        .font(FontSizes.fontFor(name: .xxxsmall))
-                        .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                        .padding()
-                }
-            case .listen:
-                ListenView(mode: $mode, publisherUrl: publisherUrl)
-            case .whisper:
-                WhisperView(mode: $mode, publisherUrl: publisherUrl)
+        switch mode {
+        case .ask:
+            VStack {
+                Spacer()
+                ChoiceView(mode: $mode, publisherUrl: $publisherUrl, transportStatus: $model.status)
+                Spacer()
+                Text("v\(versionString)")
+                    .textSelection(.enabled)
+                    .font(FontSizes.fontFor(name: .xxxsmall))
+                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+                    .padding(EdgeInsets(top: 20, leading: 0, bottom: 5, trailing: 0))
             }
+        case .listen:
+            ListenView(mode: $mode, publisherUrl: publisherUrl)
+        case .whisper:
+            WhisperView(mode: $mode, publisherUrl: publisherUrl)
         }
     }
 }

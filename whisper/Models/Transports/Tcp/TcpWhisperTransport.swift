@@ -85,9 +85,6 @@ final class TcpWhisperTransport: PublishTransport {
 
     init(_ url: String) {
         self.clientId = PreferenceData.clientId
-        guard url.hasSuffix(clientId) else {
-            fatalError("Tcp whisper transport can only publish on clientId channel")
-        }
         self.channelName = "\(clientId):whisper"
     }
     

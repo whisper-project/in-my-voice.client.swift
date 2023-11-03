@@ -27,11 +27,7 @@
 		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
 		377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothFactory.swift */; };
 		377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */; };
-		377D71042A8B0367009B416F /* DribbleWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71032A8B0367009B416F /* DribbleWhisperTransport.swift */; };
-		377D71062A8C5E17009B416F /* DribbleFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71052A8C5E17009B416F /* DribbleFactory.swift */; };
-		377D71092A8EA8E4009B416F /* DribbleListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71072A8EA451009B416F /* DribbleListenTransport.swift */; };
 		377D710B2A8EBE16009B416F /* BluetoothListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */; };
-		377D710D2A913348009B416F /* DribbleTimedChunks.json in Resources */ = {isa = PBXBuildFile; fileRef = 377D710C2A913303009B416F /* DribbleTimedChunks.json */; };
 		377D71112A913C5C009B416F /* TcpFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71102A913BFE009B416F /* TcpFactory.swift */; };
 		377D71122A913C8F009B416F /* TcpWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710F2A913BFE009B416F /* TcpWhisperTransport.swift */; };
 		377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710E2A913BFE009B416F /* TcpListenTransport.swift */; };
@@ -103,11 +99,7 @@
 		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		377646C929BACC16002C411C /* BluetoothFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothFactory.swift; sourceTree = "<group>"; };
 		377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothWhisperTransport.swift; sourceTree = "<group>"; };
-		377D71032A8B0367009B416F /* DribbleWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DribbleWhisperTransport.swift; sourceTree = "<group>"; };
-		377D71052A8C5E17009B416F /* DribbleFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DribbleFactory.swift; sourceTree = "<group>"; };
-		377D71072A8EA451009B416F /* DribbleListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DribbleListenTransport.swift; sourceTree = "<group>"; };
 		377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothListenTransport.swift; sourceTree = "<group>"; };
-		377D710C2A913303009B416F /* DribbleTimedChunks.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = DribbleTimedChunks.json; sourceTree = "<group>"; };
 		377D710E2A913BFE009B416F /* TcpListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpListenTransport.swift; sourceTree = "<group>"; };
 		377D710F2A913BFE009B416F /* TcpWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpWhisperTransport.swift; sourceTree = "<group>"; };
 		377D71102A913BFE009B416F /* TcpFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpFactory.swift; sourceTree = "<group>"; };
@@ -341,17 +333,6 @@
 			path = Tcp;
 			sourceTree = "<group>";
 		};
-		377D71022A8B0343009B416F /* Dribble */ = {
-			isa = PBXGroup;
-			children = (
-				377D710C2A913303009B416F /* DribbleTimedChunks.json */,
-				377D71052A8C5E17009B416F /* DribbleFactory.swift */,
-				377D71032A8B0367009B416F /* DribbleWhisperTransport.swift */,
-				377D71072A8EA451009B416F /* DribbleListenTransport.swift */,
-			);
-			path = Dribble;
-			sourceTree = "<group>";
-		};
 		377D711C2A95CE38009B416F /* Combo */ = {
 			isa = PBXGroup;
 			children = (
@@ -382,7 +363,6 @@
 			children = (
 				37F8C26D2A87DFA7004DED77 /* TransportProtocol.swift */,
 				377D711C2A95CE38009B416F /* Combo */,
-				377D71022A8B0343009B416F /* Dribble */,
 				377D70F62A899C54009B416F /* Tcp */,
 				377D70F42A899C3A009B416F /* Bluetooth */,
 			);
@@ -501,7 +481,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				377D710D2A913348009B416F /* DribbleTimedChunks.json in Resources */,
 				379570CD29EA314A0033CF14 /* air-horn.caf in Resources */,
 				379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */,
 				379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */,
@@ -542,12 +521,10 @@
 				37B6236F29EF166800213790 /* ListenersView.swift in Sources */,
 				377D71112A913C5C009B416F /* TcpFactory.swift in Sources */,
 				3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */,
-				377D71092A8EA8E4009B416F /* DribbleListenTransport.swift in Sources */,
 				37763D1D29AC33230051CFE5 /* BluetoothData.swift in Sources */,
 				377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
-				377D71062A8C5E17009B416F /* DribbleFactory.swift in Sources */,
 				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
 				377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */,
 				37B6237629F78AA500213790 /* WhisperersView.swift in Sources */,
@@ -559,7 +536,6 @@
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
 				373748792AD66D150053858B /* TcpMonitor.swift in Sources */,
 				377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */,
-				377D71042A8B0367009B416F /* DribbleWhisperTransport.swift in Sources */,
 				377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */,
 				377D71162A913E8B009B416F /* PreferenceData.swift in Sources */,
 				377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */,
@@ -729,7 +705,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 41;
+				CURRENT_PROJECT_VERSION = 43;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -770,7 +746,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 41;
+				CURRENT_PROJECT_VERSION = 43;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;

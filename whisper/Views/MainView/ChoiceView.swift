@@ -8,18 +8,17 @@ import SafariServices
 
 
 struct ChoiceView: View {
-    @Environment(\.scenePhase) var scenePhase
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
 
     @Binding var mode: OperatingMode
     @Binding var publisherUrl: TransportUrl
+    @Binding var transportStatus: TransportStatus
 
     @State private var currentUserName: String = ""
     @State private var newUserName: String = ""
     @State private var showWhisperButtons = false
-    @State private var confirmWhisper = false
-    @State private var confirmListen = false
     @State private var credentialsMissing = false
-    @State private var lastSubscribedUrl: TransportUrl = PreferenceData.lastSubscriberUrl
     @FocusState private var nameEdit: Bool
     
     let nameWidth = CGFloat(350)
@@ -52,9 +51,27 @@ struct ChoiceView: View {
             }
             .frame(maxWidth: nameWidth, maxHeight: nameHeight)
             if (showWhisperButtons) {
+                if transportStatus != .on {
+                    switch transportStatus {
+                    case .off:
+                        Link("Enable Bluetooth or Wireless to whisper or listen...", destination: settingsUrl)
+                            .font(FontSizes.fontFor(name: .normal))
+                            .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+                    case .disabled:
+                        Link("Enable Bluetooth to listen...", destination: settingsUrl)
+                            .font(FontSizes.fontFor(name: .normal))
+                            .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+                    case .waiting:
+                        Text("Waiting for Bluetooth to listen...")
+                            .font(FontSizes.fontFor(name: .normal))
+                            .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+                    case .on:
+                        fatalError("Can't happen")
+                    }
+                }
                 HStack(spacing: 30) {
                     Button(action: {
-                        publisherUrl = ComboFactory.shared.publisherUrl
+                        publisherUrl = ComboFactory.shared.publisherForm(PreferenceData.personalPublisherUrl)
                         mode = .whisper
                     }) {
                         Text("Whisper")
@@ -64,6 +81,7 @@ struct ChoiceView: View {
                     }
                     .background(currentUserName == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
+                    .disabled(transportStatus == .off)
                     Button(action: {
                         publisherUrl = nil
                         mode = .listen
@@ -75,6 +93,7 @@ struct ChoiceView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
+                    .disabled(transportStatus != .on)
                 }
                 .transition(.scale)
             }
@@ -153,6 +172,14 @@ struct ChoiceView: View {
         showWhisperButtons = !currentUserName.isEmpty
         nameEdit = currentUserName.isEmpty
     }
+    
+    func canListen() -> Bool {
+        if case .on = transportStatus {
+            return true
+        } else {
+            return false
+        }
+    }
 }
 
 extension UIApplication {
@@ -167,8 +194,9 @@ extension UIApplication {
 struct ChoiceView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
     static let publisherUrl = Binding<TransportUrl>(get: { nil }, set: { _ = $0 })
+    static let transportStatus = Binding<TransportStatus>( get: { .on }, set: { _ = $0 })
 
     static var previews: some View {
-        ChoiceView(mode: mode, publisherUrl: publisherUrl)
+        ChoiceView(mode: mode, publisherUrl: publisherUrl, transportStatus: transportStatus)
     }
 }

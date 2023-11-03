@@ -14,10 +14,6 @@ final class ComboFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    var publisherUrl: TransportUrl {
-        get { return TcpFactory.shared.publisherUrl }
-    }
-    
     func publisher(_ publisherUrl: TransportUrl) -> Publisher {
         return Publisher(publisherUrl)
     }
@@ -26,12 +22,17 @@ final class ComboFactory: TransportFactory {
         return Subscriber(publisherUrl)
     }
     
+    //MARK: public auxiliary functions
+    func publisherForm(_ url: String) -> TransportUrl {
+        if manualStatus == .on {
+            return url
+        } else {
+            return nil
+        }
+    }
+    
     //MARK: private types and properties and initialization
-#if targetEnvironment(simulator)
-    private var autoFactory = DribbleFactory.shared
-#else
     private var autoFactory = BluetoothFactory.shared
-#endif
     private var manualFactory = TcpFactory.shared
     
     private var autoStatus: TransportStatus = .on
@@ -64,6 +65,28 @@ final class ComboFactory: TransportFactory {
     }
     
     private func compositeStatus() -> TransportStatus {
-        return autoStatus
+        switch autoStatus {
+        case .off, .waiting:
+            if case .on = manualStatus {
+                #if targetEnvironment(simulator)
+                // the simulator always has Bluetooth off,
+                // so can't take accurate screenshots
+                // unless we ignore this status
+                return .on
+                #else
+                return .waiting
+                #endif
+            } else {
+                return .off
+            }
+        case .disabled:
+            if case .on = manualStatus {
+                return .disabled
+            } else {
+                return .off
+            }
+        case .on:
+            return .on
+        }
     }
 }

@@ -12,7 +12,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
     
     static let shared: BluetoothFactory = .init()
         
-    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(offStatus)
+    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
     
     var publisherUrl: TransportUrl = nil
     
@@ -30,7 +30,6 @@ final class BluetoothFactory: NSObject, TransportFactory {
         return Subscriber()
     }
     
-    static let offStatus: TransportStatus = .off("Waiting for Bluetooth before continuing...")
     var advertisementSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
     var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
     var characteristicsSubject: PassthroughSubject<(CBPeripheral, CBService), Never> = .init()
@@ -130,9 +129,9 @@ final class BluetoothFactory: NSObject, TransportFactory {
         if central_state == .poweredOn && peripheral_state == .poweredOn {
             return .on
         } else if central_state == .unauthorized || peripheral_state == .unauthorized {
-            return .disabled("Enable Bluetooth to continue...")
+            return .disabled
         } else {
-            return BluetoothFactory.offStatus
+            return .off
         }
     }
 }

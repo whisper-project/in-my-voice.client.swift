@@ -10,9 +10,8 @@ import Network
 import Combine
 
 final class TcpMonitor {
-    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(offStatus)
+    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
 
-    static let offStatus: TransportStatus = .off("Internet is turned off")
     private var monitor: NWPathMonitor
     
     init() {
@@ -23,9 +22,9 @@ final class TcpMonitor {
             case .satisfied:
                 self?.statusSubject.send(.on)
             case .unsatisfied, .requiresConnection:
-                self?.statusSubject.send(Self.offStatus)
+                self?.statusSubject.send(.off)
             @unknown default:
-                self?.statusSubject.send(Self.offStatus)
+                self?.statusSubject.send(.off)
             }
         }
         

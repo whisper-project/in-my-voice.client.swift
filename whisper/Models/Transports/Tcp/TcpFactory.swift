@@ -15,21 +15,14 @@ final class TcpFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    var publisherUrl: TransportUrl {
-        get {
-            if case .on = status {
-                return "\(PreferenceData.whisperServer)/subscribe/\(PreferenceData.clientId)"
-            } else {
-                return nil
-            }
-        }
-    }
-    
     func publisher(_ publisherUrl: TransportUrl) -> Publisher {
-        guard publisherUrl == self.publisherUrl else {
-            fatalError("This client's TCP publisherUrl is not \(String(describing: publisherUrl))")
+        guard let url = publisherUrl else {
+            fatalError("TCP whisper transport requires a whisper URL")
         }
-        return TcpWhisperTransport(publisherUrl!)
+        guard url.hasSuffix(PreferenceData.clientId) else {
+            fatalError("Tcp whisper transport can only publish on clientId channel")
+        }
+        return TcpWhisperTransport(url)
     }
     
     func subscriber(_ publisherUrl: TransportUrl) -> TcpListenTransport {

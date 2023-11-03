@@ -81,7 +81,7 @@ final class TcpListenTransport: SubscribeTransport {
 
     init(_ url: String) {
         self.clientId = PreferenceData.clientId
-        guard let remoteId = PreferenceData.publisherUrlToClientId(url: url) else {
+        guard let remoteId = PreferenceData.publisherUrlToSessionId(url: url) else {
             fatalError("Invalid TCP listen url: \(url)")
         }
         self.publisherId = remoteId
