@@ -71,16 +71,28 @@ let logger = Logger()
 @main
 struct whisperApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     @State var mode: OperatingMode = .ask
     @State var publisherUrl: TransportUrl = nil
     @State var showWarning: Bool = false
     @State var warningMessage: String = ""
+    
+    let username = UserProfile.shared.username
 
     var body: some Scene {
         WindowGroup {
             MainView(mode: $mode, publisherUrl: $publisherUrl)
-                .onAppear { if (mode != .listen) { publisherUrl = nil } }
+                .onAppear {
+                    if (mode != .listen) {
+                        publisherUrl = nil
+                    }
+                }
                 .onOpenURL { urlObj in
+                    guard !UserProfile.shared.username.isEmpty else {
+                        warningMessage = "You must create your initial profile before you can listen."
+                        showWarning = true
+                        return
+                    }
                     guard mode == .ask else {
                         let activity = mode == .whisper ? "whispering" : "listening"
                         warningMessage = "Already \(activity) to someone else. Stop \(activity) and click the link again."
@@ -121,11 +133,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         logger.info("Received APNs token")
         let value: [String: Any] = [
-            "clientId": PreferenceData.clientId,
+            "clientId": PreferenceData.deviceId,
             "token": deviceToken.base64EncodedString(),
             "deviceId": BluetoothData.deviceId,
             "userName": PreferenceData.userName(),
-            "lastSecret": PreferenceData.lastClientSecret(),
+            "lastSecret": PreferenceData.lastDeviceSecret(),
             "appInfo": "\(platformInfo)|\(versionString)",
             "droppedErrorCount": PreferenceData.droppedErrorCount,
             "tcpErrorCount": PreferenceData.tcpErrorCount,
@@ -181,8 +193,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             logger.info("Succesfully saved data from background notification")
             PreferenceData.updateClientSecret(secret)
             let value = [
-                "clientId": PreferenceData.clientId,
-                "lastSecret": PreferenceData.lastClientSecret()
+                "clientId": PreferenceData.deviceId,
+                "lastSecret": PreferenceData.lastDeviceSecret()
             ]
             guard let body = try? JSONSerialization.data(withJSONObject: value) else {
                 fatalError("Can't encode body for notification confirmation call")

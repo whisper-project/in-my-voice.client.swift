@@ -80,7 +80,7 @@ final class TcpListenTransport: SubscribeTransport {
     private var candidates: [String:Remote] = [:]
 
     init(_ url: String) {
-        self.clientId = PreferenceData.clientId
+        self.clientId = PreferenceData.deviceId
         guard let remoteId = PreferenceData.publisherUrlToSessionId(url: url) else {
             fatalError("Invalid TCP listen url: \(url)")
         }

@@ -15,7 +15,7 @@ enum TcpAuthenticatorError: Error {
 final class TcpAuthenticator {
     private var mode: OperatingMode
     private var publisherId: String
-    private var clientId = PreferenceData.clientId
+    private var clientId = PreferenceData.deviceId
     private var client: ARTRealtime?
     private var failureCallback: (String) -> Void
     
@@ -45,7 +45,7 @@ final class TcpAuthenticator {
     }
     
     func createJWT() -> String? {
-        guard let secret = PreferenceData.clientSecret(),
+        guard let secret = PreferenceData.deviceSecret(),
               let secretData = Data(base64Encoded: Data(secret.utf8)) else {
             logger.error("No secret data received from whisper-server")
             failureCallback("Can't receive notifications from the whisper server.  Please quit and restart the app.")

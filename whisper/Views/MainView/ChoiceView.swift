@@ -15,10 +15,11 @@ struct ChoiceView: View {
     @Binding var publisherUrl: TransportUrl
     @Binding var transportStatus: TransportStatus
 
-    @State private var currentUserName: String = ""
-    @State private var newUserName: String = ""
-    @State private var showWhisperButtons = false
+    @State private var username: String = ""
+    @State private var newUsername: String = ""
+    @State private var showWhisperButtons = true
     @State private var credentialsMissing = false
+    @State private var showConversations = false
     @FocusState private var nameEdit: Bool
     
     let nameWidth = CGFloat(350)
@@ -30,24 +31,19 @@ struct ChoiceView: View {
     var body: some View {
         VStack(spacing: 40) {
             Form {
-                Section(content: {
-                    TextField("Your Name", text: $newUserName, prompt: Text("Fill in to continue…"))
-                        .submitLabel(.done)
-                        .onSubmit { 
-                            newUserName = newUserName.trimmingCharacters(in: .whitespaces)
-                            PreferenceData.updateUserName(newUserName)
-                            currentUserName = newUserName
-                            withAnimation {
-                                self.showWhisperButtons = !currentUserName.isEmpty
-                            }
-                        }
-                        .focused($nameEdit)
-                        .textInputAutocapitalization(.never)
-                        .disableAutocorrection(true)
-                        .allowsTightening(true)
-                }, header: {
-                    Text("Your Name")
-                })
+                Section(header: Text("Your Name")) {
+                    HStack {
+                        TextField("Your Name", text: $newUsername, prompt: Text("Fill in to continue…"))
+                            .submitLabel(.done)
+                            .focused($nameEdit)
+                            .textInputAutocapitalization(.never)
+                            .disableAutocorrection(true)
+                            .allowsTightening(true)
+                        Button("Submit", systemImage: "checkmark.square.fill") { nameEdit = false }
+                            .labelStyle(.iconOnly)
+                            .disabled(newUsername.isEmpty || newUsername == username)
+                    }
+                }
             }
             .frame(maxWidth: nameWidth, maxHeight: nameHeight)
             if (showWhisperButtons) {
@@ -70,18 +66,30 @@ struct ChoiceView: View {
                     }
                 }
                 HStack(spacing: 30) {
-                    Button(action: {
-                        publisherUrl = ComboFactory.shared.publisherForm(PreferenceData.personalPublisherUrl)
-                        mode = .whisper
-                    }) {
+                    Button(action: {}) {
                         Text("Whisper")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
                             .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                     }
-                    .background(currentUserName == "" ? Color.gray : Color.accentColor)
+                    .background(username == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
                     .disabled(transportStatus == .off)
+                    .simultaneousGesture(
+                        LongPressGesture()
+                            .onEnded { _ in
+                                showConversations = true
+                            }
+                    )
+                    .highPriorityGesture(
+                        TapGesture()
+                            .onEnded { _ in
+                                maybeWhisper(UserProfile.shared.defaultConversation)
+                            }
+                    )
+                    .popover(isPresented: $showConversations) {
+                        ConversationsView(maybeWhisper: maybeWhisper)
+                    }
                     Button(action: {
                         publisherUrl = nil
                         mode = .listen
@@ -143,21 +151,19 @@ struct ChoiceView: View {
         } message: {
             Text("Sorry, but on its first launch after installation the app needs a few minutes to connect to the whisper server. Please try again.")
         }
-        .onAppear { updateUserNameOnAppear() }
+        .onAppear { updateFromProfile() }
         .onChange(of: nameEdit) { isEditing in
-            withAnimation {
-                if isEditing {
-                    showWhisperButtons = false
-                } else {
-                    showWhisperButtons = !currentUserName.isEmpty
-                }
+            if isEditing {
+                withAnimation { showWhisperButtons = false }
+            } else {
+                updateOrRevertProfile()
             }
         }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {
             case .active:
                 logger.log("Reread user name going to choice view foreground")
-                updateUserNameOnAppear()
+                updateFromProfile()
             case .background, .inactive:
                 break
             @unknown default:
@@ -166,11 +172,30 @@ struct ChoiceView: View {
         }
     }
     
-    func updateUserNameOnAppear() {
-        currentUserName = PreferenceData.userName()
-        newUserName = currentUserName
-        showWhisperButtons = !currentUserName.isEmpty
-        nameEdit = currentUserName.isEmpty
+    func updateFromProfile() {
+        username = UserProfile.shared.username
+        newUsername = username
+        if username.isEmpty {
+        withAnimation {
+                showWhisperButtons = false
+                nameEdit = true
+            }
+        }
+    }
+    
+    func updateOrRevertProfile() {
+        let proposal = newUsername.trimmingCharacters(in: .whitespaces)
+        if proposal.isEmpty {
+            updateFromProfile()
+        } else {
+            newUsername = proposal
+            username = proposal
+            UserProfile.shared.username = proposal
+            UserProfile.shared.saveAsDefault()
+            withAnimation {
+                showWhisperButtons = true
+            }
+        }
     }
     
     func canListen() -> Bool {
@@ -179,6 +204,16 @@ struct ChoiceView: View {
         } else {
             return false
         }
+    }
+    
+    func maybeWhisper(_ conv: Conversation?) {
+        guard let c = conv else {
+            showConversations = false
+            return
+        }
+        let url = PreferenceData.publisherUrl(c.id)
+        publisherUrl = ComboFactory.shared.publisherForm(url)
+        mode = .whisper
     }
 }
 

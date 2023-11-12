@@ -47,6 +47,8 @@
 		37B6237629F78AA500213790 /* WhisperersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6237529F78AA500213790 /* WhisperersView.swift */; };
 		37C5142229CA2B35001A121B /* PastTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C5142129CA2B35001A121B /* PastTextView.swift */; };
 		37C5142429CA2B44001A121B /* PastTextModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C5142329CA2B44001A121B /* PastTextModel.swift */; };
+		37CBBD0C2AF8CAC7006AE49F /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CBBD0B2AF8CAC7006AE49F /* UserProfile.swift */; };
+		37CBBD0F2AFB112B006AE49F /* ConversationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CBBD0E2AFB112B006AE49F /* ConversationsView.swift */; };
 		37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35829BC5DD300F952FE /* WhisperView.swift */; };
 		37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6B35D29BCF66400F952FE /* ListenViewModel.swift */; };
 		37F8C26E2A87DFA7004DED77 /* TransportProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F8C26D2A87DFA7004DED77 /* TransportProtocol.swift */; };
@@ -117,6 +119,8 @@
 		37B6237529F78AA500213790 /* WhisperersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperersView.swift; sourceTree = "<group>"; };
 		37C5142129CA2B35001A121B /* PastTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastTextView.swift; sourceTree = "<group>"; };
 		37C5142329CA2B44001A121B /* PastTextModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastTextModel.swift; sourceTree = "<group>"; };
+		37CBBD0B2AF8CAC7006AE49F /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		37CBBD0E2AFB112B006AE49F /* ConversationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsView.swift; sourceTree = "<group>"; };
 		37D553CB2A10717E00C27888 /* SizePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SizePrinter.swift; sourceTree = "<group>"; };
 		37D6B35829BC5DD300F952FE /* WhisperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperView.swift; sourceTree = "<group>"; };
 		37D6B35D29BCF66400F952FE /* ListenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenViewModel.swift; sourceTree = "<group>"; };
@@ -248,6 +252,7 @@
 		37763D0F29AB54F80051CFE5 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				37CBBD0D2AFB110B006AE49F /* ProfilesView */,
 				377646C229BAC589002C411C /* MainView */,
 				37763D1229AB561F0051CFE5 /* ListenView */,
 				37763D1129AB560E0051CFE5 /* WhisperView */,
@@ -281,10 +286,11 @@
 		37763D1329AC034B0051CFE5 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				3771F83429DD2F900011419E /* FontSizes.swift */,
 				377D71142A913E2E009B416F /* PreferenceData.swift */,
 				37C5142329CA2B44001A121B /* PastTextModel.swift */,
 				378A8E1629C554F20097F15A /* TextProtocol.swift */,
-				3771F83429DD2F900011419E /* FontSizes.swift */,
+				37CBBD0B2AF8CAC7006AE49F /* UserProfile.swift */,
 				37F8C26C2A87DF23004DED77 /* Transports */,
 			);
 			path = Models;
@@ -356,6 +362,14 @@
 				37C5142129CA2B35001A121B /* PastTextView.swift */,
 			);
 			path = PastTextView;
+			sourceTree = "<group>";
+		};
+		37CBBD0D2AFB110B006AE49F /* ProfilesView */ = {
+			isa = PBXGroup;
+			children = (
+				37CBBD0E2AFB112B006AE49F /* ConversationsView.swift */,
+			);
+			path = ProfilesView;
 			sourceTree = "<group>";
 		};
 		37F8C26C2A87DF23004DED77 /* Transports */ = {
@@ -525,6 +539,7 @@
 				377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
+				37CBBD0F2AFB112B006AE49F /* ConversationsView.swift in Sources */,
 				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
 				377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */,
 				37B6237629F78AA500213790 /* WhisperersView.swift in Sources */,
@@ -535,6 +550,7 @@
 				377D71122A913C8F009B416F /* TcpWhisperTransport.swift in Sources */,
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
 				373748792AD66D150053858B /* TcpMonitor.swift in Sources */,
+				37CBBD0C2AF8CAC7006AE49F /* UserProfile.swift in Sources */,
 				377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */,
 				377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */,
 				377D71162A913E8B009B416F /* PreferenceData.swift in Sources */,

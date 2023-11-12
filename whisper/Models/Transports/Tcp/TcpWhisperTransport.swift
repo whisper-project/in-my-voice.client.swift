@@ -85,7 +85,7 @@ final class TcpWhisperTransport: PublishTransport {
     private var droppedListeners: Set<String> = []
 
     init(_ url: String) {
-        self.clientId = PreferenceData.clientId
+        self.clientId = PreferenceData.deviceId
         self.channelName = "\(clientId):whisper"
     }
     

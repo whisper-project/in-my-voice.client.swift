@@ -26,20 +26,20 @@ struct PreferenceData {
         }
         return String(match.2)
     }
-    static var personalPublisherUrl: String {
-        return "\(whisperServer)/subscribe/\(clientId)"
+    static func publisherUrl(_ conversationId: String) -> String {
+        return "\(whisperServer)/subscribe/\(conversationId)"
     }
     
-    // client IDs for TCP transport
-    static var clientId: String = {
-        if let id = defaults.string(forKey: "whisper_client_id") {
+    // device ID for this device
+    static var deviceId: String {
+        if let id = defaults.string(forKey: "whisper_device_id") {
             return id
         } else {
             let id = UUID().uuidString
-            defaults.setValue(id, forKey: "whisper_client_id")
+            defaults.setValue(id, forKey: "whisper_device_id")
             return id
         }
-    }()
+    }
     
     // client secrets for TCP transport
     //
@@ -52,30 +52,30 @@ struct PreferenceData {
     // and it rotates the secret when that happens.  We sign auth requests
     // with the current secret, but the server allows use of the prior
     // secret as a one-time fallback when we've gone out of sync.
-    static func lastClientSecret() -> String {
-        if let prior = defaults.string(forKey: "whisper_last_client_secret") {
+    static func lastDeviceSecret() -> String {
+        if let prior = defaults.string(forKey: "whisper_last_device_secret") {
             return prior
         } else {
             let prior = makeSecret()
-            defaults.setValue(prior, forKey: "whisper_last_client_secret")
+            defaults.setValue(prior, forKey: "whisper_last_device_secret")
             return prior
         }
     }
-    static func clientSecret() -> String? {
-        if let current = defaults.string(forKey: "whisper_client_secret") {
+    static func deviceSecret() -> String? {
+        if let current = defaults.string(forKey: "whisper_device_secret") {
             return current
         } else {
-            let prior = lastClientSecret()
-            defaults.setValue(prior, forKey: "whisper_client_secret")
+            let prior = lastDeviceSecret()
+            defaults.setValue(prior, forKey: "whisper_device_secret")
             return prior
         }
     }
     static func updateClientSecret(_ secret: String) {
         // if the new secret is different than the old secret, save the old secret
-        if let current = defaults.string(forKey: "whisper_client_secret"), secret != current {
-            defaults.setValue(current, forKey: "whisper_last_client_secret")
+        if let current = defaults.string(forKey: "whisper_device_secret"), secret != current {
+            defaults.setValue(current, forKey: "whisper_last_device_secret")
         }
-        defaults.setValue(secret, forKey: "whisper_client_secret")
+        defaults.setValue(secret, forKey: "whisper_device_secret")
     }
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
