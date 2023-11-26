@@ -100,7 +100,7 @@ struct whisperApp: App {
                         return
                     }
                     let url = urlObj.absoluteString
-                    if PreferenceData.publisherUrlToSessionId(url: url) != nil {
+                    if PreferenceData.publisherUrlToConversationId(url: url) != nil {
                         logger.log("Handling valid universal URL: \(url)")
                         PreferenceData.lastSubscriberUrl = url
                         publisherUrl = url
@@ -133,11 +133,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         logger.info("Received APNs token")
         let value: [String: Any] = [
-            "clientId": PreferenceData.deviceId,
+            "clientId": PreferenceData.clientId,
             "token": deviceToken.base64EncodedString(),
             "deviceId": BluetoothData.deviceId,
-            "userName": PreferenceData.userName(),
-            "lastSecret": PreferenceData.lastDeviceSecret(),
+            "userName": UserProfile.shared.username,
+            "lastSecret": PreferenceData.lastClientSecret(),
             "appInfo": "\(platformInfo)|\(versionString)",
             "droppedErrorCount": PreferenceData.droppedErrorCount,
             "tcpErrorCount": PreferenceData.tcpErrorCount,
@@ -146,7 +146,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
         }
-        guard let url = URL(string: PreferenceData.whisperServer + "/api/v1/apnsToken") else {
+        guard let url = URL(string: PreferenceData.whisperServer + "/api/v2/apnsToken") else {
             fatalError("Can't create URL for device token call")
         }
         var request = URLRequest(url: url)
@@ -193,13 +193,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             logger.info("Succesfully saved data from background notification")
             PreferenceData.updateClientSecret(secret)
             let value = [
-                "clientId": PreferenceData.deviceId,
-                "lastSecret": PreferenceData.lastDeviceSecret()
+                "clientId": PreferenceData.clientId,
+                "lastSecret": PreferenceData.lastClientSecret()
             ]
             guard let body = try? JSONSerialization.data(withJSONObject: value) else {
                 fatalError("Can't encode body for notification confirmation call")
             }
-            guard let url = URL(string: PreferenceData.whisperServer + "/api/v1/apnsReceivedNotification") else {
+            guard let url = URL(string: PreferenceData.whisperServer + "/api/v2/apnsReceivedNotification") else {
                 fatalError("Can't create URL for notification confirmation call")
             }
             var request = URLRequest(url: url)

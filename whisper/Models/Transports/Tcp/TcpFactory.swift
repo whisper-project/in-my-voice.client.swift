@@ -19,18 +19,12 @@ final class TcpFactory: TransportFactory {
         guard let url = publisherUrl else {
             fatalError("TCP whisper transport requires a whisper URL")
         }
-        guard url.hasSuffix(PreferenceData.deviceId) else {
-            fatalError("Tcp whisper transport can only publish on clientId channel")
-        }
         return TcpWhisperTransport(url)
     }
     
     func subscriber(_ publisherUrl: TransportUrl) -> TcpListenTransport {
         guard let url = publisherUrl else {
             fatalError("TCP listen transport requires a whisper URL")
-        }
-        guard !url.hasSuffix(PreferenceData.deviceId) else {
-            fatalError("TCP listen transport cannot listen to itself")
         }
         return TcpListenTransport(url)
     }

@@ -18,13 +18,13 @@ final class TcpWhisperTransport: PublishTransport {
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP whisper transport")
         self.failureCallback = failureCallback
-        self.authenticator = TcpAuthenticator(mode: .whisper, publisherId: clientId, callback: receiveAuthError)
-        openChannel()
+        self.authenticator = TcpAuthenticator(mode: .whisper, conversationId: clientId, callback: receiveAuthError)
+        openChannels()
     }
     
     func stop() {
         logger.log("Stopping TCP whisper Transport")
-        closeChannel()
+        closeChannels()
     }
     
     func goToBackground() {
@@ -49,7 +49,7 @@ final class TcpWhisperTransport: PublishTransport {
             return
         }
         logger.info("Dropping listener \(remote.name) (\(remote.id))")
-        let chunk = TextProtocol.ProtocolChunk.dropRequest(id: remote.id)
+        let chunk = TextProtocol.ProtocolChunk.refuseInvite(conversationId: conversationId)
         whisperChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
         droppedListeners.insert(remote.id)
     }
@@ -77,16 +77,23 @@ final class TcpWhisperTransport: PublishTransport {
     
     private var failureCallback: ((String) -> Void)?
     private var clientId: String
+    private var conversationId: String
     private var authenticator: TcpAuthenticator!
     private var client: ARTRealtime?
     private var channelName: String
     private var whisperChannel: ARTRealtimeChannel?
+    private var controlChannel: ARTRealtimeChannel?
     private var listeners: [String:Remote] = [:]
     private var droppedListeners: Set<String> = []
 
     init(_ url: String) {
-        self.clientId = PreferenceData.deviceId
-        self.channelName = "\(clientId):whisper"
+        self.clientId = PreferenceData.clientId
+        if let conversationId = PreferenceData.publisherUrlToConversationId(url: url) {
+            self.conversationId = conversationId
+        } else {
+            self.conversationId = self.clientId
+        }
+        self.channelName = "\(conversationId):whisper"
     }
     
     //MARK: Internal methods
@@ -100,10 +107,10 @@ final class TcpWhisperTransport: PublishTransport {
     private func receiveAuthError(_ reason: String) {
         failureCallback?(reason)
         PreferenceData.authenticationErrorCount += 1
-        closeChannel()
+        closeChannels()
     }
     
-    private func openChannel() {
+    private func openChannels() {
         client = self.authenticator.getClient()
         client?.connection.on(.connected) { _ in
             logger.log("TCP whisper transport realtime client has connected")
@@ -111,7 +118,7 @@ final class TcpWhisperTransport: PublishTransport {
         client?.connection.on(.disconnected) { _ in
             logger.log("TCP whisper transport realtime client has disconnected")
         }
-        whisperChannel = client?.channels.get(channelName)
+        whisperChannel = client?.channels.get(channelName + ":whisper")
         whisperChannel?.on(.attached) { stateChange in
             logger.log("TCP whisper transport realtime client has attached the whisper channel")
         }
@@ -125,27 +132,39 @@ final class TcpWhisperTransport: PublishTransport {
             logger.error("TCP whisper transport realtime client: there is a channel failure")
         }
         whisperChannel?.attach()
-        whisperChannel?.subscribe(clientId, callback: receiveMessage)
-        whisperChannel?.presence.subscribe(receivePresence)
-        whisperChannel?.presence.enter(PreferenceData.userName())
+        controlChannel = client?.channels.get(channelName + ":control")
+        controlChannel?.on(.attached) { stateChange in
+            logger.log("TCP whisper transport realtime client has attached the whisper channel")
+        }
+        controlChannel?.on(.detached) { stateChange in
+            logger.log("TCP whisper transport realtime client has detached the whisper channel")
+        }
+        controlChannel?.on(.suspended) { stateChange in
+            logger.warning("TCP whisper transport realtime client: the connection is suspended")
+        }
+        controlChannel?.on(.failed) { stateChange in
+            logger.error("TCP whisper transport realtime client: there is a channel failure")
+        }
+        controlChannel?.attach()
+        controlChannel?.subscribe("whisperer", callback: receiveMessage)
+        let chunk = TextProtocol.ProtocolChunk.sendInvite(conversationId: conversationId)
+        controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
     }
     
-    private func closeChannel() {
-        whisperChannel?.presence.leave(PreferenceData.userName())
+    private func closeChannels() {
+        let chunk = TextProtocol.ProtocolChunk.dropping(conversationId: conversationId)
+        controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         whisperChannel?.detach()
         whisperChannel = nil
+        controlChannel?.detach()
+        controlChannel = nil
         client?.close()
         client = nil
     }
     
     private func receiveMessage(message: ARTMessage) {
-        guard let name = message.name, name == clientId else {
-            logger.error("Ignoring a message not intended for this client: \(String(describing: message))")
-            return
-        }
-        guard let sender = message.clientId,
-              let remote = listeners[sender] else {
-            logger.error("Ignoring a message from an unknown sender: \(String(describing: message))")
+        guard let name = message.name, name == "whisperer" else {
+            logger.error("Ignoring a message not intended for the whisperer: \(String(describing: message))")
             return
         }
         guard let payload = message.data as? String,
@@ -154,80 +173,46 @@ final class TcpWhisperTransport: PublishTransport {
             logger.error("Ignoring a message with a non-chunk payload: \(String(describing: message))")
             return
         }
-        if chunk.isReplayRequest() {
-            logger.info("Received replay request from \(sender)")
-            // acknowledge the read request (always done at the transport level)
-            let response = TextProtocol.ProtocolChunk.acknowledgeRead(hint: chunk.text)
-            send(remote: remote, chunks: [response])
-            // pass the request on to the whisperer
-            receivedChunkSubject.send((remote: remote, chunk: chunk))
-        } else {
-            logger.error("Ignoring non-replay request from \(sender): \(payload)")
+        if chunk.isPresenceMessage() {
+            guard let info = TextProtocol.ClientInfo.fromString(chunk.text),
+                  info.clientId == message.clientId,
+                  info.conversationId == conversationId
+            else {
+                logger.error("Ignoring a malformed or misdirected invite: \(chunk.text))")
+                return
+            }
+            if let value = TextProtocol.ControlOffset(rawValue: chunk.offset) {
+                logger.info("Received \(value) message from \(info.clientId) profile \(info.profileId) (\(info.username))")
+                switch value {
+                case .requestInvite, .joining:
+                    if listeners[info.clientId] == nil {
+                        logger.info("Adding listener from \(value) message")
+                        let remote = Remote(id: info.clientId, name: info.username)
+                        listeners[info.clientId] = remote
+                        addRemoteSubject.send(remote)
+                    }
+                case .dropping:
+                    if let existing = listeners.removeValue(forKey: info.clientId) {
+                       logger.info("Dropping listener from \(value) message")
+                       dropRemoteSubject.send(existing)
+                        // no more processing to do on this packet
+                        return
+                    } else {
+                        logger.error("Ignoring \(value) message from a non-listener: \(info.clientId)")
+                    }
+                default:
+                    logger.error("Ignoring an unexpected \(value) message from \(info.clientId)")
+                    return
+                }
+            }
         }
     }
     
-    func receivePresence(message: ARTPresenceMessage) {
-        guard let remoteId = message.clientId, let name = message.data as? String else {
-            logger.error("Ignoring a presence message missing client or info: \(String(describing: message))")
+        guard let sender = message.clientId,
+              let remote = listeners[sender] else {
+            logger.error("Ignoring a message from an unknown sender: \(String(describing: message))")
             return
         }
-        guard remoteId != clientId else {
-            let action = Self.ablyActionName(message)
-            logger.log("Ignoring a presence message about this client: \(action)")
-            return
-        }
-        switch message.action {
-        case .present, .enter:
-            guard listeners[remoteId] == nil else {
-                logger.warning("Ignoring present/enter event for existing listener \(remoteId)")
-                return
-            }
-            let remote = Remote(id: remoteId, name: name)
-            listeners[remoteId] = remote
-            addRemoteSubject.send(remote)
-            if droppedListeners.contains(remoteId) {
-                // they should not have come back!
-                drop(remote: remote)
-            } else {
-                // web remotes need a presence message from us after they've entered
-                whisperChannel?.presence.update(PreferenceData.userName())
-            }
-        case .leave:
-            guard let remote = listeners.removeValue(forKey: remoteId) else {
-                logger.warning("Ignoring leave event for non-listener \(remoteId)")
-                return
-            }
-            dropRemoteSubject.send(remote)
-        case .update:
-            guard let listener = listeners[remoteId] else {
-                logger.warning("Ignoring update event for non-listener \(remoteId)")
-                return
-            }
-            guard listener.name == name else {
-                logger.error("Ignoring disallowed name update for \(remoteId) from \(listener.name) to \(name)")
-                return
-            }
-        case .absent:
-            logger.warning("Ignoring absent presence message for \(remoteId): \(String(describing: message))")
-        @unknown default:
-            logger.warning("Ignoring unknown presence message for \(remoteId): \(String(describing: message))")
-        }
-    }
-    
-    static func ablyActionName(_ message: ARTPresenceMessage) -> String {
-        switch (message.action) {
-        case .absent:
-            return "absent"
-        case .present:
-            return "present"
-        case .enter:
-            return "enter"
-        case .leave:
-            return "leave"
-        case .update:
-            return "update"
-        @unknown default:
-            return "unknown"
-        }
+        receivedChunkSubject.send((remote: remote, chunk: chunk))
     }
 }

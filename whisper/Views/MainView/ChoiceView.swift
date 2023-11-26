@@ -19,8 +19,11 @@ struct ChoiceView: View {
     @State private var newUsername: String = ""
     @State private var showWhisperButtons = true
     @State private var credentialsMissing = false
-    @State private var showConversations = false
+    @State private var showWhisperConversations = false
+    @State private var showListenConversations = false
     @FocusState private var nameEdit: Bool
+    
+    private let profile = UserProfile.shared
     
     let nameWidth = CGFloat(350)
     let nameHeight = CGFloat(105)
@@ -78,22 +81,19 @@ struct ChoiceView: View {
                     .simultaneousGesture(
                         LongPressGesture()
                             .onEnded { _ in
-                                showConversations = true
+                                showWhisperConversations = true
                             }
                     )
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
-                                maybeWhisper(UserProfile.shared.defaultConversation)
+                                maybeWhisper(profile.whisperDefault)
                             }
                     )
-                    .popover(isPresented: $showConversations) {
-                        ConversationsView(maybeWhisper: maybeWhisper)
+                    .popover(isPresented: $showWhisperConversations) {
+                        WhisperProfileView(maybeWhisper: maybeWhisper)
                     }
-                    Button(action: {
-                        publisherUrl = nil
-                        mode = .listen
-                    }) {
+                    Button(action: {}) {
                         Text("Listen")
                             .foregroundColor(.white)
                             .fontWeight(.bold)
@@ -102,6 +102,22 @@ struct ChoiceView: View {
                     .background(Color.accentColor)
                     .cornerRadius(15)
                     .disabled(transportStatus != .on)
+                    .simultaneousGesture(
+                        LongPressGesture()
+                            .onEnded { _ in
+                                showListenConversations = true
+                            }
+                    )
+                    .highPriorityGesture(
+                        TapGesture()
+                            .onEnded { _ in
+                                publisherUrl = nil
+                                mode = .listen
+                            }
+                    )
+                    .popover(isPresented: $showListenConversations) {
+                        ListenProfileView(maybeListen: maybeListen)
+                    }
                 }
                 .transition(.scale)
             }
@@ -198,22 +214,22 @@ struct ChoiceView: View {
         }
     }
     
-    func canListen() -> Bool {
-        if case .on = transportStatus {
-            return true
-        } else {
-            return false
-        }
-    }
-    
-    func maybeWhisper(_ conv: Conversation?) {
-        guard let c = conv else {
-            showConversations = false
+    func maybeWhisper(_ c: Conversation?) {
+        guard let c = c else {
+            showWhisperConversations = false
             return
         }
         let url = PreferenceData.publisherUrl(c.id)
         publisherUrl = ComboFactory.shared.publisherForm(url)
         mode = .whisper
+    }
+    
+    func maybeListen(_ c: Conversation?) {
+        showListenConversations = false
+        if let c = c {
+            publisherUrl = PreferenceData.publisherUrl(c.id)
+            mode = .listen
+        }
     }
 }
 

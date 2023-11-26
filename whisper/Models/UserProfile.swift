@@ -8,7 +8,9 @@ import Foundation
 final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equatable {
     private(set) var id: String
     var name: String
-    
+    var allowedProfileIDs: [String] = []
+    var lastListened: Date = Date.distantPast
+
     fileprivate init(name: String) {
         self.id = UUID().uuidString
         self.name = name
@@ -16,6 +18,7 @@ final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equata
     
     fileprivate convenience init(from: Conversation) {
         self.init(name: from.name)
+        self.allowedProfileIDs = Array(from.allowedProfileIDs)
     }
     
     // equality is determined by ID
@@ -32,6 +35,15 @@ final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equata
         }
         return left.name < right.name
     }
+    
+    // decreasing sort by last-used date then increasing sort by name within date bucket
+    static func most_recent(_ left: Conversation, _ right: Conversation) -> Bool {
+        if left.lastListened == right.lastListened {
+            return left < right
+        } else {
+            return left.lastListened < right.lastListened
+        }
+    }
 }
 
 final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
@@ -39,76 +51,99 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
     
     private(set) var id: String
     var username: String = ""
-    private var cTable: [String: Conversation] = [:]
+    private var whisperTable: [String: Conversation] = [:]
+    private var listenTable: [String: Conversation] = [:]
     private var defaultId: String = ""
     
     init(username: String) {
         id = UUID().uuidString
         self.username = username
-        ensureWellFormed()
     }
     
     init(from: UserProfile) {
         id = UUID().uuidString
         username = from.username
-        for (id, c) in from.cTable {
-            cTable[id] = Conversation(from: c)
+        for (id, c) in from.whisperTable {
+            whisperTable[id] = Conversation(from: c)
         }
         defaultId = from.defaultId
     }
     
-    private func ensureWellFormed() {
-        guard let first = cTable.first?.value else {
-            let first = Conversation(name: "My Conversation")
-            cTable[first.id] = first
-            defaultId = first.id
-            return
-        }
-        if cTable[defaultId] == nil {
-            defaultId = first.id
-        }
-    }
-    
-    var conversations: [Conversation] {
-        get {
-            ensureWellFormed()
-            let random = Array(cTable.values)
-            let sorted = random.sorted()
-            return sorted
+    // make sure there is a default conversation, and return it
+    private func ensureWhisperDefaultExists() -> Conversation {
+        if let firstC = whisperTable.first?.value {
+            if let c = whisperTable[defaultId] {
+                return c
+            } else {
+                defaultId = firstC.id
+                return firstC
+            }
+        } else {
+            let newC = addWhisperConversationInternal()
+            defaultId = newC.id
+            return newC
         }
     }
     
-    var defaultConversation: Conversation {
+    /// The default whisper conversation
+    var whisperDefault: Conversation {
         get {
-            ensureWellFormed()
-            return cTable[defaultId]!
+            return ensureWhisperDefaultExists()
         }
         set(new) {
-            guard cTable[new.id] != nil else {
-                // ignore the set, make sure there is a default
-                ensureWellFormed()
-                return
+            if let existing = whisperTable[new.id]  {
+                defaultId = existing.id
             }
-            defaultId = new.id
         }
     }
     
-    /// add a new conversation to the profile
-    func newConversation() {
-        ensureWellFormed()
-        let new = Conversation(name: "Conversation \(cTable.count + 1)")
-        cTable[new.id] = new
+    /// The sorted list of whisper conversations
+    func whisperConversations() -> [Conversation] {
+        _ = ensureWhisperDefaultExists()
+        let sorted = Array(whisperTable.values).sorted()
+        return sorted
     }
     
-    /// add a received conversation to the profile
-    func addConversation(_ c: Conversation) {
-        ensureWellFormed()
-        cTable[c.id] = c
+    /// The sorted list of listen conversations
+    func listenConversations() -> [Conversation] {
+        let sorted = Array(listenTable.values).sorted(by: Conversation.most_recent)
+        return sorted
     }
     
-    func deleteConversation(_ c: Conversation) {
-        cTable.removeValue(forKey: c.id)
-        ensureWellFormed()
+    func addWhisperConversationInternal() -> Conversation {
+        var prefix = "\(username)'s "
+        if username.isEmpty {
+            prefix = ""
+        } else if username.hasSuffix("s") {
+            prefix = "\(username)' "
+        }
+        let new = Conversation(name: "\(prefix)Conversation \(whisperTable.count + 1)")
+        logger.info("Adding whisper conversation \(new.id) (\(new.name))")
+        whisperTable[new.id] = new
+        return new
+    }
+    
+    /// Create a new whisper conversation
+    func addWhisperConversation() {
+        _ = addWhisperConversationInternal()
+    }
+    
+    /// Add a newly used conversation for a Listener
+    func addListenConversation(_ c: Conversation) {
+        logger.info("Adding listen conversation \(c.id) (\(c.name))")
+        listenTable[c.id] = c
+        c.lastListened = Date.now
+    }
+    
+    func deleteWhisperConversation(_ c: Conversation) {
+        logger.info("Removing whisper conversation \(c.id) (\(c.name))")
+        whisperTable.removeValue(forKey: c.id)
+        _ = ensureWhisperDefaultExists()
+    }
+    
+    func deleteListenConversation(_ c: Conversation) {
+        logger.info("Removing listener conversation \(c.id) (\(c.name))")
+        listenTable.removeValue(forKey: c.id)
     }
     
     // equality is determined by ID
@@ -134,7 +169,7 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
             let data = try Data(contentsOf: fileUrl)
             let decoder = JSONDecoder()
             let profile = try decoder.decode(UserProfile.self, from: data)
-            logger.info("Read default profile containing \(profile.cTable.count) conversation(s)")
+            logger.info("Read default profile containing \(profile.whisperTable.count) whisper and \(profile.listenTable.count) listen conversation(s)")
             return profile
         }
         catch (let err) {
@@ -155,7 +190,7 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
             let encoder = JSONEncoder()
             let data = try encoder.encode(self)
             try data.write(to: fileUrl)
-            logger.info("Wrote default profile containing \(self.cTable.count) conversation(s)")
+            logger.info("Wrote default profile containing \(self.whisperTable.count) whisper and \(self.listenTable.count) listen conversation(s)")
         }
         catch (let err) {
             logger.error("Failure to write default profile: \(err)")

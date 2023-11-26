@@ -19,7 +19,7 @@ struct PreferenceData {
     #else
     static var whisperServer = "https://whisper.clickonetwo.io"
     #endif
-    static func publisherUrlToSessionId(url: String) -> String? {
+    static func publisherUrlToConversationId(url: String) -> String? {
         let publisherRegex = /https:\/\/(stage\.)?whisper.clickonetwo.io\/subscribe\/([-a-zA-Z0-9]{36})/
         guard let match = url.wholeMatch(of: publisherRegex) else {
             return nil
@@ -30,13 +30,13 @@ struct PreferenceData {
         return "\(whisperServer)/subscribe/\(conversationId)"
     }
     
-    // device ID for this device
-    static var deviceId: String {
-        if let id = defaults.string(forKey: "whisper_device_id") {
+    // server (and Ably) client ID for this device
+    static var clientId: String {
+        if let id = defaults.string(forKey: "whisper_client_id") {
             return id
         } else {
             let id = UUID().uuidString
-            defaults.setValue(id, forKey: "whisper_device_id")
+            defaults.setValue(id, forKey: "whisper_client_id")
             return id
         }
     }
@@ -52,30 +52,30 @@ struct PreferenceData {
     // and it rotates the secret when that happens.  We sign auth requests
     // with the current secret, but the server allows use of the prior
     // secret as a one-time fallback when we've gone out of sync.
-    static func lastDeviceSecret() -> String {
-        if let prior = defaults.string(forKey: "whisper_last_device_secret") {
+    static func lastClientSecret() -> String {
+        if let prior = defaults.string(forKey: "whisper_last_client_secret") {
             return prior
         } else {
             let prior = makeSecret()
-            defaults.setValue(prior, forKey: "whisper_last_device_secret")
+            defaults.setValue(prior, forKey: "whisper_last_client_secret")
             return prior
         }
     }
-    static func deviceSecret() -> String? {
-        if let current = defaults.string(forKey: "whisper_device_secret") {
+    static func clientSecret() -> String? {
+        if let current = defaults.string(forKey: "whisper_client_secret") {
             return current
         } else {
-            let prior = lastDeviceSecret()
-            defaults.setValue(prior, forKey: "whisper_device_secret")
+            let prior = lastClientSecret()
+            defaults.setValue(prior, forKey: "whisper_client_secret")
             return prior
         }
     }
     static func updateClientSecret(_ secret: String) {
         // if the new secret is different than the old secret, save the old secret
-        if let current = defaults.string(forKey: "whisper_device_secret"), secret != current {
-            defaults.setValue(current, forKey: "whisper_last_device_secret")
+        if let current = defaults.string(forKey: "whisper_client_secret"), secret != current {
+            defaults.setValue(current, forKey: "whisper_last_client_secret")
         }
-        defaults.setValue(secret, forKey: "whisper_device_secret")
+        defaults.setValue(secret, forKey: "whisper_client_secret")
     }
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
@@ -101,31 +101,6 @@ struct PreferenceData {
         set (new) { defaults.setValue(new, forKey: "speak_when_listening_setting") }
     }
 
-    // user name and session memory
-    private static var session_name: String = ""
-    static func userName() -> String {
-        var name = session_name
-        if name.isEmpty {
-            if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
-                name = defaults.string(forKey: "session_name") ?? ""
-            }
-        } else {
-            // this might seem unnecessary, but it's needed in case the setting was changed
-            // *after* the session name was set.  In that case we need to save the current
-            // session name for the next session.
-            if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
-                defaults.setValue(name, forKey: "session_name")
-            }
-        }
-        return name
-    }
-    static func updateUserName(_ name: String) {
-        session_name = name
-        if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
-            defaults.setValue(name, forKey: "session_name")
-        }
-    }
-    
     // require Bluetooth listeners to pair?
     static func requireAuthentication() -> Bool {
         let result = defaults.bool(forKey: "listener_authentication_preference")

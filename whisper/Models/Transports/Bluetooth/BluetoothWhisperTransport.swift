@@ -141,7 +141,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         let characteristic = request.characteristic
         if characteristic.uuid == BluetoothData.whisperNameUuid {
             logger.log("Request is for name")
-            request.value = Data(PreferenceData.userName().utf8)
+            request.value = Data(UserProfile.shared.username.utf8)
             factory.respondToReadRequest(request: request, withCode: .success)
         } else if characteristic.uuid == BluetoothData.textUuid {
             logger.log("Request is for complete text")
@@ -150,10 +150,10 @@ final class BluetoothWhisperTransport: PublishTransport {
                 factory.respondToReadRequest(request: request, withCode: .insufficientAuthorization)
                 return
             }
-            // in this transport, the "request to read" is interpreted as a full replay request
-            let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "all")
+            // in this transport, the "request to read" is interpreted as a live text request
+            let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: TextProtocol.ReadType.live)
             // acknowledge the read request (always done at the transport level)
-            request.value = TextProtocol.ProtocolChunk.acknowledgeRead(hint: "all").toData()
+            request.value = TextProtocol.ProtocolChunk.acknowledgeRead(hint: TextProtocol.ReadType.live).toData()
             factory.respondToReadRequest(request: request, withCode: .success)
             receivedChunkSubject.send((remote: listener, chunk: chunk))
         } else if request.characteristic.uuid == BluetoothData.disconnectUuid {

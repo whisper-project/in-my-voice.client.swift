@@ -14,14 +14,14 @@ enum TcpAuthenticatorError: Error {
 
 final class TcpAuthenticator {
     private var mode: OperatingMode
-    private var publisherId: String
-    private var clientId = PreferenceData.deviceId
+    private var conversationId: String
+    private var clientId = PreferenceData.clientId
     private var client: ARTRealtime?
     private var failureCallback: (String) -> Void
     
-    init(mode: OperatingMode, publisherId: String, callback: @escaping (String) -> Void) {
+    init(mode: OperatingMode, conversationId: String, callback: @escaping (String) -> Void) {
         self.mode = mode
-        self.publisherId = publisherId
+        self.conversationId = conversationId
         self.failureCallback = callback
     }
     
@@ -45,7 +45,7 @@ final class TcpAuthenticator {
     }
     
     func createJWT() -> String? {
-        guard let secret = PreferenceData.deviceSecret(),
+        guard let secret = PreferenceData.clientSecret(),
               let secretData = Data(base64Encoded: Data(secret.utf8)) else {
             logger.error("No secret data received from whisper-server")
             failureCallback("Can't receive notifications from the whisper server.  Please quit and restart the app.")
@@ -58,7 +58,8 @@ final class TcpAuthenticator {
             return try jwt.sign(using: signer)
         }
         catch let error {
-            fatalError("Can't create JWT for authentication: \(error)")
+            logger.error("Can't create JWT for authentication: \(error)")
+            return nil
         }
     }
     
@@ -77,13 +78,14 @@ final class TcpAuthenticator {
         let value = [
             "clientId": clientId,
             "activity": mode == .whisper ? "publish" : "subscribe",
-            "publisherId": publisherId,
-            "userName": PreferenceData.userName(),
+            "conversationId": conversationId,
+            "profileId": UserProfile.shared.id,
+            "userName": UserProfile.shared.username,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for \(activity) token request call")
         }
-        guard let url = URL(string: PreferenceData.whisperServer + "/api/v1/pubSubTokenRequest") else {
+        guard let url = URL(string: PreferenceData.whisperServer + "/api/v2/pubSubTokenRequest") else {
             fatalError("Can't create URL for \(activity) token request call")
         }
         var request = URLRequest(url: url)

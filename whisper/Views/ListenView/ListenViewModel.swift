@@ -129,7 +129,7 @@ final class ListenViewModel: ObservableObject {
         }
         logger.log("Requesting re-read of live text")
         resetInProgress = true
-        let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: "live")
+        let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: TextProtocol.ReadType.live)
         transport.send(remote: whisperer!, chunks: [chunk])
     }
     

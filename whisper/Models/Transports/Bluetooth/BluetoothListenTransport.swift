@@ -202,7 +202,7 @@ final class BluetoothListenTransport: SubscribeTransport {
         } else {
             fatalError("Whisper service has no disconnect characteristic")
         }
-        let idAndName = "\(BluetoothData.deviceId)|\(PreferenceData.userName())"
+        let idAndName = "\(BluetoothData.deviceId)|\(UserProfile.shared.username)"
         peripheral.writeValue(Data(idAndName.utf8), for: remote.listenNameCharacteristic!, type: .withResponse)
         peripheral.readValue(for: remote.whisperNameCharacteristic!)
     }
