@@ -39,7 +39,7 @@ protocol Transport {
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> { get }
     var dropRemoteSubject: PassthroughSubject<Remote, Never> { get }
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> { get }
+    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> { get }
 
     func start(failureCallback: @escaping (String) -> Void)
     func stop()
@@ -47,13 +47,13 @@ protocol Transport {
     func goToBackground()
     func goToForeground()
     
-    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk])
+    func send(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk])
 
     func drop(remote: Remote)
 }
 
 protocol PublishTransport: Transport {
-    func publish(chunks: [TextProtocol.ProtocolChunk])
+    func publish(chunks: [WhisperProtocol.ProtocolChunk])
 }
 
 protocol SubscribeTransport: Transport {

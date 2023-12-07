@@ -12,7 +12,7 @@ final class ComboWhisperTransport: PublishTransport {
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
+    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting combo whisper transport")
@@ -42,7 +42,7 @@ final class ComboWhisperTransport: PublishTransport {
         manualTransport?.goToForeground()
     }
     
-    func send(remote: Listener, chunks: [TextProtocol.ProtocolChunk]) {
+    func send(remote: Listener, chunks: [WhisperProtocol.ProtocolChunk]) {
         guard let remote = listeners[remote.id] else {
             fatalError("Targeting a remote that's not a listener: \(remote.id)")
         }
@@ -66,7 +66,7 @@ final class ComboWhisperTransport: PublishTransport {
         }
     }
     
-    func publish(chunks: [TextProtocol.ProtocolChunk]) {
+    func publish(chunks: [WhisperProtocol.ProtocolChunk]) {
         autoTransport?.publish(chunks: chunks)
         manualTransport?.publish(chunks: chunks)
     }
@@ -197,7 +197,7 @@ final class ComboWhisperTransport: PublishTransport {
         dropRemoteSubject.send(removed)
     }
     
-    private func receiveChunk(_ pair: (remote: any TransportRemote, chunk: TextProtocol.ProtocolChunk)) {
+    private func receiveChunk(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
         guard let listener = listeners[pair.remote.id] else {
             logger.error("Ignoring chunk from unknown remote \(pair.remote.id) with name \(pair.remote.name)")
             return

@@ -9,7 +9,7 @@ import Foundation
 /// the whisperer to the listeners.  That's still a goal, but it has been enhanced to handle
 /// invites, conversation IDs, and communication controls between whisperer and listener.
 /// See the design docs for more detail.
-final class TextProtocol {
+final class WhisperProtocol {
     enum ControlOffset: Int, CustomStringConvertible {
         /// text control messages
         case newline = -1           // Shift current live text to past text (no packet data)
@@ -20,17 +20,19 @@ final class TextProtocol {
         case clearHistory = -6      // Tell Listener to clear their history.
         
         /// sound control messages
-        case playSound = -10         // Play the sound named by the packet data.
-        case playSpeech = -11        // Generate speech for the packet data.
+        case playSound = -10        // Play the sound named by the packet data.
+        case playSpeech = -11       // Generate speech for the packet data.
         
-        /// presence control messages - packet data for all these is the client info
-        case offerInvite = -20      // Whisperer offers invite to conversation in the blind.
-        case requestInvite = -21    // Listeners requests an invite to join a conversation.
-        case sendInvite = -22       // Whisperer sends a requested invite.
-        case refuseInvite = -23     // Whisperer refuses a requested invite.
-        case revokeInvite = -24     // Whisperer tells Listener they must leave conversation.
-        case joining = -25          // An allowed whisperer or listener is joining the conversation.
-        case dropping = -26         // A whisperer or listener is dropping from the conversation.
+        /// handshake control messages - packet data for all these is the `ClientInfo`
+        case whisperOffer = -20     // Whisperer offers a conversation to listener
+        case listenRequest = -21    // Listener requests to join a conversation
+        case listenAuthYes = -22    // Whisperer authorizes Listener to join a conversation.
+        case listenAuthNo = -23     // Whisperer doesn't authorize Listener to join a conversation.
+        case joining = -24          // An allowed listener is joining the conversation.
+        case dropping = -25         // A whisperer or listener is dropping from the conversation.
+        
+        /// discovery control messages
+        case listenOffer = -30      // A Listener is looking to rejoin a conversation: packet data is client ID and profile ID.
 
         var description: String {
             switch self {
@@ -50,20 +52,20 @@ final class TextProtocol {
                 return "play sound"
             case .playSpeech:
                 return "play speech"
-            case .offerInvite:
-                return "offer invite"
-            case .requestInvite:
-                return "request invite"
-            case .sendInvite:
-                return "send invite"
-            case .refuseInvite:
-                return "refuse invite"
-            case .revokeInvite:
-                return "revoked invite"
+            case .whisperOffer:
+                return "whisper offer"
+            case .listenRequest:
+                return "listen request"
+            case .listenAuthYes:
+                return "listen authorization"
+            case .listenAuthNo:
+                return "listen deauthorization"
             case .joining:
                 return "joining"
             case .dropping:
                 return "dropping"
+            case .listenOffer:
+                return "listen offer"
             }
         }
     }
@@ -79,24 +81,26 @@ final class TextProtocol {
     /// Client info as passed in the packet data of invites
     struct ClientInfo {
         var conversationId: String
+        var conversationName: String
         var clientId: String
         var profileId: String
         var username: String
         
         func toString() -> String {
-            return "\(conversationId)|\(clientId)|\(profileId)|\(username)"
+            return "\(conversationId)|\(conversationName)\(clientId)|\(profileId)|\(username)"
         }
         
         static func fromString(_ s: String) -> ClientInfo? {
             let parts = s.split(separator: "|")
-            if parts.count != 4 {
+            if parts.count != 5 {
                 logger.error("Malformed TextProtocol.ClientInfo data: \(s))")
                 return nil
             }
             return ClientInfo(conversationId: String(parts[0]),
-                              clientId: String(parts[1]),
-                              profileId: String(parts[2]),
-                              username: String(parts[3]))
+                              conversationName: String(parts[1]),
+                              clientId: String(parts[2]),
+                              profileId: String(parts[3]),
+                              username: String(parts[4]))
         }
     }
     
@@ -157,7 +161,7 @@ final class TextProtocol {
         }
         
         func isPresenceMessage() -> Bool {
-            return (offset <= ControlOffset.offerInvite.rawValue &&
+            return (offset <= ControlOffset.whisperOffer.rawValue &&
                     offset >= ControlOffset.dropping.rawValue)
         }
         
@@ -195,11 +199,11 @@ final class TextProtocol {
         }
         
         static func requestInvite(conversationId: String) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.requestInvite.rawValue, conversationId: conversationId)
+            return presenceChunk(offset: ControlOffset.whisperAccept.rawValue, conversationId: conversationId)
         }
         
         static func sendInvite(conversationId: String) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.sendInvite.rawValue, conversationId: conversationId)
+            return presenceChunk(offset: ControlOffset.whisperAccept.rawValue, conversationId: conversationId)
         }
         
         static func refuseInvite(conversationId: String) -> ProtocolChunk {

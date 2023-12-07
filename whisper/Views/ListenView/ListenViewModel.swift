@@ -129,7 +129,7 @@ final class ListenViewModel: ObservableObject {
         }
         logger.log("Requesting re-read of live text")
         resetInProgress = true
-        let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: TextProtocol.ReadType.live)
+        let chunk = WhisperProtocol.ProtocolChunk.replayRequest(hint: WhisperProtocol.ReadType.live)
         transport.send(remote: whisperer!, chunks: [chunk])
     }
     
@@ -161,7 +161,7 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    private func receiveChunk(_ pair: (remote: Remote, chunk: TextProtocol.ProtocolChunk)) {
+    private func receiveChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
         guard pair.remote === whisperer else {
             logger.error("Ignoring chunk received from non-whisperer \(pair.remote.id)")
             return
@@ -186,7 +186,7 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    private func processChunk(_ chunk: TextProtocol.ProtocolChunk) {
+    private func processChunk(_ chunk: WhisperProtocol.ProtocolChunk) {
         if chunk.isSound() {
             logger.log("Received request to play sound '\(chunk.text)'")
             playSound(chunk.text)
@@ -223,7 +223,7 @@ final class ListenViewModel: ObservableObject {
                 readLiveText()
             } else {
 //                logger.debug("Got diff: live text[\(chunk.offset)...] updated to '\(chunk.text)'")
-                liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
+                liveText = WhisperProtocol.applyDiff(old: liveText, chunk: chunk)
             }
         }
     }

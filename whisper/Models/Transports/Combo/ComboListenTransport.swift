@@ -12,7 +12,7 @@ final class ComboListenTransport: SubscribeTransport {
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
+    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
         logger.info("Starting combo listen transport")
@@ -39,7 +39,7 @@ final class ComboListenTransport: SubscribeTransport {
         manualTransport?.goToForeground()
     }
     
-    func send(remote: Whisperer, chunks: [TextProtocol.ProtocolChunk]) {
+    func send(remote: Whisperer, chunks: [WhisperProtocol.ProtocolChunk]) {
         guard let remote = whisperers[remote.id] else {
             fatalError("Targeting a remote that's not a whisperer: \(remote.id)")
         }
@@ -161,7 +161,7 @@ final class ComboListenTransport: SubscribeTransport {
         dropRemoteSubject.send(removed)
     }
     
-    private func receiveChunk(_ pair: (remote: any TransportRemote, chunk: TextProtocol.ProtocolChunk)) {
+    private func receiveChunk(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
         guard let whisperer = whisperers[pair.remote.id] else {
             logger.error("Ignoring chunk from unknown remote \(pair.remote.id) with name \(pair.remote.name)")
             return

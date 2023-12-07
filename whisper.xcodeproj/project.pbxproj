@@ -38,7 +38,7 @@
 		377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711D2A95CE5E009B416F /* ComboFactory.swift */; };
 		377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */; };
 		377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711F2A95CEAC009B416F /* ComboListenTransport.swift */; };
-		378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378A8E1629C554F20097F15A /* TextProtocol.swift */; };
+		378A8E1729C554F20097F15A /* WhisperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378A8E1629C554F20097F15A /* WhisperProtocol.swift */; };
 		379570CD29EA314A0033CF14 /* air-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CC29EA313D0033CF14 /* air-horn.caf */; };
 		379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CA29EA313D0033CF14 /* bike-bell.caf */; };
 		379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CB29EA313D0033CF14 /* bike-horn.caf */; };
@@ -112,7 +112,7 @@
 		377D711D2A95CE5E009B416F /* ComboFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboFactory.swift; sourceTree = "<group>"; };
 		377D711F2A95CEAC009B416F /* ComboListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboListenTransport.swift; sourceTree = "<group>"; };
 		377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboWhisperTransport.swift; sourceTree = "<group>"; };
-		378A8E1629C554F20097F15A /* TextProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextProtocol.swift; sourceTree = "<group>"; };
+		378A8E1629C554F20097F15A /* WhisperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperProtocol.swift; sourceTree = "<group>"; };
 		379570CA29EA313D0033CF14 /* bike-bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-bell.caf"; sourceTree = "<group>"; };
 		379570CB29EA313D0033CF14 /* bike-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-horn.caf"; sourceTree = "<group>"; };
 		379570CC29EA313D0033CF14 /* air-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "air-horn.caf"; sourceTree = "<group>"; };
@@ -291,7 +291,7 @@
 				3771F83429DD2F900011419E /* FontSizes.swift */,
 				377D71142A913E2E009B416F /* PreferenceData.swift */,
 				37C5142329CA2B44001A121B /* PastTextModel.swift */,
-				378A8E1629C554F20097F15A /* TextProtocol.swift */,
+				378A8E1629C554F20097F15A /* WhisperProtocol.swift */,
 				37CBBD0B2AF8CAC7006AE49F /* UserProfile.swift */,
 				37F8C26C2A87DF23004DED77 /* Transports */,
 			);
@@ -548,7 +548,7 @@
 				377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */,
 				37B6237629F78AA500213790 /* WhisperersView.swift in Sources */,
 				37F8C26E2A87DFA7004DED77 /* TransportProtocol.swift in Sources */,
-				378A8E1729C554F20097F15A /* TextProtocol.swift in Sources */,
+				378A8E1729C554F20097F15A /* WhisperProtocol.swift in Sources */,
 				37763D2629AC8D550051CFE5 /* ListenView.swift in Sources */,
 				377D710B2A8EBE16009B416F /* BluetoothListenTransport.swift in Sources */,
 				377D71122A913C8F009B416F /* TcpWhisperTransport.swift in Sources */,

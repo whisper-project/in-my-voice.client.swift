@@ -63,7 +63,7 @@ final class WhisperViewModel: ObservableObject {
         guard old != new else {
             return liveText
         }
-        let chunks = TextProtocol.diffLines(old: old, new: new)
+        let chunks = WhisperProtocol.diffLines(old: old, new: new)
         for chunk in chunks {
             if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
@@ -72,7 +72,7 @@ final class WhisperViewModel: ObservableObject {
                 }
                 liveText = ""
             } else {
-                liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
+                liveText = WhisperProtocol.applyDiff(old: liveText, chunk: chunk)
             }
         }
         transport.publish(chunks: chunks)
@@ -90,7 +90,7 @@ final class WhisperViewModel: ObservableObject {
         if PreferenceData.speakWhenWhispering {
             playSoundLocally(soundName)
         }
-        let chunk = TextProtocol.ProtocolChunk.sound(soundName)
+        let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
         transport.publish(chunks: [chunk])
     }
     
@@ -101,7 +101,7 @@ final class WhisperViewModel: ObservableObject {
             return
         }
         let soundName = PreferenceData.alertSound
-        let chunk = TextProtocol.ProtocolChunk.sound(soundName)
+        let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
         transport.send(remote: remote, chunks: [chunk])
     }
     
@@ -156,12 +156,12 @@ final class WhisperViewModel: ObservableObject {
     }
 
     // send live text to a specific listener who requests it
-    private func sendAllText(_ pair: (remote: Remote, chunk: TextProtocol.ProtocolChunk)) {
+    private func sendAllText(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
         guard let remote = remotes[pair.remote.id] else {
             logger.warning("Read requested by unknown remote \(pair.remote.id)")
             return
         }
-        let chunks = [TextProtocol.ProtocolChunk.fromLiveText(text: liveText)]
+        let chunks = [WhisperProtocol.ProtocolChunk.fromLiveText(text: liveText)]
         transport.send(remote: remote, chunks: chunks)
     }
     

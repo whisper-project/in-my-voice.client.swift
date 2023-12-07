@@ -14,7 +14,7 @@ final class BluetoothListenTransport: SubscribeTransport {
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
+    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
         startDiscovery()
@@ -43,7 +43,7 @@ final class BluetoothListenTransport: SubscribeTransport {
         startDiscovery()
     }
     
-    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
+    func send(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
         guard chunks.count == 1, chunks[0].isReplayRequest() else {
             fatalError("Bluetooth listeners can only send a single replay request packet, nothing else")
         }
@@ -268,7 +268,7 @@ final class BluetoothListenTransport: SubscribeTransport {
                 drop(remote: publisher!)
             } else if triple.1.uuid == publisher!.textCharacteristic!.uuid {
                 if let textData = triple.1.value,
-                   let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
+                   let chunk = WhisperProtocol.ProtocolChunk.fromData(textData) {
                     receivedChunkSubject.send((remote: publisher!, chunk: chunk))
                 } else {
                     logger.error("Ignoring non-text-protocol data received from publisher: \(String(describing: triple.1.value))")

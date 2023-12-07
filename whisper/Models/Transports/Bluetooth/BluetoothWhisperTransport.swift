@@ -12,7 +12,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
+    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting Bluetooth whisper transport...")
@@ -47,7 +47,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         startDiscovery()
     }
     
-    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
+    func send(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
         if var existing = directedChunks[remote.central] {
             existing.append(contentsOf: chunks)
         } else {
@@ -71,7 +71,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         dropRemoteSubject.send(removed)
     }
     
-    func publish(chunks: [TextProtocol.ProtocolChunk]) {
+    func publish(chunks: [WhisperProtocol.ProtocolChunk]) {
         for chunk in chunks {
             pendingChunks.append(chunk)
         }
@@ -151,9 +151,9 @@ final class BluetoothWhisperTransport: PublishTransport {
                 return
             }
             // in this transport, the "request to read" is interpreted as a live text request
-            let chunk = TextProtocol.ProtocolChunk.replayRequest(hint: TextProtocol.ReadType.live)
+            let chunk = WhisperProtocol.ProtocolChunk.replayRequest(hint: WhisperProtocol.ReadType.live)
             // acknowledge the read request (always done at the transport level)
-            request.value = TextProtocol.ProtocolChunk.acknowledgeRead(hint: TextProtocol.ReadType.live).toData()
+            request.value = WhisperProtocol.ProtocolChunk.acknowledgeRead(hint: WhisperProtocol.ReadType.live).toData()
             factory.respondToReadRequest(request: request, withCode: .success)
             receivedChunkSubject.send((remote: listener, chunk: chunk))
         } else if request.characteristic.uuid == BluetoothData.disconnectUuid {
@@ -235,8 +235,8 @@ final class BluetoothWhisperTransport: PublishTransport {
     private var factory = BluetoothFactory.shared
     private var remotes: [CBCentral: Remote] = [:]
     private var liveText: String = ""
-    private var pendingChunks: [TextProtocol.ProtocolChunk] = []
-    private var directedChunks: [CBCentral: [TextProtocol.ProtocolChunk]] = [:]
+    private var pendingChunks: [WhisperProtocol.ProtocolChunk] = []
+    private var directedChunks: [CBCentral: [WhisperProtocol.ProtocolChunk]] = [:]
     private var advertisingInProgress = false
     private weak var adTimer: Timer?
     private var cancellables: Set<AnyCancellable> = []

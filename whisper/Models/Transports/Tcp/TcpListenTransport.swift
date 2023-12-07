@@ -13,7 +13,7 @@ final class TcpListenTransport: SubscribeTransport {
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
+    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP candidate transport")
@@ -34,7 +34,7 @@ final class TcpListenTransport: SubscribeTransport {
     func goToForeground() {
     }
     
-    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
+    func send(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
         guard let target = candidates[remote.id] else {
             logger.error("Ignoring request to send chunk to a non-candidate: \(remote.id) (\(remote.name))")
             return
@@ -160,12 +160,12 @@ final class TcpListenTransport: SubscribeTransport {
         controlChannel?.attach()
         controlChannel?.subscribe(clientId, callback: receiveMessage)
         controlChannel?.subscribe("all", callback: receiveMessage)
-        let chunk = TextProtocol.ProtocolChunk.requestInvite(conversationId: conversationId)
+        let chunk = WhisperProtocol.ProtocolChunk.requestInvite(conversationId: conversationId)
         controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
     }
     
     private func closeChannels() {
-        let chunk = TextProtocol.ProtocolChunk.dropping(conversationId: conversationId)
+        let chunk = WhisperProtocol.ProtocolChunk.dropping(conversationId: conversationId)
         controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         whisperChannel?.detach()
         whisperChannel = nil
@@ -182,23 +182,23 @@ final class TcpListenTransport: SubscribeTransport {
             return
         }
         guard let payload = message.data as? String,
-              let chunk = TextProtocol.ProtocolChunk.fromString(payload)
+              let chunk = WhisperProtocol.ProtocolChunk.fromString(payload)
         else {
             logger.error("Ignoring a message with a non-chunk payload: \(String(describing: message))")
             return
         }
         if chunk.isPresenceMessage() {
-            guard let info = TextProtocol.ClientInfo.fromString(chunk.text),
+            guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text),
                   info.conversationId == conversationId,
                   info.clientId == message.clientId
             else {
                 logger.error("Ignoring a malformed or misdirected invite: \(chunk.text))")
                 return
             }
-            if let value = TextProtocol.ControlOffset(rawValue: chunk.offset) {
+            if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
                 logger.info("Received a \(value) message from \(info.clientId) profile \(info.profileId) (\(info.username))")
                 switch value {
-                case .sendInvite, .requestInvite:
+                case .whisperAccept, .whisperAccept:
                     if candidates[info.clientId] == nil {
                         logger.info("Adding candidate from a \(value) message")
                         let remote = Remote(id: info.clientId, name: info.username)
