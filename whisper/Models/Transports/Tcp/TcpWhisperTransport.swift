@@ -172,7 +172,8 @@ final class TcpWhisperTransport: PublishTransport {
             return
         }
         guard remoteId != clientId else {
-            logger.log("Ignoring a presence message about this client")
+            let action = Self.ablyActionName(message)
+            logger.log("Ignoring a presence message about this client: \(action)")
             return
         }
         switch message.action {
@@ -187,6 +188,9 @@ final class TcpWhisperTransport: PublishTransport {
             if droppedListeners.contains(remoteId) {
                 // they should not have come back!
                 drop(remote: remote)
+            } else {
+                // web remotes need a presence message from us after they've entered
+                whisperChannel?.presence.update(PreferenceData.userName())
             }
         case .leave:
             guard let remote = listeners.removeValue(forKey: remoteId) else {
@@ -207,6 +211,23 @@ final class TcpWhisperTransport: PublishTransport {
             logger.warning("Ignoring absent presence message for \(remoteId): \(String(describing: message))")
         @unknown default:
             logger.warning("Ignoring unknown presence message for \(remoteId): \(String(describing: message))")
+        }
+    }
+    
+    static func ablyActionName(_ message: ARTPresenceMessage) -> String {
+        switch (message.action) {
+        case .absent:
+            return "absent"
+        case .present:
+            return "present"
+        case .enter:
+            return "enter"
+        case .leave:
+            return "leave"
+        case .update:
+            return "update"
+        @unknown default:
+            return "unknown"
         }
     }
 }
