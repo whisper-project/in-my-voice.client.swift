@@ -48,8 +48,9 @@ final class TcpWhisperTransport: PublishTransport {
             logger.error("Ignoring request to drop a non-listener: \(remote.id)")
             return
         }
+        logger.info("Dropping listener \(remote.name) (\(remote.id))")
         let chunk = TextProtocol.ProtocolChunk.dropRequest(id: remote.id)
-        whisperChannel?.publish(remote.id, data: chunk, callback: receiveErrorInfo)
+        whisperChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
         droppedListeners.insert(remote.id)
     }
     
