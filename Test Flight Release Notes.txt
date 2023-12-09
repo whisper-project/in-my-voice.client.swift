@@ -139,3 +139,10 @@ This build fixes one bug and supports a better experience listening from a web b
 - The bug that was keeping Whisperers from dropping unwanted Listeners has been fixed.
 
 - The web listener now disconnects automatically whenever the Whisperer disconnects or when the Whisperer drops them.  So web listeners will no longer hang around on the Whisperer's sole conversation.
+
+BUILD 45 (external)
+This build fixes one bug and supports a better experience when conversations end:
+
+- The bug that was keeping Whisperers from dropping unwanted Listeners has been fixed. Now the Whisperer can drop both app listeners and web Listeners from the conversation.
+
+- Listeners now disconnect automatically whenever the Whisperer disconnects.  So Listeners will no longer hang around on the Whisperer's sole conversation.
