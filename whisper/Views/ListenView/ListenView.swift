@@ -100,6 +100,11 @@ struct ListenView: View {
         } message: {
             Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
         }
+        .alert("Conversation Ended", isPresented: $model.conversationEnded) {
+            Button("OK") { mode = .ask }
+        } message: {
+            Text("The Whisperer has ended the conversation")
+        }
         .onAppear {
             logger.log("ListenView appeared")
             self.model.start()
