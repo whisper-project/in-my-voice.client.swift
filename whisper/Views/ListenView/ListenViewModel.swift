@@ -15,6 +15,7 @@ final class ListenViewModel: ObservableObject {
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var connectionError: Bool = false
+    @Published var conversationEnded: Bool = false
     @Published var connectionErrorDescription: String = "The connection to the whisperer was lost"
     @Published var showStatusDetail: Bool = false
     @Published var candidates: [Remote] = []
@@ -151,9 +152,10 @@ final class ListenViewModel: ObservableObject {
         if removed === whisperer {
             logger.info("Dropped the whisperer \(removed.id)")
             whisperer = nil
-            // we have lost the whisperer, transport will start looking for a new one
+            // we have lost the whisperer, stop listening
             resetTextForConnection()
             refreshStatusText()
+            conversationEnded = true
         } else {
             logger.info("Dropped candidate \(removed.id) with name \(removed.name)")
         }
