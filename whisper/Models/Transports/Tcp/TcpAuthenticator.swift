@@ -83,7 +83,7 @@ final class TcpAuthenticator {
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for \(activity) token request call")
         }
-        guard let url = URL(string: PreferenceData.whisperServer + "/api/pubSubTokenRequest") else {
+        guard let url = URL(string: PreferenceData.whisperServer + "/api/v1/pubSubTokenRequest") else {
             fatalError("Can't create URL for \(activity) token request call")
         }
         var request = URLRequest(url: url)

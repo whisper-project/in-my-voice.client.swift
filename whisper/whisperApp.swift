@@ -134,7 +134,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
         }
-        guard let url = URL(string: PreferenceData.whisperServer + "/api/apnsToken") else {
+        guard let url = URL(string: PreferenceData.whisperServer + "/api/v1/apnsToken") else {
             fatalError("Can't create URL for device token call")
         }
         var request = URLRequest(url: url)
@@ -187,7 +187,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             guard let body = try? JSONSerialization.data(withJSONObject: value) else {
                 fatalError("Can't encode body for notification confirmation call")
             }
-            guard let url = URL(string: PreferenceData.whisperServer + "/api/apnsReceivedNotification") else {
+            guard let url = URL(string: PreferenceData.whisperServer + "/api/v1/apnsReceivedNotification") else {
                 fatalError("Can't create URL for notification confirmation call")
             }
             var request = URLRequest(url: url)

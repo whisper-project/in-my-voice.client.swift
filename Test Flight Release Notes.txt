@@ -132,3 +132,10 @@ This build makes preference changes recommended by the docs writer:
 - Reword the bluetooth pairing setting so it's clearer that it is controlled by the Whisperer.
 
 In addition, Bluetooth is no longer required in order to use Whisper.  If it's not available, the Listen button is disabled and a message is shown explaining why.  If neither Bluetooth nor Internet are available, both Whisper and Listen are disabled and a message is shown explaining why.  If Bluetooth is available but internet is not, no message is shown but the "Share Listen Link" button is disabled when whispering.
+
+BUILD 44 (external):
+This build fixes one bug and supports a better experience listening from a web browser:
+
+- The bug that was keeping Whisperers from dropping unwanted Listeners has been fixed.
+
+- The web listener now disconnects automatically whenever the Whisperer disconnects or when the Whisperer drops them.  So web listeners will no longer hang around on the Whisperer's sole conversation.
