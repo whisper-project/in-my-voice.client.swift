@@ -73,22 +73,22 @@ struct whisperApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     @State var mode: OperatingMode = .ask
-    @State var publisherUrl: TransportUrl = nil
+    @State var conversation: Conversation? = nil
     @State var showWarning: Bool = false
     @State var warningMessage: String = ""
     
-    let username = UserProfile.shared.username
+    let profile = UserProfile.shared
 
     var body: some Scene {
         WindowGroup {
-            MainView(mode: $mode, publisherUrl: $publisherUrl)
+            MainView(mode: $mode, conversation: $conversation)
                 .onAppear {
                     if (mode != .listen) {
-                        publisherUrl = nil
+                        conversation = nil
                     }
                 }
                 .onOpenURL { urlObj in
-                    guard !UserProfile.shared.username.isEmpty else {
+                    guard !profile.username.isEmpty else {
                         warningMessage = "You must create your initial profile before you can listen."
                         showWarning = true
                         return
@@ -100,10 +100,9 @@ struct whisperApp: App {
                         return
                     }
                     let url = urlObj.absoluteString
-                    if PreferenceData.publisherUrlToConversationId(url: url) != nil {
+                    if let cid = PreferenceData.publisherUrlToConversationId(url: url) {
                         logger.log("Handling valid universal URL: \(url)")
-                        PreferenceData.lastSubscriberUrl = url
-                        publisherUrl = url
+						conversation = profile.conversationForInvite(cid)
                         mode = .listen
                     } else {
                         logger.warning("Ignoring invalid universal URL: \(url)")

@@ -23,7 +23,7 @@ final class WhisperProtocol {
         case playSound = -10        // Play the sound named by the packet data.
         case playSpeech = -11       // Generate speech for the packet data.
         
-        /// handshake control messages - packet data for all these is the `ClientInfo`
+        /// handshake control messages - packet data for all these is the [ClientInfo]
         case whisperOffer = -20     // Whisperer offers a conversation to listener
         case listenRequest = -21    // Listener requests to join a conversation
         case listenAuthYes = -22    // Whisperer authorizes Listener to join a conversation.
@@ -85,6 +85,7 @@ final class WhisperProtocol {
         var clientId: String
         var profileId: String
         var username: String
+        var contentId: String
         
         func toString() -> String {
             return "\(conversationId)|\(conversationName)\(clientId)|\(profileId)|\(username)"
@@ -92,7 +93,7 @@ final class WhisperProtocol {
         
         static func fromString(_ s: String) -> ClientInfo? {
             let parts = s.split(separator: "|")
-            if parts.count != 5 {
+            if parts.count != 6 {
                 logger.error("Malformed TextProtocol.ClientInfo data: \(s))")
                 return nil
             }
@@ -100,7 +101,8 @@ final class WhisperProtocol {
                               conversationName: String(parts[1]),
                               clientId: String(parts[2]),
                               profileId: String(parts[3]),
-                              username: String(parts[4]))
+                              username: String(parts[4]),
+                              contentId: String(parts[5]))
         }
     }
     
@@ -162,7 +164,11 @@ final class WhisperProtocol {
         
         func isPresenceMessage() -> Bool {
             return (offset <= ControlOffset.whisperOffer.rawValue &&
-                    offset >= ControlOffset.dropping.rawValue)
+                    offset >= ControlOffset.listenOffer.rawValue)
+        }
+        
+        func isListenOffer() -> Bool {
+            return offset == ControlOffset.listenOffer.rawValue
         }
         
         static func fromPastText(text: String) -> ProtocolChunk {
@@ -185,29 +191,49 @@ final class WhisperProtocol {
             return ProtocolChunk(offset: ControlOffset.requestReread.rawValue, text: hint.rawValue)
         }
         
-        private static func presenceChunk(offset: Int, conversationId: String) -> ProtocolChunk {
+        private static func presenceChunk(offset: Int, c: Conversation, contentId: String = "") -> ProtocolChunk {
             let profile = UserProfile.shared
-            let data = ClientInfo(conversationId: conversationId,
+            let data = ClientInfo(conversationId: c.id,
+                                  conversationName: c.name,
                                   clientId: PreferenceData.clientId,
                                   profileId: profile.id,
-                                  username: profile.username)
+                                  username: profile.username,
+                                  contentId: contentId)
             return ProtocolChunk(offset: offset, text: data.toString())
         }
         
-        static func dropping(conversationId: String) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.dropping.rawValue, conversationId: conversationId)
+        static func whisperOffer(c: Conversation) -> ProtocolChunk {
+            return presenceChunk(offset: ControlOffset.whisperOffer.rawValue, c: c)
         }
         
-        static func requestInvite(conversationId: String) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.whisperAccept.rawValue, conversationId: conversationId)
+        static func listenRequest(c: Conversation) -> ProtocolChunk {
+            return presenceChunk(offset: ControlOffset.listenRequest.rawValue, c: c)
         }
         
-        static func sendInvite(conversationId: String) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.whisperAccept.rawValue, conversationId: conversationId)
+        static func listenAuthYes(c: Conversation, contentId: String) -> ProtocolChunk {
+            return presenceChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c)
         }
         
-        static func refuseInvite(conversationId: String) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.refuseInvite.rawValue, conversationId: conversationId)
+        static func listenAuthNo(c: Conversation) -> ProtocolChunk {
+            return presenceChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c)
+        }
+        
+        static func joining(c: Conversation) -> ProtocolChunk {
+            return presenceChunk(offset: ControlOffset.joining.rawValue, c: c)
+        }
+        
+        static func dropping(c: Conversation) -> ProtocolChunk {
+            return presenceChunk(offset: ControlOffset.dropping.rawValue, c: c)
+        }
+        
+		static func listenOffer(_ c: Conversation? = nil) -> ProtocolChunk {
+			let info = ClientInfo(conversationId: c?.id ?? "",
+                                  conversationName: "",
+                                  clientId: PreferenceData.clientId,
+                                  profileId: UserProfile.shared.id,
+                                  username: "",
+                                  contentId: "")
+            return ProtocolChunk(offset: ControlOffset.listenOffer.rawValue, text: info.toString())
         }
         
         static func fromLiveTyping(text: String, start: Int) -> [ProtocolChunk] {

@@ -12,7 +12,7 @@ struct ChoiceView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Binding var mode: OperatingMode
-    @Binding var publisherUrl: TransportUrl
+    @Binding var conversation: Conversation?
     @Binding var transportStatus: TransportStatus
 
     @State private var username: String = ""
@@ -111,7 +111,7 @@ struct ChoiceView: View {
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
-                                publisherUrl = nil
+                                conversation = nil
                                 mode = .listen
                             }
                     )
@@ -189,7 +189,7 @@ struct ChoiceView: View {
     }
     
     func updateFromProfile() {
-        username = UserProfile.shared.username
+        username = profile.username
         newUsername = username
         if username.isEmpty {
         withAnimation {
@@ -206,8 +206,8 @@ struct ChoiceView: View {
         } else {
             newUsername = proposal
             username = proposal
-            UserProfile.shared.username = proposal
-            UserProfile.shared.saveAsDefault()
+            profile.username = proposal
+            profile.saveAsDefault()
             withAnimation {
                 showWhisperButtons = true
             }
@@ -215,19 +215,17 @@ struct ChoiceView: View {
     }
     
     func maybeWhisper(_ c: Conversation?) {
-        guard let c = c else {
-            showWhisperConversations = false
-            return
+        showWhisperConversations = false
+        if let c = c {
+            conversation = c
+            mode = .whisper
         }
-        let url = PreferenceData.publisherUrl(c.id)
-        publisherUrl = ComboFactory.shared.publisherForm(url)
-        mode = .whisper
     }
     
     func maybeListen(_ c: Conversation?) {
         showListenConversations = false
         if let c = c {
-            publisherUrl = PreferenceData.publisherUrl(c.id)
+            conversation = c
             mode = .listen
         }
     }
@@ -242,12 +240,8 @@ extension UIApplication {
     }
 }
 
-struct ChoiceView_Previews: PreviewProvider {
-    static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
-    static let publisherUrl = Binding<TransportUrl>(get: { nil }, set: { _ = $0 })
-    static let transportStatus = Binding<TransportStatus>( get: { .on }, set: { _ = $0 })
-
-    static var previews: some View {
-        ChoiceView(mode: mode, publisherUrl: publisherUrl, transportStatus: transportStatus)
-    }
+#Preview {
+    ChoiceView(mode: makeBinding(.ask),
+               conversation: makeBinding(nil),
+               transportStatus: makeBinding(.on))
 }

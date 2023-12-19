@@ -12,21 +12,21 @@ final class TcpFactory: TransportFactory {
     typealias Subscriber = TcpListenTransport
     
     static let shared = TcpFactory()
-    
+
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    func publisher(_ publisherUrl: TransportUrl) -> Publisher {
-        guard let url = publisherUrl else {
+    func publisher(_ conversation: Conversation?) -> Publisher {
+        guard let c = conversation else {
             fatalError("TCP whisper transport requires a whisper URL")
         }
-        return TcpWhisperTransport(url)
+        return TcpWhisperTransport(c)
     }
     
-    func subscriber(_ publisherUrl: TransportUrl) -> TcpListenTransport {
-        guard let url = publisherUrl else {
+    func subscriber(_ conversation: Conversation?) -> Subscriber {
+        guard let c = conversation else {
             fatalError("TCP listen transport requires a whisper URL")
         }
-        return TcpListenTransport(url)
+        return TcpListenTransport(c)
     }
     
     //MARK: private types, properties, and initialization

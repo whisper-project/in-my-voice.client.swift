@@ -15,62 +15,48 @@ struct WhisperProfileView: View {
     
     var body: some View {
         VStack(alignment: .center, spacing: 20) {
-            Text("\(Image(systemName: "icloud.and.arrow.up")) = Whisper, \(Image(systemName: "checkmark.square")) = Set Default, \(Image(systemName: "delete.left")) = Delete")
-                .font(FontSizes.fontFor(name: .small))
-            VStack(alignment: .leading) {
-                ForEach($conversations) { $c in
-                    HStack(spacing: 15) {
-                        TextField("Name", text: $c.name)
-                            .allowsTightening(true)
-                            .bold(c == defaultConversation)
-                            .submitLabel(.done)
-                            .onSubmit { updateProfile() }
-                        Spacer(minLength: 25)
-                        Button("Whisper", systemImage: "icloud.and.arrow.up") {
-                            logger.info("Hit whisper button on \(c.id) (\(c.name))")
-                            updateProfile()
-                            maybeWhisper?(c)
-                        }
-                        .labelStyle(.iconOnly)
-                        Button("Set Default", systemImage: "checkmark.square") {
-                            logger.info("Hit set default button on \(c.id) (\(c.name))")
-                            profile.whisperDefault = c
-                            updateProfile()
-                        }
-                        .labelStyle(.iconOnly)
-                        .disabled(c == defaultConversation)
-                        Button("Delete", systemImage: "delete.left") {
-                            logger.info("Hit delete button on \(c.id) (\(c.name))")
-                            profile.deleteWhisperConversation(c)
-                            updateProfile()
-                        }
-                    }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.borderless)
+            NavigationView {
+                List {
+					ForEach(conversations) { c in
+						NavigationLink(destination: WhisperProfileDetailView(c: c)) {
+							HStack(spacing: 15) {
+								Text(c.name)
+									.lineLimit(nil)
+									.bold(c == defaultConversation)
+								Spacer(minLength: 25)
+								Button("Whisper", systemImage: "icloud.and.arrow.up") {
+									logger.info("Hit whisper button on \(c.id) (\(c.name))")
+									maybeWhisper?(c)
+								}
+								.labelStyle(.iconOnly)
+								.buttonStyle(.bordered)
+							}
+						}
+					}
+					.onDelete { indexSet in
+						indexSet.forEach{ profile.deleteWhisperConversation(conversations[$0]) }
+						updateProfile()
+					}
                 }
             }
-            HStack {
-                Spacer()
-                Button("Cancel") {
-                    logger.info("Canceling whisper conversation choice")
-                    updateProfile()
-                    maybeWhisper?(nil)
-                }
-                Spacer()
-                Button("New") {
-                    logger.info("Creating new conversation")
-                    profile.addWhisperConversation()
-                    updateProfile()
-                }
-                Spacer()
-            }
+			.navigationTitle("Conversations")
+			.toolbar {
+				EditButton()
+				Button(action: addConversation, label: { Text("Add") } )
+			}
         }
         .padding(10)
         .onAppear {
             updateFromProfile()
         }
     }
-    
+
+	func addConversation() {
+		logger.info("Creating new conversation")
+		profile.addWhisperConversation()
+		updateProfile()
+	}
+
     func updateFromProfile() {
         conversations = profile.whisperConversations()
         defaultConversation = profile.whisperDefault

@@ -58,8 +58,6 @@ struct ListenersView: View {
     }
 }
 
-struct ListenersView_Previews: PreviewProvider {
-    static var previews: some View {
-        ListenersView(model: WhisperViewModel(nil))
-    }
+#Preview {
+	ListenersView(model: WhisperViewModel(UserProfile.shared.whisperDefault))
 }

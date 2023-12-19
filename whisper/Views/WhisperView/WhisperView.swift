@@ -11,7 +11,7 @@ struct WhisperView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
-    var publisherUrl: TransportUrl
+    var conversation: Conversation
 
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
@@ -20,10 +20,10 @@ struct WhisperView: View {
     @State private var magnify: Bool = false
     @State private var showStatusDetail: Bool = false
     
-    init(mode: Binding<OperatingMode>, publisherUrl: TransportUrl) {
+    init(mode: Binding<OperatingMode>, conversation: Conversation) {
         self._mode = mode
-        self.publisherUrl = publisherUrl
-        self._model = StateObject(wrappedValue: WhisperViewModel(publisherUrl))
+        self.conversation = conversation
+        self._model = StateObject(wrappedValue: WhisperViewModel(conversation))
     }
 
     var body: some View {
@@ -42,7 +42,7 @@ struct WhisperView: View {
                     .border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
                     .padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
-                StatusTextView(text: $model.statusText, mode: .whisper, publisherUrl: publisherUrl)
+                StatusTextView(text: $model.statusText, mode: .whisper, conversation: conversation)
                     .onTapGesture {
                         self.showStatusDetail = true
                     }
@@ -106,10 +106,6 @@ struct WhisperView: View {
     }
 }
 
-struct WhisperView_Previews: PreviewProvider {
-    static var mode: Binding<OperatingMode> = Binding(get: { .whisper }, set: { _ = $0 })
-
-    static var previews: some View {
-        WhisperView(mode: mode, publisherUrl: nil)
-    }
+#Preview {
+	WhisperView(mode: makeBinding(.whisper), conversation: UserProfile.shared.whisperDefault)
 }

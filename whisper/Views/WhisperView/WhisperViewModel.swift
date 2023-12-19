@@ -24,16 +24,16 @@ final class WhisperViewModel: ObservableObject {
     private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
-    init(_ publisherUrl: TransportUrl) {
+    init(_ c: Conversation) {
         logger.log("Initializing WhisperView model")
-        self.transport = ComboFactory.shared.publisher(publisherUrl)
+        self.transport = ComboFactory.shared.publisher(c)
         self.transport.addRemoteSubject
             .sink { [weak self] in self?.addListener($0) }
             .store(in: &cancellables)
         self.transport.dropRemoteSubject
             .sink { [weak self] in self?.removeListener($0) }
             .store(in: &cancellables)
-        self.transport.receivedChunkSubject
+        self.transport.contentSubject
             .sink { [weak self] in self?.sendAllText($0) }
             .store(in: &cancellables)
     }
@@ -102,7 +102,7 @@ final class WhisperViewModel: ObservableObject {
         }
         let soundName = PreferenceData.alertSound
         let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
-        transport.send(remote: remote, chunks: [chunk])
+        transport.sendContent(remote: remote, chunks: [chunk])
     }
     
     /// Drop a listener from the authorized list
@@ -162,7 +162,7 @@ final class WhisperViewModel: ObservableObject {
             return
         }
         let chunks = [WhisperProtocol.ProtocolChunk.fromLiveText(text: liveText)]
-        transport.send(remote: remote, chunks: chunks)
+        transport.sendContent(remote: remote, chunks: chunks)
     }
     
     // speak a set of words

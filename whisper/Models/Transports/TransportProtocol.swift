@@ -13,8 +13,6 @@ enum TransportStatus {
     case on
 }
 
-typealias TransportUrl = String?
-
 protocol TransportFactory {
     associatedtype Publisher: PublishTransport
     associatedtype Subscriber: SubscribeTransport
@@ -23,13 +21,14 @@ protocol TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> { get }
     
-    func publisher(_ publisherUrl: TransportUrl) -> Publisher
-    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber
+    func publisher(_ conversation: Conversation?) -> Publisher
+    func subscriber(_ conversation: Conversation?) -> Subscriber
 }
 
 protocol TransportRemote: Identifiable {
     var id: String { get }
     var name: String { get }
+    var authorized: Bool { get set }
 }
 
 typealias TransportSessionId = String
@@ -39,7 +38,8 @@ protocol Transport {
     
     var addRemoteSubject: PassthroughSubject<Remote, Never> { get }
     var dropRemoteSubject: PassthroughSubject<Remote, Never> { get }
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> { get }
+    var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> { get }
+    var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> { get }
 
     func start(failureCallback: @escaping (String) -> Void)
     func stop()
@@ -47,12 +47,13 @@ protocol Transport {
     func goToBackground()
     func goToForeground()
     
-    func send(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk])
+    func sendControl(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk])
 
     func drop(remote: Remote)
 }
 
 protocol PublishTransport: Transport {
+    func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk])
     func publish(chunks: [WhisperProtocol.ProtocolChunk])
 }
 

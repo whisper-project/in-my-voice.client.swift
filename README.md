@@ -39,22 +39,22 @@ The app currently supports two transport layers:
 
 A single conversation can utilize both transports, with some Listeners on Bluetooth and others on Ably.
 
-Establishment and teardown of connections between a Whisperer and Listeners takes place on one channel (called the _connection_ channel), and then content transfer from Whisperer to Listeners takes place on another channel (called the _content_ channel).  The separate authentication of the two channels is used to prevent Listeners who aren’t authorized from eavesdropping on a conversation.
+Establishment and teardown of connections between a Whisperer and Listeners takes place on one channel (called the _control_ channel), and then content transfer from Whisperer to Listeners takes place on another channel (called the _content_ channel).  The separate authentication of the two channels is used to prevent Listeners who aren’t authorized from eavesdropping on a conversation.
 
 The canonical sequence for establishing a new conversation between a Whisperer and a Listener goes as follows:
 
-1. The Listener sends the Whisperer a _listen offer_ control packet on the connection channel.  This packet contains their profile ID, but reveals nothing about their username.
-2. The Whisperer sends the Listener a *whisper offer* control packet on the connection channel. This contains the id and name of the conversation being offered as well as the Whisperer’s profile id and username.
-3. The Listener decides based on the offer information whether they want to participate in the conversation.  If they do, they respond with a *listen request* control packet, giving their profile id and name.
-4. The Whisperer sees the _listen request_ control packet and decides based on the request information whether they want to allow the Listener into the conversation:
-   1. If so, the Whisperer authorizes the Listener on the content channel and sends a _listen authorization_ control packet.
-   2. If not, the Whisperer sends a _listen deauthorization_ control packet.
+1. The Listener sends the Whisperer a _listen offer_ packet on the control channel.  This packet contains the listener’s profile ID but reveals nothing about the listener’s username.
+2. The Whisperer sends the Listener a *whisper offer* packet on the control channel. This contains the id and name of the conversation being offered as well as the Whisperer’s profile id and username.
+3. The Listener decides based on the offer information whether they want to participate in the conversation.  If they do, they respond with a *listen request* packet, giving their profile id and name.
+4. The Whisperer sees the _listen request_ packet and decides based on the request information whether they want to allow the Listener into the conversation:
+   1. If so, the Whisperer authorizes the Listener on the content channel and sends a _listen authorization_ packet.
+   2. If not, the Whisperer sends a _listen deauthorization_ packet.
 
-5. If the Listener receives a _listenAuthYes_ control packet, they connect to the content channel and send a _joining_ message on the conversation channel.
+5. If the Listener receives a _listen authorization_ packet, they connect to the content channel and send a _joining_ message on the conversation channel.
 
-Because a Whisperer can recognize an existing listener from their _listen offer_ control packet, the canonical sequence for a Listener re-joining a conversation to which they were already admitted is just steps 1, 4.1, and 5 from the above sequence.
+Because a Whisperer can recognize an existing listener from their _listen offer_ packet, the canonical sequence for a Listener re-joining a conversation to which they were already admitted is just steps 1, 4.1, and 5 from the above sequence.
 
-Whenever a Whisperer drops from a conversation, they send a _dropping_ control packet to let the Listeners know, and vice versa (Listeners who drop send a _dropping_ control packet to the Whisperer).
+Whenever a Whisperer drops from a conversation, they send a _dropping_ packet to let the Listeners know, and vice versa (Listeners who drop send a _dropping_ packet to the Whisperer).
 
 ### Whisper Server
 

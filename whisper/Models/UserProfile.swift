@@ -11,8 +11,8 @@ final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equata
     var allowedProfileIDs: [String] = []
     var lastListened: Date = Date.distantPast
 
-    fileprivate init(name: String) {
-        self.id = UUID().uuidString
+	fileprivate init(name: String, uuid: String? = nil) {
+        self.id = uuid ?? UUID().uuidString
         self.name = name
     }
     
@@ -110,7 +110,7 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
         return sorted
     }
     
-    func addWhisperConversationInternal() -> Conversation {
+    private func addWhisperConversationInternal() -> Conversation {
         var prefix = "\(username)'s "
         if username.isEmpty {
             prefix = ""
@@ -127,7 +127,15 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
     func addWhisperConversation() {
         _ = addWhisperConversationInternal()
     }
-    
+
+	func conversationForInvite(_ id: String) -> Conversation {
+		if let existing = listenTable[id] {
+			return existing
+		} else {
+			return Conversation(name: "Invitation Received", uuid: id)
+		}
+	}
+
     /// Add a newly used conversation for a Listener
     func addListenConversation(_ c: Conversation) {
         logger.info("Adding listen conversation \(c.id) (\(c.name))")

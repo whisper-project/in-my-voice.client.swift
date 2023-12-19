@@ -13,21 +13,16 @@ final class BluetoothFactory: NSObject, TransportFactory {
     static let shared: BluetoothFactory = .init()
         
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
-    
-    var publisherUrl: TransportUrl = nil
-    
-    func publisher(_ publisherUrl: TransportUrl) -> Publisher {
-        if publisherUrl != nil {
-            logger.warning("Ignoring the publisher URL given to the Bluetooth whisper transport")
-        }
-        return Publisher()
+
+    func publisher(_ c: Conversation?) -> Publisher {
+		guard let c = c else {
+			fatalError("Publishing requires a conversation")
+		}
+        return Publisher(c)
     }
     
-    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber {
-        if publisherUrl != nil {
-            logger.warning("Ignoring the publisher URL given to the Bluetooth listen transport")
-        }
-        return Subscriber()
+    func subscriber(_ c: Conversation?) -> Subscriber {
+        return Subscriber(c)
     }
     
     var advertisementSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
@@ -41,6 +36,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
     var notifyResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
     var readyToUpdateSubject: PassthroughSubject<(), Never> = .init()
     var receivedValueSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
+	var connectedSubject: PassthroughSubject<CBPeripheral, Never> = .init()
     var disconnectedSubject: PassthroughSubject<CBPeripheral, Never> = .init()
 
     private var centralManager: CBCentralManager!
@@ -86,7 +82,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
         peripheralManager.removeAllServices()
     }
     
-    func advertise(services: [CBUUID], localName: String = BluetoothData.deviceId) {
+	func advertise(services: [CBUUID], localName: String) {
         guard !services.isEmpty else {
             fatalError("Can't advertise no services")
         }
@@ -120,6 +116,10 @@ final class BluetoothFactory: NSObject, TransportFactory {
     func updateValue(value: Data, characteristic: CBMutableCharacteristic) -> Bool {
         return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: nil)
     }
+
+    func updateValue(value: Data, characteristic: CBMutableCharacteristic, centrals: [CBCentral]) -> Bool {
+        return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: centrals)
+    }
     
     func updateValue(value: Data, characteristic: CBMutableCharacteristic, central: CBCentral) -> Bool {
         return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: [central])
@@ -147,8 +147,7 @@ extension BluetoothFactory: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        logger.log("Got connect from \(peripheral)")
-        peripheral.discoverServices([BluetoothData.whisperServiceUuid])
+		connectedSubject.send(peripheral)
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {

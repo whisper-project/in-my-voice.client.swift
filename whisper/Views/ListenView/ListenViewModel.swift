@@ -35,17 +35,17 @@ final class ListenViewModel: ObservableObject {
     private var notifySoundInBackground = false
     private static let synthesizer = AVSpeechSynthesizer()
 
-    init(_ publisherUrl: TransportUrl) {
+    init(_ conversation: Conversation?) {
         logger.log("Initializing ListenView model")
-        manualWhisperer = publisherUrl != nil
-        transport = ComboFactory.shared.subscriber(publisherUrl)
+        manualWhisperer = conversation != nil
+        transport = ComboFactory.shared.subscriber(conversation)
         transport.addRemoteSubject
             .sink{ [weak self] in self?.addCandidate($0) }
             .store(in: &cancellables)
         transport.dropRemoteSubject
             .sink{ [weak self] in self?.dropCandidate($0) }
             .store(in: &cancellables)
-        transport.receivedChunkSubject
+        transport.contentSubject
             .sink{ [weak self] in self?.receiveChunk($0) }
             .store(in: &cancellables)
     }
@@ -130,7 +130,7 @@ final class ListenViewModel: ObservableObject {
         logger.log("Requesting re-read of live text")
         resetInProgress = true
         let chunk = WhisperProtocol.ProtocolChunk.replayRequest(hint: WhisperProtocol.ReadType.live)
-        transport.send(remote: whisperer!, chunks: [chunk])
+        transport.sendControl(remote: whisperer!, chunks: [chunk])
     }
     
     // MARK: Transport subscription handlers

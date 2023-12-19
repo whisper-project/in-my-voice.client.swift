@@ -11,7 +11,7 @@ struct ListenView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
-    var publisherUrl: TransportUrl
+    var conversation: Conversation?
     
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel
@@ -21,10 +21,10 @@ struct ListenView: View {
     // set this once at view creation
     private var listenerLiveTextOnTop = !PreferenceData.listenerMatchesWhisperer()
     
-    init(mode: Binding<OperatingMode>, publisherUrl: TransportUrl) {
+    init(mode: Binding<OperatingMode>, conversation: Conversation?) {
         self._mode = mode
-        self.publisherUrl = publisherUrl
-        self._model = StateObject(wrappedValue: ListenViewModel(publisherUrl))
+        self.conversation = conversation
+        self._model = StateObject(wrappedValue: ListenViewModel(conversation))
     }
 
     var body: some View {
@@ -58,7 +58,7 @@ struct ListenView: View {
                         .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                         .textSelection(.enabled)
                 }
-                StatusTextView(text: $model.statusText, mode: .listen, publisherUrl: nil)
+                StatusTextView(text: $model.statusText, mode: .listen, conversation: nil)
                     .onTapGesture {
                         model.showStatusDetail = true
                     }
@@ -134,6 +134,6 @@ struct ListenView_Previews: PreviewProvider {
     static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
 
     static var previews: some View {
-        ListenView(mode: mode, publisherUrl: nil)
+        ListenView(mode: mode, conversation: nil)
     }
 }

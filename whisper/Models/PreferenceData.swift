@@ -27,7 +27,7 @@ struct PreferenceData {
         return String(match.2)
     }
     static func publisherUrl(_ conversationId: String) -> String {
-        return "\(whisperServer)/subscribe/\(conversationId)"
+        return "\(whisperServer)/listen/\(conversationId)"
     }
     
     // server (and Ably) client ID for this device
