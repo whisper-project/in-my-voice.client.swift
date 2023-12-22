@@ -134,7 +134,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         let value: [String: Any] = [
             "clientId": PreferenceData.clientId,
             "token": deviceToken.base64EncodedString(),
-            "deviceId": BluetoothData.deviceId,
             "userName": UserProfile.shared.username,
             "lastSecret": PreferenceData.lastClientSecret(),
             "appInfo": "\(platformInfo)|\(versionString)",
