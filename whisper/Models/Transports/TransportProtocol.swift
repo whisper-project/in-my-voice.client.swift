@@ -13,6 +13,11 @@ enum TransportStatus {
     case on
 }
 
+enum TransportKind {
+	case local		// Bluetooth
+	case global		// Internet
+}
+
 typealias TransportUrl = String?
 
 protocol TransportFactory {
@@ -30,6 +35,7 @@ protocol TransportFactory {
 protocol TransportRemote: Identifiable {
     var id: String { get }
     var name: String { get }
+	var kind: TransportKind { get }
 }
 
 typealias TransportSessionId = String

@@ -222,7 +222,8 @@ final class BluetoothWhisperTransport: PublishTransport {
     final class Subscriber: TransportRemote {
         var id: String
         var name: String
-        
+		var kind: TransportKind = .local
+
         fileprivate var central: CBCentral
         
         fileprivate init(central: CBCentral, id: String, name: String) {

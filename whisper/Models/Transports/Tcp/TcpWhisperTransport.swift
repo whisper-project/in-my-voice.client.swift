@@ -68,7 +68,8 @@ final class TcpWhisperTransport: PublishTransport {
     final class Listener: TransportRemote {
         let id: String
         var name: String
-        
+		var kind: TransportKind = .global
+
         init(id: String, name: String) {
             self.id = id
             self.name = name

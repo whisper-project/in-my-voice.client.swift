@@ -302,7 +302,8 @@ final class BluetoothListenTransport: SubscribeTransport {
     class Whisperer: TransportRemote {
         var id: String
         var name: String = ""
-        
+		var kind: TransportKind = .local
+
         fileprivate var peripheral: CBPeripheral
         fileprivate var listenNameCharacteristic: CBCharacteristic?
         fileprivate var whisperNameCharacteristic: CBCharacteristic?

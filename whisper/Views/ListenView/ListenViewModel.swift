@@ -152,10 +152,14 @@ final class ListenViewModel: ObservableObject {
         if removed === whisperer {
             logger.info("Dropped the whisperer \(removed.id)")
             whisperer = nil
-            // we have lost the whisperer, stop listening
+            // we have lost the whisperer
             resetTextForConnection()
             refreshStatusText()
-            conversationEnded = true
+			if case .global = remote.kind {
+				// Internet connection drops are permanent,
+				// whereas Bluetooth connection drops are ephemeral
+				conversationEnded = true
+			}
         } else {
             logger.info("Dropped candidate \(removed.id) with name \(removed.name)")
         }
