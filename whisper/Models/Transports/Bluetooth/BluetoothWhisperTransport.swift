@@ -8,10 +8,9 @@ import CoreBluetooth
 
 final class BluetoothWhisperTransport: PublishTransport {
     // MARK: Protocol properties and methods
-    typealias Remote = Subscriber
+    typealias Remote = Listener
     
-    var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
+    var lostRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
@@ -25,7 +24,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     func stop() {
         logger.log("Stopping Bluetooth whisper transport...")
         stopDiscovery()
-        removeAllListeners()
+        leaveConversation()
         if let service = whisperService {
             factory.unpublish(service: service)
             whisperService = nil
@@ -48,42 +47,47 @@ final class BluetoothWhisperTransport: PublishTransport {
         startDiscovery()
     }
     
-    func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
-        if var existing = directedContent[remote.central] {
-            existing.append(contentsOf: chunks)
-        } else {
-            directedContent[remote.central] = chunks
+	func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
+		if var existing = directedControl[remote.central] {
+			existing.append(chunk)
+		} else {
+			directedControl[remote.central] = [chunk]
+		}
+		updateControlAndContent()
+	}
+
+    func drop(remote: Remote) {
+		guard let existing = remotes[remote.central] else {
+            logger.error("Ignoring drop request for non-remote: \(remote.id)")
+            return
         }
-        updateContent()
+		logger.info("Whisperer said to drop remote \(existing.id)")
+		removeRemote(remote)
     }
-    
-	func sendControl(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
+
+	func authorize(remote: Remote, conversation: Conversation) {
+		guard let existing = remotes[remote.central] else {
+			logger.error("Ignoring authorization for non-remote: \(remote.id)")
+			return
+		}
+		remote.isAuthorized = true
+		// in case they have already connected
+		if let index = eavesdroppers.firstIndex(of: existing.central) {
+			eavesdroppers.remove(at: index)
+			// they are an eavesdropper until they disconnect
+			listeners.append(existing.central)
+		}
+	}
+
+	func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
 		if var existing = directedContent[remote.central] {
 			existing.append(contentsOf: chunks)
 		} else {
 			directedContent[remote.central] = chunks
 		}
-		updateContent()
+		updateControlAndContent()
 	}
 
-    func drop(remote: Remote) {
-        guard let removed = remotes.removeValue(forKey: remote.central) else {
-            logger.log("Ignoring drop request for non-listener with id: \(remote.id)")
-            return
-        }
-        logger.notice("Dropping listener \(removed.id) (\(removed.name)): \(removed.central)")
-        // remember not to re-add this remote
-        droppedRemotes.append(removed.id)
-        // tell this remote we've dropped it
-		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(c: conversation)
-		if !factory.updateValue(value: chunk.toData(),
-								characteristic: BluetoothData.controlOutCharacteristic,
-								central: removed.central) {
-            logger.error("Drop message for remote \(removed.id) failed to central: \(removed.central)")
-        }
-        dropRemoteSubject.send(removed)
-    }
-    
     func publish(chunks: [WhisperProtocol.ProtocolChunk]) {
         for chunk in chunks {
             pendingContent.append(chunk)
@@ -92,55 +96,62 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
     
     // MARK: Peripheral Event Handlers
-    
+
     private func noticeAd(_ pair: (CBPeripheral, [String: Any])) {
+		guard !advertisers.contains(pair.0) else {
+			// logger.debug("Ignoring repeat ads from existing advertiser")
+			return
+		}
+		advertisers.append(pair.0)
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
             if uuids.contains(BluetoothData.listenServiceUuid) {
-                guard advertisers[pair.0] != nil else {
-                    // logger.debug("Ignoring repeat ads from already-pending listener")
-                    return
-                }
                 guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
-                      let id = adName as? String
+                      let id = adName as? String,
+					  id == "discover" || id == BluetoothData.deviceId(conversation.id)
                 else {
-                    logger.error("Ignoring advertisement with no device id from \(pair.0)")
+                    logger.error("Ignoring invalid advertisement from \(pair.0)")
                     return
                 }
-                guard !droppedRemotes.contains(id) else {
-                    logger.info("Ignoring advertisement from dropped listener \(id)")
-                    return
-                }
-                advertisers[pair.0] = id
-                logger.debug("Got first ad from listener \(id): \(pair.0)")
+                logger.debug("Responding to ad from remote: \(pair.0)")
                 startAdvertising()
             }
         }
     }
     
     private func noticeSubscription(_ pair: (CBCentral, CBCharacteristic)) {
-        guard pair.1.uuid == BluetoothData.contentOutUuid || pair.1.uuid == BluetoothData.controlOutUuid else {
-            logger.error("Ignoring subscribe for unexpected characteristic: \(pair.1)")
-            return
-        }
-        guard addListener(pair.0) != nil else {
-            logger.error("Ignoring subscription request from non-candidate: \(pair.0)")
-            return
-        }
-        // nothing else to do
+		if pair.1.uuid == BluetoothData.controlOutUuid {
+			// remote has opened the control channel
+			ensureRemote(pair.0)
+		} else if pair.1.uuid == BluetoothData.contentOutUuid {
+			if let remote = remotes[pair.0], remote.isAuthorized {
+				// add this as an authorized listener
+				logger.info("Adding content listener: \(remote.id)")
+				listeners.append(pair.0)
+			} else {
+				// this is an eavesdropper
+				logger.error("Found an eavesdropper: \(pair.0)")
+				eavesdroppers.append(pair.0)
+			}
+		} else {
+			logger.error("Ignoring subscribe for unexpected characteristic: \(pair.1)")
+		}
     }
     
     private func noticeUnsubscription(_ pair: (CBCentral, CBCharacteristic)) {
         guard pair.1.uuid == BluetoothData.contentOutUuid || pair.1.uuid == BluetoothData.controlOutUuid else {
-            logger.error("Ignoring unsubscribe for unexpected characteristic: \(pair.1)")
+			logger.error("Ignoring unsubscribe for unexpected characteristic: \(pair.1.uuid.uuidString)")
             return
         }
-        if let candidate = candidates.removeValue(forKey: pair.0) {
-            logger.log("Unsubscribe/drop candidate \(candidate.id): \(pair.0)")
-        } else if let listener = remotes.removeValue(forKey: pair.0) {
-            logger.log("Unsubscribe/drop listener \(listener.id): \(pair.0)")
-            dropRemoteSubject.send(listener)
-        } else {
-            logger.error("Ignoring unsubscription request from already-dropped candidate or listener: \(pair.0)")
+		if let remote = remotes[pair.0] {
+			if !remote.hasDropped {
+				remote.hasDropped = true
+				logger.warning("Unsubscribe by remote \(remote.id) that hasn't dropped")
+				lostRemoteSubject.send(remote)
+			}
+			logger.info("Removing remote due to unsubscribe: \(remote.id)")
+			removeRemote(remote)
+		} else {
+			logger.info("Ignoring unsubscribe from already-dropped remote: \(pair.0.identifier.uuidString)")
         }
     }
     
@@ -165,72 +176,70 @@ final class BluetoothWhisperTransport: PublishTransport {
             factory.respondToWriteRequest(request: request, withCode: .requestNotSupported)
             return
         }
-		guard request.characteristic.uuid == BluetoothData.contentOutUuid ||
-			  request.characteristic.uuid == BluetoothData.controlOutUuid
-		else {
+		guard request.characteristic.uuid == BluetoothData.controlInUuid else {
             logger.error("Got a write request for an unexpected characteristic: \(request)")
-            factory.respondToWriteRequest(request: request, withCode: .unlikelyError)
+            factory.respondToWriteRequest(request: request, withCode: .attributeNotFound)
             return
         }
         guard let value = request.value,
-              let idAndName = String(data: value, encoding: .utf8)
+			  let chunk = WhisperProtocol.ProtocolChunk.fromData(value)
         else {
-            logger.error("Got an empty listener name value: \(request)")
-            factory.respondToWriteRequest(request: request, withCode: .invalidAttributeValueLength)
-            return
-        }
-        let parts = idAndName.split(separator: "|", maxSplits: 1)
-        guard parts.count == 2 else {
-            logger.error("Got an invalid format for listener name: \(idAndName)")
+            logger.error("Ignoring a malformed packet: \(request)")
             factory.respondToWriteRequest(request: request, withCode: .unlikelyError)
+			PreferenceData.bluetoothErrorCount += 1
             return
         }
-        let candidate = Remote(central: request.central, id: String(parts[0]), name: String(parts[1]))
-        guard !droppedRemotes.contains(candidate.id) else {
-            // dropped listeners cannot be re-aquired in this session
-            logger.log("Refusing name write request from dropped listener \(candidate.id)")
-            factory.respondToWriteRequest(request: request, withCode: .insufficientAuthorization)
-            return
-        }
-        candidates[request.central] = candidate
-        logger.log("Received id \(candidate.id), name '\(candidate.name)' from candidate \(request.central)")
+		let remote = ensureRemote(request.central)
+		if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset),
+		   case .dropping = value {
+			logger.info("Received \(value) message from: \(remote.id)")
+			remote.hasDropped = true
+			removeRemote(remote)
+			return
+		}
+		controlSubject.send((remote: remote, chunk: chunk))
         factory.respondToWriteRequest(request: request, withCode: .success)
     }
     
-    private func processReadyToUpdate(_ ignore: ()) {
+    private func updateControlAndContent() {
+		if (updateControl()) {
+			return
+		}
         updateContent()
     }
     
     // MARK: Internal types, properties, and initialization
         
-    final class Subscriber: TransportRemote {
-        var id: String
-        var name: String
-		var authorized: Bool
+    final class Listener: TransportRemote {
+        private(set) var id: String
+		private(set) var kind: TransportKind = .global
 
         fileprivate var central: CBCentral
-        
-        fileprivate init(central: CBCentral, id: String, name: String) {
+		fileprivate var profileId: String?
+		fileprivate var controlSubscribed: Bool = false
+		fileprivate var isAuthorized: Bool = false
+		fileprivate var hasDropped: Bool = false
+
+        fileprivate init(central: CBCentral) {
             self.central = central
-            self.id = id
-            self.name = name
-			self.authorized = false
+			self.id = central.identifier.uuidString
         }
     }
 
     private var factory = BluetoothFactory.shared
     private var remotes: [CBCentral: Remote] = [:]
+	private var droppedRemotes: [CBCentral: Remote] = [:]
     private var liveText: String = ""
     private var pendingContent: [WhisperProtocol.ProtocolChunk] = []
-    private var directedContent: [CBCentral: [WhisperProtocol.ProtocolChunk]] = [:]
+	private var directedContent: [CBCentral: [WhisperProtocol.ProtocolChunk]] = [:]
     private var pendingControl: [WhisperProtocol.ProtocolChunk] = []
     private var directedControl: [CBCentral: [WhisperProtocol.ProtocolChunk]] = [:]
     private var advertisingInProgress = false
     private weak var adTimer: Timer?
     private var cancellables: Set<AnyCancellable> = []
-    private var candidates: [CBCentral: Remote] = [:]
-    private var advertisers: [CBPeripheral: String] = [:]
-    private var droppedRemotes: [String] = []
+	private var listeners: [CBCentral] = []
+	private var eavesdroppers: [CBCentral] = []
+    private var advertisers: [CBPeripheral] = []
     private var whisperService: CBMutableService?
     private var isInBackground = false
     private var conversation: Conversation
@@ -254,7 +263,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             .sink { [weak self] in self?.processWriteRequests($0) }
             .store(in: &cancellables)
         factory.readyToUpdateSubject
-            .sink { [weak self] in self?.processReadyToUpdate($0) }
+            .sink { [weak self] _ in self?.updateControlAndContent() }
             .store(in: &cancellables)
     }
     
@@ -266,6 +275,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     //MARK: internal methods
     private func startDiscovery() {
         factory.scan(forServices: [BluetoothData.listenServiceUuid], allow_repeats: true)
+		advertisers = []
         startAdvertising()
     }
     
@@ -274,18 +284,19 @@ final class BluetoothWhisperTransport: PublishTransport {
         factory.stopScan()
     }
     
-    /// Send pending content to listeners
+    /// Send pending content to listeners; returns whether there more to send
     private func updateContent() {
         guard !remotes.isEmpty else {
             // logger.debug("No listeners to update, dumping pending changes")
+			directedContent.removeAll()
             pendingContent.removeAll()
-            directedContent.removeAll()
             return
         }
-        // prioritize readers over subscribers, because we want to hold
-        // the changes to live text until the readers are caught up
+        // prioritize individuals over subscribers, because we want to finish
+		// updating any specific listeners who are catching up before resuming
+		// live updates to everyone
         if !directedContent.isEmpty {
-            logger.log("Updating reading listeners...")
+            logger.log("Updating specific listeners...")
             while let (listener, chunks) = directedContent.first {
                 while let chunk = chunks.first {
                     let sendOk = factory.updateValue(value: chunk.toData(),
@@ -302,11 +313,16 @@ final class BluetoothWhisperTransport: PublishTransport {
                     }
                 }
             }
-        } else if !pendingContent.isEmpty {
+        }
+		if !pendingContent.isEmpty {
             logger.debug("Updating subscribed listeners (\(self.pendingContent.count) chunks)...")
             while let chunk = pendingContent.first {
-                let sendOk = factory.updateValue(value: chunk.toData(),
-                                               characteristic: BluetoothData.contentOutCharacteristic)
+				let sendOk = eavesdroppers.isEmpty ?
+							 factory.updateValue(value: chunk.toData(),
+												 characteristic: BluetoothData.contentOutCharacteristic) :
+							 factory.updateValue(value: chunk.toData(),
+												 characteristic: BluetoothData.contentOutCharacteristic,
+												 centrals: listeners)
                 if sendOk {
                     pendingContent.removeFirst()
                 } else {
@@ -314,20 +330,19 @@ final class BluetoothWhisperTransport: PublishTransport {
                 }
             }
         }
+		return
     }
 
-    /// Send pending control to listeners
-    private func updateControl() {
+    /// Send pending control to listeners, returns whether there is more to send
+    private func updateControl() -> Bool {
         guard !remotes.isEmpty else {
             // logger.debug("No listeners to update, dumping pending changes")
+			directedControl.removeAll()
             pendingControl.removeAll()
-            directedControl.removeAll()
-            return
+            return false
         }
-        // prioritize readers over subscribers, because we want to hold
-        // the changes to live text until the readers are caught up
         if !directedControl.isEmpty {
-            logger.log("Updating reading listeners...")
+            logger.log("Sending directed control data...")
             while let (listener, chunks) = directedControl.first {
                 while let chunk = chunks.first {
                     let sendOk = factory.updateValue(value: chunk.toData(),
@@ -340,22 +355,24 @@ final class BluetoothWhisperTransport: PublishTransport {
                             directedContent[listener]!.removeFirst()
                         }
                     } else {
-                        return
+                        return true
                     }
                 }
             }
-        } else if !pendingControl.isEmpty {
-            logger.debug("Updating subscribed listeners (\(self.pendingControl.count) chunks)...")
+        }
+		if !pendingControl.isEmpty {
+            logger.debug("Sending broadcast control data (\(self.pendingControl.count) chunks)...")
             while let chunk = pendingControl.first {
                 let sendOk = factory.updateValue(value: chunk.toData(),
                                                  characteristic: BluetoothData.contentOutCharacteristic)
                 if sendOk {
                     pendingControl.removeFirst()
                 } else {
-                    return
+                    return true
                 }
             }
         }
+		return false
     }
 
     private func startAdvertising() {
@@ -385,7 +402,6 @@ final class BluetoothWhisperTransport: PublishTransport {
         }
         logger.log("Stop advertising whisperer")
         factory.stopAdvertising()
-        advertisers.removeAll()
         advertisingInProgress = false
         if let timer = adTimer {
             // manual cancellation: invalidate the running timer
@@ -394,24 +410,45 @@ final class BluetoothWhisperTransport: PublishTransport {
         }
     }
     
-    private func addListener(_ central: CBCentral) -> Remote? {
-        if let listener = remotes[central] {
+	@discardableResult private func ensureRemote(_ central: CBCentral) -> Remote {
+        if let remote = remotes[central] {
             // we've already connected this listener
-            return listener
+            return remote
         }
-        guard let candidate = candidates.removeValue(forKey: central) else {
-            // can't add this central as a listener: it hasn't completed its handshake with us
-            return nil
-        }
-        logger.log("Candidate \(candidate.id) (\(candidate.name)) has become a listener")
-        remotes[central] = candidate
-        addRemoteSubject.send(candidate)
-        return candidate
+		logger.log("Central \(central) is connecting to the control channel")
+		let remote = Remote(central: central)
+        remotes[central] = remote
+        return remote
     }
-    
-    private func removeAllListeners() {
-        for listener in Array(remotes.values) {
-			drop(remote: listener)
-        }
+
+	private func removeRemote(_ remote: Remote) {
+		guard let removed = remotes.removeValue(forKey: remote.central) else {
+			logger.error("Ignoring request to remove unknown remote: \(remote.id)")
+			return
+		}
+		if !removed.hasDropped {
+			// tell this remote we're dropping it
+			let chunk = WhisperProtocol.ProtocolChunk.dropping()
+			if !factory.updateValue(value: chunk.toData(),
+									characteristic: BluetoothData.controlOutCharacteristic,
+									central: removed.central) {
+				logger.error("Drop message for remote \(removed.id) failed to central: \(removed.central)")
+			}
+			if let index = listeners.firstIndex(of: removed.central) {
+				listeners.remove(at: index)
+			} else if let index = eavesdroppers.firstIndex(of: removed.central) {
+				eavesdroppers.remove(at: index)
+			}
+		}
+	}
+
+    private func leaveConversation() {
+		// tell everyone we are leaving the conversation
+		logger.info("Sending leaving conversation message to all remotes")
+		let chunk = WhisperProtocol.ProtocolChunk.dropping()
+		if !factory.updateValue(value: chunk.toData(),
+								characteristic: BluetoothData.controlOutCharacteristic) {
+			logger.error("Leaving conversation message failed to send to all remotes")
+		}
     }
 }

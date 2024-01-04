@@ -12,19 +12,50 @@ final class ListenViewModel: ObservableObject {
     typealias Remote = ComboFactory.Subscriber.Remote
     typealias Transport = ComboFactory.Subscriber
 
+	final class Candidate: Identifiable, Comparable {
+		private(set) var id: String
+		private(set) var remote: Remote
+		private(set) var info: WhisperProtocol.ClientInfo
+		var isPending: Bool
+		private(set) var created: Date
+
+		init(remote: Remote, info: WhisperProtocol.ClientInfo, isPending: Bool) {
+			self.id = remote.id
+			self.remote = remote
+			self.isPending = isPending
+			self.created = Date.now
+		}
+
+		// compare by network and creation date
+		static func == (lhs: ListenViewModel.Candidate, rhs: ListenViewModel.Candidate) -> Bool {
+			return lhs.remote.kind == rhs.remote.kind && lhs.created == rhs.created
+		}
+
+		// sort by network, then oldest first
+		static func < (lhs: ListenViewModel.Candidate, rhs: ListenViewModel.Candidate) -> Bool {
+			if lhs.remote.kind == rhs.remote.kind {
+				return lhs.created > rhs.created
+			} else {
+				return lhs.remote.kind == .local
+			}
+		}
+	}
+
     @Published var statusText: String = ""
     @Published var liveText: String = ""
     @Published var connectionError: Bool = false
     @Published var conversationEnded: Bool = false
     @Published var connectionErrorDescription: String = "The connection to the whisperer was lost"
     @Published var showStatusDetail: Bool = false
-    @Published var candidates: [Remote] = []
-    @Published var whisperer: Remote?
+	@Published var candidates: [String: Candidate] = [:]	// remoteId -> Candidate
+	@Published var invites: [Candidate] = []
+	@Published var conversation: Conversation?
+    @Published var whisperer: Candidate?
     @Published var pastText: PastTextModel = .init(mode: .listen)
-    
+
     private var transport: Transport
-    private var manualWhisperer: Bool
     private var cancellables: Set<AnyCancellable> = []
+	private var clients: [String: Candidate] = [:]	// clientId -> Candidate, for avoiding dups
     private var discoveryInProgress = false
     private var discoveryCountDown = 0
     private var discoveryTimer: Timer?
@@ -35,19 +66,21 @@ final class ListenViewModel: ObservableObject {
     private var notifySoundInBackground = false
     private static let synthesizer = AVSpeechSynthesizer()
 
+	let profile = UserProfile.shared
+
     init(_ conversation: Conversation?) {
         logger.log("Initializing ListenView model")
-        manualWhisperer = conversation != nil
+		self.conversation = conversation
         transport = ComboFactory.shared.subscriber(conversation)
-        transport.addRemoteSubject
-            .sink{ [weak self] in self?.addCandidate($0) }
-            .store(in: &cancellables)
-        transport.dropRemoteSubject
+        transport.lostRemoteSubject
             .sink{ [weak self] in self?.dropCandidate($0) }
             .store(in: &cancellables)
-        transport.contentSubject
-            .sink{ [weak self] in self?.receiveChunk($0) }
-            .store(in: &cancellables)
+		transport.contentSubject
+			.sink{ [weak self] in self?.receiveContentChunk($0) }
+			.store(in: &cancellables)
+		transport.controlSubject
+			.sink{ [weak self] in self?.receiveControlChunk($0) }
+			.store(in: &cancellables)
     }
     
     deinit {
@@ -64,9 +97,7 @@ final class ListenViewModel: ObservableObject {
             self.notifySoundInBackground = granted
         }
         resetTextForConnection()
-        if !manualWhisperer {
-            awaitDiscovery()
-        }
+		awaitDiscovery()
         refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
     }
@@ -93,35 +124,30 @@ final class ListenViewModel: ObservableObject {
         transport.goToForeground()
         // after going to background, assume not waiting any more
         logger.log("End initial wait for whisperers due to background transition")
-        discoveryInProgress = false
-        maybeSetWhisperer()
+        cancelDiscovery()
     }
-    
-    /// Set the passed candidate to be the whisperer
-    func setWhisperer(_ to: Remote) {
-        guard whisperer == nil else {
-            logger.error("Ignoring attempt to set whisperer when we already have one")
-            return
-        }
-        logger.log("Selecting whisperer \(to.id) with name \(to.name)")
-        whisperer = to
-        // tell the transport we're subscribing (removes all other candidates)
-        transport.subscribe(remote: to)
-        // update the view
-        refreshStatusText()
-        if isFirstConnect {
-            isFirstConnect = false
-            pastText.clearLines()
-        }
-        liveText = ""
-        // get anything we missed from whisperer
-        readLiveText()
-    }
-    
+
+	func acceptInvite(_ id: String) {
+		guard let candidate = candidates[id] else {
+			fatalError("Can't accept a non-invite: \(id)")
+		}
+		candidate.isPending = false
+		invites = candidates.values.filter{$0.isPending}.sorted()
+	}
+
+	func refuseInvite(_ id: String) {
+		guard let candidate = candidates.removeValue(forKey: id) else {
+			fatalError("Can't reject a non-invite: \(id)")
+		}
+		clients.removeValue(forKey: candidate.info.clientId)
+		transport.drop(remote: candidate.remote)
+		invites = candidates.values.filter{$0.isPending}.sorted()
+	}
+
     // re-read the whispered text
     func readLiveText() {
-        guard whisperer != nil else {
-            return
+        guard let whisperer = whisperer else {
+			fatalError("Can't read live text with no Whisperer")
         }
         guard !resetInProgress else {
             logger.log("Got reset during reset, ignoring it")
@@ -130,25 +156,16 @@ final class ListenViewModel: ObservableObject {
         logger.log("Requesting re-read of live text")
         resetInProgress = true
         let chunk = WhisperProtocol.ProtocolChunk.replayRequest(hint: WhisperProtocol.ReadType.live)
-        transport.sendControl(remote: whisperer!, chunks: [chunk])
+		transport.sendControl(remote: whisperer.remote, chunk: chunk)
     }
     
     // MARK: Transport subscription handlers
-    private func addCandidate(_ remote: Remote) {
-        guard !candidates.contains(where: { $0 === remote }) else {
-            logger.error("Ignoring add of unnecessary or duplicate remote \(remote.id)")
-            return
-        }
-        candidates.append(remote)
-        maybeSetWhisperer()
-    }
-    
     private func dropCandidate(_ remote: Remote) {
-        guard let position = candidates.firstIndex(where: { $0 === remote }) else {
+		guard let removed = candidates.removeValue(forKey: remote.id) else {
             logger.error("Ignoring dropped non-candidate \(remote.id)")
             return
         }
-        let removed = candidates.remove(at: position)
+		clients.removeValue(forKey: removed.info.clientId)
         if removed === whisperer {
             logger.info("Dropped the whisperer \(removed.id)")
             whisperer = nil
@@ -157,18 +174,25 @@ final class ListenViewModel: ObservableObject {
             refreshStatusText()
             conversationEnded = true
         } else {
-            logger.info("Dropped candidate \(removed.id) with name \(removed.name)")
+            logger.info("Dropped candidate \(removed.id)")
         }
     }
     
-    private func receiveChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
-        guard pair.remote === whisperer else {
-            logger.error("Ignoring chunk received from non-whisperer \(pair.remote.id)")
-            return
+    private func receiveContentChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
+		guard pair.remote.id == whisperer?.id else {
+            fatalError("Received content from non-whisperer \(pair.remote.id)")
         }
-        processChunk(pair.chunk)
+        processContentChunk(pair.chunk)
     }
         
+	private func receiveControlChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
+		guard whisperer == nil else {
+			// we shouldn't be seeing control messages from an active whisperer
+			fatalError("Received a control message while listening: \(pair)")
+		}
+		processControlChunk(remote: pair.remote, chunk: pair.chunk)
+	}
+
     // MARK: internal helpers
     private func resetTextForConnection() {
         if isFirstConnect {
@@ -186,7 +210,7 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    private func processChunk(_ chunk: WhisperProtocol.ProtocolChunk) {
+    private func processContentChunk(_ chunk: WhisperProtocol.ProtocolChunk) {
         if chunk.isSound() {
             logger.log("Received request to play sound '\(chunk.text)'")
             playSound(chunk.text)
@@ -210,7 +234,7 @@ final class ListenViewModel: ObservableObject {
 //                logger.debug("Got diff: live text is '\(chunk.text)'")
                 liveText = chunk.text
             } else if chunk.isCompleteLine() {
-//                logger.log("Got diff: move live text to past text")
+//				logger.log("Got diff: move live text to past text")
                 if !isInBackground && PreferenceData.speakWhenListening {
                     speak(liveText)
                 }
@@ -227,7 +251,51 @@ final class ListenViewModel: ObservableObject {
             }
         }
     }
-    
+
+	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
+		guard chunk.isPresenceMessage() else {
+			fatalError("Listener received a non-presence message: \(chunk)")
+		}
+		guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
+			fatalError("Listener received a presence message with invalid data: \(chunk)")
+		}
+		switch WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
+		case .whisperOffer:
+			let conversation = profile.listenConversationForInvite(info: info)
+			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
+				if candidate.isPending {
+					invites = candidates.values.filter{$0.isPending}.sorted()
+					showStatusDetail = true
+				}
+			}
+		case .listenAuthYes:
+			let conversation = profile.addListenConversationForInvite(info: info)
+			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
+				setWhisperer(candidate: candidate, conversation: conversation)
+			}
+		default:
+			fatalError("Listener received an unexpected presence message: \(chunk)")
+		}
+	}
+
+	private func candidateFor(
+		remote: Remote,
+		info: WhisperProtocol.ClientInfo, 
+		conversation: Conversation
+	) -> Candidate? {
+		if let existing = candidates[remote.id] {
+			return existing
+		}
+		guard clients[info.clientId] == nil else {
+			logger.info("Ignoring second appearance of client via different network: \(remote.kind)")
+			return nil
+		}
+		let candidate = Candidate(remote: remote, info: info, isPending: conversation.lastListened == Date.distantPast)
+		candidates[candidate.id] = candidate
+		clients[candidate.info.clientId] = candidate
+		return candidate
+	}
+
     private func playSound(_ name: String) {
         var name = name
         var path = Bundle.main.path(forResource: name, ofType: "caf")
@@ -285,7 +353,7 @@ final class ListenViewModel: ObservableObject {
         }
         logger.log("Start initial wait for whisperers")
         discoveryInProgress = true
-        discoveryCountDown = Int(listenerWaitTime)
+        discoveryCountDown = Int(listenerWaitTime + 1)
         discoveryTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(1), repeats: true) { timer in
             guard self.discoveryInProgress && self.discoveryCountDown > 0 else {
                 logger.log("End initial wait for whisperers due to timeout")
@@ -293,7 +361,7 @@ final class ListenViewModel: ObservableObject {
                 self.discoveryTimer = nil
                 self.discoveryCountDown = 0
                 self.discoveryInProgress = false
-                self.maybeSetWhisperer()
+                self.refreshStatusText()
                 return
             }
             self.discoveryCountDown -= 1
@@ -301,46 +369,51 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    /// Cancel the wait for discovery (only happens on shutdown)
+    /// Cancel the wait for discovery
     private func cancelDiscovery() {
         guard let timer = discoveryTimer else {
             return
         }
+		logger.log("End initial wait for whisperers explicitly")
         timer.invalidate()
         discoveryTimer = nil
         discoveryInProgress = false
-        // don't maybe set whisperer, because we have cancelled discovery
     }
     
-    /// We may have found an an eligible whisper candidate.
-    /// If so, connect to it.  Update status in any case.
-    private func maybeSetWhisperer() {
-        guard !discoveryInProgress else {
-            // we are still waiting for more candidates
-            return
-        }
-        if whisperer == nil {
-            if candidates.count == 1 {
-                // only 1 whisperer after waiting for the scan
-                setWhisperer(candidates[0])
-            }
-        }
-        refreshStatusText()
-    }
-        
-    private func refreshStatusText() {
+	/// subscribe to this candidate
+	func setWhisperer(candidate: Candidate, conversation: Conversation) {
+		guard whisperer == nil else {
+			fatalError("Ignoring attempt to set whisperer when we already have one")
+		}
+		logger.info("Selecting whisperer \(candidate.id) for conversation \(conversation.id)")
+		whisperer = candidate
+		// refresh status text
+		cancelDiscovery()
+		refreshStatusText()
+		// drop other candidates and invites
+		candidates = [candidate.id: candidate]
+		invites = []
+		// tell the transport we're subscribing
+		transport.subscribe(remote: candidate.remote, conversation: conversation)
+		// update the view
+		refreshStatusText()
+		if isFirstConnect {
+			isFirstConnect = false
+			pastText.clearLines()
+		}
+		liveText = ""
+		// catch up
+		readLiveText()
+	}
+
+	private func refreshStatusText() {
         if let whisperer = whisperer {
-            statusText = "Listening to \(whisperer.name)"
+			statusText = "Listening to \(whisperer.info.username)"
         } else if discoveryInProgress {
             let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
             statusText = "Looking for whisperers…\(suffix)"
         } else {
-            let count = candidates.count
-            if count == 0 {
-                statusText = "Waiting for a whisperer to appear…"
-            } else {
-                statusText = "Tap to select your desired whisperer…"
-            }
+            statusText = "Waiting for a whisperer to appear…"
         }
     }
 }

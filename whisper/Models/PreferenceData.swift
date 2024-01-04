@@ -126,20 +126,6 @@ struct PreferenceData {
         }
     }
     
-    // last used listener URL
-    static var lastSubscriberUrl: String? {
-        get {
-            defaults.string(forKey: "last_subscriber_url")
-        }
-        set(newUrl) {
-            if newUrl != nil {
-                defaults.setValue(newUrl, forKey: "last_subscriber_url")
-            } else {
-                defaults.removeObject(forKey: "last_subscriber_url")
-            }
-        }
-    }
-    
     // metrics of errors to send in diagnostics to server
     static var droppedErrorCount: Int {
         get {
@@ -149,14 +135,22 @@ struct PreferenceData {
             defaults.setValue(newVal, forKey: "dropped_error_count")
         }
     }
-    static var tcpErrorCount: Int {
-        get {
-            defaults.integer(forKey: "tcp_error_count")
-        }
-        set(newVal) {
-            defaults.setValue(newVal, forKey: "tcp_error_count")
-        }
-    }
+	static var bluetoothErrorCount: Int {
+		get {
+			defaults.integer(forKey: "bluetooth_error_count")
+		}
+		set(newVal) {
+			defaults.setValue(newVal, forKey: "bluetooth_error_count")
+		}
+	}
+	static var tcpErrorCount: Int {
+		get {
+			defaults.integer(forKey: "tcp_error_count")
+		}
+		set(newVal) {
+			defaults.setValue(newVal, forKey: "tcp_error_count")
+		}
+	}
     static var authenticationErrorCount: Int {
         get {
             defaults.integer(forKey: "authentication_error_count")

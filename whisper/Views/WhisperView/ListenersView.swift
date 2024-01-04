@@ -51,7 +51,7 @@ struct ListenersView: View {
     private func makeRows() -> [Row] {
         var rows: [Row] = []
         for remote in model.remotes.values {
-            rows.append(Row(id: remote.name, remote: remote))
+            rows.append(Row(id: remote.ownerName, remote: remote))
         }
         rows.sort()
         return rows

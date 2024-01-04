@@ -18,16 +18,6 @@
 		</dict>
 		<dict>
 			<key>Type</key>
-			<string>PSToggleSwitchSpecifier</string>
-			<key>Title</key>
-			<string>Whisperer requires Bluetooth Listeners to pair</string>
-			<key>Key</key>
-			<string>listener_authentication_preference</string>
-			<key>DefaultValue</key>
-			<false/>
-		</dict>
-		<dict>
-			<key>Type</key>
 			<string>PSMultiValueSpecifier</string>
 			<key>Title</key>
 			<string>Listener sees newest whisper in</string>

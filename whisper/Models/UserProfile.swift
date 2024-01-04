@@ -7,18 +7,14 @@ import Foundation
 
 final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equatable {
     private(set) var id: String
-    var name: String
-    var allowedProfileIDs: [String] = []
-    var lastListened: Date = Date.distantPast
+	fileprivate(set) var name: String = ""
+	fileprivate(set) var owner: String = ""
+	fileprivate(set) var ownerName: String = ""
+	fileprivate(set) var allowed: [String: String] = [:]	// profile ID to username mapping
+    fileprivate(set) var lastListened: Date = Date.distantPast
 
-	fileprivate init(name: String, uuid: String? = nil) {
+	fileprivate init(uuid: String? = nil) {
         self.id = uuid ?? UUID().uuidString
-        self.name = name
-    }
-    
-    fileprivate convenience init(from: Conversation) {
-        self.init(name: from.name)
-        self.allowedProfileIDs = Array(from.allowedProfileIDs)
     }
     
     // equality is determined by ID
@@ -32,8 +28,9 @@ final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equata
     static func <(_ left: Conversation, _ right: Conversation) -> Bool {
         if left.name == right.name {
             return left.id < right.id
-        }
-        return left.name < right.name
+		} else {
+			return left.name < right.name
+		}
     }
     
     // decreasing sort by last-used date then increasing sort by name within date bucket
@@ -41,7 +38,7 @@ final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equata
         if left.lastListened == right.lastListened {
             return left < right
         } else {
-            return left.lastListened < right.lastListened
+            return left.lastListened > right.lastListened
         }
     }
 }
@@ -54,33 +51,36 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
     private var whisperTable: [String: Conversation] = [:]
     private var listenTable: [String: Conversation] = [:]
     private var defaultId: String = ""
-    
-    init(username: String) {
+	private var timestamp: Date = Date.now
+
+    private init() {
         id = UUID().uuidString
-        self.username = username
     }
     
-    init(from: UserProfile) {
-        id = UUID().uuidString
-        username = from.username
-        for (id, c) in from.whisperTable {
-            whisperTable[id] = Conversation(from: c)
-        }
-        defaultId = from.defaultId
-    }
-    
+	private func addWhisperConversationInternal() -> Conversation {
+		let new = Conversation()
+		new.name = "Conversation \(whisperTable.count + 1)"
+		new.owner = id
+		new.ownerName = username
+		logger.info("Adding whisper conversation \(new.id) (\(new.name))")
+		whisperTable[new.id] = new
+		return new
+	}
+
     // make sure there is a default conversation, and return it
-    private func ensureWhisperDefaultExists() -> Conversation {
+	@discardableResult private func ensureWhisperDefaultExists() -> Conversation {
         if let firstC = whisperTable.first?.value {
             if let c = whisperTable[defaultId] {
                 return c
             } else {
                 defaultId = firstC.id
+				saveAsDefault()
                 return firstC
             }
         } else {
             let newC = addWhisperConversationInternal()
             defaultId = newC.id
+			saveAsDefault()
             return newC
         }
     }
@@ -91,15 +91,21 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
             return ensureWhisperDefaultExists()
         }
         set(new) {
-            if let existing = whisperTable[new.id]  {
-                defaultId = existing.id
-            }
+			guard new.id != defaultId else {
+				// nothing to do
+				return
+			}
+            guard let existing = whisperTable[new.id] else {
+				fatalError("Tried to set default whisper conversation to one not in whisper table")
+			}
+			defaultId = existing.id
+			saveAsDefault()
         }
     }
     
     /// The sorted list of whisper conversations
     func whisperConversations() -> [Conversation] {
-        _ = ensureWhisperDefaultExists()
+        ensureWhisperDefaultExists()
         let sorted = Array(whisperTable.values).sorted()
         return sorted
     }
@@ -110,59 +116,74 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
         return sorted
     }
     
-    private func addWhisperConversationInternal() -> Conversation {
-        var prefix = "\(username)'s "
-        if username.isEmpty {
-            prefix = ""
-        } else if username.hasSuffix("s") {
-            prefix = "\(username)' "
-        }
-        let new = Conversation(name: "\(prefix)Conversation \(whisperTable.count + 1)")
-        logger.info("Adding whisper conversation \(new.id) (\(new.name))")
-        whisperTable[new.id] = new
-        return new
-    }
-    
     /// Create a new whisper conversation
-    func addWhisperConversation() {
-        _ = addWhisperConversationInternal()
+    func addWhisperConversation() -> Conversation {
+        let c = addWhisperConversationInternal()
+		saveAsDefault()
+		return c
     }
 
-	func conversationForInvite(_ id: String) -> Conversation {
-		if let existing = listenTable[id] {
-			return existing
-		} else {
-			return Conversation(name: "Invitation Received", uuid: id)
+	/// add a user to a whisper conversation
+	func addListenerToWhisperConversation(info: WhisperProtocol.ClientInfo, conversation: Conversation) {
+		if let username = conversation.allowed[info.profileId], username == info.username {
+			// nothing to do
+			return
+		}
+		conversation.allowed[info.profileId] = info.username
+		saveAsDefault()
+	}
+
+	/// remove user from a whisper conversation
+	func removeListenerFromWhisperConversation(info: WhisperProtocol.ClientInfo, conversation: Conversation) {
+		if conversation.allowed.removeValue(forKey: info.profileId) != nil {
+			saveAsDefault()
 		}
 	}
 
+	func listenConversationForLink(_ id: String) -> Conversation {
+		if let existing = listenTable[id] {
+			return existing
+		} else {
+			return Conversation(uuid: id)
+		}
+	}
+
+	func listenConversationForInvite(info: WhisperProtocol.ClientInfo) -> Conversation {
+		let c = listenTable[info.conversationId] ?? Conversation(uuid: info.conversationId)
+		c.name = info.conversationName
+		c.owner = info.profileId
+		c.ownerName = info.username
+		return c
+	}
+
     /// Add a newly used conversation for a Listener
-    func addListenConversation(_ c: Conversation) {
-        logger.info("Adding listen conversation \(c.id) (\(c.name))")
-        listenTable[c.id] = c
+	func addListenConversationForInvite(info: WhisperProtocol.ClientInfo) -> Conversation {
+        let c = listenConversationForInvite(info: info)
+		listenTable[c.id] = c
         c.lastListened = Date.now
+		return c
     }
-    
+
+	/// Remove a conversation
+
     func deleteWhisperConversation(_ c: Conversation) {
         logger.info("Removing whisper conversation \(c.id) (\(c.name))")
-        whisperTable.removeValue(forKey: c.id)
-        _ = ensureWhisperDefaultExists()
+		if whisperTable.removeValue(forKey: c.id) != nil {
+			saveAsDefault()
+		}
+		ensureWhisperDefaultExists()
     }
     
     func deleteListenConversation(_ c: Conversation) {
         logger.info("Removing listener conversation \(c.id) (\(c.name))")
-        listenTable.removeValue(forKey: c.id)
+		if listenTable.removeValue(forKey: c.id) != nil {
+			saveAsDefault()
+		}
     }
     
     // equality is determined by ID
     static func ==(_ left: UserProfile, _ right: UserProfile) -> Bool {
         return left.id == right.id
-    }
-    
-    static func createAndSaveDefault() -> UserProfile {
-        let profile = UserProfile(username: "")
-        profile.saveAsDefault()
-        return profile
     }
     
     static func loadDefault() -> UserProfile? {
@@ -186,7 +207,14 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
         }
     }
     
-    func saveAsDefault() {
+	private static func createAndSaveDefault() -> UserProfile {
+		let profile = UserProfile()
+		profile.saveAsDefault()
+		return profile
+	}
+
+    private func saveAsDefault() {
+		timestamp = Date.now
         do {
             let folderURL = try FileManager.default.url(
                 for: .documentDirectory,

@@ -102,7 +102,7 @@ struct whisperApp: App {
                     let url = urlObj.absoluteString
                     if let cid = PreferenceData.publisherUrlToConversationId(url: url) {
                         logger.log("Handling valid universal URL: \(url)")
-						conversation = profile.conversationForInvite(cid)
+						conversation = profile.listenConversationForLink(cid)
                         mode = .listen
                     } else {
                         logger.warning("Ignoring invalid universal URL: \(url)")
@@ -138,6 +138,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             "lastSecret": PreferenceData.lastClientSecret(),
             "appInfo": "\(platformInfo)|\(versionString)",
             "droppedErrorCount": PreferenceData.droppedErrorCount,
+			"bluetoothErrorCount": PreferenceData.bluetoothErrorCount,
             "tcpErrorCount": PreferenceData.tcpErrorCount,
             "authenticationErrorCount": PreferenceData.authenticationErrorCount,
         ]
@@ -164,7 +165,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 logger.info("Successful post of APNs token")
                 // if server has received error data, reset it
                 PreferenceData.droppedErrorCount = 0
-                PreferenceData.tcpErrorCount = 0
+				PreferenceData.bluetoothErrorCount = 0
+				PreferenceData.tcpErrorCount = 0
                 PreferenceData.authenticationErrorCount = 0
                 return
             }

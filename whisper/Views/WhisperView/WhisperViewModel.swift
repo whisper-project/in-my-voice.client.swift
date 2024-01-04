@@ -30,7 +30,7 @@ final class WhisperViewModel: ObservableObject {
         self.transport.addRemoteSubject
             .sink { [weak self] in self?.addListener($0) }
             .store(in: &cancellables)
-        self.transport.dropRemoteSubject
+        self.transport.lostRemoteSubject
             .sink { [weak self] in self?.removeListener($0) }
             .store(in: &cancellables)
         self.transport.contentSubject
@@ -111,7 +111,7 @@ final class WhisperViewModel: ObservableObject {
             logger.log("Ignoring drop request for non-remote: \(remote.id)")
             return
         }
-        logger.notice("Dropping remote \(listener.id) with name \(listener.name)")
+        logger.notice("Dropping remote \(listener.id) with name \(listener.ownerName)")
         transport.drop(remote: remote)
     }
     
@@ -141,7 +141,7 @@ final class WhisperViewModel: ObservableObject {
             logger.warning("Notified of new remote \(remote.id) which is already known")
             return
         }
-        logger.log("Notified of new remote \(remote.id) with name \(remote.name)")
+        logger.log("Notified of new remote \(remote.id) with name \(remote.ownerName)")
         remotes[remote.id] = remote
         refreshStatusText()
     }
@@ -151,7 +151,7 @@ final class WhisperViewModel: ObservableObject {
             logger.warning("Notified of dropped remote \(remote.id) which is not known")
             return
         }
-        logger.log("Lost\(self.remotes.isEmpty ? " last" : "") remote \(removed.id) with name \(removed.name)")
+        logger.log("Lost\(self.remotes.isEmpty ? " last" : "") remote \(removed.id) with name \(removed.ownerName)")
         refreshStatusText()
     }
 
@@ -201,7 +201,7 @@ final class WhisperViewModel: ObservableObject {
             return
         }
         if remotes.count == 1 {
-            statusText = "Whispering to \(remotes.first!.value.name)"
+            statusText = "Whispering to \(remotes.first!.value.ownerName)"
         } else {
             statusText = "Whispering to \(remotes.count) listeners"
         }

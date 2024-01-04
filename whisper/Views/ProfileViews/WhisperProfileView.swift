@@ -18,7 +18,7 @@ struct WhisperProfileView: View {
             NavigationView {
                 List {
 					ForEach(conversations) { c in
-						NavigationLink(destination: WhisperProfileDetailView(c: c)) {
+						NavigationLink(destination: WhisperProfileDetailView(conversation: c)) {
 							HStack(spacing: 15) {
 								Text(c.name)
 									.lineLimit(nil)

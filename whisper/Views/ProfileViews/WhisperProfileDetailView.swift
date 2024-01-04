@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct WhisperProfileDetailView: View {
-	let c: Conversation
+	let conversation: Conversation
 
 	@State var name: String = ""
 	@State var newName: String = ""
@@ -27,7 +27,7 @@ struct WhisperProfileDetailView: View {
 						.onSubmit { updateProfile() }
 					Button("Submit", systemImage: "checkmark.square.fill") { updateProfile() }
 						.labelStyle(.iconOnly)
-						.disabled(name.isEmpty || name == c.name)
+						.disabled(name.isEmpty || name == conversation.name)
 				}
 				if (isDefault) {
 					Text("This is your default conversation")
@@ -48,9 +48,9 @@ struct WhisperProfileDetailView: View {
 	}
 
 	func updateFromProfile() {
-		name = c.name
+		name = conversation.name
 		newName = name
-		wasDefault = c == profile.whisperDefault
+		wasDefault = conversation == profile.whisperDefault
 		isDefault = wasDefault
 	}
 
@@ -58,11 +58,11 @@ struct WhisperProfileDetailView: View {
 		var hasChanged = false
 		if (newName != name && !newName.isEmpty) {
 			hasChanged = true
-			c.name = newName
+			conversation.name = newName
 		}
 		if (isDefault != wasDefault) {
 			hasChanged = true
-			profile.whisperDefault = c
+			profile.whisperDefault = conversation
 		}
 		if hasChanged {
 			profile.saveAsDefault()
@@ -72,5 +72,5 @@ struct WhisperProfileDetailView: View {
 }
 
 #Preview {
-	WhisperProfileDetailView(c: UserProfile.shared.whisperDefault)
+	WhisperProfileDetailView(conversation: UserProfile.shared.whisperDefault)
 }

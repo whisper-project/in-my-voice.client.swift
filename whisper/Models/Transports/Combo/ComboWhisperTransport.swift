@@ -8,11 +8,9 @@ import Combine
 
 final class ComboWhisperTransport: PublishTransport {
     // MARK: protocol properties and methods
-    typealias Remote = Listener
+    typealias Remote = Wrapper
     
-    var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
+    var lostRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
     func start(failureCallback: @escaping (String) -> Void) {
@@ -43,9 +41,9 @@ final class ComboWhisperTransport: PublishTransport {
         manualTransport?.goToForeground()
     }
     
-    func sendContent(remote: Listener, chunks: [WhisperProtocol.ProtocolChunk]) {
-        guard let remote = listeners[remote.id] else {
-            fatalError("Targeting a remote that's not a listener: \(remote.id)")
+    func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
+        guard let remote = remotes[remote.id] else {
+            fatalError("Sending content to an unknown remote: \(remote.id)")
         }
         switch remote.owner {
         case .auto:
@@ -55,27 +53,27 @@ final class ComboWhisperTransport: PublishTransport {
         }
     }
 
-    func sendControl(remote: Listener, chunks: [WhisperProtocol.ProtocolChunk]) {
-        guard let remote = listeners[remote.id] else {
-            fatalError("Targeting a remote that's not a listener: \(remote.id)")
+    func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
+        guard let remote = remotes[remote.id] else {
+            fatalError("Sending control to an unknown remote: \(remote.id)")
         }
         switch remote.owner {
         case .auto:
-            autoTransport?.sendControl(remote: remote.inner as! AutoRemote, chunks: chunks)
+            autoTransport?.sendControl(remote: remote.inner as! AutoRemote, chunk: chunk)
         case .manual:
-            manualTransport?.sendControl(remote: remote.inner as! ManualRemote, chunks: chunks)
+            manualTransport?.sendControl(remote: remote.inner as! ManualRemote, chunk: chunk)
         }
     }
 
-    func drop(remote: Listener) {
-        guard let listener = listeners[remote.id] else {
-            fatalError("Dropping a remote that's not a listener: \(remote.id)")
+    func drop(remote: Remote) {
+		guard let remote = remotes.removeValue(forKey: remote.id) else {
+            fatalError("Dropping an unknown remote: \(remote.id)")
         }
         switch remote.owner {
         case .auto:
-            autoTransport?.drop(remote: listener.inner as! AutoRemote)
+            autoTransport?.drop(remote: remote.inner as! AutoRemote)
         case .manual:
-            manualTransport?.drop(remote: listener.inner as! ManualRemote)
+            manualTransport?.drop(remote: remote.inner as! ManualRemote)
         }
     }
     
@@ -95,9 +93,8 @@ final class ComboWhisperTransport: PublishTransport {
         case manual
     }
     
-    final class Listener: TransportRemote {
+    final class Wrapper: TransportRemote {
         var id: String { get { inner.id } }
-        var name: String { get { inner.name } }
         var authorized: Bool { get { inner.authorized } set(val) { inner.authorized = val } }
 		private(set) var owner: Owner
 
@@ -115,7 +112,7 @@ final class ComboWhisperTransport: PublishTransport {
     private var manualFactory = TcpFactory.shared
     private var manualStatus: TransportStatus = .off
     private var manualTransport: TcpWhisperTransport?
-    private var listeners: [String: Listener] = [:]
+    private var remotes: [String: Remote] = [:]
     private var cancellables: Set<AnyCancellable> = []
     private var conversation: Conversation
     private var failureCallback: ((String) -> Void)?
@@ -152,25 +149,23 @@ final class ComboWhisperTransport: PublishTransport {
         guard manualStatus != status else {
             return
         }
-        if manualStatus == .on {
-            logger.error("The Internet connection was available but has dropped")
-            failureCallback?("The Internet connection has become unavailable")
-        }
-        manualStatus = status
+		#if DEBUG
+		manualStatus = .off
+		#else
+		if manualStatus == .on {
+			logger.error("The Internet connection was available but has dropped")
+			failureCallback?("The Internet connection has become unavailable")
+		}
+        manualStatus = isPending
+		#endif
     }
     
     private func initializeTransports() {
         if autoStatus == .on {
             let autoTransport = AutoTransport(conversation)
             self.autoTransport = autoTransport
-            autoTransport.addRemoteSubject
-                .sink { [weak self] in self?.addListener(.auto, remote: $0) }
-                .store(in: &cancellables)
-            autoTransport.dropRemoteSubject
+            autoTransport.lostRemoteSubject
                 .sink { [weak self] in self?.removeListener(.auto, remote: $0) }
-                .store(in: &cancellables)
-            autoTransport.contentSubject
-                .sink { [weak self] in self?.receiveContent($0) }
                 .store(in: &cancellables)
             autoTransport.controlSubject
                 .sink { [weak self] in self?.receiveControl($0) }
@@ -179,14 +174,8 @@ final class ComboWhisperTransport: PublishTransport {
         if manualStatus == .on {
 			let manualTransport = ManualTransport(conversation)
 			self.manualTransport = manualTransport
-			manualTransport.addRemoteSubject
-				.sink { [weak self] in self?.addListener(.manual, remote: $0) }
-				.store(in: &cancellables)
-			manualTransport.dropRemoteSubject
+			manualTransport.lostRemoteSubject
 				.sink { [weak self] in self?.removeListener(.manual, remote: $0) }
-				.store(in: &cancellables)
-			manualTransport.contentSubject
-				.sink { [weak self] in self?.receiveContent($0) }
 				.store(in: &cancellables)
 			manualTransport.controlSubject
 				.sink { [weak self] in self?.receiveControl($0) }
@@ -194,41 +183,23 @@ final class ComboWhisperTransport: PublishTransport {
         }
         if autoTransport == nil && manualTransport == nil {
             logger.error("No transports available for whispering")
-            failureCallback?("Cannot whisper unless one of Bluetooth or Internet is available")
+            failureCallback?("Cannot whisper unless one of Bluetooth or WiFi is available")
         }
-    }
-    
-    private func addListener(_ owner: Owner, remote: any TransportRemote) {
-        guard listeners[remote.id] == nil else {
-            logger.error("Ignoring add of existing remote \(remote.id) with name \(remote.name)")
-            return
-        }
-        let listener = Listener(owner: owner, inner: remote)
-        listeners[remote.id] = listener
-        addRemoteSubject.send(listener)
     }
     
     private func removeListener(_ owner: Owner, remote: any TransportRemote) {
-        guard let removed = listeners.removeValue(forKey: remote.id) else {
-            logger.error("Ignoring drop of unknown remote \(remote.id) with name \(remote.name)")
+        guard let removed = remotes.removeValue(forKey: remote.id) else {
+            logger.error("Ignoring drop of unknown remote \(remote.id)")
             return
         }
-        dropRemoteSubject.send(removed)
+        lostRemoteSubject.send(removed)
     }
     
-    private func receiveContent(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
-        guard let listener = listeners[pair.remote.id] else {
-            logger.error("Ignoring chunk from unknown remote \(pair.remote.id) with name \(pair.remote.name)")
-            return
-        }
-        contentSubject.send((remote: listener, chunk: pair.chunk))
-    }
-
     private func receiveControl(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
-        guard let listener = listeners[pair.remote.id] else {
-            logger.error("Ignoring chunk from unknown remote \(pair.remote.id) with name \(pair.remote.name)")
+        guard let remote = remotes[pair.remote.id] else {
+            logger.error("Ignoring control chunk from unknown remote \(pair.remote.id)")
             return
         }
-        controlSubject.send((remote: listener, chunk: pair.chunk))
+        controlSubject.send((remote: remote, chunk: pair.chunk))
     }
 }

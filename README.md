@@ -25,7 +25,7 @@ The whisper protocol consists of packets, typically very small, sent from whispe
 There are two kinds of packets: _*text*_ packets and _*control*_ packets:
 
 - Text packets are used to send changes in the Whisperer’s live text. They have offsets of 0 or greater, and their packet data is text. Their offset indicates the position past which the packet text replaces the live text. If a listener receives an offset that's shorter than the live text, he can assume the user has revised earlier text. If a listener receives an offset that's longer than the live text, they can assume they’ve missed a packet and call for a re-read of the live text, suspending incremental text packet processing until the full data is received.
-- Control packets have offsets less than 0, and the interpretation of their packet data depends on their offset. Some of them are used to carry textual changes, such as shifting the live text to past text when the Whisperer hits return. Others are used for connection control, such as authorization handshakes.
+- Control packets have offsets less than 0, and the interpretation of their packet data depends on their offset. Some of them are used to carry content changes, such as shifting the live text to past text when the Whisperer hits return. Others are used for connection control, such as authorization handshakes and flow control
 
 The whisper protocol is designed to work over a transport layer that provides:
 
@@ -50,11 +50,19 @@ The canonical sequence for establishing a new conversation between a Whisperer a
    1. If so, the Whisperer authorizes the Listener on the content channel and sends a _listen authorization_ packet.
    2. If not, the Whisperer sends a _listen deauthorization_ packet.
 
-5. If the Listener receives a _listen authorization_ packet, they connect to the content channel and send a _joining_ message on the conversation channel.
+5. If the Listener receives a _listen authorization_ packet, they connect to the content channel and send a _joining_ message on the control channel.
 
 Because a Whisperer can recognize an existing listener from their _listen offer_ packet, the canonical sequence for a Listener re-joining a conversation to which they were already admitted is just steps 1, 4.1, and 5 from the above sequence.
 
 Whenever a Whisperer drops from a conversation, they send a _dropping_ packet to let the Listeners know, and vice versa (Listeners who drop send a _dropping_ packet to the Whisperer).
+
+#### Transport vs Application Layer
+
+The implementation of whispering/listening is broken into two layers: a _transport_ layer than handles making/breaking connections and sending protocol messages between conversation participants, and an _application_ layer that understands the semantics of the messages being exchanged.
+
+The transport layer uses (and captures) one control packet that is not passed to the application layer: the _leave conversation_ packet.  This packet is sent by the transport layer for two reasons: first, to warn the other participants that the application layer is quitting; and second, for the whisperer to tell a listener that they must leave the conversation.  This second use may be motivated either by the application layer (e.g., if a current listener is de-authorized) or by the transport layer (e.g., if there is a transport error and the connection must be torn down and re-established).
+
+Whenever a participant’s transport layer receives a _leave conversation_ packet from another, it tells the application layer of the other participant’s departure and stops sending any more packets to that participant (on either channel).
 
 ### Whisper Server
 

@@ -11,28 +11,26 @@ import Foundation
 /// See the design docs for more detail.
 final class WhisperProtocol {
     enum ControlOffset: Int, CustomStringConvertible {
-        /// text control messages
+        /// content control messages
         case newline = -1           // Shift current live text to past text (no packet data)
         case pastText = -2          // Add single line of past text given by packet data
         case liveText = -3          // Replace current live text with packet data
         case startReread = -4       // Start sending re-read.  Packet data is `ReadType` being sent.
-        case requestReread = -5     // Request re-read. Packet data is `ReadType` of request.
         case clearHistory = -6      // Tell Listener to clear their history.
-        
-        /// sound control messages
-        case playSound = -10        // Play the sound named by the packet data.
-        case playSpeech = -11       // Generate speech for the packet data.
-        
-        /// handshake control messages - packet data for all these is the [ClientInfo]
+        case playSound = -7         // Play the sound named by the packet data.
+        case playSpeech = -8        // Generate speech for the packet data.
+
+        /// handshake control (aka "presence") messages - packet data for all these is the [ClientInfo]
         case whisperOffer = -20     // Whisperer offers a conversation to listener
         case listenRequest = -21    // Listener requests to join a conversation
         case listenAuthYes = -22    // Whisperer authorizes Listener to join a conversation.
         case listenAuthNo = -23     // Whisperer doesn't authorize Listener to join a conversation.
         case joining = -24          // An allowed listener is joining the conversation.
         case dropping = -25         // A whisperer or listener is dropping from the conversation.
-        
-        /// discovery control messages
-        case listenOffer = -30      // A Listener is looking to rejoin a conversation: packet data is client ID and profile ID.
+        case listenOffer = -26      // A Listener is looking to rejoin a conversation: only client ID and profile ID are included.
+
+		/// flow control messages
+		case requestReread = -40    // Request re-read. Packet data is `ReadType` of request.
 
         var description: String {
             switch self {
@@ -61,9 +59,9 @@ final class WhisperProtocol {
             case .listenAuthNo:
                 return "listen deauthorization"
             case .joining:
-                return "joining"
+                return "joining conversation"
             case .dropping:
-                return "dropping"
+                return "leaving conversation"
             case .listenOffer:
                 return "listen offer"
             }
@@ -106,10 +104,19 @@ final class WhisperProtocol {
         }
     }
     
-    struct ProtocolChunk {
+	struct ProtocolChunk: CustomStringConvertible {
         var offset: Int
         var text: String
         
+		var description: String {
+			if self.offset >= 0 {
+				return self.toString()
+			} else {
+				let offset = ControlOffset(rawValue: self.offset)?.description ?? "Unknown (\(self.offset))"
+				return "\(offset) control message: 'self.text'"
+			}
+		}
+
         func toString() -> String {
             return "\(offset)|" + text
         }
@@ -191,7 +198,7 @@ final class WhisperProtocol {
             return ProtocolChunk(offset: ControlOffset.requestReread.rawValue, text: hint.rawValue)
         }
         
-        private static func presenceChunk(offset: Int, c: Conversation, contentId: String = "") -> ProtocolChunk {
+        private static func authChunk(offset: Int, c: Conversation, contentId: String = "") -> ProtocolChunk {
             let profile = UserProfile.shared
             let data = ClientInfo(conversationId: c.id,
                                   conversationName: c.name,
@@ -202,28 +209,34 @@ final class WhisperProtocol {
             return ProtocolChunk(offset: offset, text: data.toString())
         }
         
-        static func whisperOffer(c: Conversation) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.whisperOffer.rawValue, c: c)
+        static func whisperOffer(_ c: Conversation) -> ProtocolChunk {
+            return authChunk(offset: ControlOffset.whisperOffer.rawValue, c: c)
         }
         
-        static func listenRequest(c: Conversation) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.listenRequest.rawValue, c: c)
+        static func listenRequest(_ c: Conversation) -> ProtocolChunk {
+            return authChunk(offset: ControlOffset.listenRequest.rawValue, c: c)
         }
         
-        static func listenAuthYes(c: Conversation, contentId: String) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c)
+        static func listenAuthYes(_ c: Conversation, contentId: String) -> ProtocolChunk {
+            return authChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c)
         }
         
-        static func listenAuthNo(c: Conversation) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c)
+        static func listenAuthNo(_ c: Conversation) -> ProtocolChunk {
+            return authChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c)
         }
         
-        static func joining(c: Conversation) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.joining.rawValue, c: c)
+        static func joining(_ c: Conversation) -> ProtocolChunk {
+            return authChunk(offset: ControlOffset.joining.rawValue, c: c)
         }
         
-        static func dropping(c: Conversation) -> ProtocolChunk {
-            return presenceChunk(offset: ControlOffset.dropping.rawValue, c: c)
+        static func dropping() -> ProtocolChunk {
+			let info = ClientInfo(conversationId: "",
+								  conversationName: "",
+								  clientId: PreferenceData.clientId,
+								  profileId: "",
+								  username: "",
+								  contentId: "")
+			return ProtocolChunk(offset: ControlOffset.dropping.rawValue, text: info.toString())
         }
         
 		static func listenOffer(_ c: Conversation? = nil) -> ProtocolChunk {

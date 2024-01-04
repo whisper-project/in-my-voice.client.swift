@@ -10,63 +10,43 @@ struct WhisperersView: View {
     @Environment(\.colorScheme) var colorScheme
     
     @ObservedObject var model: ListenViewModel
-    
+
     var body: some View {
-        if model.whisperer == nil && model.candidates.isEmpty {
-            Text("No Whisperers")
-                .padding()
-        } else {
-            VStack(alignment: .leading, spacing: 20) {
-                ForEach(makeRows()) { row in
-                    HStack(spacing: 5) {
-                        Text(row.id)
-                        if (row.remote.owner == .manual) {
-                            Image(systemName: "network")
-                        }
-                    }
-                    .frame(minWidth: 300)
-                    .bold(row.isWhisperer)
-                    .font(FontSizes.fontFor(FontSizes.minTextSize + 2))
-                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                    .onTapGesture {
-                        model.setWhisperer(row.remote)
-                        model.showStatusDetail = false
-                    }
-                }
-            }
-            .padding()
-        }
+		if let candidate = model.whisperer {
+			let (remote, info) = (candidate.remote, candidate.info)
+			let sfname = remote.kind == .local ? "personalhotspot.circle" : "network"
+			Text("Listening \(Image(systemName: sfname)) to \(info.username) in conversation \(info.conversationName)")
+		} else if !model.invites.isEmpty {
+			VStack(alignment: .leading, spacing: 20) {
+				ForEach(model.invites.map(Row.init)) { row in
+					HStack {
+						row.legend
+							.lineLimit(nil)
+						Button("Accept") { model.acceptInvite(row.id) }
+						Button("Refuse") { model.refuseInvite(row.id) }
+					}
+				}
+			}
+			.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
+			.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+			.padding()
+		} else {
+			Text("No Whisperer")
+		}
     }
-    
-    private struct Row: Identifiable, Comparable, Equatable {
-        var id: String
-        var remote: ListenViewModel.Remote
-        var isWhisperer: Bool
-        
-        static func < (lhs: Self, rhs: Self) -> Bool {
-            lhs.id < rhs.id
-        }
-        
-        static func == (lhs: WhisperersView.Row, rhs: WhisperersView.Row) -> Bool {
-            lhs.remote.id == rhs.remote.id
-        }
-    }
-    
-    private func makeRows() -> [Row] {
-        if let whisperer = model.whisperer {
-            return [Row(id: whisperer.name, remote: whisperer, isWhisperer: true)]
-        } else {
-            var rows = model.candidates.map { candidate in
-                Row(id: candidate.name, remote: candidate, isWhisperer: false)
-            }
-            rows.sort()
-            return rows
-        }
-    }
+
+	final class Row: Identifiable {
+		var id: String
+		var legend: Text
+
+		init(_ candidate: ListenViewModel.Candidate) {
+			id = candidate.remote.id
+			let sfname = candidate.remote.kind == .local ? "personalhotspot.circle" : "network"
+			legend = Text("Invite \(Image(systemName: sfname)) from \(candidate.info.username) to conversation \(candidate.info.conversationName)")
+		}
+	}
 }
 
-struct WhisperersView_Previews: PreviewProvider {
-    static var previews: some View {
-        WhisperersView(model: ListenViewModel(nil))
-    }
+#Preview {
+	WhisperersView(model: ListenViewModel(nil))
 }
