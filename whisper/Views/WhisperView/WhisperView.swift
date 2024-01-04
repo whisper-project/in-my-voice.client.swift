@@ -16,8 +16,8 @@ struct WhisperView: View {
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel
-    @State private var size = FontSizes.FontName.normal.rawValue
-    @State private var magnify: Bool = false
+	@State private var size = PreferenceData.sizeWhenWhispering
+	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
     @State private var showStatusDetail: Bool = false
     
     init(mode: Binding<OperatingMode>, publisherUrl: TransportUrl) {
