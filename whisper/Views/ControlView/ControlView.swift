@@ -129,6 +129,13 @@ struct ControlView: View {
             Toggle(isOn: $magnify) {
                 Text("Large Sizes")
             }
+			.onChange(of: magnify) { _ in
+				if mode == .listen {
+					PreferenceData.magnifyWhenListening = magnify
+				} else {
+					PreferenceData.magnifyWhenWhispering = magnify
+				}
+			}
             .frame(maxWidth: 105)
             Spacer()
         }
