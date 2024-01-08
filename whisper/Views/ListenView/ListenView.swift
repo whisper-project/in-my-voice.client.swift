@@ -15,8 +15,8 @@ struct ListenView: View {
     
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel
-    @State private var size = FontSizes.FontName.normal.rawValue
-    @State private var magnify: Bool = false
+	@State private var size = PreferenceData.sizeWhenListening
+	@State private var magnify: Bool = PreferenceData.magnifyWhenListening
     
     // set this once at view creation
     private var listenerLiveTextOnTop = !PreferenceData.listenerMatchesWhisperer()
