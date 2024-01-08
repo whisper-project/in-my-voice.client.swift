@@ -91,14 +91,58 @@ struct PreferenceData {
         return defaults.string(forKey: "newest_whisper_location_preference") == "bottom"
     }
     
+	// size of text
+	static var sizeWhenWhispering: FontSizes.FontSize {
+		get {
+			max(defaults.integer(forKey: "size_when_whispering_setting"), FontSizes.minTextSize)
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "size_when_whispering_setting")
+		}
+	}
+	static var sizeWhenListening: FontSizes.FontSize {
+		get {
+			max(defaults.integer(forKey: "size_when_listening_setting"), FontSizes.minTextSize)
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "size_when_listening_setting")
+		}
+	}
+
+	// whether to magnify text
+	static var magnifyWhenWhispering: Bool {
+		get {
+			defaults.bool(forKey: "magnify_when_whispering_setting")
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "magnify_when_whispering_setting")
+		}
+	}
+	static var magnifyWhenListening: Bool {
+		get { 
+			defaults.bool(forKey: "magnify_when_listening_setting")
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "magnify_when_listening_setting")
+		}
+	}
+
     // whether to speak past text
     static var speakWhenWhispering: Bool {
-        get { defaults.bool(forKey: "speak_when_whispering_setting") }
-        set (new) { defaults.setValue(new, forKey: "speak_when_whispering_setting") }
+        get {
+			defaults.bool(forKey: "speak_when_whispering_setting")
+		}
+        set (new) {
+			defaults.setValue(new, forKey: "speak_when_whispering_setting")
+		}
     }
     static var speakWhenListening: Bool {
-        get { defaults.bool(forKey: "speak_when_listening_setting") }
-        set (new) { defaults.setValue(new, forKey: "speak_when_listening_setting") }
+        get {
+			defaults.bool(forKey: "speak_when_listening_setting")
+		}
+        set (new) {
+			defaults.setValue(new, forKey: "speak_when_listening_setting")
+		}
     }
 
     // user name and session memory

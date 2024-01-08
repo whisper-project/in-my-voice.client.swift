@@ -98,12 +98,22 @@ struct ControlView: View {
         } else {
             Button {
                 self.size = FontSizes.nextTextSmaller(self.size)
+				if mode == .listen {
+					PreferenceData.sizeWhenListening = self.size
+				} else {
+					PreferenceData.sizeWhenWhispering = self.size
+				}
             } label: {
                 buttonImage("font-down-button")
             }
             .disabled(size == FontSizes.minTextSize)
             Button {
                 self.size = FontSizes.nextTextLarger(self.size)
+				if mode == .listen {
+					PreferenceData.sizeWhenListening = self.size
+				} else {
+					PreferenceData.sizeWhenWhispering = self.size
+				}
             } label: {
                 buttonImage("font-up-button")
             }
@@ -119,6 +129,13 @@ struct ControlView: View {
             Toggle(isOn: $magnify) {
                 Text("Large Sizes")
             }
+			.onChange(of: magnify) { _ in
+				if mode == .listen {
+					PreferenceData.magnifyWhenListening = magnify
+				} else {
+					PreferenceData.magnifyWhenWhispering = magnify
+				}
+			}
             .frame(maxWidth: 105)
             Spacer()
         }

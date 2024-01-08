@@ -63,7 +63,8 @@ final class TcpListenTransport: SubscribeTransport {
     final class Whisperer: TransportRemote {
         var id: String
         var name: String
-        
+		var kind: TransportKind = .global
+
         fileprivate init(id: String, name: String) {
             self.id = id
             self.name = name

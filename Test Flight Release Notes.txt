@@ -146,3 +146,8 @@ This build fixes one bug and supports a better experience when conversations end
 - The bug that was keeping Whisperers from dropping unwanted Listeners has been fixed. Now the Whisperer can drop both app listeners and web Listeners from the conversation.
 
 - Listeners now disconnect automatically whenever the Whisperer disconnects.  So Listeners will no longer hang around on the Whisperer's sole conversation.
+
+BUILD 46 (external):
+The last build made all Listeners stop listening whenever the Whisperer disconnected, but  Bluetooth Whisperers often suffer spontaneous, temporary disconnects from their Listeners.  So this build relaxes the auto-disconnect behavior for Bluetooth connections: when the Whisperer disconnects, the Listeners will keep connected and wait for the Whisperer to come back.
+
+This build also remembers from one session to the next what size of text is being used, and whether the regular or large set of sizes is in use.

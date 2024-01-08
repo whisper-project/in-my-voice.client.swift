@@ -91,6 +91,7 @@ final class ComboListenTransport: SubscribeTransport {
     final class Whisperer: TransportRemote {
         let id: String
         var name: String
+		var kind: TransportKind { get { inner.kind } }
         var owner: Owner
         
         fileprivate var inner: (any TransportRemote)
