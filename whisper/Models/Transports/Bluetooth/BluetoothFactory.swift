@@ -14,10 +14,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
         
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
 
-    func publisher(_ c: Conversation?) -> Publisher {
-		guard let c = c else {
-			fatalError("Publishing requires a conversation")
-		}
+    func publisher(_ c: Conversation) -> Publisher {
         return Publisher(c)
     }
     

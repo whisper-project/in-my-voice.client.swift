@@ -18,22 +18,19 @@ struct ListenProfileView: View {
                 .font(FontSizes.fontFor(name: .small))
             if (!conversations.isEmpty) {
                 VStack(alignment: .leading) {
-                    ForEach($conversations) { $c in
+                    ForEach(conversations) { c in
                         HStack(spacing: 20) {
-                            TextField("Name", text: $c.name)
-                                .submitLabel(.done)
-                                .onSubmit { updateProfile() }
+                            Text(c.name)
                             Spacer(minLength: 25)
                             Button("Listen", systemImage: "icloud.and.arrow.down") {
                                 logger.info("Hit listen button on \(c.id) (\(c.name))")
-                                updateProfile()
                                 maybeListen?(c)
                             }
                             .labelStyle(.iconOnly)
                             Button("Delete", systemImage: "delete.left") {
                                 logger.info("Hit delete button on \(c.id) (\(c.name))")
                                 profile.deleteListenConversation(c)
-                                updateProfile()
+                                updateFromProfile()
                             }
                         }
                         .labelStyle(.iconOnly)
@@ -48,7 +45,6 @@ struct ListenProfileView: View {
                 Spacer()
                 Button("Cancel") {
                     logger.info("Canceling whisper conversation choice")
-                    updateProfile()
                     maybeListen?(nil)
                 }
                 Spacer()
@@ -62,11 +58,6 @@ struct ListenProfileView: View {
     
     func updateFromProfile() {
         conversations = profile.listenConversations()
-    }
-    
-    func updateProfile() {
-        profile.saveAsDefault()
-        updateFromProfile()
     }
 }
 

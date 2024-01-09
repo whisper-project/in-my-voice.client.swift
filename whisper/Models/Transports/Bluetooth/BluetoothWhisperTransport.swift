@@ -121,9 +121,12 @@ final class BluetoothWhisperTransport: PublishTransport {
     private func noticeSubscription(_ pair: (CBCentral, CBCharacteristic)) {
 		if pair.1.uuid == BluetoothData.controlOutUuid {
 			// remote has opened the control channel
-			ensureRemote(pair.0)
+			let remote = ensureRemote(pair.0)
+			remote.controlSubscribed = true
 		} else if pair.1.uuid == BluetoothData.contentOutUuid {
-			if let remote = remotes[pair.0], remote.isAuthorized {
+			let remote = ensureRemote(pair.0)
+			remote.contentSubscribed = true
+			if remote.isAuthorized {
 				// add this as an authorized listener
 				logger.info("Adding content listener: \(remote.id)")
 				listeners.append(pair.0)
@@ -138,20 +141,31 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
     
     private func noticeUnsubscription(_ pair: (CBCentral, CBCharacteristic)) {
-        guard pair.1.uuid == BluetoothData.contentOutUuid || pair.1.uuid == BluetoothData.controlOutUuid else {
-			logger.error("Ignoring unsubscribe for unexpected characteristic: \(pair.1.uuid.uuidString)")
-            return
-        }
 		if let remote = remotes[pair.0] {
-			if !remote.hasDropped {
-				remote.hasDropped = true
-				logger.warning("Unsubscribe by remote \(remote.id) that hasn't dropped")
-				lostRemoteSubject.send(remote)
-			}
-			logger.info("Removing remote due to unsubscribe: \(remote.id)")
+			// unexpected unsubscription, act as if the remote had dropped
+			remote.hasDropped = true
+			logger.error("Unsubscribe by remote \(remote.id) that hasn't dropped")
 			removeRemote(remote)
+			lostRemoteSubject.send(remote)
+		}
+		if let removed = removedRemotes[pair.0] {
+			// unsubscription from a remote we have removed
+			if pair.1.uuid == BluetoothData.contentOutUuid {
+				removed.contentSubscribed = false
+				if let index = eavesdroppers.firstIndex(of: pair.0) {
+					eavesdroppers.remove(at: index)
+				}
+			} else if pair.1.uuid == BluetoothData.controlOutUuid {
+				removed.controlSubscribed = false
+			} else {
+				logger.error("Got unsubscribe for a non-published characteristic: \(pair.1)")
+			}
+			if !removed.contentSubscribed && !removed.controlSubscribed {
+				// the remote has fully disconnected, forget about it
+				removedRemotes.removeValue(forKey: pair.0)
+			}
 		} else {
-			logger.info("Ignoring unsubscribe from already-dropped remote: \(pair.0.identifier.uuidString)")
+			logger.error("Ignoring unsubscribe from unknown central: \(pair.0.identifier.uuidString)")
         }
     }
     
@@ -172,7 +186,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             fatalError("Got an empty write request sequence")
         }
         guard requests.count == 1 else {
-            logger.error("Got multiple listener requests in a batch: \(requests)")
+            logger.error("Got multiple write requests in a batch: \(requests)")
             factory.respondToWriteRequest(request: request, withCode: .requestNotSupported)
             return
         }
@@ -195,6 +209,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 			logger.info("Received \(value) message from: \(remote.id)")
 			remote.hasDropped = true
 			removeRemote(remote)
+			lostRemoteSubject.send(remote)
 			return
 		}
 		controlSubject.send((remote: remote, chunk: chunk))
@@ -216,6 +231,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 
         fileprivate var central: CBCentral
 		fileprivate var profileId: String?
+		fileprivate var contentSubscribed: Bool = false
 		fileprivate var controlSubscribed: Bool = false
 		fileprivate var isAuthorized: Bool = false
 		fileprivate var hasDropped: Bool = false
@@ -228,7 +244,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 
     private var factory = BluetoothFactory.shared
     private var remotes: [CBCentral: Remote] = [:]
-	private var droppedRemotes: [CBCentral: Remote] = [:]
+	private var removedRemotes: [CBCentral: Remote] = [:]
     private var liveText: String = ""
     private var pendingContent: [WhisperProtocol.ProtocolChunk] = []
 	private var directedContent: [CBCentral: [WhisperProtocol.ProtocolChunk]] = [:]
@@ -404,7 +420,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         factory.stopAdvertising()
         advertisingInProgress = false
         if let timer = adTimer {
-            // manual cancellation: invalidate the running timer
+            // global cancellation: invalidate the running timer
             adTimer = nil
             timer.invalidate()
         }
@@ -422,22 +438,19 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
 
 	private func removeRemote(_ remote: Remote) {
-		guard let removed = remotes.removeValue(forKey: remote.central) else {
-			logger.error("Ignoring request to remove unknown remote: \(remote.id)")
-			return
-		}
-		if !removed.hasDropped {
+		remotes.removeValue(forKey: remote.central)
+		removedRemotes[remote.central] = remote
+		if !remote.hasDropped {
 			// tell this remote we're dropping it
 			let chunk = WhisperProtocol.ProtocolChunk.dropping()
 			if !factory.updateValue(value: chunk.toData(),
 									characteristic: BluetoothData.controlOutCharacteristic,
-									central: removed.central) {
-				logger.error("Drop message for remote \(removed.id) failed to central: \(removed.central)")
+									central: remote.central) {
+				logger.error("Drop message for remote \(remote.id) failed to central: \(remote.central)")
 			}
-			if let index = listeners.firstIndex(of: removed.central) {
+			if let index = listeners.firstIndex(of: remote.central) {
 				listeners.remove(at: index)
-			} else if let index = eavesdroppers.firstIndex(of: removed.central) {
-				eavesdroppers.remove(at: index)
+				eavesdroppers.append(remote.central)
 			}
 		}
 	}
@@ -450,5 +463,10 @@ final class BluetoothWhisperTransport: PublishTransport {
 								characteristic: BluetoothData.controlOutCharacteristic) {
 			logger.error("Leaving conversation message failed to send to all remotes")
 		}
+		// move all the remotes to removedRemotes
+		for remote in remotes.values {
+			removedRemotes[remote.central] = remote
+		}
+		remotes.removeAll()
     }
 }

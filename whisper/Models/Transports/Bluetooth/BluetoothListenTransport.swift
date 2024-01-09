@@ -75,8 +75,6 @@ final class BluetoothListenTransport: SubscribeTransport {
         // complete the content subscription
 		self.conversation = conversation
 		selected.peripheral.setNotifyValue(true, for: contentOut)
-		let chunk = WhisperProtocol.ProtocolChunk.joining(conversation)
-		selected.peripheral.writeValue(chunk.toData(), for: controlIn, type: .withResponse)
         // drop the other remotes
         for remote in Array(remotes.values) {
 			if remote !== publisher {
@@ -152,8 +150,12 @@ final class BluetoothListenTransport: SubscribeTransport {
         if let remote = dropsInProgress.removeValue(forKey: peripheral) {
             // this is an expected disconnect
             logger.info("Completed disconnect from remote \(remote.id)")
-        } else if let remote = remotes.removeValue(forKey: peripheral) {
+        } else if let remote = remotes[peripheral] {
             logger.info("Remote \(remote.id) has disconnected unexpectedly")
+			remote.contentOutChannel = nil
+			remote.controlInChannel = nil
+			remote.controlOutChannel = nil
+			removeRemote(remote)
 			lostRemoteSubject.send(remote)
         } else {
             logger.error("Ignoring disconnect from unknown peripheral: \(peripheral)")
@@ -353,6 +355,10 @@ final class BluetoothListenTransport: SubscribeTransport {
 			remote.peripheral.setNotifyValue(false, for: channel)
 		}
 		factory.disconnect(remote.peripheral)
+		if remote === publisher {
+			publisher = nil
+			startDiscovery()
+		}
 	}
 	
     private func startDiscovery() {

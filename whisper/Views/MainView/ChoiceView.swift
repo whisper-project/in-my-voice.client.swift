@@ -90,7 +90,7 @@ struct ChoiceView: View {
                                 maybeWhisper(profile.whisperDefault)
                             }
                     )
-                    .popover(isPresented: $showWhisperConversations) {
+                    .sheet(isPresented: $showWhisperConversations) {
                         WhisperProfileView(maybeWhisper: maybeWhisper)
                     }
                     Button(action: {}) {
@@ -115,7 +115,7 @@ struct ChoiceView: View {
                                 mode = .listen
                             }
                     )
-                    .popover(isPresented: $showListenConversations) {
+                    .sheet(isPresented: $showListenConversations) {
                         ListenProfileView(maybeListen: maybeListen)
                     }
                 }
@@ -207,7 +207,6 @@ struct ChoiceView: View {
             newUsername = proposal
             username = proposal
             profile.username = proposal
-            profile.saveAsDefault()
             withAnimation {
                 showWhisperButtons = true
             }

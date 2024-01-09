@@ -52,17 +52,19 @@ The canonical sequence for establishing a new conversation between a Whisperer a
 
 5. If the Listener receives a _listen authorization_ packet, they connect to the content channel and send a _joining_ message on the control channel.
 
-Because a Whisperer can recognize an existing listener from their _listen offer_ packet, the canonical sequence for a Listener re-joining a conversation to which they were already admitted is just steps 1, 4.1, and 5 from the above sequence.
+Because a Whisperer can recognize an existing listener from their _listen offer_ packet, the canonical sequence for a Listener re-joining a conversation to which they have previously been a party is just steps 1, 4.1, and 5 from the above sequence.
 
 Whenever a Whisperer drops from a conversation, they send a _dropping_ packet to let the Listeners know, and vice versa (Listeners who drop send a _dropping_ packet to the Whisperer).
 
 #### Transport vs Application Layer
 
-The implementation of whispering/listening is broken into two layers: a _transport_ layer than handles making/breaking connections and sending protocol messages between conversation participants, and an _application_ layer that understands the semantics of the messages being exchanged.
+The implementation of whispering/listening is broken into two layers: a _transport_ layer that handles making/breaking connections and sending protocol messages between conversation participants, and an _application_ layer that understands the semantics of the messages being exchanged. As mentioned above, the transport layer may either be broadcast based (all packets seen by all participants) or it may be point-to-point (all packets go from one participant to a specific other participant).
 
-The transport layer uses (and captures) one control packet that is not passed to the application layer: the _leave conversation_ packet.  This packet is sent by the transport layer for two reasons: first, to warn the other participants that the application layer is quitting; and second, for the whisperer to tell a listener that they must leave the conversation.  This second use may be motivated either by the application layer (e.g., if a current listener is de-authorized) or by the transport layer (e.g., if there is a transport error and the connection must be torn down and re-established).
+All content packets, and almost all control packets, are both initiated at the application layer by the sender and then processed at the application layer by the receiver.  There are three exceptions:
 
-Whenever a participant’s transport layer receives a _leave conversation_ packet from another, it tells the application layer of the other participant’s departure and stops sending any more packets to that participant (on either channel).
+* The _listen offer_ packet is initiated from the tranport layer on the listener side whenever it starts up (broadcast) or connects to a new whisperer (point-to-point).  This packet announces the presence of the new listener and is passed to the whisper application layer.  Without this packet, listeners who arrive mid-conversation would not be noticed by the whisperer.
+* The _whisper offer_ packet is initiated from the broadcast transport layer on the whisperer side when it first connects to the control channel.  Without this packet, late-arriving whisperers would not be aware of (broadcast-based) listeners who had connected earlier.
+* The _leave conversation_ packet.  This packet is sent by the transport layer to warn other participants that they are disconnecting from the conversation.  The disconnection may be motivated either by the application layer (e.g., if the user quits) or by the transport layer (e.g., if there is a transport error and the connection must be torn down). Whenever a participant’s transport receives a _leave conversation_ packet from a participant that is already known to the application layer, it tells the application layer of the departure.
 
 ### Whisper Server
 

@@ -12,50 +12,55 @@ struct ListenersView: View {
     @ObservedObject var model: WhisperViewModel
     
     var body: some View {
-        if model.remotes.isEmpty {
-            Text("No Listeners")
-        } else {
-            VStack(alignment: .leading) {
-                ForEach(makeRows()) { row in
-                    HStack(spacing: 5) {
-                        Text(row.id)
-                        if (row.remote.owner == .manual) {
-                            Image(systemName: "network")
-                        }
-                        Spacer(minLength: 25)
-                        Button(action: { model.playSound(row.remote) }, label: { Image(systemName: "speaker.wave.2") })
-                            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10))
-                        Button(action: { model.dropListener(row.remote) }, label: { Image(systemName: "delete.left") })
-                    }
-                    .font(FontSizes.fontFor(FontSizes.minTextSize))
-                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                }
-            }
-            .padding()
-        }
+		VStack {
+			Text(model.conversation.name)
+				.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
+				.padding()
+			if !model.invites.isEmpty {
+				VStack(alignment: .leading, spacing: 20) {
+					ForEach(model.invites.map(Row.init)) { row in
+						HStack {
+							row.legend
+								.lineLimit(nil)
+							Button("Accept") { model.acceptInvite(row.id) }
+							Button("Refuse") { model.refuseInvite(row.id) }
+						}
+					}
+				}
+				Spacer(minLength: 20)
+			}
+			if model.listeners().isEmpty {
+				Text("No Listeners")
+			} else {
+				VStack(alignment: .leading, spacing: 10) {
+					ForEach(model.listeners()) { candidate in
+						HStack(spacing: 5) {
+							Text(candidate.info.username)
+							Image(systemName: candidate.remote.kind == .global ? "network" : "personalhotspot.circle")
+							Spacer(minLength: 20)
+							Button(action: { model.playSound(candidate) }, label: { Image(systemName: "speaker.wave.2") })
+								.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10))
+							Button(action: { model.dropListener(candidate) }, label: { Image(systemName: "delete.left") })
+						}
+					}
+				}
+			}
+		}
+		.font(FontSizes.fontFor(FontSizes.minTextSize + 1))
+		.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		.padding()
     }
     
-    private struct Row: Identifiable, Comparable, Equatable {
-        var id: String
-        var remote: WhisperViewModel.Remote
+	final class Row: Identifiable {
+		var id: String
+		var legend: Text
 
-        static func == (lhs: Row, rhs: Row) -> Bool {
-            lhs.id == rhs.id
-        }
-        
-        static func < (lhs: Self, rhs: Self) -> Bool {
-            lhs.id < rhs.id
-        }
-    }
-    
-    private func makeRows() -> [Row] {
-        var rows: [Row] = []
-        for remote in model.remotes.values {
-            rows.append(Row(id: remote.ownerName, remote: remote))
-        }
-        rows.sort()
-        return rows
-    }
+		init(_ candidate: WhisperViewModel.Candidate) {
+			id = candidate.remote.id
+			let sfname = candidate.remote.kind == .local ? "personalhotspot.circle" : "network"
+			legend = Text("Request \(Image(systemName: sfname)) from \(candidate.info.username)")
+		}
+	}
 }
 
 #Preview {

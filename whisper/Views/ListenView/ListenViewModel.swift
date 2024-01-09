@@ -22,6 +22,7 @@ final class ListenViewModel: ObservableObject {
 		init(remote: Remote, info: WhisperProtocol.ClientInfo, isPending: Bool) {
 			self.id = remote.id
 			self.remote = remote
+			self.info = info
 			self.isPending = isPending
 			self.created = Date.now
 		}
@@ -43,8 +44,8 @@ final class ListenViewModel: ObservableObject {
 
     @Published var statusText: String = ""
     @Published var liveText: String = ""
+	@Published var conversationEnded: Bool = false
     @Published var connectionError: Bool = false
-    @Published var conversationEnded: Bool = false
     @Published var connectionErrorDescription: String = "The connection to the whisperer was lost"
     @Published var showStatusDetail: Bool = false
 	@Published var candidates: [String: Candidate] = [:]	// remoteId -> Candidate
@@ -133,6 +134,9 @@ final class ListenViewModel: ObservableObject {
 		}
 		candidate.isPending = false
 		invites = candidates.values.filter{$0.isPending}.sorted()
+		let conversation = profile.listenConversationForInvite(info: candidate.info)
+		let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
+		transport.sendControl(remote: candidate.remote, chunk: chunk)
 	}
 
 	func refuseInvite(_ id: String) {
@@ -162,7 +166,7 @@ final class ListenViewModel: ObservableObject {
     // MARK: Transport subscription handlers
     private func dropCandidate(_ remote: Remote) {
 		guard let removed = candidates.removeValue(forKey: remote.id) else {
-            logger.error("Ignoring dropped non-candidate \(remote.id)")
+            logger.info("Ignoring dropped non-candidate \(remote.id)")
             return
         }
 		clients.removeValue(forKey: removed.info.clientId)
@@ -199,11 +203,9 @@ final class ListenViewModel: ObservableObject {
 
     // MARK: internal helpers
     private func resetTextForConnection() {
+		liveText = connectingLiveText
         if isFirstConnect {
-            liveText = connectingLiveText
             pastText.setFromText(connectingPastText)
-        } else {
-            self.liveText = connectingLiveText
         }
     }
     
@@ -258,10 +260,14 @@ final class ListenViewModel: ObservableObject {
 
 	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
 		guard chunk.isPresenceMessage() else {
-			fatalError("Listener received a non-presence message: \(chunk)")
+			fatalError("Received a non-presence control message: \(chunk)")
 		}
 		guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
-			fatalError("Listener received a presence message with invalid data: \(chunk)")
+			fatalError("Received a presence message with invalid data: \(chunk)")
+		}
+		guard conversation == nil || conversation!.id == info.conversationId else {
+			logger.error("Ignoring a presence message about the wrong conversation: \(info.conversationId)")
+			return
 		}
 		switch WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
 		case .whisperOffer:
@@ -277,6 +283,13 @@ final class ListenViewModel: ObservableObject {
 			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
 				setWhisperer(candidate: candidate, conversation: conversation)
 			}
+		case .listenAuthNo:
+			guard let candidate = candidates[remote.id] else {
+				logger.error("Ignoring refusal from non-candidate \(remote.id)")
+				return
+			}
+			connectionErrorDescription = "The Whisperer has refused to let you listen"
+			connectionError = true
 		default:
 			fatalError("Listener received an unexpected presence message: \(chunk)")
 		}
@@ -291,10 +304,11 @@ final class ListenViewModel: ObservableObject {
 			return existing
 		}
 		guard clients[info.clientId] == nil else {
-			logger.info("Ignoring second appearance of client via different network: \(remote.kind)")
+			logger.info("Refusing second appearance of client via different network: \(remote.kind)")
+			transport.drop(remote: remote)
 			return nil
 		}
-		let candidate = Candidate(remote: remote, info: info, isPending: conversation.lastListened == Date.distantPast)
+		let candidate = Candidate(remote: remote, info: info, isPending: !conversation.authorized)
 		candidates[candidate.id] = candidate
 		clients[candidate.info.clientId] = candidate
 		return candidate
@@ -391,13 +405,22 @@ final class ListenViewModel: ObservableObject {
 		}
 		logger.info("Selecting whisperer \(candidate.id) for conversation \(conversation.id)")
 		whisperer = candidate
-		// refresh status text
+		// stop looking for whisperers
 		cancelDiscovery()
 		refreshStatusText()
 		// drop other candidates and invites
-		candidates = [candidate.id: candidate]
-		invites = []
-		// tell the transport we're subscribing
+		for candidate in Array(candidates.values) {
+			if candidate === whisperer {
+				continue
+			}
+			candidates.removeValue(forKey: candidate.id)
+			clients.removeValue(forKey: candidate.info.clientId)
+			transport.drop(remote: candidate.remote)
+		}
+		invites.removeAll()
+		// tell everyone we're subscribing
+		let chunk = WhisperProtocol.ProtocolChunk.joining(conversation)
+		transport.sendControl(remote: candidate.remote, chunk: chunk)
 		transport.subscribe(remote: candidate.remote, conversation: conversation)
 		// update the view
 		refreshStatusText()

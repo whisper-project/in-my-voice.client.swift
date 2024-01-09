@@ -21,18 +21,18 @@ final class ComboListenTransport: SubscribeTransport {
 
     func stop() {
         logger.info("Stopping combo listen transport")
-		staggerStop(.auto)
-		staggerStop(.manual)
+		staggerStop(.local)
+		staggerStop(.global)
     }
     
     func goToBackground() {
-        autoTransport?.goToBackground()
-        manualTransport?.goToBackground()
+        localTransport?.goToBackground()
+        globalTransport?.goToBackground()
     }
     
     func goToForeground() {
-        autoTransport?.goToForeground()
-        manualTransport?.goToForeground()
+        localTransport?.goToForeground()
+        globalTransport?.goToForeground()
     }
     
     func sendControl(remote: Whisperer, chunk: WhisperProtocol.ProtocolChunk) {
@@ -40,10 +40,10 @@ final class ComboListenTransport: SubscribeTransport {
             fatalError("Targeting a remote that's not a whisperer: \(remote.id)")
         }
         switch remote.owner {
-        case .auto:
-            autoTransport!.sendControl(remote: remote.inner as! AutoRemote, chunk: chunk)
-        case .manual:
-            manualTransport!.sendControl(remote: remote.inner as! ManualRemote, chunk: chunk)
+        case .local:
+            localTransport!.sendControl(remote: remote.inner as! LocalRemote, chunk: chunk)
+        case .global:
+            globalTransport!.sendControl(remote: remote.inner as! GlobalRemote, chunk: chunk)
         }
     }
 
@@ -52,10 +52,10 @@ final class ComboListenTransport: SubscribeTransport {
             fatalError("Dropping a remote that's not a whisperer: \(remote.id)")
         }
         switch remote.owner {
-        case .auto:
-            autoTransport!.drop(remote: remote.inner as! AutoRemote)
-        case .manual:
-            manualTransport!.drop(remote: remote.inner as! ManualRemote)
+        case .local:
+            localTransport!.drop(remote: remote.inner as! LocalRemote)
+        case .global:
+            globalTransport!.drop(remote: remote.inner as! GlobalRemote)
         }
     }
 
@@ -64,26 +64,26 @@ final class ComboListenTransport: SubscribeTransport {
             fatalError("Subscribing to an unknown remote: \(remote.id)")
         }
         switch remote.owner {
-        case .auto:
-			logger.info("Subscribing to an AutoRemote: \(remote.id)")
-			staggerStop(.manual)
-			autoTransport!.subscribe(remote: remote.inner as! AutoRemote, conversation: conversation)
-        case .manual:
-			logger.info("Subscribing to a ManualRemote: \(remote.id)")
-			staggerStop(.auto)
-            manualTransport!.subscribe(remote: remote.inner as! ManualRemote, conversation: conversation)
+        case .local:
+			logger.info("Subscribing to an LocalRemote: \(remote.id)")
+			staggerStop(.global)
+			localTransport!.subscribe(remote: remote.inner as! LocalRemote, conversation: conversation)
+        case .global:
+			logger.info("Subscribing to a GlobalRemote: \(remote.id)")
+			staggerStop(.local)
+            globalTransport!.subscribe(remote: remote.inner as! GlobalRemote, conversation: conversation)
         }
     }
     
     // MARK: Internal types, properties, and initialization
-    typealias AutoTransport = BluetoothListenTransport
-    typealias AutoRemote = BluetoothListenTransport.Remote
-    typealias ManualTransport = TcpListenTransport
-    typealias ManualRemote = TcpListenTransport.Remote
+    typealias LocalTransport = BluetoothListenTransport
+    typealias LocalRemote = BluetoothListenTransport.Remote
+    typealias GlobalTransport = TcpListenTransport
+    typealias GlobalRemote = TcpListenTransport.Remote
     
     enum Owner {
-        case auto
-        case manual
+        case local
+        case global
     }
     
     final class Whisperer: TransportRemote {
@@ -99,8 +99,8 @@ final class ComboListenTransport: SubscribeTransport {
         }
     }
     
-    private var autoTransport: AutoTransport?
-    private var manualTransport: ManualTransport?
+    private var localTransport: LocalTransport?
+    private var globalTransport: GlobalTransport?
 	private var staggerTimer: Timer?
     private var remotes: [String: Whisperer] = [:]
     private var cancellables: Set<AnyCancellable> = []
@@ -108,28 +108,28 @@ final class ComboListenTransport: SubscribeTransport {
     init(_ conversation: Conversation?) {
         logger.log("Initializing combo listen transport")
         if let c = conversation {
-            let manualTransport = ManualTransport(c)
-            self.manualTransport = manualTransport
-            manualTransport.lostRemoteSubject
-                .sink { [weak self] in self?.removeListener(.manual, remote: $0) }
+            let globalTransport = GlobalTransport(c)
+            self.globalTransport = globalTransport
+            globalTransport.lostRemoteSubject
+                .sink { [weak self] in self?.removeListener(.global, remote: $0) }
                 .store(in: &cancellables)
-			manualTransport.contentSubject
+			globalTransport.contentSubject
 				.sink { [weak self] in self?.receiveContentChunk($0) }
 				.store(in: &cancellables)
-			manualTransport.controlSubject
-				.sink { [weak self] in self?.receiveControlChunk(.manual, remote: $0.remote, chunk: $0.chunk) }
+			globalTransport.controlSubject
+				.sink { [weak self] in self?.receiveControlChunk(.global, remote: $0.remote, chunk: $0.chunk) }
 				.store(in: &cancellables)
         }
-		let autoTransport = AutoTransport(conversation)
-		self.autoTransport = autoTransport
-		autoTransport.lostRemoteSubject
-			.sink { [weak self] in self?.removeListener(.auto, remote: $0) }
+		let localTransport = LocalTransport(conversation)
+		self.localTransport = localTransport
+		localTransport.lostRemoteSubject
+			.sink { [weak self] in self?.removeListener(.local, remote: $0) }
 			.store(in: &cancellables)
-		autoTransport.contentSubject
+		localTransport.contentSubject
 			.sink { [weak self] in self?.receiveContentChunk($0) }
 			.store(in: &cancellables)
-		autoTransport.controlSubject
-			.sink { [weak self] in self?.receiveControlChunk(.manual, remote: $0.remote, chunk: $0.chunk) }
+		localTransport.controlSubject
+			.sink { [weak self] in self?.receiveControlChunk(.global, remote: $0.remote, chunk: $0.chunk) }
 			.store(in: &cancellables)
     }
     
@@ -140,17 +140,17 @@ final class ComboListenTransport: SubscribeTransport {
     
     //MARK: internal methods
 	private func staggerStart(failureCallback: @escaping (String) -> Void) {
-		guard let auto = autoTransport else {
+		guard let local = localTransport else {
 			fatalError("Cannot start Bluetooth transport?")
 		}
 		logger.info("Starting Bluetooth in advance of Network")
-		auto.start(failureCallback: failureCallback)
+		local.start(failureCallback: failureCallback)
 		staggerTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(listenerWaitTime), repeats: false) { _ in
 			// run loop will invalidate the timer
 			self.staggerTimer = nil
 			#if DEBUG
-			if let manual = self.manualTransport {
-				manual.start(failureCallback: failureCallback)
+			if let global = self.globalTransport {
+				global.start(failureCallback: failureCallback)
 			}
 			#endif
 		}
@@ -162,10 +162,10 @@ final class ComboListenTransport: SubscribeTransport {
 			timer.invalidate()
 		}
 		switch kind {
-		case .auto:
-			autoTransport?.stop()
-		case .manual:
-			manualTransport?.stop()
+		case .local:
+			localTransport?.stop()
+		case .global:
+			globalTransport?.stop()
 		}
 	}
 

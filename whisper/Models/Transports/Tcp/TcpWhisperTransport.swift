@@ -11,7 +11,6 @@ final class TcpWhisperTransport: PublishTransport {
     // MARK: protocol properties and methods
     typealias Remote = Listener
     
-    var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var lostRemoteSubject: PassthroughSubject<Remote, Never> = .init()
     var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
@@ -34,16 +33,6 @@ final class TcpWhisperTransport: PublishTransport {
     func goToForeground() {
     }
     
-    func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
-        guard let remote = listeners[remote.id] else {
-            logger.error("Ignoring request to send chunk to a non-listener: \(remote.id)")
-            return
-        }
-        for chunk in chunks {
-            contentChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
-        }
-    }
-
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let remote = listeners[remote.id] else {
             logger.error("Ignoring request to send chunk to a non-listener: \(remote.id)")
@@ -57,12 +46,26 @@ final class TcpWhisperTransport: PublishTransport {
             logger.error("Ignoring request to drop a non-listener: \(remote.id)")
             return
         }
-        logger.info("Dropping listener \(remote.ownerName) (\(remote.id))")
+        logger.info("Dropping listener \(remote.id)")
         let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
         controlChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
         droppedListeners.insert(remote.id)
     }
-    
+
+	func authorize(remote: Listener, conversation: Conversation) {
+		remote.isAuthorized = true
+	}
+
+	func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
+		guard let remote = listeners[remote.id] else {
+			logger.error("Ignoring request to send chunk to a non-listener: \(remote.id)")
+			return
+		}
+		for chunk in chunks {
+			contentChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
+		}
+	}
+
     func publish(chunks: [WhisperProtocol.ProtocolChunk]) {
         guard !listeners.isEmpty else {
             // no one to publish to
@@ -76,13 +79,12 @@ final class TcpWhisperTransport: PublishTransport {
     // MARK: Internal types, properties, and initialization
     final class Listener: TransportRemote {
         let id: String
-        var ownerName: String
-        var authorized: Bool
+		let kind: TransportKind = .global
 
-        init(id: String, name: String) {
+		fileprivate var isAuthorized: Bool = false
+
+        init(id: String) {
             self.id = id
-            self.ownerName = name
-            self.authorized = false
         }
     }
     
@@ -160,7 +162,7 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     private func closeChannels() {
-        let chunk = WhisperProtocol.ProtocolChunk.dropping(conversation)
+        let chunk = WhisperProtocol.ProtocolChunk.dropping()
         controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         contentChannel?.detach()
         contentChannel = nil
@@ -194,9 +196,8 @@ final class TcpWhisperTransport: PublishTransport {
                 case .listenOffer, .listenRequest, .joining:
                     if listeners[info.clientId] == nil {
                         logger.info("Adding listener from \(value) message")
-                        let remote = Remote(id: info.clientId, name: info.username)
+                        let remote = Remote(id: info.clientId)
                         listeners[info.clientId] = remote
-                        addRemoteSubject.send(remote)
                     }
                 case .dropping:
                     if let existing = listeners.removeValue(forKey: info.clientId) {

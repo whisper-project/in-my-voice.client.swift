@@ -12,6 +12,7 @@ final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equata
 	fileprivate(set) var ownerName: String = ""
 	fileprivate(set) var allowed: [String: String] = [:]	// profile ID to username mapping
     fileprivate(set) var lastListened: Date = Date.distantPast
+	var authorized: Bool { get { lastListened != Date.distantPast } }
 
 	fileprivate init(uuid: String? = nil) {
         self.id = uuid ?? UUID().uuidString
@@ -47,7 +48,7 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
     static private(set) var shared = loadDefault() ?? createAndSaveDefault()
     
     private(set) var id: String
-    var username: String = ""
+	private(set) var name: String = ""
     private var whisperTable: [String: Conversation] = [:]
     private var listenTable: [String: Conversation] = [:]
     private var defaultId: String = ""
@@ -61,13 +62,25 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
 		let new = Conversation()
 		new.name = "Conversation \(whisperTable.count + 1)"
 		new.owner = id
-		new.ownerName = username
+		new.ownerName = name
 		logger.info("Adding whisper conversation \(new.id) (\(new.name))")
 		whisperTable[new.id] = new
 		return new
 	}
 
-    // make sure there is a default conversation, and return it
+	var username: String {
+		get { name }
+		set(newName) { 
+			guard name != newName else {
+				// nothing to do
+				return
+			}
+			name = newName
+			saveAsDefault()
+		}
+	}
+
+	// make sure there is a default conversation, and return it
 	@discardableResult private func ensureWhisperDefaultExists() -> Conversation {
         if let firstC = whisperTable.first?.value {
             if let c = whisperTable[defaultId] {
@@ -117,11 +130,20 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
     }
     
     /// Create a new whisper conversation
-    func addWhisperConversation() -> Conversation {
+    @discardableResult func addWhisperConversation() -> Conversation {
         let c = addWhisperConversationInternal()
 		saveAsDefault()
 		return c
     }
+
+	/// Change the name of a whisper conversation
+	func renameWhisperConversation(c: Conversation, name: String) {
+		guard let c = whisperTable[c.id] else {
+			fatalError("Not a Whisper conversation: \(c.id)")
+		}
+		c.name = name
+		saveAsDefault()
+	}
 
 	/// add a user to a whisper conversation
 	func addListenerToWhisperConversation(info: WhisperProtocol.ClientInfo, conversation: Conversation) {
@@ -133,13 +155,29 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
 		saveAsDefault()
 	}
 
+	/// find out whether a user has been added to a whisper conversation
+	func isListenerToWhisperConversation(info: WhisperProtocol.ClientInfo, conversation: Conversation) -> Bool {
+		return conversation.allowed[info.profileId] != nil
+	}
+
 	/// remove user from a whisper conversation
-	func removeListenerFromWhisperConversation(info: WhisperProtocol.ClientInfo, conversation: Conversation) {
-		if conversation.allowed.removeValue(forKey: info.profileId) != nil {
+	func removeListenerFromWhisperConversation(profileId: String, conversation: Conversation) {
+		if conversation.allowed.removeValue(forKey: profileId) != nil {
 			saveAsDefault()
 		}
 	}
 
+	struct ListenerInfo: Identifiable {
+		let id: String
+		let username: String
+	}
+
+	/// list listeners for a whisper conversation
+	func listenersToWhisperConversation(conversation: Conversation) -> [ListenerInfo] {
+		conversation.allowed.map({ k, v in ListenerInfo(id: k, username: v) })
+	}
+
+	/// get a listen conversation from a web link conversation ID
 	func listenConversationForLink(_ id: String) -> Conversation {
 		if let existing = listenTable[id] {
 			return existing
@@ -148,6 +186,7 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
 		}
 	}
 
+	/// get a listen conversation for an whisperer's invite
 	func listenConversationForInvite(info: WhisperProtocol.ClientInfo) -> Conversation {
 		let c = listenTable[info.conversationId] ?? Conversation(uuid: info.conversationId)
 		c.name = info.conversationName
@@ -165,7 +204,6 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
     }
 
 	/// Remove a conversation
-
     func deleteWhisperConversation(_ c: Conversation) {
         logger.info("Removing whisper conversation \(c.id) (\(c.name))")
 		if whisperTable.removeValue(forKey: c.id) != nil {

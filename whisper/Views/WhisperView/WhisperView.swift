@@ -18,7 +18,6 @@ struct WhisperView: View {
     @StateObject private var model: WhisperViewModel
 	@State private var size = PreferenceData.sizeWhenWhispering
 	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
-    @State private var showStatusDetail: Bool = false
     
     init(mode: Binding<OperatingMode>, conversation: Conversation) {
         self._mode = mode
@@ -44,9 +43,9 @@ struct WhisperView: View {
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
                 StatusTextView(text: $model.statusText, mode: .whisper, conversation: conversation)
                     .onTapGesture {
-                        self.showStatusDetail = true
+						self.model.showStatusDetail = true
                     }
-                    .popover(isPresented: $showStatusDetail) {
+					.popover(isPresented: $model.showStatusDetail) {
                         ListenersView(model: model)
                     }
                 TextEditor(text: $liveText)

@@ -18,7 +18,7 @@ final class TcpListenTransport: SubscribeTransport {
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP candidate transport")
         self.failureCallback = failureCallback
-		self.authenticator = TcpAuthenticator(mode: .listen, conversationId: conversation.id, callback: receiveAuthError)
+		self.authenticator = TcpAuthenticator(mode: .listen, conversationId: conversation!.id, callback: receiveAuthError)
         openControlChannel()
         openWhisperChannel()
     }
@@ -36,7 +36,7 @@ final class TcpListenTransport: SubscribeTransport {
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let target = candidates[remote.id] else {
-            logger.error("Ignoring request to send chunk to a non-candidate: \(remote.id) (\(remote.ownerName))")
+            logger.error("Ignoring request to send chunk to a non-candidate: \(remote.id)")
             return
         }
 		whisperChannel?.publish(target.id, data: chunk.toString(), callback: receiveErrorInfo)
@@ -52,14 +52,14 @@ final class TcpListenTransport: SubscribeTransport {
             logger.error("Ignoring request to drop the whisperer")
             return
         }
-        logger.log("Dropping candidate \(remote.id) (\(remote.ownerName))")
+        logger.log("Dropping candidate \(remote.id)")
         candidates.removeValue(forKey: remote.id)
         lostRemoteSubject.send(remote)
     }
     
 	func subscribe(remote: Remote, conversation: Conversation) {
         guard let candidate = candidates[remote.id] else {
-            logger.error("Ignoring request to subscribe to a non-candidate: \(remote.id) (\(remote.ownerName))")
+            logger.error("Ignoring request to subscribe to a non-candidate: \(remote.id)")
             return
         }
 		guard self.conversation == conversation else {
@@ -78,20 +78,17 @@ final class TcpListenTransport: SubscribeTransport {
     
     // MARK: Internal types, properties, and initialization
     final class Whisperer: TransportRemote {
-        var id: String
-        var ownerName: String
-		var authorized: Bool
+        let id: String
+		let kind: TransportKind = .global
 
-        fileprivate init(id: String, name: String) {
+        fileprivate init(id: String) {
             self.id = id
-            self.ownerName = name
-			self.authorized = false
         }
     }
     
     private var failureCallback: ((String) -> Void)?
     private var clientId: String
-    private var conversation: Conversation
+    private var conversation: Conversation?
     private var authenticator: TcpAuthenticator!
     private var client: ARTRealtime?
     private var channelName: String
@@ -100,10 +97,13 @@ final class TcpListenTransport: SubscribeTransport {
     private var candidates: [String:Remote] = [:]
     private var whisperer: Remote?
 
-    init(_ conversation: Conversation) {
+    init(_ conversation: Conversation?) {
+		guard let conversation = conversation else {
+			fatalError("Can't listen over the network without a conversation")
+		}
         self.clientId = PreferenceData.clientId
         self.conversation = conversation
-        self.channelName = "\(conversation):whisper"
+		self.channelName = "\(conversation.id):whisper"
     }
     
     //MARK: Internal methods
@@ -156,12 +156,12 @@ final class TcpListenTransport: SubscribeTransport {
         controlChannel?.attach()
         controlChannel?.subscribe(clientId, callback: receiveMessage)
         controlChannel?.subscribe("whisperer", callback: receiveMessage)
-        let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
+        let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation!)
         controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
     }
     
     private func closeChannels() {
-		let chunk = WhisperProtocol.ProtocolChunk.dropping(conversation)
+		let chunk = WhisperProtocol.ProtocolChunk.dropping()
         controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         whisperChannel?.detach()
         whisperChannel = nil
@@ -185,7 +185,7 @@ final class TcpListenTransport: SubscribeTransport {
         }
         if chunk.isPresenceMessage() {
             guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text),
-				  info.conversationId == conversation.id,
+				  info.conversationId == conversation!.id,
                   info.clientId == message.clientId
             else {
                 logger.error("Ignoring a malformed or misdirected invite: \(chunk.text))")
@@ -197,9 +197,8 @@ final class TcpListenTransport: SubscribeTransport {
                 case .whisperOffer, .listenAuthYes:
                     if candidates[info.clientId] == nil {
                         logger.info("Adding candidate from a \(value) message")
-                        let remote = Remote(id: info.clientId, name: info.username)
+                        let remote = Remote(id: info.clientId)
                         candidates[info.clientId] = remote
-                        addRemoteSubject.send(remote)
                     }
                     // packet can now be sent to listener
                 case .dropping, .listenAuthNo:

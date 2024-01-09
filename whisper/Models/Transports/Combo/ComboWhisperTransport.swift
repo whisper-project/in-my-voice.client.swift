@@ -11,45 +11,46 @@ final class ComboWhisperTransport: PublishTransport {
     typealias Remote = Wrapper
     
     var lostRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
+	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
+	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting combo whisper transport")
         self.failureCallback = failureCallback
         initializeTransports()
-        if let auto = autoTransport {
-            auto.start(failureCallback: failureCallback)
+        if let local = localTransport {
+            local.start(failureCallback: failureCallback)
         }
-        if let manual = manualTransport {
-            manual.start(failureCallback: failureCallback)
+        if let global = globalTransport {
+            global.start(failureCallback: failureCallback)
         }
     }
     
     func stop() {
         logger.log("Stopping combo whisper transport")
-        autoTransport?.stop()
-        manualTransport?.stop()
+        localTransport?.stop()
+        globalTransport?.stop()
     }
     
     func goToBackground() {
-        autoTransport?.goToBackground()
-        manualTransport?.goToBackground()
+        localTransport?.goToBackground()
+        globalTransport?.goToBackground()
     }
     
     func goToForeground() {
-        autoTransport?.goToForeground()
-        manualTransport?.goToForeground()
+        localTransport?.goToForeground()
+        globalTransport?.goToForeground()
     }
     
     func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
         guard let remote = remotes[remote.id] else {
             fatalError("Sending content to an unknown remote: \(remote.id)")
         }
-        switch remote.owner {
-        case .auto:
-            autoTransport?.sendContent(remote: remote.inner as! AutoRemote, chunks: chunks)
-        case .manual:
-            manualTransport?.sendContent(remote: remote.inner as! ManualRemote, chunks: chunks)
+        switch remote.kind {
+        case .local:
+            localTransport?.sendContent(remote: remote.inner as! LocalRemote, chunks: chunks)
+        case .global:
+            globalTransport?.sendContent(remote: remote.inner as! GlobalRemote, chunks: chunks)
         }
     }
 
@@ -57,11 +58,11 @@ final class ComboWhisperTransport: PublishTransport {
         guard let remote = remotes[remote.id] else {
             fatalError("Sending control to an unknown remote: \(remote.id)")
         }
-        switch remote.owner {
-        case .auto:
-            autoTransport?.sendControl(remote: remote.inner as! AutoRemote, chunk: chunk)
-        case .manual:
-            manualTransport?.sendControl(remote: remote.inner as! ManualRemote, chunk: chunk)
+        switch remote.kind {
+        case .local:
+            localTransport?.sendControl(remote: remote.inner as! LocalRemote, chunk: chunk)
+        case .global:
+            globalTransport?.sendControl(remote: remote.inner as! GlobalRemote, chunk: chunk)
         }
     }
 
@@ -69,49 +70,55 @@ final class ComboWhisperTransport: PublishTransport {
 		guard let remote = remotes.removeValue(forKey: remote.id) else {
             fatalError("Dropping an unknown remote: \(remote.id)")
         }
-        switch remote.owner {
-        case .auto:
-            autoTransport?.drop(remote: remote.inner as! AutoRemote)
-        case .manual:
-            manualTransport?.drop(remote: remote.inner as! ManualRemote)
+        switch remote.kind {
+        case .local:
+            localTransport?.drop(remote: remote.inner as! LocalRemote)
+        case .global:
+            globalTransport?.drop(remote: remote.inner as! GlobalRemote)
         }
     }
     
+	func authorize(remote: Wrapper, conversation: Conversation) {
+		guard let remote = remotes[remote.id] else {
+			fatalError("Authorizing an unknown remote: \(remote.id)")
+		}
+		switch remote.kind {
+		case .local:
+			localTransport?.authorize(remote: remote.inner as! LocalRemote, conversation: conversation)
+		case .global:
+			globalTransport?.authorize(remote: remote.inner as! GlobalRemote, conversation: conversation)
+		}
+	}
+
     func publish(chunks: [WhisperProtocol.ProtocolChunk]) {
-        autoTransport?.publish(chunks: chunks)
-        manualTransport?.publish(chunks: chunks)
+        localTransport?.publish(chunks: chunks)
+        globalTransport?.publish(chunks: chunks)
     }
     
     // MARK: internal types, properties, and initialization
-    typealias AutoTransport = BluetoothWhisperTransport
-    typealias AutoRemote = BluetoothWhisperTransport.Remote
-    typealias ManualTransport = TcpWhisperTransport
-    typealias ManualRemote = TcpWhisperTransport.Remote
+    typealias LocalTransport = BluetoothWhisperTransport
+    typealias LocalRemote = BluetoothWhisperTransport.Remote
+    typealias GlobalTransport = TcpWhisperTransport
+    typealias GlobalRemote = TcpWhisperTransport.Remote
 
-    enum Owner {
-        case auto
-        case manual
-    }
-    
     final class Wrapper: TransportRemote {
         var id: String { get { inner.id } }
-        var authorized: Bool { get { inner.authorized } set(val) { inner.authorized = val } }
-		private(set) var owner: Owner
+        var kind: TransportKind
 
 		fileprivate var inner: (any TransportRemote)
 
-        init(owner: Owner, inner: any TransportRemote) {
-            self.owner = owner
+        init(inner: any TransportRemote) {
             self.inner = inner
+			self.kind = inner.kind
         }
     }
     
-    private var autoFactory = BluetoothFactory.shared
-    private var autoStatus: TransportStatus = .off
-    private var autoTransport: AutoTransport?
-    private var manualFactory = TcpFactory.shared
-    private var manualStatus: TransportStatus = .off
-    private var manualTransport: TcpWhisperTransport?
+    private var localFactory = BluetoothFactory.shared
+    private var localStatus: TransportStatus = .off
+    private var localTransport: LocalTransport?
+    private var globalFactory = TcpFactory.shared
+    private var globalStatus: TransportStatus = .off
+    private var globalTransport: TcpWhisperTransport?
     private var remotes: [String: Remote] = [:]
     private var cancellables: Set<AnyCancellable> = []
     private var conversation: Conversation
@@ -120,11 +127,11 @@ final class ComboWhisperTransport: PublishTransport {
     init(_ c: Conversation) {
         logger.log("Initializing combo whisper transport")
         self.conversation = c
-        self.autoFactory.statusSubject
-            .sink(receiveValue: setAutoStatus)
+        self.localFactory.statusSubject
+            .sink(receiveValue: setLocalStatus)
             .store(in: &cancellables)
-        self.manualFactory.statusSubject
-            .sink(receiveValue: setManualStatus)
+        self.globalFactory.statusSubject
+            .sink(receiveValue: setGlobalStatus)
             .store(in: &cancellables)
     }
     
@@ -134,60 +141,60 @@ final class ComboWhisperTransport: PublishTransport {
     }
     
     //MARK: internal methods
-    private func setAutoStatus(_ status: TransportStatus) {
-        guard autoStatus != status else {
+    private func setLocalStatus(_ status: TransportStatus) {
+        guard localStatus != status else {
             return
         }
-        if autoStatus == .on {
+        if localStatus == .on {
             logger.error("The Bluetooth connection was available but has dropped")
             failureCallback?("The Bluetooth network has become unavailable")
         }
-        autoStatus = status
+        localStatus = status
     }
     
-    private func setManualStatus(_ status: TransportStatus) {
-        guard manualStatus != status else {
+    private func setGlobalStatus(_ status: TransportStatus) {
+        guard globalStatus != status else {
             return
         }
 		#if DEBUG
-		manualStatus = .off
+		globalStatus = .off
 		#else
-		if manualStatus == .on {
+		if globalStatus == .on {
 			logger.error("The Internet connection was available but has dropped")
 			failureCallback?("The Internet connection has become unavailable")
 		}
-        manualStatus = isPending
+        globalStatus = isPending
 		#endif
     }
     
     private func initializeTransports() {
-        if autoStatus == .on {
-            let autoTransport = AutoTransport(conversation)
-            self.autoTransport = autoTransport
-            autoTransport.lostRemoteSubject
-                .sink { [weak self] in self?.removeListener(.auto, remote: $0) }
+        if localStatus == .on {
+            let localTransport = LocalTransport(conversation)
+            self.localTransport = localTransport
+            localTransport.lostRemoteSubject
+                .sink { [weak self] in self?.removeRemote(remote: $0) }
                 .store(in: &cancellables)
-            autoTransport.controlSubject
+            localTransport.controlSubject
                 .sink { [weak self] in self?.receiveControl($0) }
                 .store(in: &cancellables)
         }
-        if manualStatus == .on {
-			let manualTransport = ManualTransport(conversation)
-			self.manualTransport = manualTransport
-			manualTransport.lostRemoteSubject
-				.sink { [weak self] in self?.removeListener(.manual, remote: $0) }
+        if globalStatus == .on {
+			let globalTransport = GlobalTransport(conversation)
+			self.globalTransport = globalTransport
+			globalTransport.lostRemoteSubject
+				.sink { [weak self] in self?.removeRemote(remote: $0) }
 				.store(in: &cancellables)
-			manualTransport.controlSubject
+			globalTransport.controlSubject
 				.sink { [weak self] in self?.receiveControl($0) }
 				.store(in: &cancellables)
         }
-        if autoTransport == nil && manualTransport == nil {
+        if localTransport == nil && globalTransport == nil {
             logger.error("No transports available for whispering")
             failureCallback?("Cannot whisper unless one of Bluetooth or WiFi is available")
         }
     }
     
-    private func removeListener(_ owner: Owner, remote: any TransportRemote) {
+    private func removeRemote(remote: any TransportRemote) {
         guard let removed = remotes.removeValue(forKey: remote.id) else {
             logger.error("Ignoring drop of unknown remote \(remote.id)")
             return
@@ -196,10 +203,15 @@ final class ComboWhisperTransport: PublishTransport {
     }
     
     private func receiveControl(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
-        guard let remote = remotes[pair.remote.id] else {
-            logger.error("Ignoring control chunk from unknown remote \(pair.remote.id)")
-            return
-        }
-        controlSubject.send((remote: remote, chunk: pair.chunk))
+		controlSubject.send((remote: ensureRemote(remote: pair.remote), chunk: pair.chunk))
     }
+
+	private func ensureRemote(remote: any TransportRemote) -> Remote {
+		if let wrapper = remotes[remote.id] {
+			return wrapper
+		}
+		let wrapper = Wrapper(inner: remote)
+		remotes[remote.id] = wrapper
+		return wrapper
+	}
 }

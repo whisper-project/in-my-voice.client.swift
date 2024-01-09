@@ -12,35 +12,50 @@ struct WhisperProfileDetailView: View {
 	@State var newName: String = ""
 	@State var isDefault: Bool = false
 	@State var wasDefault: Bool = false
+	@State var allowedParticipants: [UserProfile.ListenerInfo] = []
 
 	private let profile = UserProfile.shared
 
 	var body: some View {
 		Form {
 			Section(header: Text("Conversation Name")) {
-				HStack {
-					TextField("Conversation Name", text: $name)
+				HStack (spacing: 15) {
+					TextField("Conversation Name", text: $newName)
 						.lineLimit(nil)
 						.submitLabel(.done)
 						.textInputAutocapitalization(.never)
 						.disableAutocorrection(true)
-						.onSubmit { updateProfile() }
-					Button("Submit", systemImage: "checkmark.square.fill") { updateProfile() }
+						.onSubmit { updateConversation() }
+					Button("Submit", systemImage: "checkmark.square.fill") { updateConversation() }
 						.labelStyle(.iconOnly)
-						.disabled(name.isEmpty || name == conversation.name)
+						.disabled(newName.isEmpty || newName == conversation.name)
+					Button("Reset", systemImage: "x.square.fill") { newName = name }
+						.labelStyle(.iconOnly)
+						.disabled(newName == name)
 				}
+				.buttonStyle(.borderless)
 				if (isDefault) {
 					Text("This is your default conversation")
 				} else {
 					Button("Make this your default conversation") {
 						isDefault = true
-						updateProfile()
+						updateConversation()
 					}
 				}
 			}
-			Section(header: Text("Allowed Participants")) {
+			Section(header: allowedParticipants.isEmpty ? Text("No Allowed Participants") : Text("Allowed Participants")) {
 				List {
-					Text("This is not implemented yet.")
+					ForEach(allowedParticipants) { info in
+						HStack {
+							Text(info.username)
+							Spacer(minLength: 25)
+							Button("Delete", systemImage: "delete.left") {
+								profile.removeListenerFromWhisperConversation(profileId: info.id, conversation: conversation)
+								updateFromProfile()
+							}
+						}
+						.buttonStyle(.borderless)
+					}
 				}
 			}
 		}
@@ -52,20 +67,15 @@ struct WhisperProfileDetailView: View {
 		newName = name
 		wasDefault = conversation == profile.whisperDefault
 		isDefault = wasDefault
+		allowedParticipants = profile.listenersToWhisperConversation(conversation: conversation)
 	}
 
-	func updateProfile() {
-		var hasChanged = false
+	func updateConversation() {
 		if (newName != name && !newName.isEmpty) {
-			hasChanged = true
-			conversation.name = newName
+			profile.renameWhisperConversation(c: conversation, name: newName)
 		}
 		if (isDefault != wasDefault) {
-			hasChanged = true
 			profile.whisperDefault = conversation
-		}
-		if hasChanged {
-			profile.saveAsDefault()
 		}
 		updateFromProfile()
 	}
