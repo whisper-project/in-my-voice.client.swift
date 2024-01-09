@@ -226,8 +226,8 @@ final class BluetoothWhisperTransport: PublishTransport {
     // MARK: Internal types, properties, and initialization
         
     final class Listener: TransportRemote {
-        private(set) var id: String
-		private(set) var kind: TransportKind = .global
+        let id: String
+		let kind: TransportKind = .local
 
         fileprivate var central: CBCentral
 		fileprivate var profileId: String?
@@ -248,7 +248,6 @@ final class BluetoothWhisperTransport: PublishTransport {
     private var liveText: String = ""
     private var pendingContent: [WhisperProtocol.ProtocolChunk] = []
 	private var directedContent: [CBCentral: [WhisperProtocol.ProtocolChunk]] = [:]
-    private var pendingControl: [WhisperProtocol.ProtocolChunk] = []
     private var directedControl: [CBCentral: [WhisperProtocol.ProtocolChunk]] = [:]
     private var advertisingInProgress = false
     private weak var adTimer: Timer?
@@ -354,7 +353,6 @@ final class BluetoothWhisperTransport: PublishTransport {
         guard !remotes.isEmpty else {
             // logger.debug("No listeners to update, dumping pending changes")
 			directedControl.removeAll()
-            pendingControl.removeAll()
             return false
         }
         if !directedControl.isEmpty {
@@ -362,7 +360,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             while let (listener, chunks) = directedControl.first {
                 while let chunk = chunks.first {
                     let sendOk = factory.updateValue(value: chunk.toData(),
-                                                     characteristic: BluetoothData.contentOutCharacteristic,
+                                                     characteristic: BluetoothData.controlOutCharacteristic,
                                                      central: listener)
                     if sendOk {
                         if chunks.count == 1 {
@@ -373,18 +371,6 @@ final class BluetoothWhisperTransport: PublishTransport {
                     } else {
                         return true
                     }
-                }
-            }
-        }
-		if !pendingControl.isEmpty {
-            logger.debug("Sending broadcast control data (\(self.pendingControl.count) chunks)...")
-            while let chunk = pendingControl.first {
-                let sendOk = factory.updateValue(value: chunk.toData(),
-                                                 characteristic: BluetoothData.contentOutCharacteristic)
-                if sendOk {
-                    pendingControl.removeFirst()
-                } else {
-                    return true
                 }
             }
         }

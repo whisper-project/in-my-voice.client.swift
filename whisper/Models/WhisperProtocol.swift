@@ -86,11 +86,11 @@ final class WhisperProtocol {
         var contentId: String
         
         func toString() -> String {
-            return "\(conversationId)|\(conversationName)\(clientId)|\(profileId)|\(username)"
+            return "\(conversationId)|\(conversationName)|\(clientId)|\(profileId)|\(username)|\(contentId)"
         }
         
         static func fromString(_ s: String) -> ClientInfo? {
-            let parts = s.split(separator: "|")
+            let parts = s.split(separator: "|", omittingEmptySubsequences: false)
             if parts.count != 6 {
                 logger.error("Malformed TextProtocol.ClientInfo data: \(s))")
                 return nil
@@ -113,7 +113,7 @@ final class WhisperProtocol {
 				return self.toString()
 			} else {
 				let offset = ControlOffset(rawValue: self.offset)?.description ?? "Unknown (\(self.offset))"
-				return "\(offset) control message: 'self.text'"
+				return "\(offset) control message: \(self.text)"
 			}
 		}
 
@@ -126,13 +126,13 @@ final class WhisperProtocol {
         }
         
         static func fromString(_ s: String) -> ProtocolChunk? {
-            let parts = s.split(separator: "|", maxSplits: 1)
-            if parts.count == 0 {
+            let parts = s.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
+            if parts.count != 2 {
                 // data packets with no "|" character are malformed
                 logger.error("Malformed TextProtocol.ProtocolChunk data: \(s))")
                 return nil
             } else if let offset = Int(parts[0]) {
-                return ProtocolChunk(offset: offset, text: parts.count == 2 ? String(parts[1]) : "")
+                return ProtocolChunk(offset: offset, text: String(parts[1]))
             } else {
                 // data packets with no int before the "|" are malformed
                 logger.error("Malformed TextProtocol.ProtocolChunk data: \(s))")
@@ -240,7 +240,7 @@ final class WhisperProtocol {
         }
         
 		static func listenOffer(_ c: Conversation? = nil) -> ProtocolChunk {
-			let info = ClientInfo(conversationId: c?.id ?? "",
+			let info = ClientInfo(conversationId: c?.id ?? "discover",
                                   conversationName: "",
                                   clientId: PreferenceData.clientId,
                                   profileId: UserProfile.shared.id,

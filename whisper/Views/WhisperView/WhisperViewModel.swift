@@ -142,12 +142,30 @@ final class WhisperViewModel: ObservableObject {
 		transport.sendContent(remote: candidate.remote, chunks: [chunk])
     }
 
-	func acceptInvite(_ id: String) {
-
+	func acceptRequest(_ id: String) {
+		guard let invitee = candidates[id] else {
+			logger.error("Ignoring accepted invite from unknown invitee: \(id)")
+			return
+		}
+		logger.info("Accepted listen request from \(invitee.info.username)")
+		invitee.isPending = false
+		invites = candidates.values.filter{$0.isPending}.sorted()
+		profile.addListenerToWhisperConversation(info: invitee.info, conversation: conversation)
+		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation)
+		transport.sendControl(remote: invitee.remote, chunk: chunk)
 	}
 
-	func refuseInvite(_ id: String) {
-
+	func refuseRequest(_ id: String) {
+		guard let invitee = candidates[id] else {
+			logger.error("Ignoring refused invite from unknown invitee: \(id)")
+			return
+		}
+		logger.info("Rejected listen request from \(invitee.info.username)")
+		invitee.isPending = false
+		invites = candidates.values.filter{$0.isPending}.sorted()
+		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
+		transport.sendControl(remote: invitee.remote, chunk: chunk)
+		dropListener(invitee)
 	}
 
     /// Drop a listener from the authorized list
@@ -206,38 +224,45 @@ final class WhisperViewModel: ObservableObject {
 	}
 
 	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
-		guard let candidate = candidates[remote.id] else {
-			logger.warning("Ignoring control chunk (\(chunk.toString())) from unknown remote \(remote.id)")
-			return
-		}
 		if chunk.isPresenceMessage() {
 			guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
-				fatalError("Received a presence message with invalid data: \(chunk)")
+				fatalError("Received a presence message with invalid data: \(chunk.toString())")
 			}
 			guard info.conversationId == "discover" || info.conversationId == conversation.id else {
 				logger.error("Ignoring a presence message about the wrong conversation: \(info.conversationId)")
 				return
 			}
-			switch WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
+			let offset = WhisperProtocol.ControlOffset(rawValue: chunk.offset)
+			switch offset {
 			case .listenOffer, .listenRequest:
 				let candidate = candidateFor(remote: remote, info: info)
 				if candidate.isPending {
-					invites = candidates.values.filter{$0.isPending}.sorted()
-					showStatusDetail = true
+					if offset == .listenOffer {
+						logger.info("Sending whisper offer to new listener: \(candidate.id)")
+						let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
+						transport.sendControl(remote: candidate.remote, chunk: chunk)
+					} else {
+						logger.info("Making invite for new listener: \(candidate.id)")
+						invites = candidates.values.filter{$0.isPending}.sorted()
+						showStatusDetail = true
+					}
 				} else {
+					logger.info("Authorizing known listener: \(candidate.id)")
+					transport.authorize(remote: candidate.remote, conversation: conversation)
 					let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation)
 					transport.sendControl(remote: candidate.remote, chunk: chunk)
 				}
 			case .joining:
 				let candidate = candidateFor(remote: remote, info: info)
+				logger.info("Listener has joined the conversation: \(candidate.id)")
 				candidate.hasJoined = true
 				refreshStatusText()
 			default:
 				fatalError("Listener received an unexpected presence message: \(chunk)")
 			}
 		} else if chunk.isReplayRequest() {
-			guard !candidate.isPending else {
-				logger.warning("Ignoring replay request from unauthorized candidate \(candidate.id)")
+			guard let candidate = candidates[remote.id], !candidate.isPending else {
+				logger.warning("Ignoring replay request from unknown/unauthorized remote \(remote.id)")
 				return
 			}
 			let chunks = [WhisperProtocol.ProtocolChunk.fromLiveText(text: liveText)]

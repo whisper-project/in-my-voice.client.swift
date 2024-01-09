@@ -16,15 +16,21 @@ struct WhisperersView: View {
 			let (remote, info) = (candidate.remote, candidate.info)
 			let sfname = remote.kind == .local ? "personalhotspot.circle" : "network"
 			Text("Listening \(Image(systemName: sfname)) to \(info.username) in conversation \(info.conversationName)")
+				.lineLimit(nil)
+				.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+				.padding()
 		} else if !model.invites.isEmpty {
 			VStack(alignment: .leading, spacing: 20) {
 				ForEach(model.invites.map(Row.init)) { row in
-					HStack {
+					HStack(spacing: 10) {
 						row.legend
 							.lineLimit(nil)
+						Spacer(minLength: 25)
 						Button("Accept") { model.acceptInvite(row.id) }
 						Button("Refuse") { model.refuseInvite(row.id) }
 					}
+					.buttonStyle(.borderless)
 				}
 			}
 			.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
@@ -32,6 +38,9 @@ struct WhisperersView: View {
 			.padding()
 		} else {
 			Text("No Whisperer")
+				.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+				.padding()
 		}
     }
 

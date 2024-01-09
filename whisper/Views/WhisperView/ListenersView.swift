@@ -22,8 +22,8 @@ struct ListenersView: View {
 						HStack {
 							row.legend
 								.lineLimit(nil)
-							Button("Accept") { model.acceptInvite(row.id) }
-							Button("Refuse") { model.refuseInvite(row.id) }
+							Button("Accept") { model.acceptRequest(row.id) }
+							Button("Refuse") { model.refuseRequest(row.id) }
 						}
 					}
 				}

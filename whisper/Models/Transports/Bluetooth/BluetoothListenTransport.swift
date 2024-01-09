@@ -63,7 +63,6 @@ final class BluetoothListenTransport: SubscribeTransport {
     
 	func subscribe(remote: Remote, conversation: Conversation) {
 		guard let selected = remotes[remote.peripheral],
-			  let controlIn = selected.controlInChannel,
 			  let contentOut = selected.contentOutChannel
 		else {
             fatalError("Received request to subscribe to \(remote.id) which is not a valid remote")
@@ -181,6 +180,7 @@ final class BluetoothListenTransport: SubscribeTransport {
         if let controlIn = allCs.first(where: { $0.uuid == BluetoothData.controlInUuid }) {
             remote.controlInChannel = controlIn
 			// offer to listen so they know who we are
+			logger.info("Sending listen offer to \(remote.id)")
 			let chunk = WhisperProtocol.ProtocolChunk.listenOffer(conversation)
 			sendControl(remote: remote, chunk: chunk)
         } else {
@@ -284,8 +284,8 @@ final class BluetoothListenTransport: SubscribeTransport {
     
     // MARK: internal types, properties, and initialization
     class Whisperer: TransportRemote {
-        private(set) var id: String
-		private(set) var kind: TransportKind
+        let id: String
+		let kind: TransportKind = .local
 
         fileprivate var peripheral: CBPeripheral
         fileprivate var controlOutChannel: CBCharacteristic?
@@ -295,7 +295,6 @@ final class BluetoothListenTransport: SubscribeTransport {
         fileprivate init(peripheral: CBPeripheral) {
             self.peripheral = peripheral
 			self.id = peripheral.identifier.uuidString
-			self.kind = .local
         }
     }
     

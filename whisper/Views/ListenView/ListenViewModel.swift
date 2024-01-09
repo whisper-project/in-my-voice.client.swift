@@ -129,22 +129,25 @@ final class ListenViewModel: ObservableObject {
     }
 
 	func acceptInvite(_ id: String) {
-		guard let candidate = candidates[id] else {
+		guard let inviter = candidates[id] else {
 			fatalError("Can't accept a non-invite: \(id)")
 		}
-		candidate.isPending = false
+		logger.info("Accepted invite to conversation \(inviter.info.conversationName) from \(inviter.info.username)")
+		inviter.isPending = false
 		invites = candidates.values.filter{$0.isPending}.sorted()
-		let conversation = profile.listenConversationForInvite(info: candidate.info)
+		let conversation = profile.listenConversationForInvite(info: inviter.info)
 		let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
-		transport.sendControl(remote: candidate.remote, chunk: chunk)
+		transport.sendControl(remote: inviter.remote, chunk: chunk)
 	}
 
 	func refuseInvite(_ id: String) {
-		guard let candidate = candidates.removeValue(forKey: id) else {
+		guard let inviter = candidates.removeValue(forKey: id) else {
 			fatalError("Can't reject a non-invite: \(id)")
 		}
-		clients.removeValue(forKey: candidate.info.clientId)
-		transport.drop(remote: candidate.remote)
+		logger.info("Rejected invite to conversation \(inviter.info.conversationName) from \(inviter.info.username)")
+		clients.removeValue(forKey: inviter.info.clientId)
+		invites = candidates.values.filter{$0.isPending}.sorted()
+		transport.drop(remote: inviter.remote)
 		invites = candidates.values.filter{$0.isPending}.sorted()
 	}
 
@@ -272,6 +275,7 @@ final class ListenViewModel: ObservableObject {
 		switch WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
 		case .whisperOffer:
 			let conversation = profile.listenConversationForInvite(info: info)
+			logger.info("Received offer for conversation \(info.conversationName) from \(info.username)")
 			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
 				if candidate.isPending {
 					invites = candidates.values.filter{$0.isPending}.sorted()
@@ -279,12 +283,14 @@ final class ListenViewModel: ObservableObject {
 				}
 			}
 		case .listenAuthYes:
+			logger.info("Received approval for conversation \(info.conversationName) from \(info.username)")
 			let conversation = profile.addListenConversationForInvite(info: info)
 			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
 				setWhisperer(candidate: candidate, conversation: conversation)
 			}
 		case .listenAuthNo:
-			guard let candidate = candidates[remote.id] else {
+			logger.info("Received refusal for conversation \(info.conversationName) from \(info.username)")
+			guard candidates[remote.id] != nil else {
 				logger.error("Ignoring refusal from non-candidate \(remote.id)")
 				return
 			}
@@ -418,7 +424,7 @@ final class ListenViewModel: ObservableObject {
 			transport.drop(remote: candidate.remote)
 		}
 		invites.removeAll()
-		// tell everyone we're subscribing
+		// tell Whisperer we're subscribing
 		let chunk = WhisperProtocol.ProtocolChunk.joining(conversation)
 		transport.sendControl(remote: candidate.remote, chunk: chunk)
 		transport.subscribe(remote: candidate.remote, conversation: conversation)

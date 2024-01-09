@@ -8,7 +8,7 @@ import Combine
 
 final class ComboListenTransport: SubscribeTransport {
     // MARK: Protocol properties and methods
-    typealias Remote = Whisperer
+    typealias Remote = Wrapper
     
     var lostRemoteSubject: PassthroughSubject<Remote, Never> = .init()
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
@@ -35,11 +35,11 @@ final class ComboListenTransport: SubscribeTransport {
         globalTransport?.goToForeground()
     }
     
-    func sendControl(remote: Whisperer, chunk: WhisperProtocol.ProtocolChunk) {
+    func sendControl(remote: Wrapper, chunk: WhisperProtocol.ProtocolChunk) {
         guard let remote = remotes[remote.id] else {
             fatalError("Targeting a remote that's not a whisperer: \(remote.id)")
         }
-        switch remote.owner {
+        switch remote.kind {
         case .local:
             localTransport!.sendControl(remote: remote.inner as! LocalRemote, chunk: chunk)
         case .global:
@@ -47,11 +47,11 @@ final class ComboListenTransport: SubscribeTransport {
         }
     }
 
-    func drop(remote: Whisperer) {
+    func drop(remote: Wrapper) {
 		guard let remote = remotes.removeValue(forKey: remote.id) else {
             fatalError("Dropping a remote that's not a whisperer: \(remote.id)")
         }
-        switch remote.owner {
+        switch remote.kind {
         case .local:
             localTransport!.drop(remote: remote.inner as! LocalRemote)
         case .global:
@@ -59,13 +59,13 @@ final class ComboListenTransport: SubscribeTransport {
         }
     }
 
-	func subscribe(remote: Whisperer, conversation: Conversation) {
+	func subscribe(remote: Wrapper, conversation: Conversation) {
         guard let remote = remotes[remote.id] else {
             fatalError("Subscribing to an unknown remote: \(remote.id)")
         }
-        switch remote.owner {
+        switch remote.kind {
         case .local:
-			logger.info("Subscribing to an LocalRemote: \(remote.id)")
+			logger.info("Subscribing to a LocalRemote: \(remote.id)")
 			staggerStop(.global)
 			localTransport!.subscribe(remote: remote.inner as! LocalRemote, conversation: conversation)
         case .global:
@@ -86,15 +86,13 @@ final class ComboListenTransport: SubscribeTransport {
         case global
     }
     
-    final class Whisperer: TransportRemote {
+    final class Wrapper: TransportRemote {
 		var id: String { get { inner.id } }
 		var kind: TransportKind { get {inner.kind} }
-		private(set) var owner: Owner
 
         fileprivate var inner: (any TransportRemote)
         
-        init(owner: Owner, inner: any TransportRemote) {
-            self.owner = owner
+        init(inner: any TransportRemote) {
             self.inner = inner
         }
     }
@@ -102,7 +100,7 @@ final class ComboListenTransport: SubscribeTransport {
     private var localTransport: LocalTransport?
     private var globalTransport: GlobalTransport?
 	private var staggerTimer: Timer?
-    private var remotes: [String: Whisperer] = [:]
+    private var remotes: [String: Wrapper] = [:]
     private var cancellables: Set<AnyCancellable> = []
     
     init(_ conversation: Conversation?) {
@@ -111,25 +109,25 @@ final class ComboListenTransport: SubscribeTransport {
             let globalTransport = GlobalTransport(c)
             self.globalTransport = globalTransport
             globalTransport.lostRemoteSubject
-                .sink { [weak self] in self?.removeListener(.global, remote: $0) }
+                .sink { [weak self] in self?.removeListener(remote: $0) }
                 .store(in: &cancellables)
 			globalTransport.contentSubject
 				.sink { [weak self] in self?.receiveContentChunk($0) }
 				.store(in: &cancellables)
 			globalTransport.controlSubject
-				.sink { [weak self] in self?.receiveControlChunk(.global, remote: $0.remote, chunk: $0.chunk) }
+				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
 				.store(in: &cancellables)
         }
 		let localTransport = LocalTransport(conversation)
 		self.localTransport = localTransport
 		localTransport.lostRemoteSubject
-			.sink { [weak self] in self?.removeListener(.local, remote: $0) }
+			.sink { [weak self] in self?.removeListener(remote: $0) }
 			.store(in: &cancellables)
 		localTransport.contentSubject
 			.sink { [weak self] in self?.receiveContentChunk($0) }
 			.store(in: &cancellables)
 		localTransport.controlSubject
-			.sink { [weak self] in self?.receiveControlChunk(.global, remote: $0.remote, chunk: $0.chunk) }
+			.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
 			.store(in: &cancellables)
     }
     
@@ -169,7 +167,7 @@ final class ComboListenTransport: SubscribeTransport {
 		}
 	}
 
-	private func removeListener(_ owner: Owner, remote: any TransportRemote) {
+	private func removeListener(remote: any TransportRemote) {
         guard let removed = remotes.removeValue(forKey: remote.id) else {
             logger.error("Ignoring drop of unknown remote \(remote.id)")
             return
@@ -186,13 +184,13 @@ final class ComboListenTransport: SubscribeTransport {
         contentSubject.send((remote: remote, chunk: pair.chunk))
     }
 
-	private func receiveControlChunk(_ owner: Owner, remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk) {
+	private func receiveControlChunk(remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk) {
 		if let remote = remotes[remote.id] {
 			controlSubject.send((remote: remote, chunk: chunk))
 		} else {
-			let whisperer = Whisperer(owner: owner, inner: remote)
+			let whisperer = Wrapper(inner: remote)
 			remotes[remote.id] = whisperer
-			contentSubject.send((remote: whisperer, chunk: chunk))
+			controlSubject.send((remote: whisperer, chunk: chunk))
 		}
 	}
 }
