@@ -14,7 +14,7 @@ struct WhisperersView: View {
     var body: some View {
 		if let candidate = model.whisperer {
 			let (remote, info) = (candidate.remote, candidate.info)
-			let sfname = remote.kind == .local ? "personalhotspot.circle" : "network"
+			let sfname = remote.kind == .local ? "personalhotspot" : "network"
 			Text("Listening \(Image(systemName: sfname)) to \(info.username) in conversation \(info.conversationName)")
 				.lineLimit(nil)
 				.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
@@ -23,11 +23,14 @@ struct WhisperersView: View {
 		} else if !model.invites.isEmpty {
 			VStack(alignment: .leading, spacing: 20) {
 				ForEach(model.invites.map(Row.init)) { row in
-					HStack(spacing: 10) {
+					VStack(spacing: 5) {
 						row.legend
 							.lineLimit(nil)
-						Spacer(minLength: 25)
+							.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+					}
+					HStack {
 						Button("Accept") { model.acceptInvite(row.id) }
+						Spacer()
 						Button("Refuse") { model.refuseInvite(row.id) }
 					}
 					.buttonStyle(.borderless)
@@ -50,7 +53,7 @@ struct WhisperersView: View {
 
 		init(_ candidate: ListenViewModel.Candidate) {
 			id = candidate.remote.id
-			let sfname = candidate.remote.kind == .local ? "personalhotspot.circle" : "network"
+			let sfname = candidate.remote.kind == .local ? "personalhotspot" : "network"
 			legend = Text("Invite \(Image(systemName: sfname)) from \(candidate.info.username) to conversation \(candidate.info.conversationName)")
 		}
 	}

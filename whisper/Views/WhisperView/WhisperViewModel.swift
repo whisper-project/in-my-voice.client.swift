@@ -14,7 +14,7 @@ final class WhisperViewModel: ObservableObject {
 	final class Candidate: Identifiable, Comparable {
 		private(set) var id: String
 		private(set) var remote: Remote
-		private(set) var info: WhisperProtocol.ClientInfo
+		var info: WhisperProtocol.ClientInfo
 		var isPending: Bool
 		var hasJoined: Bool
 		private(set) var created: Date
@@ -150,6 +150,7 @@ final class WhisperViewModel: ObservableObject {
 		logger.info("Accepted listen request from \(invitee.info.username)")
 		invitee.isPending = false
 		invites = candidates.values.filter{$0.isPending}.sorted()
+		showStatusDetail = !invites.isEmpty
 		profile.addListenerToWhisperConversation(info: invitee.info, conversation: conversation)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation)
 		transport.sendControl(remote: invitee.remote, chunk: chunk)
@@ -163,6 +164,7 @@ final class WhisperViewModel: ObservableObject {
 		logger.info("Rejected listen request from \(invitee.info.username)")
 		invitee.isPending = false
 		invites = candidates.values.filter{$0.isPending}.sorted()
+		showStatusDetail = !invites.isEmpty
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
 		transport.sendControl(remote: invitee.remote, chunk: chunk)
 		dropListener(invitee)
@@ -244,7 +246,7 @@ final class WhisperViewModel: ObservableObject {
 					} else {
 						logger.info("Making invite for new listener: \(candidate.id)")
 						invites = candidates.values.filter{$0.isPending}.sorted()
-						showStatusDetail = true
+						showStatusDetail = !invites.isEmpty
 					}
 				} else {
 					logger.info("Authorizing known listener: \(candidate.id)")
@@ -274,13 +276,29 @@ final class WhisperViewModel: ObservableObject {
 		remote: Remote,
 		info: WhisperProtocol.ClientInfo
 	) -> Candidate {
-		if let existing = candidates[remote.id] {
-			return existing
-		}
 		let authorized = profile.isListenerToWhisperConversation(info: info, conversation: conversation)
-		let candidate = Candidate(remote: remote, info: info, isPending: !authorized)
-		candidates[candidate.id] = candidate
-		return candidate
+		if let existing = candidates[remote.id] {
+			// update info if we need to and can
+			if existing.info.username.isEmpty {
+				// if it's a request, use the username from the request
+				if !info.username.isEmpty {
+					existing.info.username = info.username
+				}
+				// otherwise, if it's an offer, use the last known username if any
+				else if let auth = authorized {
+					existing.info.username = auth.username
+				}
+			}
+			return existing
+		} else {
+			let candidate = Candidate(remote: remote, info: info, isPending: authorized == nil)
+			// if it's an offer, use the last known username if any
+			if info.username.isEmpty, let auth = authorized {
+				candidate.info.username = auth.username
+			}
+			candidates[candidate.id] = candidate
+			return candidate
+		}
 	}
 
     // speak a set of words
@@ -317,21 +335,21 @@ final class WhisperViewModel: ObservableObject {
 		let listeners = candidates.values.filter{$0.hasJoined}
 		if listeners.isEmpty {
 			if invites.isEmpty {
-				statusText = "No listeners yet, but you can type"
+				statusText = "\(conversation.name): No listeners yet, but you can type"
 			} else {
-				statusText = "Tap to see pending listeners"
+				statusText = "\(conversation.name): Tap to see pending listeners"
 			}
 		} else if listeners.count == 1 {
 			if invites.isEmpty {
-				statusText = "Whispering to \(listeners.first!.info.username)"
+				statusText = "\(conversation.name): Whispering to \(listeners.first!.info.username)"
 			} else {
-				statusText = "Whispering to \(listeners.first!.info.username) (+ \(invites.count) pending)"
+				statusText = "\(conversation.name): Whispering to \(listeners.first!.info.username) (+ \(invites.count) pending)"
 			}
         } else {
 			if invites.isEmpty {
-				statusText = "Whispering to \(candidates.count) listeners"
+				statusText = "\(conversation.name): Whispering to \(listeners.count) listeners"
 			} else {
-				statusText = "Whispering to \(candidates.count) listeners (+ \(invites.count) pending)"
+				statusText = "\(conversation.name): Whispering to \(listeners.count) listeners (+ \(invites.count) pending)"
 			}
         }
     }

@@ -6,8 +6,12 @@
 import SwiftUI
 
 struct WhisperProfileView: View {
-    var maybeWhisper: ((Conversation?) -> Void)?
-    
+	#if targetEnvironment(macCatalyst)
+	@Environment(\.dismiss) private var dismiss
+	#endif
+
+	var maybeWhisper: ((Conversation?) -> Void)?
+
     @State private var conversations: [Conversation] = []
     @State private var defaultConversation: Conversation?
         
@@ -38,10 +42,14 @@ struct WhisperProfileView: View {
 					updateFromProfile()
 				}
 			}
+			.toolbarTitleDisplayMode(.large)
 			.navigationTitle("Conversations")
 			.toolbar {
-				EditButton()
 				Button(action: addConversation, label: { Text("Add") } )
+				EditButton()
+				#if targetEnvironment(macCatalyst)
+				Button(action: { dismiss() }, label: { Text("Close") } )
+				#endif
 			}
 			.onAppear {
 				updateFromProfile()

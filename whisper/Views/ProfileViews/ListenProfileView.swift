@@ -6,54 +6,57 @@
 import SwiftUI
 
 struct ListenProfileView: View {
-    var maybeListen: ((Conversation?) -> Void)?
-    
+	#if targetEnvironment(macCatalyst)
+	@Environment(\.dismiss) private var dismiss
+	#endif
+
+	var maybeListen: ((Conversation?) -> Void)?
+
     @State private var conversations: [Conversation] = []
         
     private let profile = UserProfile.shared
     
     var body: some View {
-        VStack(alignment: .center, spacing: 20) {
-            Text("\(Image(systemName: "icloud.and.arrow.down")) = Listen, \(Image(systemName: "delete.left")) = Delete")
-                .font(FontSizes.fontFor(name: .small))
-            if (!conversations.isEmpty) {
-                VStack(alignment: .leading) {
-                    ForEach(conversations) { c in
-                        HStack(spacing: 20) {
-                            Text(c.name)
-                            Spacer(minLength: 25)
-                            Button("Listen", systemImage: "icloud.and.arrow.down") {
-                                logger.info("Hit listen button on \(c.id) (\(c.name))")
-                                maybeListen?(c)
-                            }
-                            .labelStyle(.iconOnly)
-                            Button("Delete", systemImage: "delete.left") {
-                                logger.info("Hit delete button on \(c.id) (\(c.name))")
-                                profile.deleteListenConversation(c)
-                                updateFromProfile()
-                            }
-                        }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.borderless)
-                    }
-                }
-            } else {
-                Text("(No past conversations to choose from.)")
-                    .padding()
-            }
-            HStack {
-                Spacer()
-                Button("Cancel") {
-                    logger.info("Canceling whisper conversation choice")
-                    maybeListen?(nil)
-                }
-                Spacer()
-            }
-        }
-        .padding(10)
-        .onAppear {
-            updateFromProfile()
-        }
+		NavigationStack {
+			VStack(alignment: .center, spacing: 20) {
+				if (!conversations.isEmpty) {
+					VStack(alignment: .leading) {
+						ForEach(conversations) { c in
+							VStack(spacing: 0) {
+								Text("\(c.name) with \(c.ownerName)")
+								HStack(spacing: 20) {
+									Button("Listen") {
+										logger.info("Hit listen button on \(c.id) (\(c.name))")
+										maybeListen?(c)
+									}
+									Spacer()
+									Button("Delete") {
+										logger.info("Hit delete button on \(c.id) (\(c.name))")
+										profile.deleteListenConversation(c)
+										updateFromProfile()
+									}
+								}
+								.buttonStyle(.borderless)
+							}
+						}
+					}
+				} else {
+					Text("(No past conversations)")
+						.padding()
+				}
+			}
+			.toolbarTitleDisplayMode(.large)
+			.navigationTitle("Conversations")
+			#if targetEnvironment(macCatalyst)
+			.toolbar {
+				Button(action: { dismiss() }, label: { Text("Close") } )
+			}
+			#endif
+			.padding(10)
+			.onAppear {
+				updateFromProfile()
+			}
+		}
     }
     
     func updateFromProfile() {

@@ -135,6 +135,7 @@ final class ListenViewModel: ObservableObject {
 		logger.info("Accepted invite to conversation \(inviter.info.conversationName) from \(inviter.info.username)")
 		inviter.isPending = false
 		invites = candidates.values.filter{$0.isPending}.sorted()
+		showStatusDetail = !invites.isEmpty
 		let conversation = profile.listenConversationForInvite(info: inviter.info)
 		let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
 		transport.sendControl(remote: inviter.remote, chunk: chunk)
@@ -147,8 +148,8 @@ final class ListenViewModel: ObservableObject {
 		logger.info("Rejected invite to conversation \(inviter.info.conversationName) from \(inviter.info.username)")
 		clients.removeValue(forKey: inviter.info.clientId)
 		invites = candidates.values.filter{$0.isPending}.sorted()
+		showStatusDetail = !invites.isEmpty
 		transport.drop(remote: inviter.remote)
-		invites = candidates.values.filter{$0.isPending}.sorted()
 	}
 
     // re-read the whispered text
@@ -279,7 +280,7 @@ final class ListenViewModel: ObservableObject {
 			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
 				if candidate.isPending {
 					invites = candidates.values.filter{$0.isPending}.sorted()
-					showStatusDetail = true
+					showStatusDetail = !invites.isEmpty
 				}
 			}
 		case .listenAuthYes:
@@ -441,7 +442,7 @@ final class ListenViewModel: ObservableObject {
 
 	private func refreshStatusText() {
         if let whisperer = whisperer {
-			statusText = "Listening to \(whisperer.info.username)"
+			statusText = "\(conversation!.name): Listening to \(whisperer.info.username)"
         } else if discoveryInProgress {
             let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
             statusText = "Looking for whisperers…\(suffix)"

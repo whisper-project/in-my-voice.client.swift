@@ -19,11 +19,16 @@ struct ListenersView: View {
 			if !model.invites.isEmpty {
 				VStack(alignment: .leading, spacing: 20) {
 					ForEach(model.invites.map(Row.init)) { row in
-						HStack {
+						VStack {
 							row.legend
 								.lineLimit(nil)
-							Button("Accept") { model.acceptRequest(row.id) }
-							Button("Refuse") { model.refuseRequest(row.id) }
+								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+							HStack {
+								Button("Accept") { model.acceptRequest(row.id) }
+								Spacer()
+								Button("Refuse") { model.refuseRequest(row.id) }
+							}
+							.buttonStyle(.borderless)
 						}
 					}
 				}
@@ -34,20 +39,22 @@ struct ListenersView: View {
 			} else {
 				VStack(alignment: .leading, spacing: 10) {
 					ForEach(model.listeners()) { candidate in
-						HStack(spacing: 5) {
+						HStack(spacing: 0) {
 							Text(candidate.info.username)
-							Image(systemName: candidate.remote.kind == .global ? "network" : "personalhotspot.circle")
+								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+							Image(systemName: candidate.remote.kind == .global ? "network" : "personalhotspot")
+								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 							Spacer(minLength: 20)
 							Button(action: { model.playSound(candidate) }, label: { Image(systemName: "speaker.wave.2") })
-								.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10))
+								.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
 							Button(action: { model.dropListener(candidate) }, label: { Image(systemName: "delete.left") })
 						}
+						.buttonStyle(.borderless)
 					}
 				}
 			}
 		}
 		.font(FontSizes.fontFor(FontSizes.minTextSize + 1))
-		.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 		.padding()
     }
     
@@ -57,7 +64,7 @@ struct ListenersView: View {
 
 		init(_ candidate: WhisperViewModel.Candidate) {
 			id = candidate.remote.id
-			let sfname = candidate.remote.kind == .local ? "personalhotspot.circle" : "network"
+			let sfname = candidate.remote.kind == .local ? "personalhotspot" : "network"
 			legend = Text("Request \(Image(systemName: sfname)) from \(candidate.info.username)")
 		}
 	}

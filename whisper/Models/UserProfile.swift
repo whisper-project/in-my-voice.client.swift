@@ -45,6 +45,11 @@ final class Conversation: Encodable, Decodable, Identifiable, Comparable, Equata
 }
 
 final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
+	struct ListenerInfo: Identifiable {
+		let id: String
+		let username: String
+	}
+
     static private(set) var shared = loadDefault() ?? createAndSaveDefault()
     
     private(set) var id: String
@@ -156,8 +161,11 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
 	}
 
 	/// find out whether a user has been added to a whisper conversation
-	func isListenerToWhisperConversation(info: WhisperProtocol.ClientInfo, conversation: Conversation) -> Bool {
-		return conversation.allowed[info.profileId] != nil
+	func isListenerToWhisperConversation(info: WhisperProtocol.ClientInfo, conversation: Conversation) -> ListenerInfo? {
+		guard let username = conversation.allowed[info.profileId] else {
+			return nil
+		}
+		return ListenerInfo(id: info.profileId, username: username)
 	}
 
 	/// remove user from a whisper conversation
@@ -165,11 +173,6 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
 		if conversation.allowed.removeValue(forKey: profileId) != nil {
 			saveAsDefault()
 		}
-	}
-
-	struct ListenerInfo: Identifiable {
-		let id: String
-		let username: String
 	}
 
 	/// list listeners for a whisper conversation
