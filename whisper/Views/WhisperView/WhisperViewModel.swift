@@ -46,12 +46,14 @@ final class WhisperViewModel: ObservableObject {
     // MARK: View entry points
     
     func start() {
+		logger.log("Starting WhisperView model")
         resetText()
         refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
     }
     
     func stop() {
+		logger.log("Stopping WhisperView model")
         transport.stop()
         resetText()
         refreshStatusText()

@@ -15,14 +15,14 @@ final class BluetoothWhisperTransport: PublishTransport {
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
-        logger.log("Starting Bluetooth whisper transport...")
+        logger.log("Starting Bluetooth whisper transport")
         whisperService = BluetoothData.whisperService()
         factory.publish(service: whisperService!)
         startDiscovery()
     }
     
     func stop() {
-        logger.log("Stopping Bluetooth whisper transport...")
+        logger.log("Stopping Bluetooth whisper transport")
         stopDiscovery()
         removeAllListeners()
         if let service = whisperService {
@@ -248,7 +248,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     private var isInBackground = false
     
     init() {
-        logger.log("Initializing bluetooth whisper transport")
+        logger.log("Initializing Bluetooth whisper transport")
         factory.advertisementSubject
             .sink { [weak self] in self?.noticeAd($0) }
             .store(in: &cancellables)
@@ -270,7 +270,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
     
     deinit {
-        logger.log("Destroying WhisperView model")
+        logger.log("Destroying Bluetooth whisper transport")
         cancellables.cancel()
     }
 

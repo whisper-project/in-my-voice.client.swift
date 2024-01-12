@@ -86,10 +86,15 @@ final class TcpWhisperTransport: PublishTransport {
     private var droppedListeners: Set<String> = []
 
     init(_ url: String) {
+		logger.log("Initializing TCP whisper transport")
         self.clientId = PreferenceData.clientId
         self.channelName = "\(clientId):whisper"
     }
-    
+
+	deinit {
+		logger.log("Destroying TCP whisper transport")
+	}
+
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {

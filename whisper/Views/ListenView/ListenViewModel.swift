@@ -51,11 +51,13 @@ final class ListenViewModel: ObservableObject {
     }
     
     deinit {
+		logger.log("Destroying ListenView model")
         cancellables.cancel()
     }
     
     // MARK: View entry points
     func start() {
+		logger.log("Starting ListenView model")
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if error != nil {
@@ -72,6 +74,7 @@ final class ListenViewModel: ObservableObject {
     }
     
     func stop() {
+		logger.log("Stopping ListenView model")
         cancelDiscovery()
         transport.stop()
         statusText = "Stopped Listening"
