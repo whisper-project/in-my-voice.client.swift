@@ -32,7 +32,7 @@ struct ListenProfileView: View {
 									Spacer()
 									Button("Delete") {
 										logger.info("Hit delete button on \(c.id) (\(c.name))")
-										profile.deleteListenConversation(c)
+										profile.deleteListenConversation(c.id)
 										updateFromProfile()
 									}
 								}

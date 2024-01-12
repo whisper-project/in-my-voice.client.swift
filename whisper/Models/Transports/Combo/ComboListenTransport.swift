@@ -49,7 +49,7 @@ final class ComboListenTransport: SubscribeTransport {
 
     func drop(remote: Wrapper) {
 		guard let remote = remotes.removeValue(forKey: remote.id) else {
-            fatalError("Dropping a remote that's not a whisperer: \(remote.id)")
+            fatalError("Request to drop an unknown remote: \(remote.id)")
         }
         switch remote.kind {
         case .local:

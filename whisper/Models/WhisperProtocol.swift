@@ -222,7 +222,7 @@ final class WhisperProtocol {
         }
         
         static func listenAuthNo(_ c: Conversation) -> ProtocolChunk {
-            return authChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c)
+            return authChunk(offset: ControlOffset.listenAuthNo.rawValue, c: c)
         }
         
         static func joining(_ c: Conversation) -> ProtocolChunk {

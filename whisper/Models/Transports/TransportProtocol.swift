@@ -64,7 +64,8 @@ protocol Transport {
 protocol PublishTransport: Transport {
 	init(_ conversation: Conversation)
 
-	func authorize(remote: Remote, conversation: Conversation)
+	func authorize(remote: Remote)
+	func deauthorize(remote: Remote)
 
     func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk])
     func publish(chunks: [WhisperProtocol.ProtocolChunk])

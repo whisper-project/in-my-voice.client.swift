@@ -180,7 +180,8 @@ final class WhisperViewModel: ObservableObject {
 		profile.removeListenerFromWhisperConversation(profileId: candidate.info.profileId, conversation: conversation)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
 		transport.sendControl(remote: candidate.remote, chunk: chunk)
-		transport.drop(remote: candidate.remote)
+		transport.deauthorize(remote: candidate.remote)
+		candidate.hasJoined = false
     }
 
 	func listeners() -> [Candidate] {
@@ -250,7 +251,7 @@ final class WhisperViewModel: ObservableObject {
 					}
 				} else {
 					logger.info("Authorizing known listener: \(candidate.id)")
-					transport.authorize(remote: candidate.remote, conversation: conversation)
+					transport.authorize(remote: candidate.remote)
 					let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation)
 					transport.sendControl(remote: candidate.remote, chunk: chunk)
 				}

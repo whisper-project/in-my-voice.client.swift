@@ -85,11 +85,13 @@ final class ListenViewModel: ObservableObject {
     }
     
     deinit {
+		logger.log("Destroying ListenView model")
         cancellables.cancel()
     }
     
     // MARK: View entry points
     func start() {
+		logger.info("Starting listen session")
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if error != nil {
@@ -104,8 +106,14 @@ final class ListenViewModel: ObservableObject {
     }
     
     func stop() {
-        cancelDiscovery()
-        transport.stop()
+		logger.info("Stopping listen session")
+		transport.stop()
+		conversation = nil
+		whisperer = nil
+		invites.removeAll()
+		candidates.removeAll()
+		clients.removeAll()
+		cancelDiscovery()
         statusText = "Stopped Listening"
     }
     
@@ -198,10 +206,6 @@ final class ListenViewModel: ObservableObject {
     }
         
 	private func receiveControlChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
-		guard whisperer == nil else {
-			// we shouldn't be seeing control messages from an active whisperer
-			fatalError("Received a control message while listening: \(pair)")
-		}
 		processControlChunk(remote: pair.remote, chunk: pair.chunk)
 	}
 
@@ -287,7 +291,11 @@ final class ListenViewModel: ObservableObject {
 			logger.info("Received approval for conversation \(info.conversationName) from \(info.username)")
 			let conversation = profile.addListenConversationForInvite(info: info)
 			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
-				setWhisperer(candidate: candidate, conversation: conversation)
+				if whisperer === candidate {
+					logger.error("Received second approval for the same conversation")
+				} else {
+					setWhisperer(candidate: candidate, conversation: conversation)
+				}
 			}
 		case .listenAuthNo:
 			logger.info("Received refusal for conversation \(info.conversationName) from \(info.username)")
@@ -295,6 +303,7 @@ final class ListenViewModel: ObservableObject {
 				logger.error("Ignoring refusal from non-candidate \(remote.id)")
 				return
 			}
+			profile.deleteListenConversation(info.conversationId)
 			connectionErrorDescription = "The Whisperer has refused to let you listen"
 			connectionError = true
 		default:
@@ -412,6 +421,7 @@ final class ListenViewModel: ObservableObject {
 		}
 		logger.info("Selecting whisperer \(candidate.id) for conversation \(conversation.id)")
 		whisperer = candidate
+		self.conversation = conversation
 		// stop looking for whisperers
 		cancelDiscovery()
 		refreshStatusText()
@@ -450,4 +460,18 @@ final class ListenViewModel: ObservableObject {
             statusText = "Waiting for a whisperer to appear…"
         }
     }
+
+	private func leaveConversation() {
+		if let w = whisperer {
+			whisperer = nil
+			candidates.removeValue(forKey: w.id)
+			logger.info("Leaving conversation \(w.info.conversationName) with \(w.info.username)")
+			transport.drop(remote: w.remote)
+		}
+		logger.info("Dropping \(self.candidates.count) remaining candidates")
+		for c in Array(candidates.values) {
+			transport.drop(remote: c.remote)
+		}
+		candidates.removeAll()
+	}
 }

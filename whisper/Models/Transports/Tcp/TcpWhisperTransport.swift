@@ -52,8 +52,12 @@ final class TcpWhisperTransport: PublishTransport {
         droppedListeners.insert(remote.id)
     }
 
-	func authorize(remote: Listener, conversation: Conversation) {
+	func authorize(remote: Listener) {
 		remote.isAuthorized = true
+	}
+
+	func deauthorize(remote: Listener) {
+		remote.isAuthorized = false
 	}
 
 	func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {

@@ -215,9 +215,9 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
 		ensureWhisperDefaultExists()
     }
     
-    func deleteListenConversation(_ c: Conversation) {
-        logger.info("Removing listener conversation \(c.id) (\(c.name))")
-		if listenTable.removeValue(forKey: c.id) != nil {
+    func deleteListenConversation(_ id: String) {
+        logger.info("Removing listener conversation \(id)")
+		if listenTable.removeValue(forKey: id) != nil {
 			saveAsDefault()
 		}
     }

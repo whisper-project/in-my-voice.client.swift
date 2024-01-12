@@ -78,15 +78,27 @@ final class ComboWhisperTransport: PublishTransport {
         }
     }
     
-	func authorize(remote: Wrapper, conversation: Conversation) {
+	func authorize(remote: Wrapper) {
 		guard let remote = remotes[remote.id] else {
 			fatalError("Authorizing an unknown remote: \(remote.id)")
 		}
 		switch remote.kind {
 		case .local:
-			localTransport?.authorize(remote: remote.inner as! LocalRemote, conversation: conversation)
+			localTransport?.authorize(remote: remote.inner as! LocalRemote)
 		case .global:
-			globalTransport?.authorize(remote: remote.inner as! GlobalRemote, conversation: conversation)
+			globalTransport?.authorize(remote: remote.inner as! GlobalRemote)
+		}
+	}
+
+	func deauthorize(remote: Wrapper) {
+		guard let remote = remotes[remote.id] else {
+			fatalError("Deauthorizing an unknown remote: \(remote.id)")
+		}
+		switch remote.kind {
+		case .local:
+			localTransport?.deauthorize(remote: remote.inner as! LocalRemote)
+		case .global:
+			globalTransport?.deauthorize(remote: remote.inner as! GlobalRemote)
 		}
 	}
 

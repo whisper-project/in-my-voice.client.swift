@@ -23,7 +23,7 @@ struct ControlView: View {
             speechButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
-            Button(action: { confirmDisconnect = true }) {
+			Button(action: { confirmDisconnect.toggle() }) {
                 stopButtonLabel()
             }
             .background(Color.accentColor)

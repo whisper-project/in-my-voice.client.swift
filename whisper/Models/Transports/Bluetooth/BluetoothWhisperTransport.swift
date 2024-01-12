@@ -65,7 +65,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 		removeRemote(remote)
     }
 
-	func authorize(remote: Remote, conversation: Conversation) {
+	func authorize(remote: Remote) {
 		guard let existing = remotes[remote.central] else {
 			logger.error("Ignoring authorization for non-remote: \(remote.id)")
 			return
@@ -74,8 +74,21 @@ final class BluetoothWhisperTransport: PublishTransport {
 		// in case they have already connected
 		if let index = eavesdroppers.firstIndex(of: existing.central) {
 			eavesdroppers.remove(at: index)
-			// they are an eavesdropper until they disconnect
 			listeners.append(existing.central)
+		}
+	}
+
+	func deauthorize(remote: Remote) {
+		guard let existing = remotes[remote.central] else {
+			logger.error("Ignoring deauthorization for non-remote: \(remote.id)")
+			return
+		}
+		remote.isAuthorized = false
+		// in case they have already connected
+		if let index = listeners.firstIndex(of: existing.central) {
+			listeners.remove(at: index)
+			// they are an eavesdropper until they disconnect or are re-authorized
+			eavesdroppers.append(existing.central)
 		}
 	}
 
@@ -312,16 +325,15 @@ final class BluetoothWhisperTransport: PublishTransport {
 		// live updates to everyone
         if !directedContent.isEmpty {
             logger.log("Updating specific listeners...")
-            while let (listener, chunks) = directedContent.first {
+            while var (listener, chunks) = directedContent.first {
                 while let chunk = chunks.first {
                     let sendOk = factory.updateValue(value: chunk.toData(),
                                                      characteristic: BluetoothData.contentOutCharacteristic,
                                                      central: listener)
                     if sendOk {
-                        if chunks.count == 1 {
+						chunks.removeFirst()
+                        if chunks.isEmpty {
                             directedContent.removeValue(forKey: listener)
-                        } else {
-                            directedContent[listener]!.removeFirst()
                         }
                     } else {
                         return
@@ -356,19 +368,19 @@ final class BluetoothWhisperTransport: PublishTransport {
             return false
         }
         if !directedControl.isEmpty {
-            logger.log("Sending directed control data...")
-            while let (listener, chunks) = directedControl.first {
+            while var (listener, chunks) = directedControl.first {
                 while let chunk = chunks.first {
+					logger.log("Sending control chunk: \(chunk)")
                     let sendOk = factory.updateValue(value: chunk.toData(),
                                                      characteristic: BluetoothData.controlOutCharacteristic,
                                                      central: listener)
                     if sendOk {
-                        if chunks.count == 1 {
+						chunks.removeFirst()
+                        if chunks.isEmpty {
                             directedControl.removeValue(forKey: listener)
-                        } else {
-                            directedContent[listener]!.removeFirst()
                         }
                     } else {
+						logger.warning("Send failed for chunk: \(chunk)")
                         return true
                     }
                 }
@@ -410,6 +422,9 @@ final class BluetoothWhisperTransport: PublishTransport {
             adTimer = nil
             timer.invalidate()
         }
+		// forget the peripherals which started the advertising,
+		// in case they need to rejoin later on.
+		advertisers.removeAll()
     }
     
 	@discardableResult private func ensureRemote(_ central: CBCentral) -> Remote {

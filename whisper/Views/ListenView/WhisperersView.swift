@@ -37,7 +37,6 @@ struct WhisperersView: View {
 				}
 			}
 			.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
-			.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 			.padding()
 		} else {
 			Text("No Whisperer")
