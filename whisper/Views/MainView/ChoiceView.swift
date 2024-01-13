@@ -168,22 +168,22 @@ struct ChoiceView: View {
             Text("Sorry, but on its first launch after installation the app needs a few minutes to connect to the whisper server. Please try again.")
         }
         .onAppear { updateFromProfile() }
-        .onChange(of: nameEdit) { isEditing in
-            if isEditing {
+        .onChange(of: nameEdit) {
+            if nameEdit {
                 withAnimation { showWhisperButtons = false }
             } else {
                 updateOrRevertProfile()
             }
         }
-        .onChange(of: scenePhase) { newPhase in
-            switch newPhase {
+        .onChange(of: scenePhase) {
+            switch scenePhase {
             case .active:
                 logger.log("Reread user name going to choice view foreground")
                 updateFromProfile()
             case .background, .inactive:
                 break
             @unknown default:
-                logger.error("Went to unknown phase: \(String(describing: newPhase))")
+                logger.error("Went to unknown phase: \(String(describing: scenePhase))")
             }
         }
     }

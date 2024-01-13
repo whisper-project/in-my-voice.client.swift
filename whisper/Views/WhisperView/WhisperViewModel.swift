@@ -152,6 +152,7 @@ final class WhisperViewModel: ObservableObject {
 		invites = candidates.values.filter{$0.isPending}.sorted()
 		showStatusDetail = !invites.isEmpty
 		profile.addListenerToWhisperConversation(info: invitee.info, conversation: conversation)
+		transport.authorize(remote: invitee.remote)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation)
 		transport.sendControl(remote: invitee.remote, chunk: chunk)
 	}

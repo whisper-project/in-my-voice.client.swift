@@ -98,7 +98,7 @@ struct ListenView: View {
         .alert("Connection Failure", isPresented: $model.connectionError) {
             Button("OK") { mode = .ask }
         } message: {
-            Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
+            Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
         }
         .alert("Conversation Ended", isPresented: $model.conversationEnded) {
             Button("OK") { mode = .ask }
@@ -113,8 +113,8 @@ struct ListenView: View {
             logger.log("ListenView disappeared")
             self.model.stop()
         }
-        .onChange(of: scenePhase) { newPhase in
-            switch newPhase {
+        .onChange(of: scenePhase) {
+            switch scenePhase {
             case .background:
                 logger.log("Went to background")
                 model.wentToBackground()
@@ -124,7 +124,7 @@ struct ListenView: View {
                 logger.log("Went to foreground")
                 model.wentToForeground()
             @unknown default:
-                logger.error("Went to unknown phase: \(String(describing: newPhase))")
+                logger.error("Went to unknown phase: \(String(describing: scenePhase))")
             }
         }
     }

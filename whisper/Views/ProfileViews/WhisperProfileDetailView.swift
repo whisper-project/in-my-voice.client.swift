@@ -49,7 +49,7 @@ struct WhisperProfileDetailView: View {
 						HStack {
 							Text(info.username)
 							Spacer(minLength: 25)
-							Button("Delete", systemImage: "delete.left") {
+							Button("Delete") {
 								profile.removeListenerFromWhisperConversation(profileId: info.id, conversation: conversation)
 								updateFromProfile()
 							}

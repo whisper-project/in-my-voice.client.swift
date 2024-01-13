@@ -10,7 +10,8 @@ struct ListenersView: View {
     @Environment(\.colorScheme) var colorScheme
     
     @ObservedObject var model: WhisperViewModel
-    
+	@State var listeners: [WhisperViewModel.Candidate] = []
+
     var body: some View {
 		VStack {
 			Text(model.conversation.name)
@@ -44,16 +45,17 @@ struct ListenersView: View {
 								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 							Image(systemName: candidate.remote.kind == .global ? "network" : "personalhotspot")
 								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-							Spacer(minLength: 20)
+							Spacer(minLength: 40)
 							Button(action: { model.playSound(candidate) }, label: { Image(systemName: "speaker.wave.2") })
-								.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
-							Button(action: { model.dropListener(candidate) }, label: { Image(systemName: "delete.left") })
+								.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 30))
+							Button(action: { dropListener(candidate) }, label: { Image(systemName: "delete.left") })
 						}
 						.buttonStyle(.borderless)
 					}
 				}
 			}
 		}
+		.onAppear{ loadListeners() }
 		.font(FontSizes.fontFor(FontSizes.minTextSize + 1))
 		.padding()
     }
@@ -65,8 +67,17 @@ struct ListenersView: View {
 		init(_ candidate: WhisperViewModel.Candidate) {
 			id = candidate.remote.id
 			let sfname = candidate.remote.kind == .local ? "personalhotspot" : "network"
-			legend = Text("Request \(Image(systemName: sfname)) from \(candidate.info.username)")
+			legend = Text("\(Image(systemName: sfname)) Request to join from \(candidate.info.username)")
 		}
+	}
+
+	func loadListeners() {
+		listeners = model.listeners()
+	}
+
+	func dropListener(_ candidate: WhisperViewModel.Candidate) {
+		model.dropListener(candidate)
+		loadListeners()
 	}
 }
 

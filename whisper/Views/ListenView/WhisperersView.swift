@@ -15,7 +15,7 @@ struct WhisperersView: View {
 		if let candidate = model.whisperer {
 			let (remote, info) = (candidate.remote, candidate.info)
 			let sfname = remote.kind == .local ? "personalhotspot" : "network"
-			Text("Listening \(Image(systemName: sfname)) to \(info.username) in conversation \(info.conversationName)")
+			Text("\(Image(systemName: sfname)) Listening to \(info.username) in conversation \(info.conversationName)")
 				.lineLimit(nil)
 				.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
 				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
@@ -53,7 +53,7 @@ struct WhisperersView: View {
 		init(_ candidate: ListenViewModel.Candidate) {
 			id = candidate.remote.id
 			let sfname = candidate.remote.kind == .local ? "personalhotspot" : "network"
-			legend = Text("Invite \(Image(systemName: sfname)) from \(candidate.info.username) to conversation \(candidate.info.conversationName)")
+			legend = Text("\(Image(systemName: sfname)) Invite from \(candidate.info.username) to conversation \(candidate.info.conversationName)")
 		}
 	}
 }

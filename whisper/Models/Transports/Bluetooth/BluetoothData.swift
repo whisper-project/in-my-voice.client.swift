@@ -22,7 +22,7 @@ struct BluetoothData {
     static let controlOutCharacteristic = CBMutableCharacteristic(
         type: controlOutUuid, properties: [.read, .notify], value: nil, permissions: .readable)
     static let controlInCharacteristic = CBMutableCharacteristic(
-        type: controlInUuid, properties: .write, value: nil, permissions: .writeable)
+		type: controlInUuid, properties: [.write, .writeWithoutResponse], value: nil, permissions: .writeable)
 
     // MARK: Services
     static func whisperService() -> CBMutableService {

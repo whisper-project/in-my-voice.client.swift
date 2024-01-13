@@ -282,10 +282,15 @@ final class ListenViewModel: ObservableObject {
 			let conversation = profile.listenConversationForInvite(info: info)
 			logger.info("Received offer for conversation \(info.conversationName) from \(info.username)")
 			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
-				if candidate.isPending {
-					invites = candidates.values.filter{$0.isPending}.sorted()
-					showStatusDetail = !invites.isEmpty
+				if !candidate.isPending {
+					// since we got an offer, not an auth, the whisperer thinks we are pending
+					// so we need to correct our listener database to agree
+					profile.deleteListenConversation(conversation.id)
+					candidate.isPending = true
 				}
+				// this is a new invite, so remake the invite list and show it
+				invites = candidates.values.filter{$0.isPending}.sorted()
+				showStatusDetail = !invites.isEmpty
 			}
 		case .listenAuthYes:
 			logger.info("Received approval for conversation \(info.conversationName) from \(info.username)")
@@ -313,7 +318,7 @@ final class ListenViewModel: ObservableObject {
 
 	private func candidateFor(
 		remote: Remote,
-		info: WhisperProtocol.ClientInfo, 
+		info: WhisperProtocol.ClientInfo,
 		conversation: Conversation
 	) -> Candidate? {
 		if let existing = candidates[remote.id] {
