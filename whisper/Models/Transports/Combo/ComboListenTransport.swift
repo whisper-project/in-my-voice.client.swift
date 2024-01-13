@@ -143,15 +143,15 @@ final class ComboListenTransport: SubscribeTransport {
 		guard globalStatus != status else {
 			return
 		}
-#if DEBUG
+		#if DISABLE_INTERNET
 		globalStatus = .off
-#else
+		#else
 		if globalStatus == .on {
 			logger.error("The Internet connection was available but has dropped")
 			failureCallback?("The Internet connection has become unavailable")
 		}
-		globalStatus = isPending
-#endif
+		globalStatus = status
+		#endif
 	}
 
 	private func initializeTransports() {
