@@ -203,6 +203,7 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
         let c = listenConversationForInvite(info: info)
 		listenTable[c.id] = c
         c.lastListened = Date.now
+		saveAsDefault()
 		return c
     }
 
