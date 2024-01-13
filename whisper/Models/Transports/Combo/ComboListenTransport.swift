@@ -16,7 +16,9 @@ final class ComboListenTransport: SubscribeTransport {
 
     func start(failureCallback: @escaping (String) -> Void) {
         logger.info("Starting combo listen transport")
-		staggerStart(failureCallback: failureCallback)
+		self.failureCallback = failureCallback
+		initializeTransports()
+		staggerStart()
     }
 
     func stop() {
@@ -97,37 +99,26 @@ final class ComboListenTransport: SubscribeTransport {
         }
     }
     
-    private var localTransport: LocalTransport?
-    private var globalTransport: GlobalTransport?
+	private var conversation: Conversation?
+	private var localFactory = BluetoothFactory.shared
+	private var localStatus: TransportStatus = .off
+	private var localTransport: LocalTransport?
+	private var globalFactory = TcpFactory.shared
+	private var globalStatus: TransportStatus = .off
+	private var globalTransport: GlobalTransport?
 	private var staggerTimer: Timer?
     private var remotes: [String: Wrapper] = [:]
     private var cancellables: Set<AnyCancellable> = []
-    
+	private var failureCallback: ((String) -> Void)?
+
     init(_ conversation: Conversation?) {
         logger.log("Initializing combo listen transport")
-        if let c = conversation {
-            let globalTransport = GlobalTransport(c)
-            self.globalTransport = globalTransport
-            globalTransport.lostRemoteSubject
-                .sink { [weak self] in self?.removeListener(remote: $0) }
-                .store(in: &cancellables)
-			globalTransport.contentSubject
-				.sink { [weak self] in self?.receiveContentChunk($0) }
-				.store(in: &cancellables)
-			globalTransport.controlSubject
-				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
-				.store(in: &cancellables)
-        }
-		let localTransport = LocalTransport(conversation)
-		self.localTransport = localTransport
-		localTransport.lostRemoteSubject
-			.sink { [weak self] in self?.removeListener(remote: $0) }
+		self.conversation = conversation
+		self.localFactory.statusSubject
+			.sink(receiveValue: setLocalStatus)
 			.store(in: &cancellables)
-		localTransport.contentSubject
-			.sink { [weak self] in self?.receiveContentChunk($0) }
-			.store(in: &cancellables)
-		localTransport.controlSubject
-			.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
+		self.globalFactory.statusSubject
+			.sink(receiveValue: setGlobalStatus)
 			.store(in: &cancellables)
     }
     
@@ -137,20 +128,77 @@ final class ComboListenTransport: SubscribeTransport {
     }
     
     //MARK: internal methods
-	private func staggerStart(failureCallback: @escaping (String) -> Void) {
+	private func setLocalStatus(_ status: TransportStatus) {
+		guard localStatus != status else {
+			return
+		}
+		if localStatus == .on {
+			logger.error("The Bluetooth connection was available but has dropped")
+			failureCallback?("The Bluetooth network has become unavailable")
+		}
+		localStatus = status
+	}
+
+	private func setGlobalStatus(_ status: TransportStatus) {
+		guard globalStatus != status else {
+			return
+		}
+#if DEBUG
+		globalStatus = .off
+#else
+		if globalStatus == .on {
+			logger.error("The Internet connection was available but has dropped")
+			failureCallback?("The Internet connection has become unavailable")
+		}
+		globalStatus = isPending
+#endif
+	}
+
+	private func initializeTransports() {
+		if let c = conversation, globalStatus == .on {
+			let globalTransport = GlobalTransport(c)
+			self.globalTransport = globalTransport
+			globalTransport.lostRemoteSubject
+				.sink { [weak self] in self?.removeListener(remote: $0) }
+				.store(in: &cancellables)
+			globalTransport.contentSubject
+				.sink { [weak self] in self?.receiveContentChunk($0) }
+				.store(in: &cancellables)
+			globalTransport.controlSubject
+				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
+				.store(in: &cancellables)
+		}
+		if localStatus == .on {
+			let localTransport = LocalTransport(conversation)
+			self.localTransport = localTransport
+			localTransport.lostRemoteSubject
+				.sink { [weak self] in self?.removeListener(remote: $0) }
+				.store(in: &cancellables)
+			localTransport.contentSubject
+				.sink { [weak self] in self?.receiveContentChunk($0) }
+				.store(in: &cancellables)
+			localTransport.controlSubject
+				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
+				.store(in: &cancellables)
+		}
+		if localTransport == nil && globalTransport == nil {
+			logger.error("No transports available for whispering")
+			failureCallback?("Cannot whisper unless one of Bluetooth or WiFi is available")
+		}
+	}
+
+	private func staggerStart() {
 		guard let local = localTransport else {
 			fatalError("Cannot start Bluetooth transport?")
 		}
 		logger.info("Starting Bluetooth in advance of Network")
-		local.start(failureCallback: failureCallback)
+		local.start(failureCallback: failureCallback!)
 		staggerTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(listenerWaitTime), repeats: false) { _ in
 			// run loop will invalidate the timer
 			self.staggerTimer = nil
-			#if DEBUG
 			if let global = self.globalTransport {
-				global.start(failureCallback: failureCallback)
+				global.start(failureCallback: self.failureCallback!)
 			}
-			#endif
 		}
 	}
 
