@@ -152,7 +152,7 @@ The last build made all Listeners stop listening whenever the Whisperer disconne
 
 This build also remembers from one session to the next what size of text is being used, and whether the regular or large set of sizes is in use.
 
-v2 BUILD 1 (internal):
+v2 BUILDS 1 & 2 (internal):
 This is the first build of v2, which supports multiple named conversations and requires both the Listeners and the Whisperer to explicitly approve (once) their participation in a given named conversation.
 
-This build only supports Bluetooth connections. Internet will come once the transports and server have been updated.
+This build only supports Bluetooth connections. Internet will come once the transports and server have been updated.  Links can be sent to other users and will work as long as the other user is in Bluetooth range, because the app will use the link to try a Bluetooth connection.
