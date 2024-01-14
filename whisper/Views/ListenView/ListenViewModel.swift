@@ -245,10 +245,8 @@ final class ListenViewModel: ObservableObject {
             if !chunk.isDiff() {
                 logger.log("Ignoring non-diff chunk because no read in progress")
             } else if chunk.offset == 0 {
-//                logger.debug("Got diff: live text is '\(chunk.text)'")
                 liveText = chunk.text
             } else if chunk.isCompleteLine() {
-//				logger.log("Got diff: move live text to past text")
                 if !isInBackground && PreferenceData.speakWhenListening {
                     speak(liveText)
                 }
@@ -260,7 +258,6 @@ final class ListenViewModel: ObservableObject {
                 logger.log("Resetting live text after missed packet...")
                 readLiveText()
             } else {
-//                logger.debug("Got diff: live text[\(chunk.offset)...] updated to '\(chunk.text)'")
                 liveText = WhisperProtocol.applyDiff(old: liveText, chunk: chunk)
             }
         }
@@ -282,15 +279,16 @@ final class ListenViewModel: ObservableObject {
 			let conversation = profile.listenConversationForInvite(info: info)
 			logger.info("Received offer for conversation \(info.conversationName) from \(info.username)")
 			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
-				if !candidate.isPending {
-					// since we got an offer, not an auth, the whisperer thinks we are pending
-					// so we need to correct our listener database to agree
-					profile.deleteListenConversation(conversation.id)
-					candidate.isPending = true
+				if candidate.isPending {
+					// this is a new invite, so remake the invite list and show it
+					invites = candidates.values.filter{$0.isPending}.sorted()
+					showStatusDetail = !invites.isEmpty
+				} else {
+					// we've already accepted this invite, so try to join
+					let conversation = profile.listenConversationForInvite(info: candidate.info)
+					let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
+					transport.sendControl(remote: candidate.remote, chunk: chunk)
 				}
-				// this is a new invite, so remake the invite list and show it
-				invites = candidates.values.filter{$0.isPending}.sorted()
-				showStatusDetail = !invites.isEmpty
 			}
 		case .listenAuthYes:
 			logger.info("Received approval for conversation \(info.conversationName) from \(info.username)")

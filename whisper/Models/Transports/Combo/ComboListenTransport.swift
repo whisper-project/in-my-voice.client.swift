@@ -132,11 +132,15 @@ final class ComboListenTransport: SubscribeTransport {
 		guard localStatus != status else {
 			return
 		}
+		#if DISABLE_BLUETOOTH
+		localStatus = .off
+		#else
 		if localStatus == .on {
 			logger.error("The Bluetooth connection was available but has dropped")
 			failureCallback?("The Bluetooth network has become unavailable")
 		}
 		localStatus = status
+		#endif
 	}
 
 	private func setGlobalStatus(_ status: TransportStatus) {
@@ -188,17 +192,22 @@ final class ComboListenTransport: SubscribeTransport {
 	}
 
 	private func staggerStart() {
-		guard let local = localTransport else {
-			fatalError("Cannot start Bluetooth transport?")
-		}
-		logger.info("Starting Bluetooth in advance of Network")
-		local.start(failureCallback: failureCallback!)
-		staggerTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(listenerWaitTime), repeats: false) { _ in
-			// run loop will invalidate the timer
-			self.staggerTimer = nil
-			if let global = self.globalTransport {
-				global.start(failureCallback: self.failureCallback!)
+		if let local = localTransport {
+			logger.info("Starting Bluetooth in advance of Internet")
+			local.start(failureCallback: failureCallback!)
+			staggerTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(listenerWaitTime), repeats: false) { _ in
+				// run loop will invalidate the timer
+				self.staggerTimer = nil
+				if let global = self.globalTransport {
+					logger.info("Starting Internet after Bluetooth")
+					global.start(failureCallback: self.failureCallback!)
+				}
 			}
+		} else if let global = globalTransport {
+			logger.info("Starting Internet only because Bluetooth not available")
+			global.start(failureCallback: self.failureCallback!)
+		} else {
+			fatalError("Cannot listen because neither Bluetooth nor Internet is available")
 		}
 	}
 

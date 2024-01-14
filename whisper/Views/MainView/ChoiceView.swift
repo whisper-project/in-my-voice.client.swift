@@ -21,6 +21,7 @@ struct ChoiceView: View {
     @State private var credentialsMissing = false
     @State private var showWhisperConversations = false
     @State private var showListenConversations = false
+	@State private var showNoConnection = false
     @FocusState private var nameEdit: Bool
     
     private let profile = UserProfile.shared
@@ -57,11 +58,11 @@ struct ChoiceView: View {
                             .font(FontSizes.fontFor(name: .normal))
                             .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     case .disabled:
-                        Link("Enable Bluetooth to listen...", destination: settingsUrl)
+                        Link("Bluetooth not enabled, Wireless available", destination: settingsUrl)
                             .font(FontSizes.fontFor(name: .normal))
                             .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     case .waiting:
-                        Text("Waiting for Bluetooth to listen...")
+                        Text("Waiting for Bluetooth, Wireless available")
                             .font(FontSizes.fontFor(name: .normal))
                             .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     case .on:
@@ -87,7 +88,7 @@ struct ChoiceView: View {
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
-                                maybeWhisper(profile.whisperDefault)
+								maybeWhisper(profile.whisperDefault)
                             }
                     )
                     .sheet(isPresented: $showWhisperConversations) {
@@ -101,7 +102,7 @@ struct ChoiceView: View {
                     }
                     .background(Color.accentColor)
                     .cornerRadius(15)
-                    .disabled(transportStatus != .on)
+					.disabled(transportStatus == .off)
                     .simultaneousGesture(
                         LongPressGesture()
                             .onEnded { _ in
@@ -111,8 +112,12 @@ struct ChoiceView: View {
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
-                                conversation = nil
-                                mode = .listen
+								if transportStatus == .on {
+									conversation = nil
+									mode = .listen
+								} else {
+									showListenConversations = true
+								}
                             }
                     )
                     .sheet(isPresented: $showListenConversations) {
@@ -167,6 +172,11 @@ struct ChoiceView: View {
         } message: {
             Text("Sorry, but on its first launch after installation the app needs a few minutes to connect to the whisper server. Please try again.")
         }
+		.alert("No Connection", isPresented: $showNoConnection) {
+			Button("OK") { }
+		} message: {
+			Text("You must enable a Bluetooth and/or Wireless connection before you can whisper or listen")
+		}
         .onAppear { updateFromProfile() }
         .onChange(of: nameEdit) {
             if nameEdit {
@@ -215,18 +225,26 @@ struct ChoiceView: View {
     
     func maybeWhisper(_ c: Conversation?) {
         showWhisperConversations = false
-        if let c = c {
-            conversation = c
-            mode = .whisper
-        }
+		if let c = c {
+			if transportStatus == .off {
+				showNoConnection = true
+			} else {
+				conversation = c
+				mode = .whisper
+			}
+		}
     }
     
     func maybeListen(_ c: Conversation?) {
         showListenConversations = false
-        if let c = c {
-            conversation = c
-            mode = .listen
-        }
+		if let c = c {
+			if transportStatus == .off {
+				showNoConnection = true
+			} else {
+				conversation = c
+				mode = .listen
+			}
+		}
     }
 }
 

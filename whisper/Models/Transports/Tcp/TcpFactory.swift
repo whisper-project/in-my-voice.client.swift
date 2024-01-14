@@ -42,7 +42,11 @@ final class TcpFactory: TransportFactory {
     }
     
     private func setStatus(_ status: TransportStatus) {
+		#if DISABLE_INTERNET
+		self.status = .off
+		#else
         self.status = status
+		#endif
         statusSubject.send(status)
     }
 }

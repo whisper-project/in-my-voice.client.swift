@@ -218,7 +218,7 @@ final class WhisperProtocol {
         }
         
         static func listenAuthYes(_ c: Conversation, contentId: String = "") -> ProtocolChunk {
-            return authChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c)
+            return authChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c, contentId: contentId)
         }
         
         static func listenAuthNo(_ c: Conversation) -> ProtocolChunk {

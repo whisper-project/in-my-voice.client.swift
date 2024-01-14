@@ -22,23 +22,23 @@ struct ListenProfileView: View {
 				if (!conversations.isEmpty) {
 					VStack(alignment: .leading) {
 						ForEach(conversations) { c in
-							VStack(spacing: 0) {
-								Text("\(c.name) with \(c.ownerName)")
-								HStack(spacing: 20) {
-									Button("Listen") {
-										logger.info("Hit listen button on \(c.id) (\(c.name))")
-										maybeListen?(c)
-									}
-									Spacer()
-									Button("Delete") {
-										logger.info("Hit delete button on \(c.id) (\(c.name))")
-										profile.deleteListenConversation(c.id)
-										updateFromProfile()
-									}
+							HStack(spacing: 20) {
+								Text("\(c.name) with \(c.ownerName)").lineLimit(nil)
+								Spacer(minLength: 25)
+								Button("Listen", systemImage: "icloud.and.arrow.down") {
+									logger.info("Hit listen button on \(c.id) (\(c.name))")
+									maybeListen?(c)
 								}
-								.buttonStyle(.borderless)
+								Button("Delete", systemImage: "delete.left") {
+									logger.info("Hit delete button on \(c.id) (\(c.name))")
+									profile.deleteListenConversation(c.id)
+									updateFromProfile()
+								}
 							}
+							.labelStyle(.iconOnly)
+							.buttonStyle(.borderless)
 						}
+						Spacer()
 					}
 				} else {
 					Text("(No past conversations)")

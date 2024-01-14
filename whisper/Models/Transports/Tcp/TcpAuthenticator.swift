@@ -16,6 +16,7 @@ final class TcpAuthenticator {
     private var mode: OperatingMode
     private var conversationId: String
     private var clientId = PreferenceData.clientId
+	private var contentId: String = PreferenceData.contentId
     private var client: ARTRealtime?
     private var failureCallback: (String) -> Void
     
@@ -75,10 +76,12 @@ final class TcpAuthenticator {
             return
         }
         let activity = mode == .whisper ? "publish" : "subscribe"
+		let contentChannelId = mode == .whisper ? contentId : "*"
         let value = [
             "clientId": clientId,
             "activity": mode == .whisper ? "publish" : "subscribe",
             "conversationId": conversationId,
+			"contentId": contentChannelId,
             "profileId": UserProfile.shared.id,
             "userName": UserProfile.shared.username,
         ]

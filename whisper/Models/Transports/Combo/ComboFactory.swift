@@ -12,8 +12,8 @@ final class ComboFactory: TransportFactory {
     
     static let shared = ComboFactory()
     
-    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
-    
+    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
+
     func publisher(_ conversation: Conversation) -> Publisher {
         return Publisher(conversation)
     }
@@ -26,8 +26,8 @@ final class ComboFactory: TransportFactory {
     private var localFactory = BluetoothFactory.shared
     private var globalFactory = TcpFactory.shared
     
-    private var localStatus: TransportStatus = .on
-    private var globalStatus: TransportStatus = .on
+    private var localStatus: TransportStatus = .off
+    private var globalStatus: TransportStatus = .off
 
     private var cancellables: Set<AnyCancellable> = []
 

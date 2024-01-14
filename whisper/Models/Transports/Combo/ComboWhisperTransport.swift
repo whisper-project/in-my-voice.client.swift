@@ -168,15 +168,11 @@ final class ComboWhisperTransport: PublishTransport {
         guard globalStatus != status else {
             return
         }
-		#if DISABLE_INTERNET
-		globalStatus = .off
-		#else
 		if globalStatus == .on {
 			logger.error("The Internet connection was available but has dropped")
 			failureCallback?("The Internet connection has become unavailable")
 		}
         globalStatus = status
-		#endif
     }
     
     private func initializeTransports() {

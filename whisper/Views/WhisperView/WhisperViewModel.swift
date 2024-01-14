@@ -59,6 +59,7 @@ final class WhisperViewModel: ObservableObject {
     private var soundEffect: AVAudioPlayer?
 
 	let profile = UserProfile.shared
+	let contentId = UUID().uuidString
 
     init(_ conversation: Conversation) {
         logger.log("Initializing WhisperView model")
@@ -73,6 +74,7 @@ final class WhisperViewModel: ObservableObject {
 		self.transport.controlSubject
 			.sink { [weak self] in self?.receiveControlChunk($0) }
 			.store(in: &cancellables)
+		PreferenceData.contentId = contentId
     }
     
     deinit {
@@ -153,7 +155,7 @@ final class WhisperViewModel: ObservableObject {
 		showStatusDetail = !invites.isEmpty
 		profile.addListenerToWhisperConversation(info: invitee.info, conversation: conversation)
 		transport.authorize(remote: invitee.remote)
-		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation)
+		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation, contentId: contentId)
 		transport.sendControl(remote: invitee.remote, chunk: chunk)
 	}
 
@@ -253,7 +255,7 @@ final class WhisperViewModel: ObservableObject {
 				} else {
 					logger.info("Authorizing known listener: \(candidate.id)")
 					transport.authorize(remote: candidate.remote)
-					let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation)
+					let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation, contentId: contentId)
 					transport.sendControl(remote: candidate.remote, chunk: chunk)
 				}
 			case .joining:

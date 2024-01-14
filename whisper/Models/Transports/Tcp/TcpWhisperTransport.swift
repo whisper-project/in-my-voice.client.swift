@@ -34,22 +34,20 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
-        guard let remote = listeners[remote.id] else {
-            logger.error("Ignoring request to send chunk to a non-listener: \(remote.id)")
+        guard let remote = remotes[remote.id] else {
+            logger.error("Ignoring request to send chunk to an unknown remote: \(remote.id)")
             return
         }
+		logger.info("Sending control packet to remote: \(remote.id): \(chunk)")
 		controlChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
     }
 
     func drop(remote: Remote) {
-        guard let remote = listeners[remote.id] else {
-            logger.error("Ignoring request to drop a non-listener: \(remote.id)")
-            return
+        guard let remote = remotes[remote.id] else {
+            fatalError("Ignoring request to drop an unknown remote: \(remote.id)")
         }
-        logger.info("Dropping listener \(remote.id)")
-        let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
-        controlChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
-        droppedListeners.insert(remote.id)
+        logger.info("Dropping remote \(remote.id)")
+		removeRemote(remote)
     }
 
 	func authorize(remote: Listener) {
@@ -61,8 +59,8 @@ final class TcpWhisperTransport: PublishTransport {
 	}
 
 	func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
-		guard let remote = listeners[remote.id] else {
-			logger.error("Ignoring request to send chunk to a non-listener: \(remote.id)")
+		guard let remote = remotes[remote.id] else {
+			logger.error("Ignoring request to send chunk to an unknown remote: \(remote.id)")
 			return
 		}
 		for chunk in chunks {
@@ -71,7 +69,7 @@ final class TcpWhisperTransport: PublishTransport {
 	}
 
     func publish(chunks: [WhisperProtocol.ProtocolChunk]) {
-        guard !listeners.isEmpty else {
+        guard !remotes.isEmpty else {
             // no one to publish to
             return
         }
@@ -86,8 +84,9 @@ final class TcpWhisperTransport: PublishTransport {
 		let kind: TransportKind = .global
 
 		fileprivate var isAuthorized: Bool = false
+		fileprivate var hasDropped: Bool = false
 
-        init(id: String) {
+		init(id: String) {
             self.id = id
         }
     }
@@ -95,19 +94,15 @@ final class TcpWhisperTransport: PublishTransport {
     private var failureCallback: ((String) -> Void)?
     private var clientId: String
     private var conversation: Conversation
-    private var contentChannelId: String
     private var authenticator: TcpAuthenticator!
     private var client: ARTRealtime?
     private var contentChannel: ARTRealtimeChannel?
     private var controlChannel: ARTRealtimeChannel?
-    private var listeners: [String:Remote] = [:]
-    private var droppedListeners: Set<String> = []
+    private var remotes: [String:Remote] = [:]
 
     init(_ c: Conversation) {
         self.clientId = PreferenceData.clientId
         self.conversation = c
-        self.contentChannelId = UUID().uuidString
-        logger.info("Content channel ID for conversation \(c.id) is \(self.contentChannelId)")
     }
     
     //MARK: Internal methods
@@ -132,7 +127,7 @@ final class TcpWhisperTransport: PublishTransport {
         client?.connection.on(.disconnected) { _ in
             logger.log("TCP whisper transport realtime client has disconnected")
         }
-        contentChannel = client?.channels.get(conversation.id + ":" + contentChannelId)
+		contentChannel = client?.channels.get(conversation.id + ":" + PreferenceData.contentId)
         contentChannel?.on(.attached) { stateChange in
             logger.log("TCP whisper transport realtime client has attached the content channel")
         }
@@ -160,12 +155,14 @@ final class TcpWhisperTransport: PublishTransport {
             logger.error("TCP whisper transport realtime client: there is a control channel failure")
         }
         controlChannel?.attach()
-        controlChannel?.subscribe("whisperer", callback: receiveControlMessage)
+		controlChannel?.subscribe(PreferenceData.clientId, callback: receiveControlMessage)
+		controlChannel?.subscribe("whisperer", callback: receiveControlMessage)
         let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
         controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
     }
     
     private func closeChannels() {
+		logger.info("Send drop message to \(self.remotes.count) remotes")
         let chunk = WhisperProtocol.ProtocolChunk.dropping()
         controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         contentChannel?.detach()
@@ -177,52 +174,45 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     private func receiveControlMessage(message: ARTMessage) {
-        guard let name = message.name, name == "whisperer" else {
-            logger.error("Ignoring a message not intended for the whisperer: \(String(describing: message))")
-            return
-        }
+		guard let remote = listenerFor(message.clientId) else {
+			logger.error("Ignoring a message with a missing client id: \(message)")
+			return
+		}
         guard let payload = message.data as? String,
               let chunk = WhisperProtocol.ProtocolChunk.fromString(payload)
         else {
             logger.error("Ignoring a message with a non-chunk payload: \(String(describing: message))")
             return
         }
-        if chunk.isPresenceMessage() {
-            guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text),
-                  info.clientId == message.clientId
-            else {
-                logger.error("Ignoring a malformed or misdirected invite: \(chunk.text))")
-                return
-            }
-            if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
-                logger.info("Received \(value) message from \(info.clientId) profile \(info.profileId) (\(info.username))")
-                switch value {
-                case .listenOffer, .listenRequest, .joining:
-                    if listeners[info.clientId] == nil {
-                        logger.info("Adding listener from \(value) message")
-                        let remote = Remote(id: info.clientId)
-                        listeners[info.clientId] = remote
-                    }
-                case .dropping:
-                    if let existing = listeners.removeValue(forKey: info.clientId) {
-                       logger.info("Dropping listener from \(value) message")
-                       lostRemoteSubject.send(existing)
-                        // no more processing to do on this packet
-                        return
-                    } else {
-                        logger.error("Ignoring \(value) message from a non-listener: \(info.clientId)")
-                    }
-                default:
-                    logger.error("Ignoring an unexpected \(value) message from \(info.clientId)")
-                    return
-                }
-            }
-        }
-        guard let sender = message.clientId,
-              let remote = listeners[sender] else {
-            logger.error("Ignoring a message from an unknown sender: \(String(describing: message))")
-            return
-        }
+		if chunk.offset == WhisperProtocol.ControlOffset.dropping.rawValue {
+			logger.info("Received dropping message from: \(remote.id)")
+			remote.hasDropped = true
+			removeRemote(remote)
+			lostRemoteSubject.send(remote)
+			return
+		}
+		logger.info("Received control packet from remote \(remote.id): \(chunk)")
         controlSubject.send((remote: remote, chunk: chunk))
     }
+
+	private func removeRemote(_ remote: Remote) {
+		remotes.removeValue(forKey: remote.id)
+		if !remote.hasDropped {
+			// tell this remote we're dropping it
+			let chunk = WhisperProtocol.ProtocolChunk.dropping()
+			sendControl(remote: remote, chunk: chunk)
+		}
+	}
+
+	private func listenerFor(_ clientId: String?) -> Remote? {
+		guard let clientId = clientId else {
+			return nil
+		}
+		if let existing = remotes[clientId] {
+			return existing
+		}
+		let remote = Listener(id: clientId)
+		remotes[clientId] = remote
+		return remote
+	}
 }

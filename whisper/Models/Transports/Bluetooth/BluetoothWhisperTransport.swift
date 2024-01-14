@@ -46,6 +46,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     
 	func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
 		guard running else { return }
+		logger.info("Sending control packet to remote: \(remote.id): \(chunk)")
 		if var existing = directedControl[remote.central] {
 			existing.append(chunk)
 		} else {
@@ -59,7 +60,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             logger.error("Ignoring drop request for non-remote: \(remote.id)")
             return
         }
-		logger.info("Whisperer said to drop remote \(existing.id)")
+		logger.info("Dropping listener \(existing.id)")
 		removeRemote(remote)
     }
 
@@ -363,16 +364,15 @@ final class BluetoothWhisperTransport: PublishTransport {
     /// Send pending control to listeners, returns whether there is more to send
 	@discardableResult private func updateControl() -> Bool {
         if !directedControl.isEmpty {
-			while case ((let listener, var chunks))? = directedControl.first {
+			while case ((let central, var chunks))? = directedControl.first {
                 while let chunk = chunks.first {
-					logger.log("Sending control chunk: \(chunk)")
                     let sendOk = factory.updateValue(value: chunk.toData(),
                                                      characteristic: BluetoothData.controlOutCharacteristic,
-                                                     central: listener)
+                                                     central: central)
                     if sendOk {
 						chunks.removeFirst()
                         if chunks.isEmpty {
-                            directedControl.removeValue(forKey: listener)
+                            directedControl.removeValue(forKey: central)
                         }
                     } else {
                         return true
@@ -450,7 +450,6 @@ final class BluetoothWhisperTransport: PublishTransport {
 			// tell this remote we're dropping it
 			let chunk = WhisperProtocol.ProtocolChunk.dropping()
 			sendControl(remote: remote, chunk: chunk)
-			updateControl()
 			if let index = listeners.firstIndex(of: remote.central) {
 				listeners.remove(at: index)
 				eavesdroppers.append(remote.central)
@@ -470,7 +469,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 			remotes.removeValue(forKey: remote.central)
 		}
 		// tell everyone we are leaving the conversation
-		logger.info("Sending leaving conversation message to all remotes")
+		logger.info("Dropping all remotes")
 		let chunk = WhisperProtocol.ProtocolChunk.dropping()
 		pendingControl.append(chunk)
 		updateControl()

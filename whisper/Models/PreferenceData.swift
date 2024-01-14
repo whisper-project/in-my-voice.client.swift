@@ -85,7 +85,23 @@ struct PreferenceData {
         }
         return Data(bytes).base64EncodedString()
     }
-    
+
+	// content channel ID
+	static var contentId: String {
+		get {
+			if let value = defaults.string(forKey: "content_channel_id") {
+				return value
+			} else {
+				let new = UUID().uuidString
+				defaults.setValue(new, forKey: "content_channel_id")
+				return new
+			}
+		}
+		set(new) {
+			defaults.setValue(new, forKey: "content_channel_id")
+		}
+	}
+
     // layout control of listeners
     static func listenerMatchesWhisperer() -> Bool {
         return defaults.string(forKey: "newest_whisper_location_preference") == "bottom"
