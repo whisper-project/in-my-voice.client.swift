@@ -35,18 +35,18 @@ final class TcpWhisperTransport: PublishTransport {
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let remote = remotes[remote.id] else {
-            logger.error("Ignoring request to send chunk to an unknown remote: \(remote.id)")
+            logger.error("Ignoring request to send chunk to an unknown \(remote.kind) remote: \(remote.id)")
             return
         }
-		logger.info("Sending control packet to remote: \(remote.id): \(chunk)")
+		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
 		controlChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
     }
 
     func drop(remote: Remote) {
         guard let remote = remotes[remote.id] else {
-            fatalError("Ignoring request to drop an unknown remote: \(remote.id)")
+            fatalError("Ignoring request to drop an unknown \(remote.kind) remote: \(remote.id)")
         }
-        logger.info("Dropping remote \(remote.id)")
+        logger.info("Dropping \(remote.kind) remote \(remote.id)")
 		removeRemote(remote)
     }
 
@@ -60,7 +60,7 @@ final class TcpWhisperTransport: PublishTransport {
 
 	func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
 		guard let remote = remotes[remote.id] else {
-			logger.error("Ignoring request to send chunk to an unknown remote: \(remote.id)")
+			logger.error("Ignoring request to send chunk to an unknown \(remote.kind) remote: \(remote.id)")
 			return
 		}
 		for chunk in chunks {
@@ -185,23 +185,23 @@ final class TcpWhisperTransport: PublishTransport {
             return
         }
 		if chunk.offset == WhisperProtocol.ControlOffset.dropping.rawValue {
-			logger.info("Received dropping message from: \(remote.id)")
+			logger.info("Received dropping message from \(remote.kind) remote \(remote.id)")
 			remote.hasDropped = true
 			removeRemote(remote)
 			lostRemoteSubject.send(remote)
 			return
 		}
-		logger.info("Received control packet from remote \(remote.id): \(chunk)")
+		logger.info("Received control packet from \(remote.kind) remote \(remote.id): \(chunk)")
         controlSubject.send((remote: remote, chunk: chunk))
     }
 
 	private func removeRemote(_ remote: Remote) {
-		remotes.removeValue(forKey: remote.id)
 		if !remote.hasDropped {
 			// tell this remote we're dropping it
 			let chunk = WhisperProtocol.ProtocolChunk.dropping()
 			sendControl(remote: remote, chunk: chunk)
 		}
+		remotes.removeValue(forKey: remote.id)
 	}
 
 	private func listenerFor(_ clientId: String?) -> Remote? {

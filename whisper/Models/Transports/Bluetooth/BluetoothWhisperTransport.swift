@@ -46,7 +46,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     
 	func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
 		guard running else { return }
-		logger.info("Sending control packet to remote: \(remote.id): \(chunk)")
+		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
 		if var existing = directedControl[remote.central] {
 			existing.append(chunk)
 		} else {
@@ -57,17 +57,17 @@ final class BluetoothWhisperTransport: PublishTransport {
 
     func drop(remote: Remote) {
 		guard let existing = remotes[remote.central] else {
-            logger.error("Ignoring drop request for non-remote: \(remote.id)")
+            logger.error("Ignoring drop request for \(remote.kind) non-remote: \(remote.id)")
             return
         }
-		logger.info("Dropping listener \(existing.id)")
+		logger.info("Dropping \(remote.kind) remote \(existing.id)")
 		removeRemote(remote)
     }
 
 	func authorize(remote: Remote) {
 		guard running else { return }
 		guard let existing = remotes[remote.central] else {
-			logger.error("Ignoring authorization for non-remote: \(remote.id)")
+			logger.error("Ignoring authorization for \(remote.kind) non-remote: \(remote.id)")
 			return
 		}
 		remote.isAuthorized = true
@@ -81,7 +81,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 	func deauthorize(remote: Remote) {
 		guard running else { return }
 		guard let existing = remotes[remote.central] else {
-			logger.error("Ignoring deauthorization for non-remote: \(remote.id)")
+			logger.error("Ignoring deauthorization for \(remote.kind) non-remote: \(remote.id)")
 			return
 		}
 		remote.isAuthorized = false
@@ -129,7 +129,7 @@ final class BluetoothWhisperTransport: PublishTransport {
                     logger.error("Ignoring invalid advertisement from \(pair.0)")
                     return
                 }
-                logger.debug("Responding to ad from remote: \(pair.0)")
+                logger.debug("Responding to ad from local remote: \(pair.0)")
                 startAdvertising()
             }
         }
@@ -146,7 +146,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 			remote.contentSubscribed = true
 			if remote.isAuthorized {
 				// add this as an authorized listener
-				logger.info("Adding content listener: \(remote.id)")
+				logger.info("Adding \(remote.kind) content listener: \(remote.id)")
 				listeners.append(pair.0)
 			} else {
 				// this is an eavesdropper
@@ -162,7 +162,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 		if let remote = remotes[pair.0] {
 			// unexpected unsubscription, act as if the remote had dropped
 			remote.hasDropped = true
-			logger.error("Unsubscribe by remote \(remote.id) that hasn't dropped")
+			logger.error("Unsubscribe by \(remote.kind) remote \(remote.id) that hasn't dropped")
 			removeRemote(remote)
 			lostRemoteSubject.send(remote)
 		}
@@ -236,7 +236,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 		let remote = ensureRemote(request.central)
 		if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset),
 		   case .dropping = value {
-			logger.info("Received \(value) message from: \(remote.id)")
+			logger.info("Received \(value) message from \(remote.kind) remote \(remote.id)")
 			remote.hasDropped = true
 			removeRemote(remote)
 			lostRemoteSubject.send(remote)
@@ -469,7 +469,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 			remotes.removeValue(forKey: remote.central)
 		}
 		// tell everyone we are leaving the conversation
-		logger.info("Dropping all remotes")
+		logger.info("Dropping all local remotes")
 		let chunk = WhisperProtocol.ProtocolChunk.dropping()
 		pendingControl.append(chunk)
 		updateControl()

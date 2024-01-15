@@ -140,7 +140,7 @@ final class ListenViewModel: ObservableObject {
 		guard let inviter = candidates[id] else {
 			fatalError("Can't accept a non-invite: \(id)")
 		}
-		logger.info("Accepted invite to conversation \(inviter.info.conversationName) from \(inviter.info.username)")
+		logger.info("Accepted invite from \(inviter.remote.kind) remote \(inviter.id) conversation \(inviter.info.conversationName)")
 		inviter.isPending = false
 		invites = candidates.values.filter{$0.isPending}.sorted()
 		showStatusDetail = !invites.isEmpty
@@ -153,7 +153,7 @@ final class ListenViewModel: ObservableObject {
 		guard let inviter = candidates.removeValue(forKey: id) else {
 			fatalError("Can't reject a non-invite: \(id)")
 		}
-		logger.info("Rejected invite to conversation \(inviter.info.conversationName) from \(inviter.info.username)")
+		logger.info("Rejected invite from \(inviter.remote.kind) remote \(inviter.id) conversation \(inviter.info.conversationName)")
 		clients.removeValue(forKey: inviter.info.clientId)
 		invites = candidates.values.filter{$0.isPending}.sorted()
 		showStatusDetail = !invites.isEmpty
@@ -178,12 +178,12 @@ final class ListenViewModel: ObservableObject {
     // MARK: Transport subscription handlers
     private func dropCandidate(_ remote: Remote) {
 		guard let removed = candidates.removeValue(forKey: remote.id) else {
-            logger.info("Ignoring dropped non-candidate \(remote.id)")
+			logger.info("Ignoring dropped \(remote.kind) non-candidate \(remote.id)")
             return
         }
 		clients.removeValue(forKey: removed.info.clientId)
         if removed === whisperer {
-            logger.info("Dropped the whisperer \(removed.id)")
+            logger.info("Dropped the \(remote.kind) whisperer \(removed.id)")
             whisperer = nil
             // we have lost the whisperer
             resetTextForConnection()
@@ -194,7 +194,7 @@ final class ListenViewModel: ObservableObject {
 				conversationEnded = true
 			}
         } else {
-            logger.info("Dropped candidate \(removed.id)")
+            logger.info("Dropped \(remote.kind) candidate \(removed.id)")
         }
     }
     
@@ -277,33 +277,31 @@ final class ListenViewModel: ObservableObject {
 		switch WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
 		case .whisperOffer:
 			let conversation = profile.listenConversationForInvite(info: info)
-			logger.info("Received offer for conversation \(info.conversationName) from \(info.username)")
-			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
-				if candidate.isPending {
-					// this is a new invite, so remake the invite list and show it
-					invites = candidates.values.filter{$0.isPending}.sorted()
-					showStatusDetail = !invites.isEmpty
-				} else {
-					// we've already accepted this invite, so try to join
-					let conversation = profile.listenConversationForInvite(info: candidate.info)
-					let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
-					transport.sendControl(remote: candidate.remote, chunk: chunk)
-				}
+			logger.info("Received offer from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
+			let candidate = candidateFor(remote: remote, info: info, conversation: conversation)
+			if candidate.isPending {
+				// this is a new invite, so remake the invite list and show it
+				invites = candidates.values.filter{$0.isPending}.sorted()
+				showStatusDetail = !invites.isEmpty
+			} else {
+				// we've already accepted this invite, so try to join
+				let conversation = profile.listenConversationForInvite(info: candidate.info)
+				let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
+				transport.sendControl(remote: candidate.remote, chunk: chunk)
 			}
 		case .listenAuthYes:
-			logger.info("Received approval for conversation \(info.conversationName) from \(info.username)")
+			logger.info("Received approval from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
 			let conversation = profile.addListenConversationForInvite(info: info)
-			if let candidate = candidateFor(remote: remote, info: info, conversation: conversation) {
-				if whisperer === candidate {
-					logger.error("Received second approval for the same conversation")
-				} else {
-					setWhisperer(candidate: candidate, conversation: conversation)
-				}
+			let candidate = candidateFor(remote: remote, info: info, conversation: conversation)
+			if whisperer === candidate {
+				logger.error("Received second approval for the same conversation")
+			} else {
+				setWhisperer(candidate: candidate, conversation: conversation)
 			}
 		case .listenAuthNo:
-			logger.info("Received refusal for conversation \(info.conversationName) from \(info.username)")
+			logger.info("Received refusal from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
 			guard candidates[remote.id] != nil else {
-				logger.error("Ignoring refusal from non-candidate \(remote.id)")
+				logger.error("Ignoring refusal from \(remote.kind) non-candidate \(remote.id)")
 				return
 			}
 			profile.deleteListenConversation(info.conversationId)
@@ -318,18 +316,12 @@ final class ListenViewModel: ObservableObject {
 		remote: Remote,
 		info: WhisperProtocol.ClientInfo,
 		conversation: Conversation
-	) -> Candidate? {
+	) -> Candidate {
 		if let existing = candidates[remote.id] {
 			return existing
 		}
-		guard clients[info.clientId] == nil else {
-			logger.info("Refusing second appearance of client via different network: \(remote.kind)")
-			transport.drop(remote: remote)
-			return nil
-		}
 		let candidate = Candidate(remote: remote, info: info, isPending: !conversation.authorized)
 		candidates[candidate.id] = candidate
-		clients[candidate.info.clientId] = candidate
 		return candidate
 	}
 
@@ -422,7 +414,7 @@ final class ListenViewModel: ObservableObject {
 		guard whisperer == nil else {
 			fatalError("Ignoring attempt to set whisperer when we already have one")
 		}
-		logger.info("Selecting whisperer \(candidate.id) for conversation \(conversation.id)")
+		logger.info("Selecting \(candidate.remote.kind) whisperer \(candidate.id) for conversation \(conversation.id)")
 		whisperer = candidate
 		self.conversation = conversation
 		// stop looking for whisperers

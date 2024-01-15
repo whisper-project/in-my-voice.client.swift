@@ -35,10 +35,10 @@ final class TcpListenTransport: SubscribeTransport {
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let target = remotes[remote.id] else {
-            logger.error("Ignoring request to send chunk to an unknown remote: \(remote.id)")
+            logger.error("Ignoring request to send chunk to an unknown \(remote.kind) remote: \(remote.id)")
             return
         }
-		logger.info("Sending control packet to remote: \(remote.id): \(chunk)")
+		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
 		controlChannel?.publish(target.id, data: chunk.toString(), callback: receiveErrorInfo)
     }
     
@@ -51,7 +51,7 @@ final class TcpListenTransport: SubscribeTransport {
     
 	func subscribe(remote: Remote, conversation: Conversation) {
         guard let remote = remotes[remote.id] else {
-            logger.error("Ignoring request to subscribe to an unknown remote: \(remote.id)")
+            logger.error("Ignoring request to subscribe to an unknown \(remote.kind) remote: \(remote.id)")
             return
         }
 		if whisperer === remote {
@@ -186,7 +186,7 @@ final class TcpListenTransport: SubscribeTransport {
     }
 
 	private func removeCandidate(_ remote: Remote, sendDrop: Bool = false) {
-		logger.log("Removing remote \(remote.id)")
+		logger.log("Removing \(remote.kind) remote \(remote.id)")
 		remotes.removeValue(forKey: remote.id)
 		if sendDrop {
 				let chunk = WhisperProtocol.ProtocolChunk.dropping()
@@ -227,13 +227,13 @@ final class TcpListenTransport: SubscribeTransport {
             if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
                 switch value {
 				case .dropping:
-					logger.info("Advised of drop from remote \(remote.id)")
+					logger.info("Advised of drop from \(remote.kind) remote \(remote.id)")
 					removeCandidate(remote)
 					lostRemoteSubject.send(remote)
 					// no more processing to do on this packet
 					return
                 case .listenAuthYes:
-					logger.info("Capturing content id from remote \(remote.id)")
+					logger.info("Capturing content id from \(remote.kind) remote \(remote.id)")
 					let contentId = info.contentId
 					guard !contentId.isEmpty else {
 						fatalError("Received an empty content id in a TCP \(value) message")

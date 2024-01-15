@@ -70,6 +70,7 @@ final class ComboWhisperTransport: PublishTransport {
 		guard let remote = remotes.removeValue(forKey: remote.id) else {
             fatalError("Dropping an unknown remote: \(remote.id)")
         }
+		clients.removeValue(forKey: remote.clientId)
         switch remote.kind {
         case .local:
             localTransport?.drop(remote: remote.inner as! LocalRemote)
@@ -78,7 +79,7 @@ final class ComboWhisperTransport: PublishTransport {
         }
     }
     
-	func authorize(remote: Wrapper) {
+	func authorize(remote: Remote) {
 		guard let remote = remotes[remote.id] else {
 			fatalError("Authorizing an unknown remote: \(remote.id)")
 		}
@@ -90,7 +91,7 @@ final class ComboWhisperTransport: PublishTransport {
 		}
 	}
 
-	func deauthorize(remote: Wrapper) {
+	func deauthorize(remote: Remote) {
 		guard let remote = remotes[remote.id] else {
 			fatalError("Deauthorizing an unknown remote: \(remote.id)")
 		}
@@ -114,15 +115,18 @@ final class ComboWhisperTransport: PublishTransport {
     typealias GlobalRemote = TcpWhisperTransport.Remote
 
     final class Wrapper: TransportRemote {
-        var id: String { get { inner.id } }
-        var kind: TransportKind
+		let id: String
+		let kind: TransportKind
 
 		fileprivate var inner: (any TransportRemote)
+		fileprivate var clientId: String
 
-        init(inner: any TransportRemote) {
-            self.inner = inner
+		init(inner: any TransportRemote, clientId: String) {
+			self.inner = inner
+			self.id = inner.id
 			self.kind = inner.kind
-        }
+			self.clientId = clientId
+		}
     }
     
     private var localFactory = BluetoothFactory.shared
@@ -131,7 +135,8 @@ final class ComboWhisperTransport: PublishTransport {
     private var globalFactory = TcpFactory.shared
     private var globalStatus: TransportStatus = .off
     private var globalTransport: TcpWhisperTransport?
-    private var remotes: [String: Remote] = [:]
+    private var remotes: [String: Remote] = [:]	// maps from remoite id to remote
+	private var clients: [String: Remote] = [:]	// maps from client id to remote
     private var cancellables: Set<AnyCancellable> = []
     private var conversation: Conversation
     private var failureCallback: ((String) -> Void)?
@@ -182,9 +187,9 @@ final class ComboWhisperTransport: PublishTransport {
             localTransport.lostRemoteSubject
                 .sink { [weak self] in self?.removeRemote(remote: $0) }
                 .store(in: &cancellables)
-            localTransport.controlSubject
-                .sink { [weak self] in self?.receiveControl($0) }
-                .store(in: &cancellables)
+			localTransport.controlSubject
+				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
+				.store(in: &cancellables)
         }
         if globalStatus == .on {
 			let globalTransport = GlobalTransport(conversation)
@@ -193,7 +198,7 @@ final class ComboWhisperTransport: PublishTransport {
 				.sink { [weak self] in self?.removeRemote(remote: $0) }
 				.store(in: &cancellables)
 			globalTransport.controlSubject
-				.sink { [weak self] in self?.receiveControl($0) }
+				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
 				.store(in: &cancellables)
         }
         if localTransport == nil && globalTransport == nil {
@@ -204,22 +209,39 @@ final class ComboWhisperTransport: PublishTransport {
     
     private func removeRemote(remote: any TransportRemote) {
         guard let removed = remotes.removeValue(forKey: remote.id) else {
-            logger.error("Ignoring drop of unknown remote \(remote.id)")
+            logger.error("Ignoring drop of unknown \(remote.kind) remote \(remote.id)")
             return
         }
+		clients.removeValue(forKey: removed.clientId)
         lostRemoteSubject.send(removed)
     }
     
-    private func receiveControl(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
-		controlSubject.send((remote: ensureRemote(remote: pair.remote), chunk: pair.chunk))
-    }
-
-	private func ensureRemote(remote: any TransportRemote) -> Remote {
-		if let wrapper = remotes[remote.id] {
-			return wrapper
+	private func receiveControlChunk(remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk) {
+		if let remote = remoteFor(remote: remote, chunk: chunk) {
+			controlSubject.send((remote: remote, chunk: chunk))
 		}
-		let wrapper = Wrapper(inner: remote)
-		remotes[remote.id] = wrapper
-		return wrapper
+	}
+
+	private func remoteFor(remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk) -> Remote? {
+		if let remote = remotes[remote.id] {
+			return remote
+		}
+		guard chunk.isPresenceMessage(), let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
+			fatalError("Non-presence initial control packet received from \(remote.kind) remote: \(remote.id)")
+		}
+		guard clients[info.clientId] == nil else {
+			logger.info("Refusing second appearance of client via different network: \(remote.kind)")
+			switch remote.kind {
+			case .local:
+				localTransport?.drop(remote: remote as! LocalRemote)
+			case .global:
+				globalTransport?.drop(remote: remote as! GlobalRemote)
+			}
+			return nil
+		}
+		let remote = Wrapper(inner: remote, clientId: info.clientId)
+		remotes[remote.id] = remote
+		clients[info.clientId] = remote
+		return remote
 	}
 }

@@ -37,7 +37,7 @@ final class ComboListenTransport: SubscribeTransport {
         globalTransport?.goToForeground()
     }
     
-    func sendControl(remote: Wrapper, chunk: WhisperProtocol.ProtocolChunk) {
+    func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let remote = remotes[remote.id] else {
             fatalError("Targeting a remote that's not a whisperer: \(remote.id)")
         }
@@ -49,19 +49,20 @@ final class ComboListenTransport: SubscribeTransport {
         }
     }
 
-    func drop(remote: Wrapper) {
+	func drop(remote: Remote) {
 		guard let remote = remotes.removeValue(forKey: remote.id) else {
-            fatalError("Request to drop an unknown remote: \(remote.id)")
-        }
-        switch remote.kind {
-        case .local:
-            localTransport!.drop(remote: remote.inner as! LocalRemote)
-        case .global:
-            globalTransport!.drop(remote: remote.inner as! GlobalRemote)
-        }
-    }
+			fatalError("Dropping an unknown remote: \(remote.id)")
+		}
+		clients.removeValue(forKey: remote.clientId)
+		switch remote.kind {
+		case .local:
+			localTransport?.drop(remote: remote.inner as! LocalRemote)
+		case .global:
+			globalTransport?.drop(remote: remote.inner as! GlobalRemote)
+		}
+	}
 
-	func subscribe(remote: Wrapper, conversation: Conversation) {
+	func subscribe(remote: Remote, conversation: Conversation) {
         guard let remote = remotes[remote.id] else {
             fatalError("Subscribing to an unknown remote: \(remote.id)")
         }
@@ -89,14 +90,18 @@ final class ComboListenTransport: SubscribeTransport {
     }
     
     final class Wrapper: TransportRemote {
-		var id: String { get { inner.id } }
-		var kind: TransportKind { get {inner.kind} }
+		let id: String
+		let kind: TransportKind
 
         fileprivate var inner: (any TransportRemote)
-        
-        init(inner: any TransportRemote) {
-            self.inner = inner
-        }
+		fileprivate var clientId: String
+
+		init(inner: any TransportRemote, clientId: String) {
+			self.inner = inner
+			self.id = inner.id
+			self.kind = inner.kind
+			self.clientId = clientId
+		}
     }
     
 	private var conversation: Conversation?
@@ -107,7 +112,8 @@ final class ComboListenTransport: SubscribeTransport {
 	private var globalStatus: TransportStatus = .off
 	private var globalTransport: GlobalTransport?
 	private var staggerTimer: Timer?
-    private var remotes: [String: Wrapper] = [:]
+	private var remotes: [String: Remote] = [:]	// maps from remote id to remote
+	private var clients: [String: Remote] = [:]	// maps from client id to remote
     private var cancellables: Set<AnyCancellable> = []
 	private var failureCallback: ((String) -> Void)?
 
@@ -163,7 +169,7 @@ final class ComboListenTransport: SubscribeTransport {
 			let globalTransport = GlobalTransport(c)
 			self.globalTransport = globalTransport
 			globalTransport.lostRemoteSubject
-				.sink { [weak self] in self?.removeListener(remote: $0) }
+				.sink { [weak self] in self?.removeRemote(remote: $0) }
 				.store(in: &cancellables)
 			globalTransport.contentSubject
 				.sink { [weak self] in self?.receiveContentChunk($0) }
@@ -176,7 +182,7 @@ final class ComboListenTransport: SubscribeTransport {
 			let localTransport = LocalTransport(conversation)
 			self.localTransport = localTransport
 			localTransport.lostRemoteSubject
-				.sink { [weak self] in self?.removeListener(remote: $0) }
+				.sink { [weak self] in self?.removeRemote(remote: $0) }
 				.store(in: &cancellables)
 			localTransport.contentSubject
 				.sink { [weak self] in self?.receiveContentChunk($0) }
@@ -224,30 +230,50 @@ final class ComboListenTransport: SubscribeTransport {
 		}
 	}
 
-	private func removeListener(remote: any TransportRemote) {
-        guard let removed = remotes.removeValue(forKey: remote.id) else {
-            logger.error("Ignoring drop of unknown remote \(remote.id)")
-            return
-        }
-        lostRemoteSubject.send(removed)
-    }
-    
+	private func removeRemote(remote: any TransportRemote) {
+		guard let removed = remotes.removeValue(forKey: remote.id) else {
+			logger.error("Ignoring drop of unknown \(remote.kind) remote \(remote.id)")
+			return
+		}
+		clients.removeValue(forKey: removed.clientId)
+		lostRemoteSubject.send(removed)
+	}
+
     private func receiveContentChunk(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
 		// we should already have the Whisperer as a remote
         guard let remote = remotes[pair.remote.id] else {
-            logger.error("Ignoring chunk from unknown remote \(pair.remote.id)")
+			logger.error("Ignoring chunk from \(pair.remote.kind) unknown remote \(pair.remote.id)")
             return
         }
         contentSubject.send((remote: remote, chunk: pair.chunk))
     }
 
 	private func receiveControlChunk(remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk) {
-		if let remote = remotes[remote.id] {
+		if let remote = remoteFor(remote: remote, chunk: chunk) {
 			controlSubject.send((remote: remote, chunk: chunk))
-		} else {
-			let whisperer = Wrapper(inner: remote)
-			remotes[remote.id] = whisperer
-			controlSubject.send((remote: whisperer, chunk: chunk))
 		}
+	}
+
+	private func remoteFor(remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk) -> Remote? {
+		if let remote = remotes[remote.id] {
+			return remote
+		}
+		guard chunk.isPresenceMessage(), let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
+			fatalError("Non-presence initial control packet received from \(remote.kind) remote: \(remote.id)")
+		}
+		guard clients[info.clientId] == nil else {
+			logger.info("Refusing second appearance of client via different network: \(remote.kind)")
+			switch remote.kind {
+			case .local:
+				localTransport?.drop(remote: remote as! LocalRemote)
+			case .global:
+				globalTransport?.drop(remote: remote as! GlobalRemote)
+			}
+			return nil
+		}
+		let remote = Wrapper(inner: remote, clientId: info.clientId)
+		remotes[remote.id] = remote
+		clients[info.clientId] = remote
+		return remote
 	}
 }
