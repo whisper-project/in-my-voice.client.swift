@@ -156,3 +156,14 @@ v2 BUILDS 1 & 2 (internal):
 This is the first build of v2, which supports multiple named conversations and requires both the Listeners and the Whisperer to explicitly approve (once) their participation in a given named conversation.
 
 This build only supports Bluetooth connections. Internet will come once the transports and server have been updated.  Links can be sent to other users and will work as long as the other user is in Bluetooth range, because the app will use the link to try a Bluetooth connection.
+
+v2 BUILD 3 (external):
+This is the first build of v2, which supports multiple, named conversations (controlled by the Whisperer) and requires both the Listeners and the Whisperer to explicitly approve mutual participation in a given named conversation.
+
+Like v1, Listeners can listen to a Whisperer either over Bluetooth or via the internet (aka Wireless).  Unlike v1, a user who clicks on a link to join a conversation in the app will join it via Bluetooth rather than Wireless if the Whisperer is local to them.
+
+To engage in a conversation for the first time, a Listener must have received a link from the Whisperer. The first step when using the link will be for the Listener and then the Whisperer to agree to be in conversation with each other. Thereafter the Listener can directly join the conversation without further prompting.
+
+The app remembers all conversations that its user has participated in, both as Whisperer and as Listener.  To see your Whisper conversations, long-press on the Whisper button: that will pop up an interface that allows you to create and edit conversations (including removing allowed Listeners), and to select which one will be used by default when you click the Whisper button.  To see your Listen conversations, long-press on the Listen button: that will pop up an interface that lets you see the conversation name and the Whisperer name for all conversations in which you have participated, as well as to select one of them to listen to anew (exactly like clicking on the link).
+
+For Whisperers and Listeners who are within Bluetooth range (such as members of the same household), the app can discover any conversations the Listener has been in before that are in progress at the time.  This allows these Listeners to rejoin any of these conversations simply by clicking on the Listen button.
