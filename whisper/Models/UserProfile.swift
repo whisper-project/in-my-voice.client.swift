@@ -191,7 +191,26 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
 
 	/// get a listen conversation for an whisperer's invite
 	func listenConversationForInvite(info: WhisperProtocol.ClientInfo) -> Conversation {
-		let c = listenTable[info.conversationId] ?? Conversation(uuid: info.conversationId)
+		if let c = listenTable[info.conversationId] {
+			var changed = false
+			if !info.conversationName.isEmpty && info.conversationName != c.name {
+				c.name = info.conversationName
+				changed = true
+			}
+			if !info.profileId.isEmpty && info.profileId != c.owner {
+				c.owner = info.profileId
+				changed = true
+			}
+			if !info.username.isEmpty && info.username != c.ownerName {
+				c.ownerName = info.username
+				changed = true
+			}
+			if changed {
+				saveAsDefault()
+			}
+			return c
+		}
+		let c =  Conversation(uuid: info.conversationId)
 		c.name = info.conversationName
 		c.owner = info.profileId
 		c.ownerName = info.username
@@ -201,7 +220,9 @@ final class UserProfile: Encodable, Decodable, Identifiable, Equatable {
     /// Add a newly used conversation for a Listener
 	func addListenConversationForInvite(info: WhisperProtocol.ClientInfo) -> Conversation {
         let c = listenConversationForInvite(info: info)
-		listenTable[c.id] = c
+		if listenTable[c.id] == nil {
+			listenTable[c.id] = c
+		}
         c.lastListened = Date.now
 		saveAsDefault()
 		return c
