@@ -164,7 +164,8 @@ final class ComboWhisperTransport: PublishTransport {
         }
         if localStatus == .on {
             logger.error("The Bluetooth connection was available but has dropped")
-            failureCallback?("The Bluetooth network has become unavailable")
+			// Bluetooth drops whenever you sleep
+            // failureCallback?("The Bluetooth network has become unavailable")
         }
         localStatus = status
     }
