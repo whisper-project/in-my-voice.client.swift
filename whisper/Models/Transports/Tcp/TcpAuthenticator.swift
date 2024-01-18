@@ -15,14 +15,16 @@ enum TcpAuthenticatorError: Error {
 final class TcpAuthenticator {
     private var mode: OperatingMode
     private var conversationId: String
+	private var conversationName: String
     private var clientId = PreferenceData.clientId
 	private var contentId: String = PreferenceData.contentId
     private var client: ARTRealtime?
     private var failureCallback: (String) -> Void
     
-    init(mode: OperatingMode, conversationId: String, callback: @escaping (String) -> Void) {
+	init(mode: OperatingMode, conversationId: String, conversationName: String, callback: @escaping (String) -> Void) {
         self.mode = mode
         self.conversationId = conversationId
+		self.conversationName = conversationName
         self.failureCallback = callback
     }
     
@@ -81,9 +83,10 @@ final class TcpAuthenticator {
             "clientId": clientId,
             "activity": mode == .whisper ? "publish" : "subscribe",
             "conversationId": conversationId,
+			"conversationName": conversationName,
 			"contentId": contentChannelId,
             "profileId": UserProfile.shared.id,
-            "userName": UserProfile.shared.username,
+            "username": UserProfile.shared.username,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for \(activity) token request call")

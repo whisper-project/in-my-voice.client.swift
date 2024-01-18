@@ -18,7 +18,10 @@ final class TcpListenTransport: SubscribeTransport {
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP listen transport")
         self.failureCallback = failureCallback
-		self.authenticator = TcpAuthenticator(mode: .listen, conversationId: conversation.id, callback: receiveAuthError)
+		self.authenticator = TcpAuthenticator(mode: .listen,
+											  conversationId: conversation.id,
+											  conversationName: conversation.name,
+											  callback: receiveAuthError)
         openControlChannel()
     }
     

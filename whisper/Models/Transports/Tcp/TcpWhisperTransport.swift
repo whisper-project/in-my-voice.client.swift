@@ -18,7 +18,10 @@ final class TcpWhisperTransport: PublishTransport {
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP whisper transport")
         self.failureCallback = failureCallback
-        self.authenticator = TcpAuthenticator(mode: .whisper, conversationId: conversation.id, callback: receiveAuthError)
+		self.authenticator = TcpAuthenticator(mode: .whisper,
+											  conversationId: conversation.id,
+											  conversationName: conversation.name,
+											  callback: receiveAuthError)
         openChannels()
     }
     
