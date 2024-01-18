@@ -70,7 +70,7 @@ final class ListenViewModel: ObservableObject {
 	let profile = UserProfile.shared
 
     init(_ conversation: Conversation?) {
-        logger.log("Initializing ListenView model")
+		logger.log("Initializing ListenView model")
 		self.conversation = conversation
         transport = ComboFactory.shared.subscriber(conversation)
         transport.lostRemoteSubject
@@ -448,12 +448,21 @@ final class ListenViewModel: ObservableObject {
 	private func refreshStatusText() {
         if let whisperer = whisperer {
 			statusText = "\(conversation!.name): Listening to \(whisperer.info.username)"
-        } else if discoveryInProgress {
-            let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
-            statusText = "Looking for whisperers…\(suffix)"
-        } else {
-            statusText = "Waiting for a whisperer to appear…"
-        }
+		} else if let c = conversation {
+			if discoveryInProgress {
+				let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
+				statusText = "\(c.name): Looking for the Whisperer…\(suffix)"
+			} else {
+				statusText = "\(c.name): Waiting for the Whisperer…"
+			}
+		} else {
+			if discoveryInProgress {
+				let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
+				statusText = "Looking for local conversations…\(suffix)"
+			} else {
+				statusText = "Waiting for a local conversation to be started…"
+			}
+		}
     }
 
 	private func leaveConversation() {

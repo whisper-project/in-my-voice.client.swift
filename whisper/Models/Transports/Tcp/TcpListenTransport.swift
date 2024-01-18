@@ -147,22 +147,10 @@ final class TcpListenTransport: SubscribeTransport {
     }
     
     private func openControlChannel() {
-		var sentListenOffer: Bool = false
-		func controlChannelAttach() {
-			if !sentListenOffer {
-				sentListenOffer = true
-				logger.info("TCP whisper transport: first attach to control channel")
-				logger.info("TCP whisper transport: sending listen offer")
-				let chunk = WhisperProtocol.ProtocolChunk.listenOffer(conversation)
-				controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
-			} else {
-				logger.info("TCP whisper transport: re-attach to control channel")
-			}
-		}
 		logger.info("TCP listen transport: open control channel")
         controlChannel = getClient().channels.get(channelName + ":control")
         controlChannel?.on(.attached) { stateChange in
-            controlChannelAttach()
+			logger.info("TCP whisper transport: attach to control channel")
         }
         controlChannel?.on(.detached) { stateChange in
             logger.log("TCP listen transport: detach from control channel")
@@ -170,6 +158,9 @@ final class TcpListenTransport: SubscribeTransport {
         controlChannel?.attach()
         controlChannel?.subscribe(clientId, callback: receiveControlMessage)
         controlChannel?.subscribe("all", callback: receiveControlMessage)
+		let chunk = WhisperProtocol.ProtocolChunk.listenOffer(conversation)
+		logger.info("TCP whisper transport: sending listen offer: \(chunk)")
+		controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
     }
     
     private func closeChannels() {
