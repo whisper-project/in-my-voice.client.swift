@@ -160,7 +160,6 @@ final class TcpWhisperTransport: PublishTransport {
         controlChannel?.attach()
 		controlChannel?.subscribe(PreferenceData.clientId, callback: receiveControlMessage)
 		controlChannel?.subscribe("whisperer", callback: receiveControlMessage)
-		controlChannel?.presence.subscribe(receivePresenceMessage)
         let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
 		logger.info("Broadcasting whisper offer to control channel: \(chunk)")
         controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
@@ -199,22 +198,6 @@ final class TcpWhisperTransport: PublishTransport {
 		logger.info("Received control packet from \(remote.kind) remote \(remote.id): \(chunk)")
         controlSubject.send((remote: remote, chunk: chunk))
     }
-
-	private func receivePresenceMessage(message: ARTPresenceMessage) {
-		// look out for web remotes which detach by closing their window
-		// (in which case no drop messages are sent)
-		guard message.action == .leave || message.action == .absent else {
-			return
-		}
-		guard let clientId = message.clientId, let remote = remotes[clientId], !remote.hasDropped else {
-			logger.info("Received leave presence message from an already-dropped remote")
-			return
-		}
-		logger.info("Got leave message from a remote which hasn't dropped: \(remote.id)")
-		remote.hasDropped = true
-		removeRemote(remote)
-		lostRemoteSubject.send(remote)
-	}
 
 	private func removeRemote(_ remote: Remote) {
 		if !remote.hasDropped {
