@@ -296,7 +296,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         // prioritize readers over subscribers, because we want to hold
         // the changes to live text until the readers are caught up
         if !directedChunks.isEmpty {
-            logger.log("Updating reading listeners...")
+            // logger.log("Updating reading listeners...")
             while let (listener, chunks) = directedChunks.first {
                 while let chunk = chunks.first {
                     let sendOk = factory.updateValue(value: chunk.toData(),
@@ -314,7 +314,7 @@ final class BluetoothWhisperTransport: PublishTransport {
                 }
             }
         } else if !pendingChunks.isEmpty {
-            logger.debug("Updating subscribed listeners (\(self.pendingChunks.count) chunks)...")
+            // logger.debug("Updating subscribed listeners (\(self.pendingChunks.count) chunks)...")
             while let chunk = pendingChunks.first {
                 let sendOk = factory.updateValue(value: chunk.toData(),
                                                characteristic: BluetoothData.whisperTextCharacteristic)

@@ -167,12 +167,15 @@ final class WhisperViewModel: ObservableObject {
         transport.send(remote: remote, chunks: chunks)
     }
     
-    // speak a set of words
-    private func speak(_ text: String) {
-        let utterance = AVSpeechUtterance(string: text)
-        Self.synthesizer.speak(utterance)
-    }
-    
+	private func speak(_ text: String) {
+		if PreferenceData.elevenLabsApiKey().isEmpty || PreferenceData.elevenLabsVoiceId().isEmpty {
+			let utterance = AVSpeechUtterance(string: text)
+			Self.synthesizer.speak(utterance)
+		} else {
+			ElevenLabs.shared.speakText(text: text)
+		}
+	}
+
     // play the alert sound locally
     private func playSoundLocally(_ name: String) {
         var name = name

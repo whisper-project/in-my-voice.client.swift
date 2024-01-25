@@ -46,6 +46,22 @@
 				<string>Bottom window</string>
 			</array>
 		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTextFieldSpecifier</string>
+			<key>Title</key>
+			<string>ElevenLabs API Key</string>
+			<key>Key</key>
+			<string>elevenlabs_api_key_preference</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTextFieldSpecifier</string>
+			<key>Title</key>
+			<string>ElevenLabs Voice ID</string>
+			<key>Key</key>
+			<string>elevenlabs_voice_id_preference</string>
+		</dict>
 	</array>
 </dict>
 </plist>

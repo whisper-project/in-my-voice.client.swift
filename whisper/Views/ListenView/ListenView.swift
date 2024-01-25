@@ -113,8 +113,8 @@ struct ListenView: View {
             logger.log("ListenView disappeared")
             self.model.stop()
         }
-        .onChange(of: scenePhase) { newPhase in
-            switch newPhase {
+        .onChange(of: scenePhase) {
+            switch scenePhase {
             case .background:
                 logger.log("Went to background")
                 model.wentToBackground()
@@ -124,7 +124,7 @@ struct ListenView: View {
                 logger.log("Went to foreground")
                 model.wentToForeground()
             @unknown default:
-                logger.error("Went to unknown phase: \(String(describing: newPhase))")
+                logger.error("Went to unknown phase: \(String(describing: scenePhase))")
             }
         }
     }

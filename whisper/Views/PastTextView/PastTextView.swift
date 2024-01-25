@@ -57,7 +57,7 @@ struct PastTextView: View {
                         .frame(minWidth: gp.size.width, minHeight: gp.size.height, alignment: .leading)
                     }
                     .onAppear { self.scrollToEnd(sp) }
-                    .onChange(of: model.pastText) { _ in self.scrollToEnd(sp) }
+                    .onChange(of: model.pastText) { self.scrollToEnd(sp) }
                 }
                 if mode == .whisper {
                     VStack {

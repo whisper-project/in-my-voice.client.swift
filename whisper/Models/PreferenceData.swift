@@ -234,4 +234,12 @@ struct PreferenceData {
             defaults.setValue(newVal, forKey: "authentication_error_count")
         }
     }
+
+	// speech keys
+	static func elevenLabsApiKey() -> String {
+		return defaults.string(forKey: "elevenlabs_api_key_preference") ?? ""
+	}
+	static func elevenLabsVoiceId() -> String {
+		return defaults.string(forKey: "elevenlabs_voice_id_preference") ?? ""
+	}
 }
