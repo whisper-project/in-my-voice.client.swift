@@ -6,7 +6,7 @@
 import Foundation
 import AVFAudio
 
-final class ElevenLabs {
+final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 	static let shared = ElevenLabs()
 
 	private let apiRoot: String = "https://api.elevenlabs.io/v1"
@@ -16,9 +16,20 @@ final class ElevenLabs {
 	private var similarityBoost: Float = 0.8
 	private var stability: Float = 0.3
 	private var useSpeakerBoost: Bool = true
+	private var speeches: [Data] = []
 	private var speaker: AVAudioPlayer?
+	private var emptyTextCount: Int = 0
 
 	func speakText(text: String) {
+		guard !text.isEmpty else {
+			emptyTextCount += 1
+			if emptyTextCount == 2 {
+				abortCurrentSpeech()
+				emptyTextCount = 0
+			}
+			return
+		}
+		emptyTextCount = 0
 		let apiKey = PreferenceData.elevenLabsApiKey()
 		let voiceId = PreferenceData.elevenLabsVoiceId()
 		guard !apiKey.isEmpty, !voiceId.isEmpty else {
@@ -55,11 +66,11 @@ final class ElevenLabs {
 			}
 			if response.statusCode == 200,
 			   let data = data {
-				logger.info("Successful text generation")
-				self.playSpeech(data)
+				logger.info("Successful speech generation")
+				self.queueSpeech(data)
 				return
 			}
-			logger.error("Received unexpected response speech generation: \(response.statusCode)")
+			logger.error("Speech generation of \(text) got status \(response.statusCode)")
 			guard let data = data,
 				  let body = try? JSONSerialization.jsonObject(with: data),
 				  let obj = body as? [String:Any] else {
@@ -72,16 +83,64 @@ final class ElevenLabs {
 		task.resume()
 	}
 
-	private func playSpeech(_ data: Data) {
+	private func queueSpeech(_ data: Data) {
 		DispatchQueue.main.async {
-			self.speaker = try? AVAudioPlayer(data: data, fileTypeHint: "mp3")
-			if let player = self.speaker {
+			self.speeches.append(data)
+			if self.speeches.count == 1 {
+				// this speech is not queued behind another
+				self.playFirstSpeech()
+			}
+		}
+	}
+
+	@MainActor
+	private func playFirstSpeech() {
+		guard let speech = speeches.first else {
+			// no first speech to play, nothing to do
+			return
+		}
+		do {
+			speaker = try AVAudioPlayer(data: speech, fileTypeHint: "mp3")
+			if let player = speaker {
+				player.delegate = ElevenLabs.shared
 				if !player.play() {
 					logger.error("Couldn't play generated speech")
 				}
-			} else {
-				logger.error("Couldn't create player for generated speech")
 			}
+		}
+		catch {
+			logger.error("Couldn't create player for speech: \(error)")
+		}
+	}
+
+	@MainActor
+	func playNextSpeech() {
+		if !speeches.isEmpty {
+			// dequeue the last speech
+			speeches.removeFirst()
+		}
+		// release the audio player
+		speaker = nil
+		// play the new first speech
+		playFirstSpeech()
+	}
+
+	@MainActor
+	func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully: Bool) {
+		if !successfully {
+			logger.warning("Generated speech did not play successfully")
+		}
+		playNextSpeech()
+	}
+
+	func abortCurrentSpeech() {
+		DispatchQueue.main.async {
+			guard let player = self.speaker else {
+				// nothing to abort
+				return
+			}
+			player.stop()
+			self.playNextSpeech()
 		}
 	}
 }
