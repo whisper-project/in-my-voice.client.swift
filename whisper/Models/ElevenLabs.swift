@@ -36,7 +36,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 			logger.error("Can't generate speech due to empty api key or voice id")
 			return
 		}
-		let endpoint = "\(apiRoot)/text-to-speech/\(voiceId)"
+		let endpoint = "\(apiRoot)/text-to-speech/\(voiceId)/stream"
 		let query = "?output_format=\(outputFormat)&optimize_streaming_latency=\(optimizeStreamingLatency)"
 		let body: [String: Any] = [
 			"model_id": modelId,
