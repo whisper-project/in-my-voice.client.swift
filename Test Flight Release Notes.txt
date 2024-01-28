@@ -163,3 +163,9 @@ This build introduces some creature comforts for generated speech:
 1. If the Whisperer finishes typing a line while the previous line is still being spoken, the speaking of the new line will be queued until the speech of the previous line finishes.
 
 2. Blank lines are not spoken.  But typing two blank lines in a row while an earlier line is being spoken will stop the speech.  (If there are queued lines waiting to be spoken, the next one will start.  Typing two more blank lines will stop it.)
+
+BUILD 49 (external):
+This build has a couple of small improvements and bug fixes:
+
+1. Voice generation latency is slightly reduced.
+2. Bluetooth-based sessions are not terminated by sleeping the whispering device.

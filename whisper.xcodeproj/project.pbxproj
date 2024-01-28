@@ -287,8 +287,8 @@
 				37C5142329CA2B44001A121B /* PastTextModel.swift */,
 				378A8E1629C554F20097F15A /* TextProtocol.swift */,
 				3771F83429DD2F900011419E /* FontSizes.swift */,
-				37F8C26C2A87DF23004DED77 /* Transports */,
 				375152A02B61E6990045FEBD /* ElevenLabs.swift */,
+				37F8C26C2A87DF23004DED77 /* Transports */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -711,7 +711,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -752,7 +752,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
