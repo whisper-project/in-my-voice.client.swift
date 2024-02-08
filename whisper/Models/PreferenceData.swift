@@ -15,7 +15,7 @@ struct PreferenceData {
     
     // publisher URLs
     #if DEBUG
-    static var whisperServer = "https://stage.whisper.clickonetwo.io"
+	static var whisperServer = ProcessInfo.processInfo.environment["WHISPER_SERVER"] ?? "https://stage.whisper.clickonetwo.io"
     #else
     static var whisperServer = "https://whisper.clickonetwo.io"
     #endif
