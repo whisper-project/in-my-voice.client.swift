@@ -242,4 +242,7 @@ struct PreferenceData {
 	static func elevenLabsVoiceId() -> String {
 		return defaults.string(forKey: "elevenlabs_voice_id_preference") ?? ""
 	}
+	static func elevenLabsLatencyReduction() -> Int {
+		return defaults.integer(forKey: "elevenlabs_latency_reduction_preference") + 1
+	}
 }

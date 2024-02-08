@@ -10,11 +10,10 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 	static let shared = ElevenLabs()
 
 	private let apiRoot: String = "https://api.elevenlabs.io/v1"
-	private var outputFormat: String = "mp3_44100_32"
-	private var optimizeStreamingLatency: Int = 0
+	private var outputFormat: String = "mp3_44100_128"
 	private var modelId: String = "eleven_turbo_v2"
-	private var similarityBoost: Float = 0.8
-	private var stability: Float = 0.3
+	private var similarityBoost: Float = 0.5
+	private var stability: Float = 0.5
 	private var useSpeakerBoost: Bool = true
 	private var speeches: [Data] = []
 	private var speaker: AVAudioPlayer?
@@ -32,6 +31,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		emptyTextCount = 0
 		let apiKey = PreferenceData.elevenLabsApiKey()
 		let voiceId = PreferenceData.elevenLabsVoiceId()
+		let optimizeStreamingLatency = PreferenceData.elevenLabsLatencyReduction()
 		guard !apiKey.isEmpty, !voiceId.isEmpty else {
 			logger.error("Can't generate speech due to empty api key or voice id")
 			return
