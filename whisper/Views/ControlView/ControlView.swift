@@ -23,7 +23,7 @@ struct ControlView: View {
             speechButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
-            Button(action: { confirmDisconnect = true }) {
+			Button(action: { confirmDisconnect.toggle() }) {
                 stopButtonLabel()
             }
             .background(Color.accentColor)
@@ -129,7 +129,7 @@ struct ControlView: View {
             Toggle(isOn: $magnify) {
                 Text("Large Sizes")
             }
-			.onChange(of: magnify) { _ in
+			.onChange(of: magnify) {
 				if mode == .listen {
 					PreferenceData.magnifyWhenListening = magnify
 				} else {

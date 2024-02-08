@@ -52,8 +52,8 @@ struct WhisperView: View {
                 TextEditor(text: $liveText)
                     .font(FontSizes.fontFor(size))
                     .truncationMode(.head)
-                    .onChange(of: liveText) { [liveText] new in
-                        self.liveText = model.updateLiveText(old: liveText, new: new)
+                    .onChange(of: liveText) { old, new in
+                        self.liveText = model.updateLiveText(old: old, new: new)
                     }
                     .onSubmit {
                         // shouldn't ever be used with a TextEditor,
@@ -89,8 +89,8 @@ struct WhisperView: View {
             logger.log("WhisperView disappeared")
             self.model.stop()
         }
-        .onChange(of: scenePhase) { newPhase in
-            switch newPhase {
+        .onChange(of: scenePhase) {
+            switch scenePhase {
             case .background:
                 logger.log("Went to background")
                 model.wentToBackground()
@@ -100,7 +100,7 @@ struct WhisperView: View {
                 logger.log("Went to foreground")
                 model.wentToForeground()
             @unknown default:
-                logger.error("Went to unknown phase: \(String(describing: newPhase))")
+                logger.error("Went to unknown phase: \(String(describing: scenePhase))")
             }
         }
     }

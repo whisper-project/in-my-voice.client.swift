@@ -15,14 +15,14 @@ final class BluetoothWhisperTransport: PublishTransport {
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
-        logger.log("Starting Bluetooth whisper transport...")
+        logger.log("Starting Bluetooth whisper transport")
         whisperService = BluetoothData.whisperService()
         factory.publish(service: whisperService!)
         startDiscovery()
     }
     
     func stop() {
-        logger.log("Stopping Bluetooth whisper transport...")
+        logger.log("Stopping Bluetooth whisper transport")
         stopDiscovery()
         removeAllListeners()
         if let service = whisperService {
@@ -248,7 +248,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     private var isInBackground = false
     
     init() {
-        logger.log("Initializing bluetooth whisper transport")
+        logger.log("Initializing Bluetooth whisper transport")
         factory.advertisementSubject
             .sink { [weak self] in self?.noticeAd($0) }
             .store(in: &cancellables)
@@ -270,7 +270,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
     
     deinit {
-        logger.log("Destroying WhisperView model")
+        logger.log("Destroying Bluetooth whisper transport")
         cancellables.cancel()
     }
 
@@ -296,7 +296,7 @@ final class BluetoothWhisperTransport: PublishTransport {
         // prioritize readers over subscribers, because we want to hold
         // the changes to live text until the readers are caught up
         if !directedChunks.isEmpty {
-            logger.log("Updating reading listeners...")
+            // logger.log("Updating reading listeners...")
             while let (listener, chunks) = directedChunks.first {
                 while let chunk = chunks.first {
                     let sendOk = factory.updateValue(value: chunk.toData(),
@@ -314,7 +314,7 @@ final class BluetoothWhisperTransport: PublishTransport {
                 }
             }
         } else if !pendingChunks.isEmpty {
-            logger.debug("Updating subscribed listeners (\(self.pendingChunks.count) chunks)...")
+            // logger.debug("Updating subscribed listeners (\(self.pendingChunks.count) chunks)...")
             while let chunk = pendingChunks.first {
                 let sendOk = factory.updateValue(value: chunk.toData(),
                                                characteristic: BluetoothData.whisperTextCharacteristic)

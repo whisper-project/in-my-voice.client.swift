@@ -17,10 +17,12 @@ final class BluetoothListenTransport: SubscribeTransport {
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
+		logger.info("Starting Bluetooth listen transport")
         startDiscovery()
     }
     
     func stop() {
+		logger.info("Stopping Bluetooth listen transport")
         stopDiscovery()
         if let publisher = self.publisher {
             drop(remote: publisher)
@@ -331,7 +333,7 @@ final class BluetoothListenTransport: SubscribeTransport {
     private var disconnectsInProgress: [CBPeripheral: Remote] = [:]
     
     init() {
-        logger.log("Initializing Bluetooth whisper transport")
+        logger.log("Initializing Bluetooth listen transport")
         factory.advertisementSubject
             .sink{ [weak self] in self?.discoveredRemote($0) }
             .store(in: &cancellables)
@@ -356,7 +358,7 @@ final class BluetoothListenTransport: SubscribeTransport {
     }
     
     deinit {
-        logger.log("Destroying Bluetooth whisper transport")
+        logger.log("Destroying Bluetooth listen transport")
         cancellables.cancel()
     }
     

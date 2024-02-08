@@ -16,7 +16,7 @@ final class TcpListenTransport: SubscribeTransport {
     var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
     
     func start(failureCallback: @escaping (String) -> Void) {
-        logger.log("Starting TCP candidate transport")
+        logger.log("Starting TCP listen transport")
         self.failureCallback = failureCallback
         self.authenticator = TcpAuthenticator(mode: .listen, publisherId: publisherId, callback: receiveAuthError)
         openChannel()
@@ -81,6 +81,7 @@ final class TcpListenTransport: SubscribeTransport {
     private var candidates: [String:Remote] = [:]
 
     init(_ url: String) {
+		logger.log("Initializing TCP listen transport")
         self.clientId = PreferenceData.clientId
         guard let remoteId = PreferenceData.publisherUrlToSessionId(url: url) else {
             fatalError("Invalid TCP listen url: \(url)")
@@ -89,6 +90,10 @@ final class TcpListenTransport: SubscribeTransport {
         self.channelName = "\(publisherId):whisper"
     }
     
+	deinit {
+		logger.log("Destroying TCP listen transport")
+	}
+
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
