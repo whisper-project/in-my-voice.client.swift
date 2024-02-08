@@ -15,7 +15,7 @@ struct PreferenceData {
     
     // publisher URLs
     #if DEBUG
-    static var whisperServer = "https://stage.whisper.clickonetwo.io"
+	static var whisperServer = ProcessInfo.processInfo.environment["WHISPER_SERVER"] ?? "https://stage.whisper.clickonetwo.io"
     #else
     static var whisperServer = "https://whisper.clickonetwo.io"
     #endif
@@ -219,4 +219,15 @@ struct PreferenceData {
             defaults.setValue(newVal, forKey: "authentication_error_count")
         }
     }
+
+	// speech keys
+	static func elevenLabsApiKey() -> String {
+		return defaults.string(forKey: "elevenlabs_api_key_preference") ?? ""
+	}
+	static func elevenLabsVoiceId() -> String {
+		return defaults.string(forKey: "elevenlabs_voice_id_preference") ?? ""
+	}
+	static func elevenLabsLatencyReduction() -> Int {
+		return defaults.integer(forKey: "elevenlabs_latency_reduction_preference") + 1
+	}
 }

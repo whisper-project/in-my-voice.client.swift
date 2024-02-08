@@ -85,12 +85,14 @@ final class WhisperViewModel: ObservableObject {
     // MARK: View entry points
     
     func start() {
+		logger.log("Starting WhisperView model")
         resetText()
         refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
     }
     
     func stop() {
+		logger.log("Stopping WhisperView model")
         transport.stop()
         resetText()
         refreshStatusText()
@@ -311,11 +313,14 @@ final class WhisperViewModel: ObservableObject {
 		}
 	}
 
-    // speak a set of words
-    private func speak(_ text: String) {
-        let utterance = AVSpeechUtterance(string: text)
-        Self.synthesizer.speak(utterance)
-    }
+	private func speak(_ text: String) {
+		if PreferenceData.elevenLabsApiKey().isEmpty || PreferenceData.elevenLabsVoiceId().isEmpty {
+			let utterance = AVSpeechUtterance(string: text)
+			Self.synthesizer.speak(utterance)
+		} else {
+			ElevenLabs.shared.speakText(text: text)
+		}
+	}
     
     // play the alert sound locally
     private func playSoundLocally(_ name: String) {

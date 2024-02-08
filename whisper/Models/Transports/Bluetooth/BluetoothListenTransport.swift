@@ -16,7 +16,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
     func start(failureCallback: @escaping (String) -> Void) {
-		logger.log("Starting Bluetooth listen transport")
+		logger.info("Starting Bluetooth listen transport")
 		registerCallbacks()
 		running = true
 		self.failureCallback = failureCallback
@@ -24,7 +24,7 @@ final class BluetoothListenTransport: SubscribeTransport {
     }
     
     func stop() {
-		logger.log("Stopping Bluetooth listen transport")
+		logger.info("Stopping Bluetooth listen transport")
 		running = false
         stopDiscovery()
 		for remote in Array(remotes.values) {

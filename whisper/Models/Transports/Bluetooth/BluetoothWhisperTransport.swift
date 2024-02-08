@@ -22,7 +22,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
     
     func stop() {
-        logger.log("Stopping Bluetooth whisper transport...")
+        logger.log("Stopping Bluetooth whisper transport")
 		running = false
         stopDiscovery()
         leaveConversation()

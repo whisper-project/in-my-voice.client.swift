@@ -152,6 +152,28 @@ The last build made all Listeners stop listening whenever the Whisperer disconne
 
 This build also remembers from one session to the next what size of text is being used, and whether the regular or large set of sizes is in use.
 
+BUILD 47 (external):
+There's a new feature in this build: the Whisperer can speak in any generated ElevenLabs voice they would like, and Listeners can listen to the Whisperer speak in any generated ElevenLabs voice they would like.
+
+To enable this feature, you have to enter a valid ElevenLabs api key and voice id in Whisper's settings.  Obviously, to do this, you will need to have an ElevenLabs account, but free accounts are available at elevenlabs.io.
+
+BUILD 48 (external):
+This build introduces some creature comforts for generated speech:
+
+v2 BUILD 3 (external):
+1. If the Whisperer finishes typing a line while the previous line is still being spoken, the speaking of the new line will be queued until the speech of the previous line finishes.
+
+2. Blank lines are not spoken.  But typing two blank lines in a row while an earlier line is being spoken will stop the speech.  (If there are queued lines waiting to be spoken, the next one will start.  Typing two more blank lines will stop it.)
+
+BUILD 49 (external):
+This build has a couple of small improvements and bug fixes:
+
+1. Voice generation latency is slightly reduced.
+2. Bluetooth-based sessions are not terminated by sleeping the whispering device.
+
+BUILD 50 (external):
+This build adds a preference to control latency suppression in speech generation.
+
 v2 BUILDS 1 & 2 (internal):
 This is the first build of v2, which supports multiple named conversations and requires both the Listeners and the Whisperer to explicitly approve (once) their participation in a given named conversation.
 

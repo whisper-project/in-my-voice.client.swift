@@ -11,6 +11,7 @@
 		3712340E29E20BD700CBF49C /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712340D29E20BD700CBF49C /* ControlView.swift */; };
 		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
+		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
 		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
 		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
@@ -80,6 +81,7 @@
 		3712341129E2151100CBF49C /* Binding+Convert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Binding+Convert.swift"; sourceTree = "<group>"; };
 		373748782AD66D150053858B /* TcpMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpMonitor.swift; sourceTree = "<group>"; };
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
+		375152A02B61E6990045FEBD /* ElevenLabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabs.swift; sourceTree = "<group>"; };
 		3758F3E929E7D9F50072F7A8 /* air-horn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "air-horn.mp3"; sourceTree = "<group>"; };
 		3758F3EB29E8C2C00072F7A8 /* bike-horn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "bike-horn.mp3"; sourceTree = "<group>"; };
 		3758F3ED29E8C5590072F7A8 /* bike-bell.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "bike-bell.mp3"; sourceTree = "<group>"; };
@@ -297,6 +299,7 @@
 				37C5142329CA2B44001A121B /* PastTextModel.swift */,
 				378A8E1629C554F20097F15A /* WhisperProtocol.swift */,
 				37CBBD0B2AF8CAC7006AE49F /* UserProfile.swift */,
+				375152A02B61E6990045FEBD /* ElevenLabs.swift */,
 				37F8C26C2A87DF23004DED77 /* Transports */,
 			);
 			path = Models;
@@ -548,6 +551,7 @@
 				37763D1D29AC33230051CFE5 /* BluetoothData.swift in Sources */,
 				377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
+				375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
 				37CBBD0F2AFB112B006AE49F /* WhisperProfileView.swift in Sources */,
 				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
