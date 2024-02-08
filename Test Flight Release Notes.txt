@@ -169,3 +169,6 @@ This build has a couple of small improvements and bug fixes:
 
 1. Voice generation latency is slightly reduced.
 2. Bluetooth-based sessions are not terminated by sleeping the whispering device.
+
+BUILD 50 (external):
+This build adds a preference to control latency suppression in speech generation.
