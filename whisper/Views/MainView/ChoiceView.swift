@@ -12,7 +12,7 @@ struct ChoiceView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Binding var mode: OperatingMode
-    @Binding var conversation: Conversation?
+	@Binding var conversation: (any Conversation)?
     @Binding var transportStatus: TransportStatus
 
     @State private var username: String = ""
@@ -24,13 +24,13 @@ struct ChoiceView: View {
 	@State private var showNoConnection = false
     @FocusState private var nameEdit: Bool
     
-    private let profile = UserProfile.shared
-    
     let nameWidth = CGFloat(350)
     let nameHeight = CGFloat(105)
     let choiceButtonWidth = CGFloat(140)
     let choiceButtonHeight = CGFloat(45)
     let website = "https://clickonetwo.github.io/whisper/"
+
+	let profile = UserProfile.shared
 
     var body: some View {
         VStack(spacing: 40) {
@@ -88,7 +88,7 @@ struct ChoiceView: View {
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
-								maybeWhisper(profile.whisperDefault)
+								maybeWhisper(profile.whisperProfile.fallback)
                             }
                     )
                     .sheet(isPresented: $showWhisperConversations) {
@@ -199,6 +199,7 @@ struct ChoiceView: View {
     }
     
     func updateFromProfile() {
+		profile.update()
         username = profile.username
         newUsername = username
         if username.isEmpty {
@@ -223,7 +224,7 @@ struct ChoiceView: View {
         }
     }
     
-    func maybeWhisper(_ c: Conversation?) {
+    func maybeWhisper(_ c: WhisperConversation?) {
         showWhisperConversations = false
 		if let c = c {
 			if transportStatus == .off {
@@ -235,7 +236,7 @@ struct ChoiceView: View {
 		}
     }
     
-    func maybeListen(_ c: Conversation?) {
+    func maybeListen(_ c: ListenConversation?) {
         showListenConversations = false
 		if let c = c {
 			if transportStatus == .off {

@@ -82,5 +82,5 @@ struct ListenersView: View {
 }
 
 #Preview {
-	ListenersView(model: WhisperViewModel(UserProfile.shared.whisperDefault))
+	ListenersView(model: WhisperViewModel(UserProfile.shared.whisperProfile.fallback))
 }

@@ -15,11 +15,11 @@ final class TcpFactory: TransportFactory {
 
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
     
-    func publisher(_ conversation: Conversation) -> Publisher {
+    func publisher(_ conversation: WhisperConversation) -> Publisher {
         return TcpWhisperTransport(conversation)
     }
     
-    func subscriber(_ conversation: Conversation?) -> Subscriber {
+    func subscriber(_ conversation: ListenConversation?) -> Subscriber {
         guard let c = conversation else {
             fatalError("TCP listen transport requires a whisper URL")
         }

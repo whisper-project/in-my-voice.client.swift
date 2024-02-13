@@ -62,7 +62,7 @@ final class ComboListenTransport: SubscribeTransport {
 		}
 	}
 
-	func subscribe(remote: Remote, conversation: Conversation) {
+	func subscribe(remote: Remote, conversation: ListenConversation) {
         guard let remote = remotes[remote.id] else {
             fatalError("Subscribing to an unknown remote: \(remote.id)")
         }
@@ -104,7 +104,7 @@ final class ComboListenTransport: SubscribeTransport {
 		}
     }
     
-	private var conversation: Conversation?
+	private var conversation: ListenConversation?
 	private var localFactory = BluetoothFactory.shared
 	private var localStatus: TransportStatus = .off
 	private var localTransport: LocalTransport?
@@ -117,7 +117,7 @@ final class ComboListenTransport: SubscribeTransport {
     private var cancellables: Set<AnyCancellable> = []
 	private var failureCallback: ((String) -> Void)?
 
-    init(_ conversation: Conversation?) {
+    init(_ conversation: ListenConversation?) {
         logger.log("Initializing combo listen transport")
 		self.conversation = conversation
 		self.localFactory.statusSubject

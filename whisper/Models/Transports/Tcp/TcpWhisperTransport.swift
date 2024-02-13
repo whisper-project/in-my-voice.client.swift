@@ -96,14 +96,14 @@ final class TcpWhisperTransport: PublishTransport {
     
     private var failureCallback: ((String) -> Void)?
     private var clientId: String
-    private var conversation: Conversation
+    private var conversation: WhisperConversation
     private var authenticator: TcpAuthenticator!
     private var client: ARTRealtime?
     private var contentChannel: ARTRealtimeChannel?
     private var controlChannel: ARTRealtimeChannel?
     private var remotes: [String:Remote] = [:]
 
-    init(_ c: Conversation) {
+    init(_ c: WhisperConversation) {
         self.clientId = PreferenceData.clientId
         self.conversation = c
     }

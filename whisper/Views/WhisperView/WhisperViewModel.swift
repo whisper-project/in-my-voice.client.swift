@@ -50,7 +50,7 @@ final class WhisperViewModel: ObservableObject {
 	@Published var invites: [Candidate] = []
     @Published var pastText: PastTextModel = .init(mode: .whisper)
 	@Published var showStatusDetail: Bool = false
-	private(set) var conversation: Conversation
+	private(set) var conversation: WhisperConversation
 
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
@@ -58,10 +58,10 @@ final class WhisperViewModel: ObservableObject {
     private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
-	let profile = UserProfile.shared
+	let profile = UserProfile.shared.whisperProfile
 	let contentId = UUID().uuidString
 
-    init(_ conversation: Conversation) {
+    init(_ conversation: WhisperConversation) {
         logger.log("Initializing WhisperView model")
 		self.conversation = conversation
         self.transport = ComboFactory.shared.publisher(conversation)
@@ -155,7 +155,7 @@ final class WhisperViewModel: ObservableObject {
 		invitee.isPending = false
 		invites = candidates.values.filter{$0.isPending}.sorted()
 		showStatusDetail = !invites.isEmpty
-		profile.addListenerToWhisperConversation(info: invitee.info, conversation: conversation)
+		profile.addListener(conversation, info: invitee.info)
 		transport.authorize(remote: invitee.remote)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation, contentId: contentId)
 		transport.sendControl(remote: invitee.remote, chunk: chunk)
@@ -182,7 +182,7 @@ final class WhisperViewModel: ObservableObject {
             return
         }
 		logger.notice("De-authorizing \(listener.remote.kind) candidate \(listener.id)")
-		profile.removeListenerFromWhisperConversation(profileId: candidate.info.profileId, conversation: conversation)
+		profile.removeListener(conversation, profileId: candidate.info.profileId)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
 		transport.sendControl(remote: candidate.remote, chunk: chunk)
 		transport.deauthorize(remote: candidate.remote)
@@ -288,7 +288,7 @@ final class WhisperViewModel: ObservableObject {
 		remote: Remote,
 		info: WhisperProtocol.ClientInfo
 	) -> Candidate {
-		let authorized = profile.isListenerToWhisperConversation(info: info, conversation: conversation)
+		let authorized = profile.isListener(conversation, info: info)
 		if let existing = candidates[remote.id] {
 			// update info if we need to and can
 			if existing.info.username.isEmpty {

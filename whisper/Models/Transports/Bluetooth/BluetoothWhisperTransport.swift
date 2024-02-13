@@ -289,9 +289,9 @@ final class BluetoothWhisperTransport: PublishTransport {
     private var advertisers: [CBPeripheral] = []
     private var whisperService: CBMutableService?
     private var isInBackground = false
-    private var conversation: Conversation
+    private var conversation: WhisperConversation
 
-    init(_ c: Conversation) {
+    init(_ c: WhisperConversation) {
         logger.log("Initializing Bluetooth whisper transport")
         conversation = c
     }

@@ -65,7 +65,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 		removeRemote(existing, sendDrop: true)
     }
     
-	func subscribe(remote: Remote, conversation: Conversation) {
+	func subscribe(remote: Remote, conversation: ListenConversation) {
 		guard running else { return }
 		if publisher === remote {
 			logger.error("Ignoring duplicate subscribe to same publisher")
@@ -348,10 +348,10 @@ final class BluetoothListenTransport: SubscribeTransport {
     private var cancellables: Set<AnyCancellable> = []
     private var isInBackground = false
     private var scanRefreshCount = 0
-	private var conversation: Conversation? = nil
+	private var conversation: ListenConversation? = nil
 	private var failureCallback: ((String) -> Void)?
 
-	init(_ c: Conversation?) {
+	init(_ c: ListenConversation?) {
         logger.log("Initializing Bluetooth listen transport")
 		self.conversation = c
     }

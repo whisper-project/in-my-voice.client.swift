@@ -11,8 +11,8 @@ struct ListenView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
-    var conversation: Conversation?
-    
+    var conversation: ListenConversation?
+
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel
 	@State private var size = PreferenceData.sizeWhenListening
@@ -21,9 +21,9 @@ struct ListenView: View {
     // set this once at view creation
     private var listenerLiveTextOnTop = !PreferenceData.listenerMatchesWhisperer()
     
-    init(mode: Binding<OperatingMode>, conversation: Conversation?) {
+    init(mode: Binding<OperatingMode>, conversation: ListenConversation?) {
         self._mode = mode
-        self.conversation = conversation
+		self.conversation = conversation
         self._model = StateObject(wrappedValue: ListenViewModel(conversation))
     }
 

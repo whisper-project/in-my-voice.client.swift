@@ -10,13 +10,13 @@ struct WhisperProfileView: View {
 	@Environment(\.dismiss) private var dismiss
 	#endif
 
-	var maybeWhisper: ((Conversation?) -> Void)?
+	var maybeWhisper: ((WhisperConversation?) -> Void)?
 
-    @State private var conversations: [Conversation] = []
-    @State private var defaultConversation: Conversation?
-        
-    private let profile = UserProfile.shared
-    
+    @State private var conversations: [WhisperConversation] = []
+    @State private var defaultConversation: WhisperConversation?
+
+	private let profile = UserProfile.shared.whisperProfile
+
     var body: some View {
 		NavigationStack {
 			List {
@@ -38,7 +38,7 @@ struct WhisperProfileView: View {
 					}
 				}
 				.onDelete { indexSet in
-					indexSet.forEach{ profile.deleteWhisperConversation(conversations[$0]) }
+					indexSet.forEach{ profile.delete(conversations[$0]) }
 					updateFromProfile()
 				}
 			}
@@ -59,13 +59,13 @@ struct WhisperProfileView: View {
 
 	func addConversation() {
 		logger.info("Creating new conversation")
-		profile.addWhisperConversation()
+		profile.new()
 		updateFromProfile()
 	}
 
     func updateFromProfile() {
-        conversations = profile.whisperConversations()
-        defaultConversation = profile.whisperDefault
+        conversations = profile.conversations()
+        defaultConversation = profile.fallback
     }
 }
 

@@ -28,6 +28,9 @@
 		377646C629BACB4B002C411C /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C529BACB4B002C411C /* MainViewModel.swift */; };
 		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
 		377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothFactory.swift */; };
+		377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01052B7A65CC00489C05 /* WhisperProfile.swift */; };
+		377C01082B7A65DB00489C05 /* ListenProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01072B7A65DB00489C05 /* ListenProfile.swift */; };
+		377C010A2B7AD47800489C05 /* Data+File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01092B7AD47800489C05 /* Data+File.swift */; };
 		377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */; };
 		377D710B2A8EBE16009B416F /* BluetoothListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */; };
 		377D71112A913C5C009B416F /* TcpFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71102A913BFE009B416F /* TcpFactory.swift */; };
@@ -106,6 +109,9 @@
 		377646C529BACB4B002C411C /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
 		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		377646C929BACC16002C411C /* BluetoothFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothFactory.swift; sourceTree = "<group>"; };
+		377C01052B7A65CC00489C05 /* WhisperProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperProfile.swift; sourceTree = "<group>"; };
+		377C01072B7A65DB00489C05 /* ListenProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenProfile.swift; sourceTree = "<group>"; };
+		377C01092B7AD47800489C05 /* Data+File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+File.swift"; sourceTree = "<group>"; };
 		377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothWhisperTransport.swift; sourceTree = "<group>"; };
 		377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothListenTransport.swift; sourceTree = "<group>"; };
 		377D710E2A913BFE009B416F /* TcpListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpListenTransport.swift; sourceTree = "<group>"; };
@@ -298,9 +304,9 @@
 				377D71142A913E2E009B416F /* PreferenceData.swift */,
 				37C5142329CA2B44001A121B /* PastTextModel.swift */,
 				378A8E1629C554F20097F15A /* WhisperProtocol.swift */,
-				37CBBD0B2AF8CAC7006AE49F /* UserProfile.swift */,
 				375152A02B61E6990045FEBD /* ElevenLabs.swift */,
 				37F8C26C2A87DF23004DED77 /* Transports */,
+				377C01042B7A65A500489C05 /* UserProfile */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -312,6 +318,7 @@
 				3712341129E2151100CBF49C /* Binding+Convert.swift */,
 				37D553CB2A10717E00C27888 /* SizePrinter.swift */,
 				37D78A152B2FB50D002494CD /* MakeBinding.swift */,
+				377C01092B7AD47800489C05 /* Data+File.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -324,6 +331,16 @@
 				3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */,
 			);
 			path = MainView;
+			sourceTree = "<group>";
+		};
+		377C01042B7A65A500489C05 /* UserProfile */ = {
+			isa = PBXGroup;
+			children = (
+				37CBBD0B2AF8CAC7006AE49F /* UserProfile.swift */,
+				377C01052B7A65CC00489C05 /* WhisperProfile.swift */,
+				377C01072B7A65DB00489C05 /* ListenProfile.swift */,
+			);
+			path = UserProfile;
 			sourceTree = "<group>";
 		};
 		377D70F42A899C3A009B416F /* Bluetooth */ = {
@@ -542,6 +559,7 @@
 				377646C829BACB73002C411C /* MainView.swift in Sources */,
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
 				377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */,
+				377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */,
 				37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */,
 				37076DE52B12DB97003AC2FD /* ListenProfileView.swift in Sources */,
 				377D711B2A956C23009B416F /* TcpAuthenticator.swift in Sources */,
@@ -552,9 +570,11 @@
 				377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */,
+				377C010A2B7AD47800489C05 /* Data+File.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
 				37CBBD0F2AFB112B006AE49F /* WhisperProfileView.swift in Sources */,
 				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
+				377C01082B7A65DB00489C05 /* ListenProfile.swift in Sources */,
 				377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */,
 				37B6237629F78AA500213790 /* WhisperersView.swift in Sources */,
 				37F8C26E2A87DFA7004DED77 /* TransportProtocol.swift in Sources */,
@@ -739,7 +759,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -781,7 +801,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;

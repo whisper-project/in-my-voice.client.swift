@@ -138,10 +138,10 @@ final class ComboWhisperTransport: PublishTransport {
     private var remotes: [String: Remote] = [:]	// maps from remoite id to remote
 	private var clients: [String: Remote] = [:]	// maps from client id to remote
     private var cancellables: Set<AnyCancellable> = []
-    private var conversation: Conversation
+    private var conversation: WhisperConversation
     private var failureCallback: ((String) -> Void)?
 
-    init(_ c: Conversation) {
+    init(_ c: WhisperConversation) {
         logger.log("Initializing combo whisper transport")
         self.conversation = c
         self.localFactory.statusSubject

@@ -198,7 +198,7 @@ final class WhisperProtocol {
             return ProtocolChunk(offset: ControlOffset.requestReread.rawValue, text: hint.rawValue)
         }
         
-        private static func authChunk(offset: Int, c: Conversation, contentId: String = "") -> ProtocolChunk {
+		private static func authChunk(offset: Int, c: any Conversation, contentId: String = "") -> ProtocolChunk {
             let profile = UserProfile.shared
             let data = ClientInfo(conversationId: c.id,
                                   conversationName: c.name,
@@ -209,23 +209,23 @@ final class WhisperProtocol {
             return ProtocolChunk(offset: offset, text: data.toString())
         }
         
-        static func whisperOffer(_ c: Conversation) -> ProtocolChunk {
+		static func whisperOffer(_ c: any Conversation) -> ProtocolChunk {
             return authChunk(offset: ControlOffset.whisperOffer.rawValue, c: c)
         }
         
-        static func listenRequest(_ c: Conversation) -> ProtocolChunk {
+		static func listenRequest(_ c: any Conversation) -> ProtocolChunk {
             return authChunk(offset: ControlOffset.listenRequest.rawValue, c: c)
         }
         
-        static func listenAuthYes(_ c: Conversation, contentId: String = "") -> ProtocolChunk {
+		static func listenAuthYes(_ c: any Conversation, contentId: String = "") -> ProtocolChunk {
             return authChunk(offset: ControlOffset.listenAuthYes.rawValue, c: c, contentId: contentId)
         }
         
-        static func listenAuthNo(_ c: Conversation) -> ProtocolChunk {
+		static func listenAuthNo(_ c: any Conversation) -> ProtocolChunk {
             return authChunk(offset: ControlOffset.listenAuthNo.rawValue, c: c)
         }
         
-        static func joining(_ c: Conversation) -> ProtocolChunk {
+		static func joining(_ c: any Conversation) -> ProtocolChunk {
             return authChunk(offset: ControlOffset.joining.rawValue, c: c)
         }
         
@@ -239,7 +239,7 @@ final class WhisperProtocol {
 			return ProtocolChunk(offset: ControlOffset.dropping.rawValue, text: info.toString())
         }
         
-		static func listenOffer(_ c: Conversation? = nil) -> ProtocolChunk {
+		static func listenOffer(_ c: (any Conversation)? = nil) -> ProtocolChunk {
 			let info = ClientInfo(conversationId: c?.id ?? "discover",
                                   conversationName: "",
                                   clientId: PreferenceData.clientId,

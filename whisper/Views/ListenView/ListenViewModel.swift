@@ -50,7 +50,7 @@ final class ListenViewModel: ObservableObject {
     @Published var showStatusDetail: Bool = false
 	@Published var candidates: [String: Candidate] = [:]	// remoteId -> Candidate
 	@Published var invites: [Candidate] = []
-	@Published var conversation: Conversation?
+	@Published var conversation: ListenConversation?
     @Published var whisperer: Candidate?
     @Published var pastText: PastTextModel = .init(mode: .listen)
 
@@ -67,9 +67,9 @@ final class ListenViewModel: ObservableObject {
     private var notifySoundInBackground = false
     private static let synthesizer = AVSpeechSynthesizer()
 
-	let profile = UserProfile.shared
+	let profile = UserProfile.shared.listenProfile
 
-    init(_ conversation: Conversation?) {
+    init(_ conversation: ListenConversation?) {
 		logger.log("Initializing ListenView model")
 		self.conversation = conversation
         transport = ComboFactory.shared.subscriber(conversation)
@@ -144,7 +144,7 @@ final class ListenViewModel: ObservableObject {
 		inviter.isPending = false
 		invites = candidates.values.filter{$0.isPending}.sorted()
 		showStatusDetail = !invites.isEmpty
-		let conversation = profile.listenConversationForInvite(info: inviter.info)
+		let conversation = profile.forInvite(info: inviter.info)
 		let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
 		transport.sendControl(remote: inviter.remote, chunk: chunk)
 	}
@@ -276,7 +276,7 @@ final class ListenViewModel: ObservableObject {
 		}
 		switch WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
 		case .whisperOffer:
-			let conversation = profile.listenConversationForInvite(info: info)
+			let conversation = profile.forInvite(info: info)
 			logger.info("Received offer from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
 			let candidate = candidateFor(remote: remote, info: info, conversation: conversation)
 			if candidate.isPending {
@@ -285,13 +285,13 @@ final class ListenViewModel: ObservableObject {
 				showStatusDetail = !invites.isEmpty
 			} else {
 				// we've already accepted this invite, so try to join
-				let conversation = profile.listenConversationForInvite(info: candidate.info)
+				let conversation = profile.forInvite(info: candidate.info)
 				let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
 				transport.sendControl(remote: candidate.remote, chunk: chunk)
 			}
 		case .listenAuthYes:
 			logger.info("Received approval from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
-			let conversation = profile.addListenConversationForInvite(info: info)
+			let conversation = profile.addForInvite(info: info)
 			let candidate = candidateFor(remote: remote, info: info, conversation: conversation)
 			if whisperer === candidate {
 				logger.error("Received second approval for the same conversation")
@@ -304,7 +304,7 @@ final class ListenViewModel: ObservableObject {
 				logger.error("Ignoring refusal from \(remote.kind) non-candidate \(remote.id)")
 				return
 			}
-			profile.deleteListenConversation(info.conversationId)
+			profile.delete(info.conversationId)
 			connectionErrorDescription = "The Whisperer has refused to let you listen"
 			connectionError = true
 		default:
@@ -315,7 +315,7 @@ final class ListenViewModel: ObservableObject {
 	private func candidateFor(
 		remote: Remote,
 		info: WhisperProtocol.ClientInfo,
-		conversation: Conversation
+		conversation: ListenConversation
 	) -> Candidate {
 		if let existing = candidates[remote.id] {
 			return existing
@@ -414,7 +414,7 @@ final class ListenViewModel: ObservableObject {
     }
     
 	/// subscribe to this candidate
-	func setWhisperer(candidate: Candidate, conversation: Conversation) {
+	func setWhisperer(candidate: Candidate, conversation: ListenConversation) {
 		guard whisperer == nil else {
 			fatalError("Ignoring attempt to set whisperer when we already have one")
 		}

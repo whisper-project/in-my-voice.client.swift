@@ -10,12 +10,12 @@ struct ListenProfileView: View {
 	@Environment(\.dismiss) private var dismiss
 	#endif
 
-	var maybeListen: ((Conversation?) -> Void)?
+	var maybeListen: ((ListenConversation?) -> Void)?
 
-    @State private var conversations: [Conversation] = []
-        
-    private let profile = UserProfile.shared
-    
+    @State private var conversations: [ListenConversation] = []
+
+	private let profile = UserProfile.shared.listenProfile
+
     var body: some View {
 		NavigationStack {
 			VStack(alignment: .center, spacing: 20) {
@@ -31,7 +31,7 @@ struct ListenProfileView: View {
 								}
 								Button("Delete", systemImage: "delete.left") {
 									logger.info("Hit delete button on \(c.id) (\(c.name))")
-									profile.deleteListenConversation(c.id)
+									profile.delete(c.id)
 									updateFromProfile()
 								}
 							}
@@ -60,7 +60,7 @@ struct ListenProfileView: View {
     }
     
     func updateFromProfile() {
-        conversations = profile.listenConversations()
+        conversations = profile.conversations()
     }
 }
 

@@ -73,7 +73,7 @@ struct whisperApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     @State var mode: OperatingMode = .ask
-    @State var conversation: Conversation? = nil
+    @State var conversation: (any Conversation)? = nil
     @State var showWarning: Bool = false
     @State var warningMessage: String = ""
     
@@ -102,7 +102,7 @@ struct whisperApp: App {
                     let url = urlObj.absoluteString
                     if let cid = PreferenceData.publisherUrlToConversationId(url: url) {
                         logger.log("Handling valid universal URL: \(url)")
-						conversation = profile.listenConversationForLink(cid)
+						conversation = profile.listenProfile.fromLink(cid)
                         mode = .listen
                     } else {
                         logger.warning("Ignoring invalid universal URL: \(url)")
@@ -135,6 +135,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             "clientId": PreferenceData.clientId,
             "token": deviceToken.base64EncodedString(),
             "userName": UserProfile.shared.username,
+			"profileId": UserProfile.shared.id,
             "lastSecret": PreferenceData.lastClientSecret(),
             "appInfo": "\(platformInfo)|\(versionString)",
             "droppedErrorCount": PreferenceData.droppedErrorCount,

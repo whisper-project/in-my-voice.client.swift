@@ -14,11 +14,11 @@ final class ComboFactory: TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
 
-    func publisher(_ conversation: Conversation) -> Publisher {
+    func publisher(_ conversation: WhisperConversation) -> Publisher {
         return Publisher(conversation)
     }
     
-    func subscriber(_ conversation: Conversation?) -> Subscriber {
+    func subscriber(_ conversation: ListenConversation?) -> Subscriber {
         return Subscriber(conversation)
     }
     

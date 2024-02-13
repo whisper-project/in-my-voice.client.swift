@@ -12,8 +12,8 @@ struct MainView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Binding var mode: OperatingMode
-    @Binding var conversation: Conversation?
-    
+    @Binding var conversation: (any Conversation)?
+
     @StateObject private var model: MainViewModel = .init()
             
     var body: some View {
@@ -30,9 +30,9 @@ struct MainView: View {
                     .padding(EdgeInsets(top: 20, leading: 0, bottom: 5, trailing: 0))
             }
         case .listen:
-            ListenView(mode: $mode, conversation: conversation)
+            ListenView(mode: $mode, conversation: conversation as? ListenConversation)
         case .whisper:
-			WhisperView(mode: $mode, conversation: conversation ?? UserProfile.shared.whisperDefault)
+			WhisperView(mode: $mode, conversation: conversation as? WhisperConversation ?? UserProfile.shared.whisperProfile.fallback)
         }
     }
 }

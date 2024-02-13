@@ -11,7 +11,7 @@ struct WhisperView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
-    var conversation: Conversation
+    var conversation: WhisperConversation
 
     @State private var liveText: String = ""
     @FocusState private var focusField: String?
@@ -19,7 +19,7 @@ struct WhisperView: View {
 	@State private var size = PreferenceData.sizeWhenWhispering
 	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
     
-    init(mode: Binding<OperatingMode>, conversation: Conversation) {
+    init(mode: Binding<OperatingMode>, conversation: WhisperConversation) {
         self._mode = mode
         self.conversation = conversation
         self._model = StateObject(wrappedValue: WhisperViewModel(conversation))
@@ -106,5 +106,5 @@ struct WhisperView: View {
 }
 
 #Preview {
-	WhisperView(mode: makeBinding(.whisper), conversation: UserProfile.shared.whisperDefault)
+	WhisperView(mode: makeBinding(.whisper), conversation: UserProfile.shared.whisperProfile.fallback)
 }

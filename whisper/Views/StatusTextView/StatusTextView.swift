@@ -10,7 +10,7 @@ struct StatusTextView: View {
 
     @Binding var text: String
     var mode: OperatingMode
-    var conversation: Conversation?
+	var conversation: (any Conversation)?
 
 	private var shareLinkUrl: URL {
 		if let c = conversation {
@@ -49,5 +49,5 @@ struct StatusTextView: View {
 }
 
 #Preview {
-	StatusTextView(text: makeBinding("Generic status text"), mode: .whisper, conversation: UserProfile.shared.whisperDefault)
+	StatusTextView(text: makeBinding("Generic status text"), mode: .whisper, conversation: UserProfile.shared.whisperProfile.fallback)
 }

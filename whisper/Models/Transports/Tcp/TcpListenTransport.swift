@@ -52,7 +52,7 @@ final class TcpListenTransport: SubscribeTransport {
 		removeCandidate(remote, sendDrop: true)
     }
     
-	func subscribe(remote: Remote, conversation: Conversation) {
+	func subscribe(remote: Remote, conversation: ListenConversation) {
         guard let remote = remotes[remote.id] else {
             logger.error("Ignoring request to subscribe to an unknown \(remote.kind) remote: \(remote.id)")
             return
@@ -89,7 +89,7 @@ final class TcpListenTransport: SubscribeTransport {
     
     private var failureCallback: ((String) -> Void)?
     private var clientId: String
-    private var conversation: Conversation
+    private var conversation: ListenConversation
     private var authenticator: TcpAuthenticator!
     private var client: ARTRealtime?
     private var channelName: String
@@ -98,7 +98,7 @@ final class TcpListenTransport: SubscribeTransport {
     private var remotes: [String:Remote] = [:]
     private var whisperer: Remote?
 
-    init(_ conversation: Conversation?) {
+    init(_ conversation: ListenConversation?) {
 		guard let conversation = conversation else {
 			fatalError("Can't listen over the network without a conversation")
 		}

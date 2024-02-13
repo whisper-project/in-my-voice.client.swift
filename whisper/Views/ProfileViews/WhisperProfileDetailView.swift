@@ -6,15 +6,15 @@
 import SwiftUI
 
 struct WhisperProfileDetailView: View {
-	let conversation: Conversation
+	let conversation: WhisperConversation
 
 	@State var name: String = ""
 	@State var newName: String = ""
 	@State var isDefault: Bool = false
 	@State var wasDefault: Bool = false
-	@State var allowedParticipants: [UserProfile.ListenerInfo] = []
+	@State var allowedParticipants: [ListenerInfo] = []
 
-	private let profile = UserProfile.shared
+	private let profile = UserProfile.shared.whisperProfile
 
 	var body: some View {
 		Form {
@@ -50,7 +50,7 @@ struct WhisperProfileDetailView: View {
 							Text(info.username)
 							Spacer(minLength: 25)
 							Button("Delete") {
-								profile.removeListenerFromWhisperConversation(profileId: info.id, conversation: conversation)
+								profile.removeListener(conversation, profileId: info.id)
 								updateFromProfile()
 							}
 						}
@@ -65,22 +65,22 @@ struct WhisperProfileDetailView: View {
 	func updateFromProfile() {
 		name = conversation.name
 		newName = name
-		wasDefault = conversation == profile.whisperDefault
+		wasDefault = conversation == profile.fallback
 		isDefault = wasDefault
-		allowedParticipants = profile.listenersToWhisperConversation(conversation: conversation)
+		allowedParticipants = profile.listeners(conversation)
 	}
 
 	func updateConversation() {
 		if (newName != name && !newName.isEmpty) {
-			profile.renameWhisperConversation(c: conversation, name: newName)
+			profile.rename(conversation, name: newName)
 		}
 		if (isDefault != wasDefault) {
-			profile.whisperDefault = conversation
+			profile.fallback = conversation
 		}
 		updateFromProfile()
 	}
 }
 
 #Preview {
-	WhisperProfileDetailView(conversation: UserProfile.shared.whisperDefault)
+	WhisperProfileDetailView(conversation: UserProfile.shared.whisperProfile.fallback)
 }

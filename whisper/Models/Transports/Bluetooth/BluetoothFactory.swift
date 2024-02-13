@@ -14,11 +14,11 @@ final class BluetoothFactory: NSObject, TransportFactory {
 
 	var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
 
-	func publisher(_ c: Conversation) -> Publisher {
+	func publisher(_ c: WhisperConversation) -> Publisher {
 		return Publisher(c)
 	}
 
-	func subscriber(_ c: Conversation?) -> Subscriber {
+	func subscriber(_ c: ListenConversation?) -> Subscriber {
 		return Subscriber(c)
 	}
 
