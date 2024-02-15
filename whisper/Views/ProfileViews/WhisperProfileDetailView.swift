@@ -34,6 +34,8 @@ struct WhisperProfileDetailView: View {
 						.disabled(newName == name)
 				}
 				.buttonStyle(.borderless)
+			}
+			Section(header: Text("Conversation Details")) {
 				if (isDefault) {
 					Text("This is your default conversation")
 				} else {
@@ -42,6 +44,7 @@ struct WhisperProfileDetailView: View {
 						updateConversation()
 					}
 				}
+				ShareLink("Listen link", item: PreferenceData.publisherUrl(conversation.id))
 			}
 			Section(header: allowedParticipants.isEmpty ? Text("No Allowed Participants") : Text("Allowed Participants")) {
 				List {
