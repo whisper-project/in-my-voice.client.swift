@@ -30,7 +30,8 @@
 		377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothFactory.swift */; };
 		377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01052B7A65CC00489C05 /* WhisperProfile.swift */; };
 		377C01082B7A65DB00489C05 /* ListenProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01072B7A65DB00489C05 /* ListenProfile.swift */; };
-		377C010A2B7AD47800489C05 /* Data+File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01092B7AD47800489C05 /* Data+File.swift */; };
+		377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01092B7AD47800489C05 /* Data+JSON.swift */; };
+		377C010C2B7C1EEF00489C05 /* ShareProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C010B2B7C1EEF00489C05 /* ShareProfileView.swift */; };
 		377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */; };
 		377D710B2A8EBE16009B416F /* BluetoothListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */; };
 		377D71112A913C5C009B416F /* TcpFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71102A913BFE009B416F /* TcpFactory.swift */; };
@@ -111,7 +112,8 @@
 		377646C929BACC16002C411C /* BluetoothFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothFactory.swift; sourceTree = "<group>"; };
 		377C01052B7A65CC00489C05 /* WhisperProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperProfile.swift; sourceTree = "<group>"; };
 		377C01072B7A65DB00489C05 /* ListenProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenProfile.swift; sourceTree = "<group>"; };
-		377C01092B7AD47800489C05 /* Data+File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+File.swift"; sourceTree = "<group>"; };
+		377C01092B7AD47800489C05 /* Data+JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+JSON.swift"; sourceTree = "<group>"; };
+		377C010B2B7C1EEF00489C05 /* ShareProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareProfileView.swift; sourceTree = "<group>"; };
 		377D70F72A899C88009B416F /* BluetoothWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothWhisperTransport.swift; sourceTree = "<group>"; };
 		377D710A2A8EBE16009B416F /* BluetoothListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothListenTransport.swift; sourceTree = "<group>"; };
 		377D710E2A913BFE009B416F /* TcpListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpListenTransport.swift; sourceTree = "<group>"; };
@@ -318,7 +320,7 @@
 				3712341129E2151100CBF49C /* Binding+Convert.swift */,
 				37D553CB2A10717E00C27888 /* SizePrinter.swift */,
 				37D78A152B2FB50D002494CD /* MakeBinding.swift */,
-				377C01092B7AD47800489C05 /* Data+File.swift */,
+				377C01092B7AD47800489C05 /* Data+JSON.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -397,6 +399,7 @@
 				37CBBD0E2AFB112B006AE49F /* WhisperProfileView.swift */,
 				37D78A172B2FE017002494CD /* WhisperProfileDetailView.swift */,
 				37076DE42B12DB97003AC2FD /* ListenProfileView.swift */,
+				377C010B2B7C1EEF00489C05 /* ShareProfileView.swift */,
 			);
 			path = ProfileViews;
 			sourceTree = "<group>";
@@ -558,6 +561,7 @@
 				376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */,
 				377646C829BACB73002C411C /* MainView.swift in Sources */,
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
+				377C010C2B7C1EEF00489C05 /* ShareProfileView.swift in Sources */,
 				377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */,
 				377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */,
 				37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */,
@@ -570,7 +574,7 @@
 				377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */,
-				377C010A2B7AD47800489C05 /* Data+File.swift in Sources */,
+				377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
 				37CBBD0F2AFB112B006AE49F /* WhisperProfileView.swift in Sources */,
 				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,

@@ -4,6 +4,7 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import Foundation
+import CryptoKit
 
 final class WhisperConversation: Conversation, Encodable, Decodable {
 	private(set) var id: String
@@ -37,14 +38,14 @@ final class WhisperProfile: Encodable, Decodable {
 	private var table: [String: WhisperConversation]
 	private var defaultId: String
 	private var timestamp: Date
-	private var shared: Bool
+	private var password: String
 
 	init(_ profileId: String) {
 		id = profileId
 		table = [:]
 		defaultId = "none"
 		timestamp = Date.now
-		shared = false
+		password = ""
 	}
 
 	func updateFrom(_ profile: WhisperProfile) {
@@ -52,19 +53,6 @@ final class WhisperProfile: Encodable, Decodable {
 		table = profile.table
 		defaultId = profile.defaultId
 		timestamp = profile.timestamp
-	}
-
-	var isShared: Bool {
-		get {
-			return shared
-		}
-		set(val) {
-			guard shared != val else {
-				return
-			}
-			shared = val
-			save()
-		}
 	}
 
 	var fallback: WhisperConversation {
@@ -173,16 +161,18 @@ final class WhisperProfile: Encodable, Decodable {
 		}
 	}
 
-	private func save() {
-		timestamp = Date.now
+	private func save(verb: String = "PUT", localOnly: Bool = false) {
+		if !localOnly {
+			timestamp = Date.now
+		}
 		guard let data = try? JSONEncoder().encode(self) else {
 			fatalError("Cannot encode whisper profile: \(self)")
 		}
 		guard data.saveJsonToDocumentsDirectory("WhisperProfile") else {
 			fatalError("Cannot save whisper profile to Documents directory")
 		}
-		if shared {
-			saveToServer(data: data)
+		if !localOnly && !password.isEmpty {
+			saveToServer(data: data, verb: verb)
 		}
 	}
 
@@ -190,47 +180,93 @@ final class WhisperProfile: Encodable, Decodable {
 		if let data = Data.loadJsonFromDocumentsDirectory("WhisperProfile"),
 		   let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
 		{
-			if profile.id != profileId {
-				logger.warning("Overriding id \(profile.id) with id \(profileId) in loaded whisper profile")
-				profile.id = profileId
-				profile.save()
+			if profileId == profile.id {
+				return profile
 			}
-			return profile
+			logger.warning("Asked to load profile with id \(profileId), deleting saved profile with id \(profile.id)")
+			Data.removeJsonFromDocumentsDirectory("WhisperProfile")
 		}
 		return nil
 	}
 
-	private func saveToServer(data: Data) {
-		guard let url = URL(string: PreferenceData.whisperServer + "/api/v2/whisperProfile/\(id)") else {
+	private func saveToServer(data: Data, verb: String = "PUT") {
+		let path = "/api/v2/whisperProfile" + (verb == "PUT" ? "/\(id)" : "")
+		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for whisper profile upload")
 		}
 		var request = URLRequest(url: url)
-		request.httpMethod = "PUT"
+		request.httpMethod = verb
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = data
-		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-			guard error == nil else {
-				logger.error("Failed to post whisper profile: \(String(describing: error))")
-				return
+		Data.executeJSONRequest(request)
+	}
+
+	func update(_ completionHandler: ((Bool) -> Void)? = nil) {
+		func handler(_ code: Int, _ data: Data) {
+			if code < 200 || code > 300 {
+				completionHandler?(false)
+			} else if let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
+			{
+				self.table = profile.table
+				self.defaultId = profile.defaultId
+				self.timestamp = profile.timestamp
+				save(localOnly: true)
+				completionHandler?(true)
+			} else {
+				completionHandler?(false)
 			}
-			guard let response = response as? HTTPURLResponse else {
-				logger.error("Received non-HTTP response on whisper profile post: \(String(describing: response))")
-				return
-			}
-			if response.statusCode == 204 {
-				logger.info("Successful post of whisper profile")
-				return
-			}
-			logger.error("Received unexpected response on whisper profile post: \(response.statusCode)")
-			guard let data = data,
-				  let body = try? JSONSerialization.jsonObject(with: data),
-				  let obj = body as? [String:String] else {
-				logger.error("Can't deserialize whisper profile post response body: \(String(describing: data))")
-				return
-			}
-			logger.error("Response body of whisper profile post: \(obj)")
 		}
-		logger.info("Posting whisper profile to whisper-server")
-		task.resume()
+		let path = "/api/v2/whisperProfile/\(id)"
+		let token = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
+		guard let url = URL(string: PreferenceData.whisperServer + path) else {
+			fatalError("Can't create URL for whisper profile download")
+		}
+		var request = URLRequest(url: url)
+		request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+		request.httpMethod = "GET"
+		Data.executeJSONRequest(request)
+	}
+
+	func stopSharing() {
+		// reset the profile
+		id = UUID().uuidString
+		password = ""
+		table = [:]
+		defaultId = "none"
+		timestamp = Date.now
+		save()
+	}
+
+	func startSharing(password: String) {
+		self.password = password
+		save(verb: "POST")
+	}
+
+	func loadShared(id: String, password: String, completionHandler: @escaping (Int) -> Void) {
+		func handler(_ code: Int, _ data: Data) {
+			if code < 200 || code > 300 {
+				completionHandler(code)
+			} else if let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
+			{
+				self.id = profile.id
+				self.password = profile.password
+				self.table = profile.table
+				self.defaultId = profile.defaultId
+				self.timestamp = profile.timestamp
+				save(localOnly: true)
+				completionHandler(200)
+			} else {
+				completionHandler(-1)
+			}
+		}
+		let path = "/api/v2/userProfile/\(id)"
+		let token = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
+		guard let url = URL(string: PreferenceData.whisperServer + path) else {
+			fatalError("Can't create URL for whisper profile download")
+		}
+		var request = URLRequest(url: url)
+		request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+		request.httpMethod = "GET"
+		Data.executeJSONRequest(request, handler: handler)
 	}
 }

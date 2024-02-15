@@ -22,6 +22,7 @@ struct ChoiceView: View {
     @State private var showWhisperConversations = false
     @State private var showListenConversations = false
 	@State private var showNoConnection = false
+	@State private var showSharingSheet = false
     @FocusState private var nameEdit: Bool
     
     let nameWidth = CGFloat(350)
@@ -136,7 +137,7 @@ struct ChoiceView: View {
             }
             .background(Color.accentColor)
             .cornerRadius(15)
-            VStack (spacing: 10) {
+            VStack (spacing: 40) {
                 Button(action: {
                     let vc = SFSafariViewController(url: URL(string: "\(website)instructions.html")!)
                     UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
@@ -149,22 +150,19 @@ struct ChoiceView: View {
                 .background(Color.accentColor)
                 .cornerRadius(15)
                 HStack {
-                    HStack {
-                        Spacer()
-                        Button("About", action: {
-                            let vc = SFSafariViewController(url: URL(string: website)!)
-                            UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
-                        })
-                    }.frame(width: choiceButtonWidth)
-                    Spacer().frame(width: choiceButtonWidth/3)
-                    HStack {
-                        Button("Support", action: {
-                            let vc = SFSafariViewController(url: URL(string: "\(website)support.html")!)
-                            UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
-                        })
-                        Spacer()
-                    }.frame(width: choiceButtonWidth)
-                }
+					Button("Profile Sharing", action: { showSharingSheet = true })
+						.sheet(isPresented: $showSharingSheet, content: { ShareProfileView() })
+					Spacer()
+					Button("About", action: {
+						let vc = SFSafariViewController(url: URL(string: website)!)
+						UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
+					})
+                    Spacer()
+					Button("Support", action: {
+						let vc = SFSafariViewController(url: URL(string: "\(website)support.html")!)
+						UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
+					})
+				}.frame(width: nameWidth)
             }
         }
         .alert("First Launch", isPresented: $credentialsMissing) {
