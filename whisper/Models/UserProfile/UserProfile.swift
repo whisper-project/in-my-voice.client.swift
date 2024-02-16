@@ -101,7 +101,9 @@ final class UserProfile: Identifiable, ObservableObject {
 		}
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
-		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
+		if verb == "PUT" {
+			request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
+		}
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = data
 		Data.executeJSONRequest(request)
