@@ -25,7 +25,6 @@ struct ShareProfileView: View {
 				StopSharingView()
 			}
 		}
-		.popover(isPresented: $showStatus, content: statusView)
     }
 
 	func StartSharingView() -> some View {
@@ -50,10 +49,18 @@ struct ShareProfileView: View {
 			Section("Receive a shared profile") {
 				Text("To receive a profile from another device, first fill these fields:")
 				TextField(text: $receivedId, label: { Text("Profile ID") })
+					.autocorrectionDisabled()
+					.textInputAutocapitalization(.never)
 				TextField(text: $receivedPassword, label: { Text("Profile Secret") })
-				Text("Once you've filled the fields, click this button:")
-				Button(action: { receiveSharing() }, label: { Text("Receive Profile") })
-					.disabled(receivedId.isEmpty || receivedPassword.isEmpty)
+					.autocorrectionDisabled()
+					.textInputAutocapitalization(.never)
+				if (showStatus) {
+					statusView()
+				} else {
+					Text("Once you've filled the fields, click this button:")
+					Button(action: { receiveSharing() }, label: { Text("Receive Profile") })
+						.disabled(receivedId.isEmpty || receivedPassword.isEmpty)
+				}
 			}
 		}
 	}
@@ -111,12 +118,10 @@ struct ShareProfileView: View {
 		if inProgress {
 			ProgressView(label: { Text("Fetching profile...") })
 		} else {
-			VStack {
+			VStack(spacing: 5) {
 				Text("Sharing Error").font(.headline)
 				Text(errorMessage)
-#if targetEnvironment(macCatalyst)
-				Button(action: { dismiss() }, label: { Text("Close") } )
-#endif
+				Button(action: { showStatus = false }, label: { Text("OK") } )
 			}
 		}
 	}

@@ -64,6 +64,7 @@ struct WhisperProfileView: View {
 	}
 
     func updateFromProfile() {
+		profile.update()
         conversations = profile.conversations()
         defaultConversation = profile.fallback
     }

@@ -41,7 +41,11 @@ final class UserProfile: Identifiable, ObservableObject {
 		self.id = id
 		self.name = name
 		userPassword = password
-		serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
+		if password.isEmpty {
+			serverPassword = ""
+		} else {
+			serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
+		}
 		whisperProfile = WhisperProfile.load(id, serverPassword: serverPassword) ?? WhisperProfile(id)
 		listenProfile = ListenProfile.load(id) ?? ListenProfile(id)
 	}
@@ -120,8 +124,10 @@ final class UserProfile: Identifiable, ObservableObject {
 			   let value = obj as? [String:String],
 			   let name = value["name"]
 			{
-				self.name = name
-				save(localOnly: true)
+				DispatchQueue.main.async {
+					self.name = name
+					self.save(localOnly: true)
+				}
 			}
 		}
 		let path = "/api/v2/userProfile/\(id)"
@@ -149,8 +155,9 @@ final class UserProfile: Identifiable, ObservableObject {
 		// set the password, post the profile to server
 		let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%_+-="
 		userPassword = String((0..<20).map{ _ in letters.randomElement()! })
+		serverPassword = SHA256.hash(data: Data(userPassword.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		save(verb: "POST")
-		whisperProfile.startSharing(serverPassword: userPassword)
+		whisperProfile.startSharing(serverPassword: serverPassword)
 	}
 
 	func receiveSharing(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
@@ -159,6 +166,9 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	func loadShared(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
+		guard !password.isEmpty else {
+			fatalError("Can't use an empty password with a shared profile")
+		}
 		let serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		var doingNameUpdate = true
 		var newName = name
@@ -169,12 +179,14 @@ final class UserProfile: Identifiable, ObservableObject {
 					doingNameUpdate = false
 					whisperProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
 				} else {
-					self.id = id
-					self.name = newName
-					self.userPassword = password
-					self.serverPassword = serverPassword
-					save(localOnly: true)
-					completionHandler(true, "The profile was successfully shared to this device")
+					DispatchQueue.main.async {
+						self.id = id
+						self.name = newName
+						self.userPassword = password
+						self.serverPassword = serverPassword
+						self.save(localOnly: true)
+						completionHandler(true, "The profile was successfully shared to this device")
+					}
 				}
 			case 403:
 				completionHandler(false, "You have specified an incorrect password")

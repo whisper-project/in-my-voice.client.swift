@@ -201,23 +201,19 @@ final class WhisperProfile: Codable {
 		Data.executeJSONRequest(request)
 	}
 
-	func update(_ completionHandler: ((Bool) -> Void)? = nil) {
+	func update() {
 		guard !serverPassword.isEmpty else {
 			// not a shared profile, so no way to update
 			return
 		}
 		func handler(_ code: Int, _ data: Data) {
-			if code < 200 || code > 300 {
-				completionHandler?(false)
-			} else if let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
+			if code == 200,
+			   let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
 			{
 				self.table = profile.table
 				self.defaultId = profile.defaultId
 				self.timestamp = profile.timestamp
 				save(localOnly: true)
-				completionHandler?(true)
-			} else {
-				completionHandler?(false)
 			}
 		}
 		let path = "/api/v2/whisperProfile/\(id)"
@@ -262,7 +258,7 @@ final class WhisperProfile: Codable {
 				completionHandler(-1)
 			}
 		}
-		let path = "/api/v2/userProfile/\(id)"
+		let path = "/api/v2/whisperProfile/\(id)"
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for whisper profile download")
 		}
