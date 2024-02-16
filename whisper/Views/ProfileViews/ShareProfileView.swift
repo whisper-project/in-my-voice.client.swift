@@ -6,6 +6,10 @@
 import SwiftUI
 
 struct ShareProfileView: View {
+#if targetEnvironment(macCatalyst)
+	@Environment(\.dismiss) private var dismiss
+#endif
+
 	@StateObject var profile: UserProfile = UserProfile.shared
 	@State private var receivedId: String = ""
 	@State private var receivedPassword: String = ""
@@ -15,7 +19,7 @@ struct ShareProfileView: View {
 
     var body: some View {
 		VStack {
-			if profile.password.isEmpty {
+			if profile.userPassword.isEmpty {
 				StartSharingView()
 			} else {
 				StopSharingView()
@@ -26,8 +30,17 @@ struct ShareProfileView: View {
 
 	func StartSharingView() -> some View {
 		Form {
+			#if targetEnvironment(macCatalyst)
+			HStack {
+				Text("Profile Sharing is OFF")
+					.font(.headline)
+				Spacer()
+				Button(action: { dismiss() }, label: { Text("Close") } )
+			}
+			#else
 			Text("Profile Sharing is OFF")
 				.font(.headline)
+			#endif
 			Section("Start profile sharing") {
 				Text("To share your profile to another device, click here:")
 				Button(action: { profile.startSharing() }) {
@@ -47,8 +60,17 @@ struct ShareProfileView: View {
 
 	func StopSharingView() -> some View {
 		Form {
+#if targetEnvironment(macCatalyst)
+			HStack {
+				Text("Profile Sharing is ON")
+					.font(.headline)
+				Spacer()
+				Button(action: { dismiss() }, label: { Text("Close") } )
+			}
+#else
 			Text("Profile Sharing is ON")
 				.font(.headline)
+#endif
 			Section("Sharing your profile") {
 				Text("To add your profile to a new device, copy these values to it:")
 				HStack { 
@@ -59,8 +81,8 @@ struct ShareProfileView: View {
 				.buttonStyle(.borderless)
 				HStack {
 					Text("Password:").bold()
-					Text("\(profile.password)").textSelection(.enabled)
-					ShareLink(item: profile.password, label: { Image(systemName: "square.on.square") })
+					Text("\(profile.userPassword)").textSelection(.enabled)
+					ShareLink(item: profile.userPassword, label: { Image(systemName: "square.on.square") })
 				}
 				.buttonStyle(.borderless)
 			}

@@ -33,26 +33,22 @@ struct ListenerInfo: Identifiable {
 	let username: String
 }
 
-final class WhisperProfile: Encodable, Decodable {
+final class WhisperProfile: Codable {
 	var id: String
 	private var table: [String: WhisperConversation]
 	private var defaultId: String
 	private var timestamp: Date
-	private var password: String
+	private var serverPassword: String = ""
+
+	private enum CodingKeys: String, CodingKey {
+		case id, table, defaultId, timestamp
+	}
 
 	init(_ profileId: String) {
 		id = profileId
 		table = [:]
 		defaultId = "none"
 		timestamp = Date.now
-		password = ""
-	}
-
-	func updateFrom(_ profile: WhisperProfile) {
-		id = profile.id
-		table = profile.table
-		defaultId = profile.defaultId
-		timestamp = profile.timestamp
 	}
 
 	var fallback: WhisperConversation {
@@ -171,16 +167,17 @@ final class WhisperProfile: Encodable, Decodable {
 		guard data.saveJsonToDocumentsDirectory("WhisperProfile") else {
 			fatalError("Cannot save whisper profile to Documents directory")
 		}
-		if !localOnly && !password.isEmpty {
+		if !localOnly && !serverPassword.isEmpty {
 			saveToServer(data: data, verb: verb)
 		}
 	}
 
-	static func load(_ profileId: String) -> WhisperProfile? {
+	static func load(_ profileId: String, serverPassword: String) -> WhisperProfile? {
 		if let data = Data.loadJsonFromDocumentsDirectory("WhisperProfile"),
 		   let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
 		{
 			if profileId == profile.id {
+				profile.serverPassword = serverPassword
 				return profile
 			}
 			logger.warning("Asked to load profile with id \(profileId), deleting saved profile with id \(profile.id)")
@@ -196,6 +193,7 @@ final class WhisperProfile: Encodable, Decodable {
 		}
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
+		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = data
 		Data.executeJSONRequest(request)
@@ -217,12 +215,11 @@ final class WhisperProfile: Encodable, Decodable {
 			}
 		}
 		let path = "/api/v2/whisperProfile/\(id)"
-		let token = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for whisper profile download")
 		}
 		var request = URLRequest(url: url)
-		request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request)
 	}
@@ -230,26 +227,26 @@ final class WhisperProfile: Encodable, Decodable {
 	func stopSharing() {
 		// reset the profile
 		id = UUID().uuidString
-		password = ""
+		serverPassword = ""
 		table = [:]
 		defaultId = "none"
 		timestamp = Date.now
 		save()
 	}
 
-	func startSharing(password: String) {
-		self.password = password
+	func startSharing(serverPassword: String) {
+		self.serverPassword = serverPassword
 		save(verb: "POST")
 	}
 
-	func loadShared(id: String, password: String, completionHandler: @escaping (Int) -> Void) {
+	func loadShared(id: String, serverPassword: String, completionHandler: @escaping (Int) -> Void) {
 		func handler(_ code: Int, _ data: Data) {
 			if code < 200 || code > 300 {
 				completionHandler(code)
 			} else if let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
 			{
-				self.id = profile.id
-				self.password = profile.password
+				self.id = id
+				self.serverPassword = serverPassword
 				self.table = profile.table
 				self.defaultId = profile.defaultId
 				self.timestamp = profile.timestamp
@@ -260,12 +257,11 @@ final class WhisperProfile: Encodable, Decodable {
 			}
 		}
 		let path = "/api/v2/userProfile/\(id)"
-		let token = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for whisper profile download")
 		}
 		var request = URLRequest(url: url)
-		request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 	}

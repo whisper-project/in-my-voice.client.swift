@@ -25,12 +25,14 @@ final class UserProfile: Identifiable, ObservableObject {
 	@Published private(set) var name: String = ""
 	@Published private(set) var whisperProfile: WhisperProfile
 	@Published private(set) var listenProfile: ListenProfile
-	@Published private(set) var password: String
+	@Published private(set) var userPassword: String
+	private var serverPassword: String
 
 	private init() {
 		let profileId = UUID().uuidString
 		id = profileId
-		password = ""
+		userPassword = ""
+		serverPassword = ""
 		whisperProfile = WhisperProfile(profileId)
 		listenProfile = ListenProfile(profileId)
 	}
@@ -38,9 +40,10 @@ final class UserProfile: Identifiable, ObservableObject {
 	private init(id: String, name: String, password: String) {
 		self.id = id
 		self.name = name
-		self.password = password
-		self.whisperProfile = WhisperProfile.load(id) ?? WhisperProfile(id)
-		self.listenProfile = ListenProfile.load(id) ?? ListenProfile(id)
+		userPassword = password
+		serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
+		whisperProfile = WhisperProfile.load(id, serverPassword: serverPassword) ?? WhisperProfile(id)
+		listenProfile = ListenProfile.load(id) ?? ListenProfile(id)
 	}
 
 	var username: String {
@@ -56,15 +59,19 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	private func save(verb: String = "PUT", localOnly: Bool = false) {
-		let value = ["id": id, "name": name, "password": password]
-		guard let data = try? JSONSerialization.data(withJSONObject: value) else {
-			fatalError("Can't encode user profile data: \(value)")
+		let localValue = ["id": id, "name": name, "password": userPassword]
+		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
+			fatalError("Can't encode user profile data: \(localValue)")
 		}
-		guard data.saveJsonToDocumentsDirectory("UserProfile") else {
+		guard localData.saveJsonToDocumentsDirectory("UserProfile") else {
 			fatalError("Can't save user profile data")
 		}
-		if !localOnly && !password.isEmpty {
-			saveToServer(data: data, verb: verb)
+		if !localOnly && !serverPassword.isEmpty {
+			let serverValue = ["id": id, "name": name, "password": serverPassword]
+			guard let serverData = try? JSONSerialization.data(withJSONObject: serverValue) else {
+				fatalError("Can't encode user profile data: \(serverValue)")
+			}
+			saveToServer(data: serverData, verb: verb)
 		}
 	}
 
@@ -94,42 +101,39 @@ final class UserProfile: Identifiable, ObservableObject {
 		}
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
+		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = data
 		Data.executeJSONRequest(request)
 	}
 
 	func update() {
-		whisperProfile.update()
 		func handler(_ code: Int, _ data: Data) {
 			if code == 200,
 			   let obj = try? JSONSerialization.jsonObject(with: data),
 			   let value = obj as? [String:String],
-			   let id = value["id"],
-			   let name = value["name"],
-			   let password = value["password"]
+			   let name = value["name"]
 			{
-				self.id = id
 				self.name = name
-				self.password = password
 				save(localOnly: true)
 			}
 		}
 		let path = "/api/v2/userProfile/\(id)"
-		let token = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
+		let token = SHA256.hash(data: Data(userPassword.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for user profile download")
 		}
 		var request = URLRequest(url: url)
-		request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+		request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
+		whisperProfile.update()
 	}
 
 	func stopSharing() {
 		// reset the profile
 		id = UUID().uuidString
-		password = ""
+		userPassword = ""
 		whisperProfile = WhisperProfile(id)
 		listenProfile = ListenProfile(id)
 		save()
@@ -138,9 +142,9 @@ final class UserProfile: Identifiable, ObservableObject {
 	func startSharing() {
 		// set the password, post the profile to server
 		let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%_+-="
-		password = String((0..<20).map{ _ in letters.randomElement()! })
+		userPassword = String((0..<20).map{ _ in letters.randomElement()! })
 		save(verb: "POST")
-		whisperProfile.startSharing(password: password)
+		whisperProfile.startSharing(serverPassword: userPassword)
 	}
 
 	func receiveSharing(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
@@ -149,51 +153,53 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	func loadShared(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
-		var update1: Int?
+		let serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
+		var doingNameUpdate = true
+		var newName = name
 		func dualHandler(_ result: Int) {
-			if update1 == nil {
-				update1 = result
-			} else {
-				if update1 == 200 && result == 200 {
-					completionHandler(true, "Profile received successfully")
-				} else if update1 == 403 || result == 403 {
-					completionHandler(false, "Incorrect password")
-				} else if update1 == 404 || result == 404 {
-					completionHandler(false, "Unknown Profile ID")
-				} else if update1 == -1 || result == -1 {
-					completionHandler(false, "Received invalid data from the whisper server")
+			switch result {
+			case 200:
+				if doingNameUpdate {
+					doingNameUpdate = false
+					whisperProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
 				} else {
-					completionHandler(false, "Failed to retrieve profile: error codes \(update1!) and \(result)")
+					self.id = id
+					self.name = newName
+					self.userPassword = password
+					self.serverPassword = serverPassword
+					save(localOnly: true)
+					completionHandler(true, "Profile received successfully")
 				}
+			case 403:
+				completionHandler(false, "Incorrect password")
+			case 404:
+				completionHandler(false, "Unknown Profile ID")
+			case -1:
+				completionHandler(false, "Received invalid data from the whisper server")
+			default:
+				completionHandler(false, "Failed to retrieve profile: error code \(result)")
 			}
 		}
-		whisperProfile.loadShared(id: id, password: password, completionHandler: dualHandler)
-		func handler(_ code: Int, _ data: Data) {
+		func nameHandler(_ code: Int, _ data: Data) {
 			if code < 200 || code >= 300 {
 				dualHandler(code)
 			} else if let obj = try? JSONSerialization.jsonObject(with: data),
 					  let value = obj as? [String:String],
-					  let id = value["id"],
-					  let name = value["name"],
-					  let password = value["password"]
+					  let name = value["name"]
 			{
-				self.id = id
-				self.name = name
-				self.password = password
-				save(localOnly: true)
+				newName = name
 				dualHandler(200)
 			} else {
 				dualHandler(-1)
 			}
 		}
 		let path = "/api/v2/userProfile/\(id)"
-		let token = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for user profile download")
 		}
 		var request = URLRequest(url: url)
-		request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.httpMethod = "GET"
-		Data.executeJSONRequest(request, handler: handler)
+		Data.executeJSONRequest(request, handler: nameHandler)
 	}
 }
