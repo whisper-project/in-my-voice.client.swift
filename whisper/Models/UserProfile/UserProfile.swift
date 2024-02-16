@@ -108,6 +108,10 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	func update() {
+		guard !serverPassword.isEmpty else {
+			// not a shared profile, so no way to update
+			return
+		}
 		func handler(_ code: Int, _ data: Data) {
 			if code == 200,
 			   let obj = try? JSONSerialization.jsonObject(with: data),
@@ -119,12 +123,11 @@ final class UserProfile: Identifiable, ObservableObject {
 			}
 		}
 		let path = "/api/v2/userProfile/\(id)"
-		let token = SHA256.hash(data: Data(userPassword.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for user profile download")
 		}
 		var request = URLRequest(url: url)
-		request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 		whisperProfile.update()
@@ -134,6 +137,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		// reset the profile
 		id = UUID().uuidString
 		userPassword = ""
+		serverPassword = ""
 		whisperProfile = WhisperProfile(id)
 		listenProfile = ListenProfile(id)
 		save()
@@ -168,16 +172,18 @@ final class UserProfile: Identifiable, ObservableObject {
 					self.userPassword = password
 					self.serverPassword = serverPassword
 					save(localOnly: true)
-					completionHandler(true, "Profile received successfully")
+					completionHandler(true, "The profile was successfully shared to this device")
 				}
 			case 403:
-				completionHandler(false, "Incorrect password")
+				completionHandler(false, "You have specified an incorrect password")
 			case 404:
-				completionHandler(false, "Unknown Profile ID")
+				completionHandler(false, "There is no profile with that Profile ID")
+			case 409:
+				completionHandler(false, "This profile is already shared from another device? Please report a bug.")
 			case -1:
-				completionHandler(false, "Received invalid data from the whisper server")
+				completionHandler(false, "The whisper server returned invalid profile data. Please report a bug.")
 			default:
-				completionHandler(false, "Failed to retrieve profile: error code \(result)")
+				completionHandler(false, "There was a problem on the Whisper server: error code \(result).  Please try again.")
 			}
 		}
 		func nameHandler(_ code: Int, _ data: Data) {

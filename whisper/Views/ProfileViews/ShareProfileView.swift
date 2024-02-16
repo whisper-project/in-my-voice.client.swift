@@ -14,8 +14,8 @@ struct ShareProfileView: View {
 	@State private var receivedId: String = ""
 	@State private var receivedPassword: String = ""
 	@State private var showStatus: Bool = false
-	@State private var success: Bool = true
-	@State private var message: String = "The profile was received"
+	@State private var inProgress: Bool = false
+	@State private var errorMessage: String = ""
 
     var body: some View {
 		VStack {
@@ -25,7 +25,7 @@ struct ShareProfileView: View {
 				StopSharingView()
 			}
 		}
-		.alert("Sharing Status", isPresented: $showStatus, actions: { }, message: { Text(self.message) })
+		.popover(isPresented: $showStatus, content: statusView)
     }
 
 	func StartSharingView() -> some View {
@@ -50,7 +50,7 @@ struct ShareProfileView: View {
 			Section("Receive a shared profile") {
 				Text("To receive a profile from another device, first fill these fields:")
 				TextField(text: $receivedId, label: { Text("Profile ID") })
-				TextField(text: $receivedPassword, label: { Text("Password") })
+				TextField(text: $receivedPassword, label: { Text("Profile Secret") })
 				Text("Once you've filled the fields, click this button:")
 				Button(action: { receiveSharing() }, label: { Text("Receive Profile") })
 					.disabled(receivedId.isEmpty || receivedPassword.isEmpty)
@@ -80,7 +80,7 @@ struct ShareProfileView: View {
 				}
 				.buttonStyle(.borderless)
 				HStack {
-					Text("Password:").bold()
+					Text("Profile Secret:").bold()
 					Text("\(profile.userPassword)").textSelection(.enabled)
 					ShareLink(item: profile.userPassword, label: { Image(systemName: "square.on.square") })
 				}
@@ -96,13 +96,29 @@ struct ShareProfileView: View {
 	}
 
 	func receiveSharing() {
-		profile.receiveSharing(id: receivedId, 
+		self.showStatus = true
+		self.inProgress = true
+		profile.receiveSharing(id: receivedId,
 							   password: receivedPassword,
 							   completionHandler: { success, message in
-			self.success = success
-			self.message = message
-			self.showStatus = true
+			self.errorMessage = message
+			self.inProgress = false
+			self.showStatus = !success
 		})
+	}
+
+	@ViewBuilder func statusView() -> some View {
+		if inProgress {
+			ProgressView(label: { Text("Fetching profile...") })
+		} else {
+			VStack {
+				Text("Sharing Error").font(.headline)
+				Text(errorMessage)
+#if targetEnvironment(macCatalyst)
+				Button(action: { dismiss() }, label: { Text("Close") } )
+#endif
+			}
+		}
 	}
 }
 

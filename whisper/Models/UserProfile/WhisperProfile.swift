@@ -200,6 +200,10 @@ final class WhisperProfile: Codable {
 	}
 
 	func update(_ completionHandler: ((Bool) -> Void)? = nil) {
+		guard !serverPassword.isEmpty else {
+			// not a shared profile, so no way to update
+			return
+		}
 		func handler(_ code: Int, _ data: Data) {
 			if code < 200 || code > 300 {
 				completionHandler?(false)
