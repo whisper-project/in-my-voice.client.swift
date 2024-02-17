@@ -25,6 +25,7 @@ struct ShareProfileView: View {
 				StopSharingView()
 			}
 		}
+		.onDisappear(perform: profile.update)
     }
 
 	func StartSharingView() -> some View {

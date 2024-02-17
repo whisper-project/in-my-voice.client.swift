@@ -92,7 +92,7 @@ extension Data {
 				}
 			}
 		}
-		logger.info("Executing \(request)")
+		logger.info("Executing \(request.httpMethod!) \(request.url!)")
 		task.resume()
 	}
 }

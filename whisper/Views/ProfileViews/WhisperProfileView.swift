@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct WhisperProfileView: View {
+	@Environment(\.scenePhase) private var scenePhase
 	#if targetEnvironment(macCatalyst)
 	@Environment(\.dismiss) private var dismiss
 	#endif
@@ -14,8 +15,7 @@ struct WhisperProfileView: View {
 
     @State private var conversations: [WhisperConversation] = []
     @State private var defaultConversation: WhisperConversation?
-
-	private let profile = UserProfile.shared.whisperProfile
+	@StateObject private var profile = UserProfile.shared
 
     var body: some View {
 		NavigationStack {
@@ -38,7 +38,7 @@ struct WhisperProfileView: View {
 					}
 				}
 				.onDelete { indexSet in
-					indexSet.forEach{ profile.delete(conversations[$0]) }
+					indexSet.forEach{ profile.whisperProfile.delete(conversations[$0]) }
 					updateFromProfile()
 				}
 			}
@@ -51,22 +51,21 @@ struct WhisperProfileView: View {
 				Button(action: { dismiss() }, label: { Text("Close") } )
 				#endif
 			}
-			.onAppear {
-				updateFromProfile()
-			}
+			.onChange(of: profile.timestamp, initial: true, updateFromProfile)
         }
+		.onChange(of: scenePhase, initial: true, profile.update)
+		.onDisappear(perform: profile.update)
     }
 
 	func addConversation() {
 		logger.info("Creating new conversation")
-		profile.new()
+		profile.whisperProfile.new()
 		updateFromProfile()
 	}
 
     func updateFromProfile() {
-		profile.update()
-        conversations = profile.conversations()
-        defaultConversation = profile.fallback
+		conversations = profile.whisperProfile.conversations()
+		defaultConversation = profile.whisperProfile.fallback
     }
 }
 

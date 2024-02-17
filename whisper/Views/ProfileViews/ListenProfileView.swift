@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct ListenProfileView: View {
+	@Environment(\.scenePhase) private var scenePhase
 	#if targetEnvironment(macCatalyst)
 	@Environment(\.dismiss) private var dismiss
 	#endif
@@ -13,8 +14,7 @@ struct ListenProfileView: View {
 	var maybeListen: ((ListenConversation?) -> Void)?
 
     @State private var conversations: [ListenConversation] = []
-
-	private let profile = UserProfile.shared.listenProfile
+	@StateObject private var profile = UserProfile.shared
 
     var body: some View {
 		NavigationStack {
@@ -31,7 +31,7 @@ struct ListenProfileView: View {
 								}
 								Button("Delete", systemImage: "delete.left") {
 									logger.info("Hit delete button on \(c.id) (\(c.name))")
-									profile.delete(c.id)
+									profile.listenProfile.delete(c.id)
 									updateFromProfile()
 								}
 							}
@@ -53,14 +53,14 @@ struct ListenProfileView: View {
 			}
 			#endif
 			.padding(10)
-			.onAppear {
-				updateFromProfile()
-			}
+			.onChange(of: profile.timestamp, initial: true, updateFromProfile)
 		}
+		.onChange(of: scenePhase, initial: true, profile.update)
+		.onDisappear(perform: profile.update)
     }
     
     func updateFromProfile() {
-        conversations = profile.conversations()
+		conversations = profile.listenProfile.conversations()
     }
 }
 

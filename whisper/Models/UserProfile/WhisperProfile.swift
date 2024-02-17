@@ -37,7 +37,7 @@ final class WhisperProfile: Codable {
 	private var id: String
 	private var table: [String: WhisperConversation]
 	private var defaultId: String
-	private var timestamp: Date
+	private var timestamp: Int
 	private var serverPassword: String = ""
 
 	private enum CodingKeys: String, CodingKey {
@@ -48,12 +48,13 @@ final class WhisperProfile: Codable {
 		id = profileId
 		table = [:]
 		defaultId = "none"
-		timestamp = Date.now
+		timestamp = Int(Date.now.timeIntervalSince1970)
+		ensureFallback()
 	}
 
 	var fallback: WhisperConversation {
 		get {
-			return ensureDefault()
+			return ensureFallback()
 		}
 		set(c) {
 			guard c.id != defaultId else {
@@ -64,13 +65,13 @@ final class WhisperProfile: Codable {
 				fatalError("Tried to set default whisper conversation to one not in whisper table")
 			}
 			defaultId = existing.id
-			timestamp = Date.now
+			timestamp = Int(Date.now.timeIntervalSince1970)
 			save()
 		}
 	}
 
 	// make sure there is a default conversation, and return it
-	@discardableResult private func ensureDefault() -> WhisperConversation {
+	@discardableResult private func ensureFallback() -> WhisperConversation {
 		if let c = table[defaultId] {
 			return c
 		} else if let firstC = table.first?.value {
@@ -94,7 +95,7 @@ final class WhisperProfile: Codable {
 	}
 
 	func conversations() -> [WhisperConversation] {
-		ensureDefault()
+		ensureFallback()
 		let sorted = Array(table.values).sorted()
 		return sorted
 	}
@@ -150,7 +151,7 @@ final class WhisperProfile: Codable {
 		logger.info("Removing whisper conversation \(conversation.id) (\(conversation.name))")
 		if table.removeValue(forKey: conversation.id) != nil {
 			if (defaultId == conversation.id) {
-				ensureDefault()
+				ensureFallback()
 			} else {
 				save()
 			}
@@ -159,7 +160,7 @@ final class WhisperProfile: Codable {
 
 	private func save(verb: String = "PUT", localOnly: Bool = false) {
 		if !localOnly {
-			timestamp = Date.now
+			timestamp = Int(Date.now.timeIntervalSince1970)
 		}
 		guard let data = try? JSONEncoder().encode(self) else {
 			fatalError("Cannot encode whisper profile: \(self)")
@@ -201,7 +202,7 @@ final class WhisperProfile: Codable {
 		Data.executeJSONRequest(request)
 	}
 
-	func update() {
+	func update(_ notifyChange: (() -> Void)? = nil) {
 		guard !serverPassword.isEmpty else {
 			// not a shared profile, so no way to update
 			return
@@ -214,6 +215,7 @@ final class WhisperProfile: Codable {
 				self.defaultId = profile.defaultId
 				self.timestamp = profile.timestamp
 				save(localOnly: true)
+				notifyChange?()
 			}
 		}
 		let path = "/api/v2/whisperProfile/\(id)"
@@ -222,8 +224,9 @@ final class WhisperProfile: Codable {
 		}
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
+		request.setValue("\"\(self.timestamp)\"", forHTTPHeaderField: "If-None-Match")
 		request.httpMethod = "GET"
-		Data.executeJSONRequest(request)
+		Data.executeJSONRequest(request, handler: handler)
 	}
 
 	func stopSharing() {
@@ -232,7 +235,7 @@ final class WhisperProfile: Codable {
 		serverPassword = ""
 		table = [:]
 		defaultId = "none"
-		timestamp = Date.now
+		timestamp = Int(Date.now.timeIntervalSince1970)
 		save()
 	}
 

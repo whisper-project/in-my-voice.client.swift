@@ -83,6 +83,7 @@ struct whisperApp: App {
         WindowGroup {
             MainView(mode: $mode, conversation: $conversation)
                 .onAppear {
+					profile.update()
                     if (mode != .listen) {
                         conversation = nil
                     }

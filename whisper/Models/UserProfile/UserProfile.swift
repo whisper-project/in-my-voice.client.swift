@@ -21,12 +21,13 @@ extension Conversation {
 final class UserProfile: Identifiable, ObservableObject {
 	static private(set) var shared = load() ?? create()
 
-	@Published private(set) var id: String
-	@Published private(set) var name: String = ""
-	@Published private(set) var whisperProfile: WhisperProfile
-	@Published private(set) var listenProfile: ListenProfile
+	private(set) var id: String
+	private(set) var name: String = ""
+	private(set) var whisperProfile: WhisperProfile
+	private(set) var listenProfile: ListenProfile
 	@Published private(set) var userPassword: String
 	private var serverPassword: String
+	@Published private(set) var timestamp = Date.now
 
 	private init() {
 		let profileId = UUID().uuidString
@@ -63,6 +64,7 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	private func save(verb: String = "PUT", localOnly: Bool = false) {
+		timestamp = Date.now
 		let localValue = ["id": id, "name": name, "password": userPassword]
 		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
 			fatalError("Can't encode user profile data: \(localValue)")
@@ -136,9 +138,16 @@ final class UserProfile: Identifiable, ObservableObject {
 		}
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
+		request.setValue("\"\(self.name)\"", forHTTPHeaderField: "If-None-Match")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
-		whisperProfile.update()
+		func notifyChange() {
+			// we want our observed object to change when the whisper profile is updated
+			DispatchQueue.main.async {
+				self.timestamp = Date.now
+			}
+		}
+		whisperProfile.update(notifyChange)
 	}
 
 	func stopSharing() {

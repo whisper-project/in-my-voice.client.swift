@@ -35,6 +35,7 @@ final class ListenProfile: Encodable, Decodable {
 	init(_ profileId: String) {
 		id = profileId
 		table = [:]
+		save()
 	}
 
 	/// The sorted list of listen conversations

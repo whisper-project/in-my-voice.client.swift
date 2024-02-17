@@ -15,7 +15,6 @@ struct ChoiceView: View {
 	@Binding var conversation: (any Conversation)?
     @Binding var transportStatus: TransportStatus
 
-    @State private var username: String = ""
     @State private var newUsername: String = ""
     @State private var showWhisperButtons = true
     @State private var credentialsMissing = false
@@ -24,14 +23,13 @@ struct ChoiceView: View {
 	@State private var showNoConnection = false
 	@State private var showSharingSheet = false
     @FocusState private var nameEdit: Bool
-    
+	@StateObject private var profile = UserProfile.shared
+
     let nameWidth = CGFloat(350)
     let nameHeight = CGFloat(105)
     let choiceButtonWidth = CGFloat(140)
     let choiceButtonHeight = CGFloat(45)
     let website = "https://clickonetwo.github.io/whisper/"
-
-	let profile = UserProfile.shared
 
     var body: some View {
         VStack(spacing: 40) {
@@ -46,7 +44,7 @@ struct ChoiceView: View {
                             .allowsTightening(true)
                         Button("Submit", systemImage: "checkmark.square.fill") { nameEdit = false }
                             .labelStyle(.iconOnly)
-                            .disabled(newUsername.isEmpty || newUsername == username)
+                            .disabled(newUsername.isEmpty || newUsername == profile.username)
                     }
                 }
             }
@@ -77,7 +75,7 @@ struct ChoiceView: View {
                             .fontWeight(.bold)
                             .frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
                     }
-                    .background(username == "" ? Color.gray : Color.accentColor)
+                    .background(profile.username == "" ? Color.gray : Color.accentColor)
                     .cornerRadius(15)
                     .disabled(transportStatus == .off)
                     .simultaneousGesture(
@@ -175,7 +173,8 @@ struct ChoiceView: View {
 		} message: {
 			Text("You must enable a Bluetooth and/or Wireless connection before you can whisper or listen")
 		}
-        .onAppear { updateFromProfile() }
+		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
+		.onChange(of: scenePhase, initial: true, profile.update)
         .onChange(of: nameEdit) {
             if nameEdit {
                 withAnimation { showWhisperButtons = false }
@@ -183,28 +182,15 @@ struct ChoiceView: View {
                 updateOrRevertProfile()
             }
         }
-        .onChange(of: scenePhase) {
-            switch scenePhase {
-            case .active:
-                logger.log("Reread user name going to choice view foreground")
-                updateFromProfile()
-            case .background, .inactive:
-                break
-            @unknown default:
-                logger.error("Went to unknown phase: \(String(describing: scenePhase))")
-            }
-        }
     }
     
     func updateFromProfile() {
-		profile.update()
-        username = profile.username
-        newUsername = username
-        if username.isEmpty {
-        withAnimation {
-                showWhisperButtons = false
-                nameEdit = true
-            }
+        newUsername = profile.username
+        if profile.username.isEmpty {
+			withAnimation {
+					showWhisperButtons = false
+					nameEdit = true
+				}
         }
     }
     
@@ -214,7 +200,6 @@ struct ChoiceView: View {
             updateFromProfile()
         } else {
             newUsername = proposal
-            username = proposal
             profile.username = proposal
             withAnimation {
                 showWhisperButtons = true
