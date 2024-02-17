@@ -48,7 +48,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		}
 		whisperProfile = WhisperProfile.load(id, serverPassword: serverPassword) ?? WhisperProfile(id)
-		listenProfile = ListenProfile.load(id) ?? ListenProfile(id)
+		listenProfile = ListenProfile.load(id, serverPassword: serverPassword) ?? ListenProfile(id)
 	}
 
 	var username: String {
@@ -151,7 +151,7 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	func stopSharing() {
-		// reset the profile
+		// reset the profile, but leave the name alone
 		id = UUID().uuidString
 		userPassword = ""
 		serverPassword = ""
@@ -167,11 +167,22 @@ final class UserProfile: Identifiable, ObservableObject {
 		serverPassword = SHA256.hash(data: Data(userPassword.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		save(verb: "POST")
 		whisperProfile.startSharing(serverPassword: serverPassword)
+		listenProfile.startSharing(serverPassword: serverPassword)
 	}
 
 	func receiveSharing(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
-		// reset the profile and update from server
-		loadShared(id: id, password: password, completionHandler: completionHandler)
+		// try to update from the server.  If that fails, reset the whisper and listen profiles,
+		// because they may have been loaded successfully from the server.
+		func loadHandler(_ success: Bool, _ message: String) {
+			if !success {
+				userPassword = ""
+				serverPassword = ""
+				whisperProfile = WhisperProfile(self.id)
+				listenProfile = ListenProfile(self.id)
+			}
+			completionHandler(success, message)
+		}
+		loadShared(id: id, password: password, completionHandler: loadHandler)
 	}
 
 	func loadShared(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
@@ -179,14 +190,17 @@ final class UserProfile: Identifiable, ObservableObject {
 			fatalError("Can't use an empty password with a shared profile")
 		}
 		let serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
-		var doingNameUpdate = true
+		var whichUpdate = "name"
 		var newName = name
 		func dualHandler(_ result: Int) {
 			switch result {
 			case 200:
-				if doingNameUpdate {
-					doingNameUpdate = false
+				if whichUpdate == "name" {
+					whichUpdate = "whisper"
 					whisperProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
+				} else if whichUpdate == "whisper" {
+					whichUpdate = "listen"
+					listenProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
 				} else {
 					DispatchQueue.main.async {
 						self.id = id
