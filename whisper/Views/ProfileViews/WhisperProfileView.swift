@@ -13,23 +13,23 @@ struct WhisperProfileView: View {
 
 	var maybeWhisper: ((WhisperConversation?) -> Void)?
 
-    @State private var conversations: [WhisperConversation] = []
+    @State private var rows: [Row] = []
     @State private var defaultConversation: WhisperConversation?
 	@StateObject private var profile = UserProfile.shared
 
     var body: some View {
 		NavigationStack {
 			List {
-				ForEach(conversations) { c in
-					NavigationLink(destination: WhisperProfileDetailView(conversation: c)) {
+				ForEach(rows) { r in
+					NavigationLink(destination: WhisperProfileDetailView(conversation: r.conversation)) {
 						HStack(spacing: 15) {
-							Text(c.name)
+							Text(r.id)
 								.lineLimit(nil)
-								.bold(c == defaultConversation)
+								.bold(r.conversation == defaultConversation)
 							Spacer(minLength: 25)
 							Button("Whisper", systemImage: "icloud.and.arrow.up") {
-								logger.info("Hit whisper button on \(c.id) (\(c.name))")
-								maybeWhisper?(c)
+								logger.info("Hit whisper button on \(r.conversation.id) (\(r.id))")
+								maybeWhisper?(r.conversation)
 							}
 							.labelStyle(.iconOnly)
 							.buttonStyle(.bordered)
@@ -38,6 +38,7 @@ struct WhisperProfileView: View {
 					}
 				}
 				.onDelete { indexSet in
+					let conversations = rows.map{r in return r.conversation}
 					indexSet.forEach{ profile.whisperProfile.delete(conversations[$0]) }
 					updateFromProfile()
 				}
@@ -57,14 +58,19 @@ struct WhisperProfileView: View {
 		.onDisappear(perform: profile.update)
     }
 
-	func addConversation() {
+	private func addConversation() {
 		logger.info("Creating new conversation")
 		profile.whisperProfile.new()
 		updateFromProfile()
 	}
 
-    func updateFromProfile() {
-		conversations = profile.whisperProfile.conversations()
+	private struct Row: Identifiable {
+		let id: String
+		let conversation: WhisperConversation
+	}
+
+    private func updateFromProfile() {
+		rows = profile.whisperProfile.conversations().map{ c in return Row(id: c.name, conversation: c) }
 		defaultConversation = profile.whisperProfile.fallback
     }
 }
