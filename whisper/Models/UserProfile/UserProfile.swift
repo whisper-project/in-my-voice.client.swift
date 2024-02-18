@@ -148,6 +148,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			}
 		}
 		whisperProfile.update(notifyChange)
+		listenProfile.update(notifyChange)
 	}
 
 	func stopSharing() {
