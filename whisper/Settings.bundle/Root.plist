@@ -8,26 +8,6 @@
 	<array>
 		<dict>
 			<key>Type</key>
-			<string>PSToggleSwitchSpecifier</string>
-			<key>Title</key>
-			<string>Remember name from last session</string>
-			<key>Key</key>
-			<string>remember_name_preference</string>
-			<key>DefaultValue</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>Type</key>
-			<string>PSToggleSwitchSpecifier</string>
-			<key>Title</key>
-			<string>Whisperer requires Bluetooth Listeners to pair</string>
-			<key>Key</key>
-			<string>listener_authentication_preference</string>
-			<key>DefaultValue</key>
-			<false/>
-		</dict>
-		<dict>
-			<key>Type</key>
 			<string>PSMultiValueSpecifier</string>
 			<key>Title</key>
 			<string>Listener sees newest whisper in</string>
@@ -48,9 +28,15 @@
 		</dict>
 		<dict>
 			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
+			<string>ElevenLabs Speech Generation</string>
+		</dict>
+		<dict>
+			<key>Type</key>
 			<string>PSTextFieldSpecifier</string>
 			<key>Title</key>
-			<string>ElevenLabs API Key</string>
+			<string>API Key</string>
 			<key>Key</key>
 			<string>elevenlabs_api_key_preference</string>
 		</dict>
@@ -58,7 +44,7 @@
 			<key>Type</key>
 			<string>PSTextFieldSpecifier</string>
 			<key>Title</key>
-			<string>ElevenLabs Voice ID</string>
+			<string>Voice ID</string>
 			<key>Key</key>
 			<string>elevenlabs_voice_id_preference</string>
 		</dict>
@@ -66,7 +52,7 @@
 			<key>Type</key>
 			<string>PSMultiValueSpecifier</string>
 			<key>Title</key>
-			<string>ElevenLabs Latency Reduction</string>
+			<string>Latency Reduction</string>
 			<key>Key</key>
 			<string>elevenlabs_latency_reduction_preference</string>
 			<key>DefaultValue</key>

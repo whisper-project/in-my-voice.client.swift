@@ -13,12 +13,19 @@ enum TransportStatus {
     case on
 }
 
-enum TransportKind {
-	case local		// Bluetooth
-	case global		// Internet
-}
+enum TransportKind: CustomStringConvertible {
+	case local
+	case global
 
-typealias TransportUrl = String?
+	var description: String {
+		switch self {
+		case .local:
+			return "local"
+		case .global:
+			return "global"
+		}
+	}
+}
 
 protocol TransportFactory {
     associatedtype Publisher: PublishTransport
@@ -28,24 +35,20 @@ protocol TransportFactory {
     
     var statusSubject: CurrentValueSubject<TransportStatus, Never> { get }
     
-    func publisher(_ publisherUrl: TransportUrl) -> Publisher
-    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber
+    func publisher(_ conversation: WhisperConversation) -> Publisher
+    func subscriber(_ conversation: ListenConversation?) -> Subscriber
 }
 
 protocol TransportRemote: Identifiable {
-    var id: String { get }
-    var name: String { get }
+	var id: String { get }
 	var kind: TransportKind { get }
 }
 
-typealias TransportSessionId = String
-
 protocol Transport {
     associatedtype Remote: TransportRemote
-    
-    var addRemoteSubject: PassthroughSubject<Remote, Never> { get }
-    var dropRemoteSubject: PassthroughSubject<Remote, Never> { get }
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> { get }
+
+    var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> { get }
+	var lostRemoteSubject: PassthroughSubject<Remote, Never> { get }
 
     func start(failureCallback: @escaping (String) -> Void)
     func stop()
@@ -53,15 +56,25 @@ protocol Transport {
     func goToBackground()
     func goToForeground()
     
-    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk])
+    func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk)
 
     func drop(remote: Remote)
 }
 
 protocol PublishTransport: Transport {
-    func publish(chunks: [TextProtocol.ProtocolChunk])
+	init(_ conversation: WhisperConversation)
+
+	func authorize(remote: Remote)
+	func deauthorize(remote: Remote)
+
+    func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk])
+    func publish(chunks: [WhisperProtocol.ProtocolChunk])
 }
 
 protocol SubscribeTransport: Transport {
-    func subscribe(remote: Remote)
+	init(_ conversation: ListenConversation?)
+
+	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> { get }
+
+	func subscribe(remote: Remote, conversation: ListenConversation)
 }

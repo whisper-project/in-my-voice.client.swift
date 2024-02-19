@@ -11,20 +11,23 @@ final class TcpListenTransport: SubscribeTransport {
     // MARK: Protocol properties and methods
     typealias Remote = Whisperer
     
-    var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
-    
+    var lostRemoteSubject: PassthroughSubject<Remote, Never> = .init()
+	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
+	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
+
     func start(failureCallback: @escaping (String) -> Void) {
         logger.log("Starting TCP listen transport")
         self.failureCallback = failureCallback
-        self.authenticator = TcpAuthenticator(mode: .listen, publisherId: publisherId, callback: receiveAuthError)
-        openChannel()
+		self.authenticator = TcpAuthenticator(mode: .listen,
+											  conversationId: conversation.id,
+											  conversationName: conversation.name,
+											  callback: receiveAuthError)
+        openControlChannel()
     }
     
     func stop() {
         logger.info("Stopping TCP listen transport")
-        closeChannel()
+        closeChannels()
     }
     
     func goToBackground() {
@@ -33,67 +36,77 @@ final class TcpListenTransport: SubscribeTransport {
     func goToForeground() {
     }
     
-    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
-        guard let remote = candidates[remote.id] else {
-            logger.error("Ignoring request to send chunk to a non-candidate: \(remote.id)")
+    func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
+        guard let target = remotes[remote.id] else {
+            logger.error("Ignoring request to send chunk to an unknown \(remote.kind) remote: \(remote.id)")
             return
         }
-        for chunk in chunks {
-            whisperChannel?.publish(remote.id, data: chunk.toString(), callback: receiveErrorInfo)
-        }
+		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
+		controlChannel?.publish(target.id, data: chunk.toString(), callback: receiveErrorInfo)
     }
     
     func drop(remote: Remote) {
-        guard candidates[remote.id] != nil else {
-            logger.error("Ignoring request to drop a non-candidate: \(remote.id)")
-            return
+        guard remotes[remote.id] != nil else {
+            fatalError("Ignoring request to drop an unknown remote: \(remote.id)")
         }
-        // we only ever have one candidate and that's the whisperer.
-        // Dropping the whisperer is a mistake.
-        failureCallback?("Whisperer requested a disconnect")
+		removeCandidate(remote, sendDrop: true)
     }
     
-    func subscribe(remote: Remote) {
-        // since we only ever have one candidate,
-        // there's nothing to do here, because
-        // we are already subscribed.
+	func subscribe(remote: Remote, conversation: ListenConversation) {
+        guard let remote = remotes[remote.id] else {
+            logger.error("Ignoring request to subscribe to an unknown \(remote.kind) remote: \(remote.id)")
+            return
+        }
+		if whisperer === remote {
+			logger.error("Ignoring duplicate subscribe")
+			return
+		} else if let w = whisperer {
+			fatalError("Got subscribe request to \(remote.id) but already subscribed to \(w.id)")
+		}
+		guard self.conversation == conversation else {
+			fatalError("Can't subscribe to \(conversation.id): initialized with \(self.conversation.id)")
+		}
+        whisperer = remote
+		openContentChannel(remote: remote)
+		for remote in Array(remotes.values) {
+			if remote !== whisperer {
+				drop(remote: remote)
+			}
+		}
     }
     
     // MARK: Internal types, properties, and initialization
     final class Whisperer: TransportRemote {
-        var id: String
-        var name: String
-		var kind: TransportKind = .global
+        let id: String
+		let kind: TransportKind = .global
 
-        fileprivate init(id: String, name: String) {
+		fileprivate var contentId = ""
+
+        fileprivate init(id: String) {
             self.id = id
-            self.name = name
         }
     }
     
     private var failureCallback: ((String) -> Void)?
     private var clientId: String
-    private var publisherId: String
+    private var conversation: ListenConversation
     private var authenticator: TcpAuthenticator!
-    private var client: ARTRealtime!
+    private var client: ARTRealtime?
     private var channelName: String
-    private var whisperChannel: ARTRealtimeChannel?
-    private var candidates: [String:Remote] = [:]
+    private var contentChannel: ARTRealtimeChannel?
+    private var controlChannel: ARTRealtimeChannel?
+    private var remotes: [String:Remote] = [:]
+    private var whisperer: Remote?
 
-    init(_ url: String) {
-		logger.log("Initializing TCP listen transport")
+    init(_ conversation: ListenConversation?) {
+		guard let conversation = conversation else {
+			fatalError("Can't listen over the network without a conversation")
+		}
         self.clientId = PreferenceData.clientId
-        guard let remoteId = PreferenceData.publisherUrlToSessionId(url: url) else {
-            fatalError("Invalid TCP listen url: \(url)")
-        }
-        self.publisherId = remoteId
-        self.channelName = "\(publisherId):whisper"
+        self.conversation = conversation
+		self.channelName = conversation.id
     }
     
-	deinit {
-		logger.log("Destroying TCP listen transport")
-	}
-
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
@@ -103,106 +116,141 @@ final class TcpListenTransport: SubscribeTransport {
     
     private func receiveAuthError(_ reason: String) {
         failureCallback?(reason)
-        closeChannel()
+        closeChannels()
     }
     
-    private func openChannel() {
-        self.client = self.authenticator.getClient()
-        self.client.connection.on(.connected) { _ in
+    private func getClient() -> ARTRealtime {
+        if let client = self.client {
+            return client
+        }
+        let client = self.authenticator.getClient()
+        client.connection.on(.connected) { _ in
             logger.log("TCP listen transport realtime client has connected")
         }
-        self.client.connection.on(.disconnected) { _ in
+        client.connection.on(.disconnected) { _ in
             logger.log("TCP listen transport realtime client has disconnected")
         }
-        whisperChannel = client.channels.get(channelName)
-        whisperChannel?.on(.attached) { stateChange in
-            logger.log("TCP listen transport realtime client has attached the whisper channel")
-        }
-        whisperChannel?.on(.detached) { stateChange in
-            logger.log("TCP listen transport realtime client has detached the whisper channel")
-        }
-        whisperChannel?.attach()
-        whisperChannel?.subscribe(clientId, callback: receiveMessage)
-        whisperChannel?.subscribe("all", callback: receiveMessage)
-        whisperChannel?.presence.subscribe(receivePresence)
-        whisperChannel?.presence.enter(PreferenceData.userName())
+        return client
     }
     
-    private func closeChannel() {
-        whisperChannel?.presence.leave(PreferenceData.userName())
-        whisperChannel?.detach()
-        whisperChannel = nil
+	private func openContentChannel(remote: Remote) {
+		guard !remote.contentId.isEmpty else {
+			fatalError("Can't subscribe to remote with no content ID: \(remote)")
+		}
+		contentChannel = getClient().channels.get(channelName + ":" + remote.contentId)
+        contentChannel?.on(.attached) { stateChange in
+            logger.log("TCP listen transport realtime client has attached the content channel")
+        }
+        contentChannel?.on(.detached) { stateChange in
+            logger.log("TCP listen transport realtime client has detached the content channel")
+        }
+        contentChannel?.attach()
+        contentChannel?.subscribe(clientId, callback: receiveContentMessage)
+        contentChannel?.subscribe("all", callback: receiveContentMessage)
+    }
+    
+    private func openControlChannel() {
+		logger.info("TCP listen transport: open control channel")
+        controlChannel = getClient().channels.get(channelName + ":control")
+        controlChannel?.on(.attached) { stateChange in
+			logger.info("TCP listen transport: attach to control channel")
+        }
+        controlChannel?.on(.detached) { stateChange in
+            logger.log("TCP listen transport: detach from control channel")
+        }
+        controlChannel?.attach()
+        controlChannel?.subscribe(clientId, callback: receiveControlMessage)
+        controlChannel?.subscribe("all", callback: receiveControlMessage)
+		let chunk = WhisperProtocol.ProtocolChunk.listenOffer(conversation)
+		logger.info("TCP listen transport: sending listen offer: \(chunk)")
+		controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
+    }
+    
+    private func closeChannels() {
+		logger.info("TCP listen transport: closing both channels")
+		logger.info("TCP listen transport: publishing drop to \(self.remotes.count) remotes")
+		let chunk = WhisperProtocol.ProtocolChunk.dropping()
+        controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
+        contentChannel?.detach()
+        contentChannel = nil
+        controlChannel?.detach()
+        controlChannel = nil
         client?.close()
         client = nil
     }
-    
-    func receiveMessage(message: ARTMessage) {
-        guard let name = message.name,
-              (name == clientId || name == "all") else {
-            logger.error("Ignoring a message not intended for this client: \(String(describing: message))")
-            return
-        }
-        guard let sender = message.clientId,
-              let remote = candidates[sender] else {
-            logger.error("Ignoring a message from an unknown sender: \(String(describing: message))")
-            return
-        }
+
+	private func removeCandidate(_ remote: Remote, sendDrop: Bool = false) {
+		logger.log("Removing \(remote.kind) remote \(remote.id)")
+		remotes.removeValue(forKey: remote.id)
+		if sendDrop {
+				let chunk = WhisperProtocol.ProtocolChunk.dropping()
+				sendControl(remote: remote, chunk: chunk)
+		}
+	}
+
+	func receiveContentMessage(message: ARTMessage) {
+		guard let remote = remoteFor(message.clientId) else {
+			logger.error("Ignoring a message with a missing client id: \(message)")
+			return
+		}
+		guard let payload = message.data as? String,
+			  let chunk = WhisperProtocol.ProtocolChunk.fromString(payload) else {
+			logger.error("Ignoring a message with a non-chunk payload: \(message)")
+			return
+		}
+		contentSubject.send((remote: remote, chunk: chunk))
+	}
+
+    func receiveControlMessage(message: ARTMessage) {
+		guard let remote = remoteFor(message.clientId) else {
+			logger.error("Ignoring a message with a missing client id: \(message)")
+			return
+		}
         guard let payload = message.data as? String,
-              let chunk = TextProtocol.ProtocolChunk.fromString(payload)
-        else {
-            logger.error("Ignoring a message with a non-chunk payload: \(String(describing: message))")
+              let chunk = WhisperProtocol.ProtocolChunk.fromString(payload) else {
+            logger.error("Ignoring a message with a non-chunk payload: \(message)")
             return
         }
-        if chunk.isDropRequest() {
-            guard chunk.text == clientId else {
-                logger.error("Ignoring a drop request meant for someone else: \(chunk.text)")
+        if chunk.isPresenceMessage() {
+            guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text),
+                  info.clientId == message.clientId
+            else {
+                logger.error("Ignoring a malformed or misdirected packet: \(chunk)")
                 return
             }
-            logger.info("Received a drop request")
-            failureCallback?("Whisperer requested disconnection")
-            return
+            if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
+                switch value {
+				case .dropping:
+					logger.info("Advised of drop from \(remote.kind) remote \(remote.id)")
+					removeCandidate(remote)
+					lostRemoteSubject.send(remote)
+					// no more processing to do on this packet
+					return
+                case .listenAuthYes:
+					logger.info("Capturing content id from \(remote.kind) remote \(remote.id)")
+					let contentId = info.contentId
+					guard !contentId.isEmpty else {
+						fatalError("Received an empty content id in a TCP \(value) message")
+					}
+					remote.contentId = contentId
+                default:
+					break
+                }
+            }
         }
-        receivedChunkSubject.send((remote: remote, chunk: chunk))
+		logger.info("Received control packet: \(chunk)")
+        controlSubject.send((remote: remote, chunk: chunk))
     }
-    
-    func receivePresence(message: ARTPresenceMessage) {
-        guard let remoteId = message.clientId, let name = message.data as? String else {
-            logger.error("Ignoring a presence message missing client or info: \(String(describing: message))")
-            return
-        }
-        guard remoteId == publisherId else {
-            logger.log("Ignoring a presence message not about the whisperer")
-            return
-        }
-        switch message.action {
-        case .present, .enter:
-            guard candidates[remoteId] == nil else {
-                logger.warning("Ignoring present/enter event for existing candidate \(remoteId)")
-                return
-            }
-            let remote = Remote(id: remoteId, name: name)
-            candidates[remoteId] = remote
-            addRemoteSubject.send(remote)
-        case .leave:
-            guard let remote = candidates.removeValue(forKey: remoteId) else {
-                logger.warning("Ignoring leave event for non-candidate \(remoteId)")
-                return
-            }
-            logger.info("The whisperer has left the building")
-            dropRemoteSubject.send(remote)
-        case .update:
-            guard let candidate = candidates[remoteId] else {
-                logger.warning("Ignoring update event for non-candidate \(remoteId)")
-                return
-            }
-            guard candidate.name == name else {
-                logger.error("Ignoring disallowed name update for \(remoteId) from \(candidate.name) to \(name)")
-                return
-            }
-        case .absent:
-            logger.warning("Ignoring absent presence message for \(remoteId): \(String(describing: message))")
-        @unknown default:
-            logger.warning("Ignoring unknown presence message for \(remoteId): \(String(describing: message))")
-        }
-    }
+
+	private func remoteFor(_ clientId: String?) -> Remote? {
+		guard let clientId = clientId else {
+			return nil
+		}
+		if let existing = remotes[clientId] {
+			return existing
+		}
+		let remote = Whisperer(id: clientId)
+		remotes[clientId] = remote
+		return remote
+	}
 }

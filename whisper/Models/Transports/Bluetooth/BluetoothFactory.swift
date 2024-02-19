@@ -7,133 +7,134 @@ import Combine
 import CoreBluetooth
 
 final class BluetoothFactory: NSObject, TransportFactory {
-    typealias Publisher = BluetoothWhisperTransport
-    typealias Subscriber = BluetoothListenTransport
-    
-    static let shared: BluetoothFactory = .init()
-        
-    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
-    
-    var publisherUrl: TransportUrl = nil
-    
-    func publisher(_ publisherUrl: TransportUrl) -> Publisher {
-        if publisherUrl != nil {
-            logger.warning("Ignoring the publisher URL given to the Bluetooth whisper transport")
-        }
-        return Publisher()
-    }
-    
-    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber {
-        if publisherUrl != nil {
-            logger.warning("Ignoring the publisher URL given to the Bluetooth listen transport")
-        }
-        return Subscriber()
-    }
-    
-    var advertisementSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
-    var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
-    var characteristicsSubject: PassthroughSubject<(CBPeripheral, CBService), Never> = .init()
-    var centralSubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
-    var centralUnsubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
-    var readRequestSubject: PassthroughSubject<CBATTRequest, Never> = .init()
-    var writeRequestSubject: PassthroughSubject<[CBATTRequest], Never> = .init()
-    var writeResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
-    var notifyResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
-    var readyToUpdateSubject: PassthroughSubject<(), Never> = .init()
-    var receivedValueSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
-    var disconnectedSubject: PassthroughSubject<CBPeripheral, Never> = .init()
+	typealias Publisher = BluetoothWhisperTransport
+	typealias Subscriber = BluetoothListenTransport
 
-    private var centralManager: CBCentralManager!
-    private var peripheralManager: CBPeripheralManager!
-    
-    private var central_state: CBManagerState = .unknown
-    private var peripheral_state: CBManagerState = .unknown
+	static let shared: BluetoothFactory = .init()
 
-    override init() {
-        super.init()
-        centralManager = .init(delegate: self, queue: .main)
-        peripheralManager = .init(delegate: self, queue: .main)
-    }
-    
-    func connectedPeripherals(forServices: [CBUUID]) -> [CBPeripheral] {
-        return centralManager.retrieveConnectedPeripherals(withServices: forServices)
-    }
-    
-    func scan(forServices: [CBUUID], allow_repeats: Bool = false) {
-        guard !forServices.isEmpty else {
-            fatalError("Can't scan for no services")
-        }
-        centralManager.scanForPeripherals(
-            withServices: forServices,
-            options: [CBCentralManagerScanOptionAllowDuplicatesKey: allow_repeats as NSNumber]
-        )
-    }
-    
-    func stopScan() {
-        logger.log("Stop scanning for whisperers")
-        centralManager.stopScan()
-    }
-    
-    func publish(service: CBMutableService) {
-        peripheralManager.add(service)
-    }
-    
-    func unpublish(service: CBMutableService) {
-        peripheralManager.remove(service)
-    }
-    
-    func unpublishAll() {
-        peripheralManager.removeAllServices()
-    }
-    
-    func advertise(services: [CBUUID], localName: String = BluetoothData.deviceId) {
-        guard !services.isEmpty else {
-            fatalError("Can't advertise no services")
-        }
-        peripheralManager.startAdvertising([
-            CBAdvertisementDataServiceUUIDsKey: services,
-            CBAdvertisementDataLocalNameKey: localName,
-        ])
-    }
-    
-    func stopAdvertising() {
-        peripheralManager.stopAdvertising()
-    }
-    
-    func connect(_ peripheral: CBPeripheral) {
-        peripheral.delegate = self
-        centralManager.connect(peripheral)
-    }
-    
-    func disconnect(_ peripheral: CBPeripheral) {
-        centralManager.cancelPeripheralConnection(peripheral)
-    }
-    
-    func respondToReadRequest(request: CBATTRequest, withCode: CBATTError.Code) {
-        peripheralManager.respond(to: request, withResult: withCode)
-    }
-    
-    func respondToWriteRequest(request: CBATTRequest, withCode: CBATTError.Code) {
-        peripheralManager.respond(to: request, withResult: withCode)
-    }
-    
-    func updateValue(value: Data, characteristic: CBMutableCharacteristic) -> Bool {
-        return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: nil)
-    }
-    
-    func updateValue(value: Data, characteristic: CBMutableCharacteristic, central: CBCentral) -> Bool {
-        return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: [central])
-    }
-    
-    private func compositeStatus() -> TransportStatus {
-        if central_state == .poweredOn && peripheral_state == .poweredOn {
-            return .on
-        } else if central_state == .unauthorized || peripheral_state == .unauthorized {
-            return .disabled
-        } else {
-            return .off
-        }
-    }
+	var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
+
+	func publisher(_ c: WhisperConversation) -> Publisher {
+		return Publisher(c)
+	}
+
+	func subscriber(_ c: ListenConversation?) -> Subscriber {
+		return Subscriber(c)
+	}
+
+	var advertisementSubject: PassthroughSubject<(CBPeripheral, [String: Any]), Never> = .init()
+	var servicesSubject: PassthroughSubject<(CBPeripheral, [CBService]), Never> = .init()
+	var characteristicsSubject: PassthroughSubject<(CBPeripheral, CBService), Never> = .init()
+	var centralSubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
+	var centralUnsubscribedSubject: PassthroughSubject<(CBCentral, CBCharacteristic), Never> = .init()
+	var readRequestSubject: PassthroughSubject<CBATTRequest, Never> = .init()
+	var writeRequestSubject: PassthroughSubject<[CBATTRequest], Never> = .init()
+	var writeResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
+	var notifyResultSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
+	var readyToUpdateSubject: PassthroughSubject<(), Never> = .init()
+	var receivedValueSubject: PassthroughSubject<(CBPeripheral, CBCharacteristic, Error?), Never> = .init()
+	var connectedSubject: PassthroughSubject<CBPeripheral, Never> = .init()
+	var disconnectedSubject: PassthroughSubject<CBPeripheral, Never> = .init()
+
+	private var centralManager: CBCentralManager!
+	private var peripheralManager: CBPeripheralManager!
+
+	private var central_state: CBManagerState = .unknown
+	private var peripheral_state: CBManagerState = .unknown
+
+	override init() {
+		super.init()
+		centralManager = .init(delegate: self, queue: .main)
+		peripheralManager = .init(delegate: self, queue: .main)
+	}
+
+	func connectedPeripherals(forServices: [CBUUID]) -> [CBPeripheral] {
+		return centralManager.retrieveConnectedPeripherals(withServices: forServices)
+	}
+
+	func scan(forServices: [CBUUID], allow_repeats: Bool = false) {
+		guard !forServices.isEmpty else {
+			fatalError("Can't scan for no services")
+		}
+		centralManager.scanForPeripherals(
+			withServices: forServices,
+			options: [CBCentralManagerScanOptionAllowDuplicatesKey: allow_repeats as NSNumber]
+		)
+	}
+
+	func stopScan() {
+		logger.log("Stop scanning for whisperers")
+		centralManager.stopScan()
+	}
+
+	func publish(service: CBMutableService) {
+		peripheralManager.add(service)
+	}
+
+	func unpublish(service: CBMutableService) {
+		peripheralManager.remove(service)
+	}
+
+	func unpublishAll() {
+		peripheralManager.removeAllServices()
+	}
+
+	func advertise(services: [CBUUID], localName: String) {
+		guard !services.isEmpty else {
+			fatalError("Can't advertise no services")
+		}
+		peripheralManager.startAdvertising([
+			CBAdvertisementDataServiceUUIDsKey: services,
+			CBAdvertisementDataLocalNameKey: localName,
+		])
+	}
+
+	func stopAdvertising() {
+		peripheralManager.stopAdvertising()
+	}
+
+	func connect(_ peripheral: CBPeripheral) {
+		peripheral.delegate = self
+		centralManager.connect(peripheral)
+	}
+
+	func disconnect(_ peripheral: CBPeripheral) {
+		centralManager.cancelPeripheralConnection(peripheral)
+	}
+
+	func respondToReadRequest(request: CBATTRequest, withCode: CBATTError.Code) {
+		peripheralManager.respond(to: request, withResult: withCode)
+	}
+
+	func respondToWriteRequest(request: CBATTRequest, withCode: CBATTError.Code) {
+		peripheralManager.respond(to: request, withResult: withCode)
+	}
+
+	func updateValue(value: Data, characteristic: CBMutableCharacteristic) -> Bool {
+		return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: nil)
+	}
+
+	func updateValue(value: Data, characteristic: CBMutableCharacteristic, centrals: [CBCentral]) -> Bool {
+		return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: centrals)
+	}
+
+	func updateValue(value: Data, characteristic: CBMutableCharacteristic, central: CBCentral) -> Bool {
+		return peripheralManager.updateValue(value, for: characteristic, onSubscribedCentrals: [central])
+	}
+
+	private func compositeStatus() -> TransportStatus {
+		#if DISABLE_BLUETOOTH
+		return .off
+		#else
+		if central_state == .poweredOn && peripheral_state == .poweredOn {
+			return .on
+		} else if central_state == .unauthorized || peripheral_state == .unauthorized {
+			return .disabled
+		} else {
+			return .off
+		}
+		#endif
+	}
 }
 
 extension BluetoothFactory: CBCentralManagerDelegate {
@@ -147,8 +148,7 @@ extension BluetoothFactory: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        logger.log("Got connect from \(peripheral)")
-        peripheral.discoverServices([BluetoothData.whisperServiceUuid])
+		connectedSubject.send(peripheral)
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {

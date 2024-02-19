@@ -10,8 +10,16 @@ struct StatusTextView: View {
 
     @Binding var text: String
     var mode: OperatingMode
-    var publisherUrl: TransportUrl
-    
+	var conversation: (any Conversation)?
+
+	private var shareLinkUrl: URL {
+		if let c = conversation {
+			return URL(string: PreferenceData.publisherUrl(c.id))!
+		} else {
+			return URL(string: "https://localhost")!
+		}
+	}
+
     private let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
     
     var body: some View {
@@ -21,8 +29,8 @@ struct StatusTextView: View {
                 .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
         } else {
             HStack (spacing: 20) {
-                ShareLink(linkText, item: URL(string: publisherUrl ?? "https://localhost")!)
-                    .disabled(publisherUrl == nil)
+                ShareLink(linkText, item: shareLinkUrl)
+                    .disabled(conversation == nil)
                     .font(FontSizes.fontFor(name: .xsmall))
                 Text(text)
                     .font(FontSizes.fontFor(name: .xsmall))
@@ -32,14 +40,14 @@ struct StatusTextView: View {
     }
 }
 
-struct StatusTextViewModel_Previews: PreviewProvider {
-    static var text: Binding<String> = Binding(get: { return "This is some generic status text"}, set: { _ = $0 })
-    
-    static var previews: some View {
-        VStack {
-            StatusTextView(text: text, mode: .whisper, publisherUrl: nil)
-            StatusTextView(text: text, mode: .whisper, publisherUrl: "https://localhost/fake")
-            StatusTextView(text: text, mode: .listen, publisherUrl: "https://localhost/fake")
-        }
-    }
+#Preview {
+	StatusTextView(text: makeBinding("Generic status text"), mode: .listen, conversation: nil)
+}
+
+#Preview {
+	StatusTextView(text: makeBinding("Generic status text"), mode: .whisper, conversation: nil)
+}
+
+#Preview {
+	StatusTextView(text: makeBinding("Generic status text"), mode: .whisper, conversation: UserProfile.shared.whisperProfile.fallback)
 }

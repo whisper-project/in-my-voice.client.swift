@@ -19,19 +19,19 @@ struct PreferenceData {
     #else
     static var whisperServer = "https://whisper.clickonetwo.io"
     #endif
-    static func publisherUrlToSessionId(url: String) -> String? {
-        let publisherRegex = /https:\/\/(stage\.)?whisper.clickonetwo.io\/subscribe\/([-a-zA-Z0-9]{36})/
+    static func publisherUrlToConversationId(url: String) -> String? {
+        let publisherRegex = /https:\/\/(stage\.)?whisper.clickonetwo.io\/listen\/([-a-zA-Z0-9]{36})/
         guard let match = url.wholeMatch(of: publisherRegex) else {
             return nil
         }
         return String(match.2)
     }
-    static var personalPublisherUrl: String {
-        return "\(whisperServer)/subscribe/\(clientId)"
+    static func publisherUrl(_ conversationId: String) -> String {
+        return "\(whisperServer)/listen/\(conversationId)"
     }
     
-    // client IDs for TCP transport
-    static var clientId: String = {
+    // server (and Ably) client ID for this device
+    static var clientId: String {
         if let id = defaults.string(forKey: "whisper_client_id") {
             return id
         } else {
@@ -39,7 +39,7 @@ struct PreferenceData {
             defaults.setValue(id, forKey: "whisper_client_id")
             return id
         }
-    }()
+    }
     
     // client secrets for TCP transport
     //
@@ -85,7 +85,23 @@ struct PreferenceData {
         }
         return Data(bytes).base64EncodedString()
     }
-    
+
+	// content channel ID
+	static var contentId: String {
+		get {
+			if let value = defaults.string(forKey: "content_channel_id") {
+				return value
+			} else {
+				let new = UUID().uuidString
+				defaults.setValue(new, forKey: "content_channel_id")
+				return new
+			}
+		}
+		set(new) {
+			defaults.setValue(new, forKey: "content_channel_id")
+		}
+	}
+
     // layout control of listeners
     static func listenerMatchesWhisperer() -> Bool {
         return defaults.string(forKey: "newest_whisper_location_preference") == "bottom"
@@ -145,31 +161,6 @@ struct PreferenceData {
 		}
     }
 
-    // user name and session memory
-    private static var session_name: String = ""
-    static func userName() -> String {
-        var name = session_name
-        if name.isEmpty {
-            if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
-                name = defaults.string(forKey: "session_name") ?? ""
-            }
-        } else {
-            // this might seem unnecessary, but it's needed in case the setting was changed
-            // *after* the session name was set.  In that case we need to save the current
-            // session name for the next session.
-            if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
-                defaults.setValue(name, forKey: "session_name")
-            }
-        }
-        return name
-    }
-    static func updateUserName(_ name: String) {
-        session_name = name
-        if defaults.object(forKey: "remember_name_preference") as? Bool ?? true {
-            defaults.setValue(name, forKey: "session_name")
-        }
-    }
-    
     // require Bluetooth listeners to pair?
     static func requireAuthentication() -> Bool {
         let result = defaults.bool(forKey: "listener_authentication_preference")
@@ -195,20 +186,6 @@ struct PreferenceData {
         }
     }
     
-    // last used listener URL
-    static var lastSubscriberUrl: String? {
-        get {
-            defaults.string(forKey: "last_subscriber_url")
-        }
-        set(newUrl) {
-            if newUrl != nil {
-                defaults.setValue(newUrl, forKey: "last_subscriber_url")
-            } else {
-                defaults.removeObject(forKey: "last_subscriber_url")
-            }
-        }
-    }
-    
     // metrics of errors to send in diagnostics to server
     static var droppedErrorCount: Int {
         get {
@@ -218,14 +195,22 @@ struct PreferenceData {
             defaults.setValue(newVal, forKey: "dropped_error_count")
         }
     }
-    static var tcpErrorCount: Int {
-        get {
-            defaults.integer(forKey: "tcp_error_count")
-        }
-        set(newVal) {
-            defaults.setValue(newVal, forKey: "tcp_error_count")
-        }
-    }
+	static var bluetoothErrorCount: Int {
+		get {
+			defaults.integer(forKey: "bluetooth_error_count")
+		}
+		set(newVal) {
+			defaults.setValue(newVal, forKey: "bluetooth_error_count")
+		}
+	}
+	static var tcpErrorCount: Int {
+		get {
+			defaults.integer(forKey: "tcp_error_count")
+		}
+		set(newVal) {
+			defaults.setValue(newVal, forKey: "tcp_error_count")
+		}
+	}
     static var authenticationErrorCount: Int {
         get {
             defaults.integer(forKey: "authentication_error_count")

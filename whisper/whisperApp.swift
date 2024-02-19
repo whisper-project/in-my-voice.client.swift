@@ -71,16 +71,29 @@ let logger = Logger()
 @main
 struct whisperApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     @State var mode: OperatingMode = .ask
-    @State var publisherUrl: TransportUrl = nil
+    @State var conversation: (any Conversation)? = nil
     @State var showWarning: Bool = false
     @State var warningMessage: String = ""
+    
+    let profile = UserProfile.shared
 
     var body: some Scene {
         WindowGroup {
-            MainView(mode: $mode, publisherUrl: $publisherUrl)
-                .onAppear { if (mode != .listen) { publisherUrl = nil } }
+            MainView(mode: $mode, conversation: $conversation)
+                .onAppear {
+					profile.update()
+                    if (mode != .listen) {
+                        conversation = nil
+                    }
+                }
                 .onOpenURL { urlObj in
+                    guard !profile.username.isEmpty else {
+                        warningMessage = "You must create your initial profile before you can listen."
+                        showWarning = true
+                        return
+                    }
                     guard mode == .ask else {
                         let activity = mode == .whisper ? "whispering" : "listening"
                         warningMessage = "Already \(activity) to someone else. Stop \(activity) and click the link again."
@@ -88,10 +101,9 @@ struct whisperApp: App {
                         return
                     }
                     let url = urlObj.absoluteString
-                    if PreferenceData.publisherUrlToSessionId(url: url) != nil {
+                    if let cid = PreferenceData.publisherUrlToConversationId(url: url) {
                         logger.log("Handling valid universal URL: \(url)")
-                        PreferenceData.lastSubscriberUrl = url
-                        publisherUrl = url
+						conversation = profile.listenProfile.fromLink(cid)
                         mode = .listen
                     } else {
                         logger.warning("Ignoring invalid universal URL: \(url)")
@@ -123,18 +135,19 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         let value: [String: Any] = [
             "clientId": PreferenceData.clientId,
             "token": deviceToken.base64EncodedString(),
-            "deviceId": BluetoothData.deviceId,
-            "userName": PreferenceData.userName(),
+            "userName": UserProfile.shared.username,
+			"profileId": UserProfile.shared.id,
             "lastSecret": PreferenceData.lastClientSecret(),
             "appInfo": "\(platformInfo)|\(versionString)",
             "droppedErrorCount": PreferenceData.droppedErrorCount,
+			"bluetoothErrorCount": PreferenceData.bluetoothErrorCount,
             "tcpErrorCount": PreferenceData.tcpErrorCount,
             "authenticationErrorCount": PreferenceData.authenticationErrorCount,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
         }
-        guard let url = URL(string: PreferenceData.whisperServer + "/api/v1/apnsToken") else {
+        guard let url = URL(string: PreferenceData.whisperServer + "/api/v2/apnsToken") else {
             fatalError("Can't create URL for device token call")
         }
         var request = URLRequest(url: url)
@@ -154,7 +167,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 logger.info("Successful post of APNs token")
                 // if server has received error data, reset it
                 PreferenceData.droppedErrorCount = 0
-                PreferenceData.tcpErrorCount = 0
+				PreferenceData.bluetoothErrorCount = 0
+				PreferenceData.tcpErrorCount = 0
                 PreferenceData.authenticationErrorCount = 0
                 return
             }
@@ -187,7 +201,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             guard let body = try? JSONSerialization.data(withJSONObject: value) else {
                 fatalError("Can't encode body for notification confirmation call")
             }
-            guard let url = URL(string: PreferenceData.whisperServer + "/api/v1/apnsReceivedNotification") else {
+            guard let url = URL(string: PreferenceData.whisperServer + "/api/v2/apnsReceivedNotification") else {
                 fatalError("Can't create URL for notification confirmation call")
             }
             var request = URLRequest(url: url)

@@ -12,40 +12,31 @@ final class ComboFactory: TransportFactory {
     
     static let shared = ComboFactory()
     
-    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
-    
-    func publisher(_ publisherUrl: TransportUrl) -> Publisher {
-        return Publisher(publisherUrl)
+    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
+
+    func publisher(_ conversation: WhisperConversation) -> Publisher {
+        return Publisher(conversation)
     }
     
-    func subscriber(_ publisherUrl: TransportUrl) -> Subscriber {
-        return Subscriber(publisherUrl)
-    }
-    
-    //MARK: public auxiliary functions
-    func publisherForm(_ url: String) -> TransportUrl {
-        if manualStatus == .on {
-            return url
-        } else {
-            return nil
-        }
+    func subscriber(_ conversation: ListenConversation?) -> Subscriber {
+        return Subscriber(conversation)
     }
     
     //MARK: private types and properties and initialization
-    private var autoFactory = BluetoothFactory.shared
-    private var manualFactory = TcpFactory.shared
+    private var localFactory = BluetoothFactory.shared
+    private var globalFactory = TcpFactory.shared
     
-    private var autoStatus: TransportStatus = .on
-    private var manualStatus: TransportStatus = .on
+    private var localStatus: TransportStatus = .off
+    private var globalStatus: TransportStatus = .off
 
     private var cancellables: Set<AnyCancellable> = []
 
     init() {
-        autoFactory.statusSubject
-            .sink(receiveValue: setAutoStatus)
+        localFactory.statusSubject
+            .sink(receiveValue: setLocalStatus)
             .store(in: &cancellables)
-        manualFactory.statusSubject
-            .sink(receiveValue: setManualStatus)
+        globalFactory.statusSubject
+            .sink(receiveValue: setGlobalStatus)
             .store(in: &cancellables)
     }
     
@@ -54,20 +45,20 @@ final class ComboFactory: TransportFactory {
     }
 
     //MARK: private methods
-    func setAutoStatus(_ new: TransportStatus) {
-        autoStatus = new
+    func setLocalStatus(_ new: TransportStatus) {
+        localStatus = new
         statusSubject.send(compositeStatus())
     }
     
-    func setManualStatus(_ new: TransportStatus) {
-        manualStatus = new
+    func setGlobalStatus(_ new: TransportStatus) {
+        globalStatus = new
         statusSubject.send(compositeStatus())
     }
     
     private func compositeStatus() -> TransportStatus {
-        switch autoStatus {
+        switch localStatus {
         case .off, .waiting:
-            if case .on = manualStatus {
+            if case .on = globalStatus {
                 #if targetEnvironment(simulator)
                 // the simulator always has Bluetooth off,
                 // so can't take accurate screenshots
@@ -80,7 +71,7 @@ final class ComboFactory: TransportFactory {
                 return .off
             }
         case .disabled:
-            if case .on = manualStatus {
+            if case .on = globalStatus {
                 return .disabled
             } else {
                 return .off

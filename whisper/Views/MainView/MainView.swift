@@ -12,8 +12,8 @@ struct MainView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Binding var mode: OperatingMode
-    @Binding var publisherUrl: TransportUrl
-    
+    @Binding var conversation: (any Conversation)?
+
     @StateObject private var model: MainViewModel = .init()
             
     var body: some View {
@@ -21,7 +21,7 @@ struct MainView: View {
         case .ask:
             VStack {
                 Spacer()
-                ChoiceView(mode: $mode, publisherUrl: $publisherUrl, transportStatus: $model.status)
+                ChoiceView(mode: $mode, conversation: $conversation, transportStatus: $model.status)
                 Spacer()
                 Text("v\(versionString)")
                     .textSelection(.enabled)
@@ -30,18 +30,13 @@ struct MainView: View {
                     .padding(EdgeInsets(top: 20, leading: 0, bottom: 5, trailing: 0))
             }
         case .listen:
-            ListenView(mode: $mode, publisherUrl: publisherUrl)
+            ListenView(mode: $mode, conversation: conversation as? ListenConversation)
         case .whisper:
-            WhisperView(mode: $mode, publisherUrl: publisherUrl)
+			WhisperView(mode: $mode, conversation: conversation as? WhisperConversation ?? UserProfile.shared.whisperProfile.fallback)
         }
     }
 }
 
-struct MainView_Previews: PreviewProvider {
-    static let mode = Binding<OperatingMode>(get: { .ask }, set: { _ = $0 })
-    static let publisherUrl = Binding<TransportUrl>(get: { nil }, set: { _ = $0 })
-
-    static var previews: some View {
-        MainView(mode: mode, publisherUrl: publisherUrl)
-    }
+#Preview {
+	MainView(mode: makeBinding(.ask), conversation: makeBinding(nil))
 }

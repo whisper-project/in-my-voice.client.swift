@@ -9,28 +9,31 @@ import CoreBluetooth
 
 final class BluetoothListenTransport: SubscribeTransport {
     // MARK: Protocol types, properties, and methods
-    
     typealias Remote = Whisperer
     
-    var addRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var dropRemoteSubject: PassthroughSubject<Remote, Never> = .init()
-    var receivedChunkSubject: PassthroughSubject<(remote: Remote, chunk: TextProtocol.ProtocolChunk), Never> = .init()
-    
+    var lostRemoteSubject: PassthroughSubject<Remote, Never> = .init()
+	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
+	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
+
     func start(failureCallback: @escaping (String) -> Void) {
 		logger.info("Starting Bluetooth listen transport")
+		registerCallbacks()
+		running = true
+		self.failureCallback = failureCallback
         startDiscovery()
     }
     
     func stop() {
 		logger.info("Stopping Bluetooth listen transport")
+		running = false
         stopDiscovery()
-        if let publisher = self.publisher {
-            drop(remote: publisher)
-        } else {
-            for remote in remotes.values {
-                drop(remote: remote)
-            }
-        }
+		for remote in Array(remotes.values) {
+			drop(remote: remote)
+		}
+		// the callbacks will unregister automatically
+		// when the last connected whisperer disconnects
+		// but we time limit how long this can happen
+		DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: unregisterCallbacks)
     }
     
     func goToBackground() {
@@ -45,325 +48,348 @@ final class BluetoothListenTransport: SubscribeTransport {
         startDiscovery()
     }
     
-    func send(remote: Remote, chunks: [TextProtocol.ProtocolChunk]) {
-        guard chunks.count == 1, chunks[0].isReplayRequest() else {
-            fatalError("Bluetooth listeners can only send a single replay request packet, nothing else")
-        }
-        remote.peripheral.readValue(for: remote.textCharacteristic!)
+    func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
+		guard running else { return }
+		guard let channel = remote.controlInChannel else {
+			fatalError("Missing control channel on remote: \(remote)")
+		}
+		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
+		remote.peripheral.writeValue(chunk.toData(), for: channel, type: .withResponse)
     }
     
     func drop(remote: Remote) {
-        if remote === publisher {
-            logger.log("Dropping publisher remote \(remote.id)")
-            publisher = nil
-        } else {
-            guard remotes.removeValue(forKey: remote.peripheral) != nil else {
-                logger.error("Ignoring request to drop unknown remote \(remote.id)")
-                return
-            }
-            logger.log("Dropping unused remote \(remote.id)")
-        }
-        disconnectsInProgress[remote.peripheral] = remote
-        if remote.canBePublisher() {
-            // we have paired with this remote, warn it we are dropping it
-            remote.peripheral.readValue(for: remote.rejectCharacteristic!)
-            // give a little time for the message to reach it, then disconnect
-            Timer.scheduledTimer(withTimeInterval: 0.25, repeats: false) { _ in
-                self.factory.disconnect(remote.peripheral)
-            }
-            // tell the client we are dropping this remote
-            dropRemoteSubject.send(remote)
-        } else {
-            // we have not established communication with this remote, so just drop it
-            factory.disconnect(remote.peripheral)
-        }
+		guard let existing = remotes[remote.peripheral] else {
+			logger.error("Ignoring request to drop unknown \(remote.kind) remote \(remote.id)")
+			return
+		}
+		removeRemote(existing, sendDrop: true)
     }
     
-    func subscribe(remote: Whisperer) {
-        guard publisher == nil else {
-            fatalError("Can't subscribe to \(remote.id) when already subscribed to \(publisher!)")
+	func subscribe(remote: Remote, conversation: ListenConversation) {
+		guard running else { return }
+		if publisher === remote {
+			logger.error("Ignoring duplicate subscribe to same publisher")
+			return
+		} else if publisher != nil {
+			fatalError("Got subscribe request to \(remote.id) but already have publisher \(publisher!.id)")
+		}
+		guard let selected = remotes[remote.peripheral],
+			  let contentOut = selected.contentOutChannel
+		else {
+            fatalError("Received request to subscribe to \(remote.id) which is not a valid remote")
         }
-        guard let selected = remotes[remote.peripheral], selected.canBePublisher() else {
-            fatalError("Received request to subscribe to \(remote.id) but it's not qualified to be a publisher")
-        }
-        logger.log("Subscribing to remote \(remote.id) with name \(remote.name)")
-        publisher = selected
+        logger.log("Subscribing to \(remote.kind) remote \(selected.id)")
+		publisher = remote
         // subscribing implicitly stops discovery
         stopDiscovery()
-        // complete the Bluetooth subscription
-        selected.peripheral.setNotifyValue(true, for: selected.textCharacteristic!)
-        selected.peripheral.setNotifyValue(true, for: selected.rejectCharacteristic!)
+        // complete the content subscription
+		self.conversation = conversation
+		selected.peripheral.setNotifyValue(true, for: contentOut)
         // drop the other remotes
-        for remote in remotes.values {
-            if remote === selected {
-                continue
-            }
-            logger.log("Dropping unused remote \(remote.id) (\(remote.name))")
-            remote.peripheral.readValue(for: remote.rejectCharacteristic!)
-            dropRemoteSubject.send(remote)
+        for remote in Array(remotes.values) {
+			if remote !== publisher {
+				drop(remote: remote)
+			}
         }
-        remotes.removeAll()
     }
     
     // MARK: Central event handlers
     
     /// Called when we see an ad from a potential publisher
     private func discoveredRemote(_ pair: (CBPeripheral, [String: Any])) {
+		guard running else { return }
         guard publisher == nil else {
             // ignore advertisements seen once we're subscribed
             logger.warning("Received ad after subscription from \(pair.0)")
             return
         }
+		guard !advertisers.contains(pair.0) else {
+			// logger.debug("Ignoring repeat ads from existing advertiser")
+			return
+		}
+		advertisers.append(pair.0)
         if let uuids = pair.1[CBAdvertisementDataServiceUUIDsKey] as? Array<CBUUID> {
             if uuids.contains(BluetoothData.whisperServiceUuid) {
                 guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
-                      let id = adName as? String else {
-                    logger.error("Ignoring advertisement with no device id")
+                      let id = adName as? String
+				else {
+					logger.error("Ignoring advertisement with no conversation id from: \(pair.0)")
                     return
                 }
-                guard remotes[pair.0] == nil else {
-//                    logger.debug("Ignoring repeat ad from remote \(id)")
-                    return
-                }
-                logger.log("Connecting to remote \(id): \(pair.0)")
-                remotes[pair.0] = Whisperer(peripheral: pair.0, id: id)
+				guard conversation == nil || BluetoothData.deviceId(conversation!.id) == id else {
+					logger.info("Ignoring advertisement with non-matching conversation id from: \(pair.0)")
+					return
+				}
+                logger.log("Connecting to local remote \(pair.0)")
+                remotes[pair.0] = Remote(peripheral: pair.0)
                 factory.connect(pair.0)
                 return
             }
         }
     }
-    
-    /// Called when we get a connection established to a potential publisher
-    private func connectedRemote(_ pair: (CBPeripheral, [CBService])) {
-        guard let remote = remotes[pair.0] else {
-            fatalError("Connected to remote \(pair.0) but didn't request a connection")
-        }
-        if let whisperSvc = pair.1.first(where: {svc in svc.uuid == BluetoothData.whisperServiceUuid}) {
-            logger.log("Connected to remote \(remote.id), readying...")
-            remote.peripheral.discoverCharacteristics(
-                [
-                    BluetoothData.listenNameUuid,
-                    BluetoothData.whisperNameUuid,
-                    BluetoothData.textUuid,
-                    BluetoothData.disconnectUuid,
-                ],
-                for: whisperSvc
-            )
-        } else {
-            fatalError("Connected to advertised publisher \(remote) but it has no whisper service")
-        }
+
+	/// Called when we get a connection establlished to an advertised whisperer
+	private func connectedRemote(_ peripheral: CBPeripheral) {
+		guard running else { return }
+		if remotes[peripheral] == nil {
+			logger.info("Connected to local remote \(peripheral) but didn't request a connection")
+			remotes[peripheral] = Remote(peripheral: peripheral)
+		}
+		logger.log("Found a peripheral, ensuring it's a whisperer")
+		peripheral.discoverServices([BluetoothData.whisperServiceUuid])
+	}
+
+    /// Called when we get discovered a whisper service on a remote
+    private func connectedService(_ pair: (CBPeripheral, [CBService])) {
+		guard running else { return }
+		let remote = remotes[pair.0] ?? {
+			logger.info("Found services for local remote \(pair.0) but didn't discover them")
+			let remote = Remote(peripheral: pair.0)
+			remotes[pair.0] = remote
+			return remote
+		}()
+		guard let whisperSvc = pair.1.first(where: {svc in svc.uuid == BluetoothData.whisperServiceUuid}) else {
+			fatalError("Connected to \(remote) but it has no whisper service")
+		}
+		logger.log("Connected to whispering \(remote.kind) remote \(remote.id), getting characteristics...")
+		remote.peripheral.discoverCharacteristics(
+			[
+				BluetoothData.contentOutUuid,
+				BluetoothData.controlInUuid,
+				BluetoothData.controlOutUuid,
+			],
+			for: whisperSvc
+		)
     }
     
+	/// Called when we have lost connection with a remote
     private func disconnectedRemote(_ peripheral: CBPeripheral) {
-        if let remote = disconnectsInProgress.removeValue(forKey: peripheral) {
+		guard let remote = remotes[peripheral] else {
+			logger.error("Ignoring disconnect from unknown peripheral: \(peripheral)")
+			return
+		}
+		if remote.dropInProgress {
             // this is an expected disconnect
-            logger.info("Completed drop of remote \(remote.id) with name \(remote.name)")
-        } else if peripheral == publisher?.peripheral {
-            logger.log("Publisher \(self.publisher!.id) has stopped publishing")
-            remotes.removeValue(forKey: peripheral)
-            dropRemoteSubject.send(publisher!)
-            publisher = nil
-            // lost our whisperer, look again
-            startDiscovery()
-        } else if let remote = remotes.removeValue(forKey: peripheral) {
-            logger.log("Remote \(remote.id) has stopped publishing")
-            dropRemoteSubject.send(remote)
-        } else {
-            logger.error("Ignoring disconnect from unknown peripheral: \(peripheral)")
+            logger.info("Completed disconnect from \(remote.kind) remote \(remote.id)")
+			remotes.removeValue(forKey: peripheral)
+			// if this was the publisher, look for a new one
+			if remote === publisher {
+				publisher = nil
+				startDiscovery()
+			}
+        } else  {
+            logger.info("\(remote.kind) Remote \(remote.id) has disconnected unexpectedly")
+			remote.contentOutChannel = nil
+			remote.controlInChannel = nil
+			remote.controlOutChannel = nil
+			remotes.removeValue(forKey: peripheral)
+			lostRemoteSubject.send(remote)
         }
+		if !running {
+			if remotes.isEmpty {
+				logger.info("Shutting down Bluetooth listen transport after disconnecting all remotes")
+				unregisterCallbacks()
+			} else {
+				logger.log("Waiting to disconnect from \(self.remotes.count) remotes")
+			}
+		}
     }
     
     /// Called when we have discovered characteristics for the whisper service on a remote
     private func pairWithWhisperer(_ pair: (CBPeripheral, CBService)) {
+		guard running else { return }
         let (peripheral, service) = pair
         guard let remote = remotes[peripheral] else {
             fatalError("Connected to a whisper service that's not a remote")
         }
-        guard service.characteristics != nil else {
+        guard let allCs = service.characteristics else {
             fatalError("Conected to a whisper service with no characteristics")
         }
-        logger.log("Trying to pair with connected whisper service on: \(remote.id)...")
-        let allCs = service.characteristics!
-        if let listenNameC = allCs.first(where: { $0.uuid == BluetoothData.listenNameUuid }) {
-            remote.listenNameCharacteristic = listenNameC
+        logger.log("Trying to pair with connected whisper service on \(remote.peripheral)...")
+        if let controlOut = allCs.first(where: { $0.uuid == BluetoothData.controlOutUuid }) {
+            remote.controlOutChannel = controlOut
+			peripheral.setNotifyValue(true, for: controlOut)
         } else {
-            fatalError("Whisper service has no listener name characteristic")
+            fatalError("Whisper service has no control channel out characteristic")
         }
-        if let whisperNameC = allCs.first(where: { $0.uuid == BluetoothData.whisperNameUuid }) {
-            remote.whisperNameCharacteristic = whisperNameC
+        if let controlIn = allCs.first(where: { $0.uuid == BluetoothData.controlInUuid }) {
+            remote.controlInChannel = controlIn
+			// offer to listen so they know who we are
+			logger.info("Sending listen offer to \(remote.kind) remote \(remote.id)")
+			let chunk = WhisperProtocol.ProtocolChunk.listenOffer(conversation)
+			sendControl(remote: remote, chunk: chunk)
         } else {
-            fatalError("Whisper service has no publisher name characteristic")
+            fatalError("Whisper service has no control channel in characteristic")
         }
-        if let liveTextC = allCs.first(where: { $0.uuid == BluetoothData.textUuid }) {
-            remote.textCharacteristic = liveTextC
+        if let contentOut = allCs.first(where: { $0.uuid == BluetoothData.contentOutUuid }) {
+            remote.contentOutChannel = contentOut
+			// don't subscribe to content out until we are authorized!
         } else {
-            fatalError("Whisper service has no text protocol characteristic")
+            fatalError("Whisper service has no content channel out characteristic")
         }
-        if let disconnectC = allCs.first(where: { $0.uuid == BluetoothData.disconnectUuid }) {
-            remote.rejectCharacteristic = disconnectC
-        } else {
-            fatalError("Whisper service has no disconnect characteristic")
-        }
-        let idAndName = "\(BluetoothData.deviceId)|\(PreferenceData.userName())"
-        peripheral.writeValue(Data(idAndName.utf8), for: remote.listenNameCharacteristic!, type: .withResponse)
-        peripheral.readValue(for: remote.whisperNameCharacteristic!)
     }
     
-    /// Get a confirmation or error from an attempt to write our name to a remote
+    /// Get a confirmation or error from an attempt to write to a remote
     private func wroteValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
-        guard let remote = remotes[triple.0] else {
-            fatalError("Received write result for a non-remote: \(triple.0)")
-        }
-        guard triple.1.uuid == BluetoothData.listenNameUuid else {
-            fatalError("Received write result for unexpected characteristic: \(triple.1)")
-        }
+		guard let remote = remotes[triple.0] else {
+			fatalError("Received write result for a non-remote: \(triple.0)")
+		}
+		guard triple.1.uuid == BluetoothData.controlInUuid else {
+			fatalError("Received write result for unexpected characteristic: \(triple.1)")
+		}
+		if remote.dropInProgress {
+			logger.warning("Received a write result from a \(remote.kind) remote we are dropping: \(remote.id)")
+			return
+		}
         if triple.2 != nil {
-            logger.log("Pairing failed with remote \(remote.id): \(triple.2)")
-            drop(remote: remote)
-        } else {
-            logger.log("Successfully sent name to \(remote.id)")
-            remote.sentName = true
-            maybeAddRemote(remote: remote)
+            logger.error("Send of control packet failed to \(remote.kind) remote \(remote.id): \(triple.2)")
+			PreferenceData.bluetoothErrorCount += 1
+			failureCallback?("Communication failure while connecting to Whisperer")
+		} else {
+            // logger.log("Successfully sent control packet to \(remote.kind) remote \(remote.id)")
         }
     }
     
-    // got a confirmation of an attempt to subscribe
+    // got a confirmation of an attempt to subscribe or unsubscribe
     private func subscribedValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
-        guard triple.0 == publisher?.peripheral else {
-            logger.error("Ignoring subscription result for non-publisher: \(triple.0)")
-            return
+		guard let remote = remotes[triple.0] else {
+			fatalError("Received subscription result for a non-remote: \(triple.0)")
+		}
+		guard triple.1.uuid == BluetoothData.controlOutUuid || triple.1.uuid == BluetoothData.contentOutUuid else {
+			fatalError("Received subscription result for unexpected characteristic: \(triple.1)")
+		}
+		if remote.dropInProgress {
+			remote.pendingNotifyCount -= 1
+			if triple.2 != nil {
+				logger.warning("Failed to turn off notifications during drop of \(remote.kind) remote \(remote.id)")
+				PreferenceData.bluetoothErrorCount += 1
+			}
+			if remote.pendingNotifyCount == 0 {
+				logger.info("Disconnecting after notifications completed to dropped \(remote.kind) remote: \(remote.id)")
+				factory.disconnect(triple.0)
+			}
+		} else if triple.2 != nil {
+			// if we failed to subscribe, we have to warn the client
+			logger.error("Failed to subscribe to peripheral: \(remote.id), channel: \(triple.1.uuid), error: \(triple.2)")
+			PreferenceData.bluetoothErrorCount += 1
+			failureCallback?("Bluetooth subscription error while connecting")
         }
-        guard triple.1.uuid == BluetoothData.textUuid || triple.1.uuid == BluetoothData.disconnectUuid else {
-            logger.error("Ignoring subscription result for unexpected characteristic: \(triple.1)")
-            return
-        }
-        guard disconnectsInProgress[triple.0] == nil else {
-            // ignore errors during disconnect
-            return
-        }
-        guard triple.2 != nil else {
-            // no action needed on success
-            return
-        }
-        // if we failed to subscribe, we have to force-drop the publisher;
-        // this will force the client to rediscover and re-subscribe
-        logger.error("Failed to subscribe to the publisher")
-        drop(remote: publisher!)
     }
     
-    // receive an updated value either from a read or a publisher push
+    // receive an updated value from a remote
     private func readValue(_ triple: (CBPeripheral, CBCharacteristic, Error?)) {
-        if let disconnected = disconnectsInProgress[triple.0] {
-            if triple.1.uuid == disconnected.rejectCharacteristic!.uuid {
-                logger.log("Remote \(disconnected.id) acknowledged drop request")
-            } else {
-                logger.log("Ignoring read from disconnected remote \(disconnected.id)")
-            }
-            return
-        }
-        if triple.0 == publisher?.peripheral {
-            if let error = triple.2 {
-                logger.error("Got error on publisher read: \(error)")
-                drop(remote: publisher!)
-            } else if triple.1.uuid == publisher!.rejectCharacteristic!.uuid {
-                logger.log("Publisher rejected this subscriber")
-                drop(remote: publisher!)
-            } else if triple.1.uuid == publisher!.textCharacteristic!.uuid {
-                if let textData = triple.1.value,
-                   let chunk = TextProtocol.ProtocolChunk.fromData(textData) {
-                    receivedChunkSubject.send((remote: publisher!, chunk: chunk))
-                } else {
-                    logger.error("Ignoring non-text-protocol data received from publisher: \(String(describing: triple.1.value))")
-                }
-            } else {
-                logger.error("Whisperer received value for an unexpected characteristic: \(triple.1)")
-            }
-        } else if let remote = remotes[triple.0] {
-            if let error = triple.2 {
-                logger.error("Read from remote \(remote.id) failed: \(error)")
-                drop(remote: remote)
-            } else if triple.1 == remote.whisperNameCharacteristic! {
-                logger.log("Read name value from remote \(remote.id)")
-                if let nameData = triple.1.value, !nameData.isEmpty {
-                    remote.haveName = true
-                    remote.name = String(decoding: nameData, as: UTF8.self)
-                    maybeAddRemote(remote: remote)
-                } else {
-                    logger.error("Read malformed name value from remote \(remote.id)")
-                    drop(remote: remote)
-                }
-            } else {
-                logger.error("Ignoring read value from remote \(remote.id) for an unexpected characteristic: \(triple.1)")
-            }
-        } else {
-            logger.error("Ignoring read value from an unexpected source: \(triple.0)")
-        }
+		guard running else { return }
+		if triple.1.uuid == BluetoothData.contentOutUuid {
+			if let error = triple.2 {
+				// got a content read failure, this must be from the publisher
+				logger.error("Got error on content update: \(error)")
+				PreferenceData.bluetoothErrorCount += 1
+			} else if let remote = publisher,
+					  let textData = triple.1.value,
+					  let chunk = WhisperProtocol.ProtocolChunk.fromData(textData) {
+				contentSubject.send((remote: remote, chunk: chunk))
+			} else {
+				logger.error("Ignoring invalid content data: \(String(describing: triple.1.value))")
+				PreferenceData.bluetoothErrorCount += 1
+			}
+		} else if triple.1.uuid == BluetoothData.controlOutUuid {
+			guard let remote = remotes[triple.0] else {
+				fatalError("Received update from unknown peripheral: \(triple)")
+			}
+			if let error = triple.2 {
+				// got a control read failure
+				logger.error("Got error on control update from \(triple.0): \(error)")
+				PreferenceData.bluetoothErrorCount += 1
+				failureCallback?("Bluetooth read failure while connecting")
+			} else if let textData = triple.1.value,
+					  let chunk = WhisperProtocol.ProtocolChunk.fromData(textData) {
+				if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset),
+				   case .dropping = value {
+					logger.info("Advised of drop by \(remote.kind) remote \(remote.id)")
+					removeRemote(remote)
+					lostRemoteSubject.send(remote)
+					return
+				}
+				logger.info("Received control packet: \(chunk)")
+				controlSubject.send((remote: remote, chunk: chunk))
+			} else {
+				logger.error("Received invalid control data from \(remote.kind) remote \(remote.id): \(String(describing: triple.1.value))")
+				PreferenceData.bluetoothErrorCount += 1
+				failureCallback?("Bluetooth read data consistency failure while connecting")
+			}
+		} else {
+			fatalError("Got update of an unknown characteristic: \(String(describing: triple))")
+		}
     }
     
     // MARK: internal types, properties, and initialization
     class Whisperer: TransportRemote {
-        var id: String
-        var name: String = ""
-		var kind: TransportKind = .local
+        let id: String
+		let kind: TransportKind = .local
 
         fileprivate var peripheral: CBPeripheral
-        fileprivate var listenNameCharacteristic: CBCharacteristic?
-        fileprivate var whisperNameCharacteristic: CBCharacteristic?
-        fileprivate var textCharacteristic: CBCharacteristic?
-        fileprivate var rejectCharacteristic: CBCharacteristic?
-        fileprivate var sentName: Bool = false
-        fileprivate var haveName: Bool = false
-        
-        fileprivate init(peripheral: CBPeripheral, id: String) {
+        fileprivate var controlOutChannel: CBCharacteristic?
+        fileprivate var controlInChannel: CBCharacteristic?
+        fileprivate var contentOutChannel: CBCharacteristic?
+		fileprivate var pendingNotifyCount: Int = 0
+		fileprivate var dropInProgress: Bool = false
+
+        fileprivate init(peripheral: CBPeripheral) {
             self.peripheral = peripheral
-            self.id = id
-        }
-        
-        fileprivate func canBePublisher() -> Bool {
-            return self.sentName && self.haveName
+			self.id = peripheral.identifier.uuidString
         }
     }
     
+	private var running = false
     private var factory = BluetoothFactory.shared
-    private var remotes: [CBPeripheral: Whisperer] = [:]
-    private var publisher: Remote?
+	private var advertisers: [CBPeripheral] = []
+    private var remotes: [CBPeripheral: Remote] = [:]
+	private var publisher: Remote?
     private var cancellables: Set<AnyCancellable> = []
     private var isInBackground = false
     private var scanRefreshCount = 0
-    private var disconnectsInProgress: [CBPeripheral: Remote] = [:]
-    
-    init() {
+	private var conversation: ListenConversation? = nil
+	private var failureCallback: ((String) -> Void)?
+
+	init(_ c: ListenConversation?) {
         logger.log("Initializing Bluetooth listen transport")
-        factory.advertisementSubject
-            .sink{ [weak self] in self?.discoveredRemote($0) }
-            .store(in: &cancellables)
-        factory.servicesSubject
-            .sink{ [weak self] in self?.connectedRemote($0) }
-            .store(in: &cancellables)
-        factory.characteristicsSubject
-            .sink{ [weak self] in self?.pairWithWhisperer($0) }
-            .store(in: &cancellables)
-        factory.receivedValueSubject
-            .sink{ [weak self] in self?.readValue($0) }
-            .store(in: &cancellables)
-        factory.writeResultSubject
-            .sink{ [weak self] in self?.wroteValue($0) }
-            .store(in: &cancellables)
-        factory.notifyResultSubject
-            .sink{ [weak self] in self?.subscribedValue($0) }
-            .store(in: &cancellables)
-        factory.disconnectedSubject
-            .sink{ [weak self] in self?.disconnectedRemote($0) }
-            .store(in: &cancellables)
+		self.conversation = c
     }
     
     deinit {
-        logger.log("Destroying Bluetooth listen transport")
-        cancellables.cancel()
+        logger.log("Destroying Bluetooth whisper transport")
+        unregisterCallbacks()
     }
     
     //MARK: internal methods
+	private func removeRemote(_ remote: Remote, sendDrop: Bool = false) {
+		guard !remote.dropInProgress else {
+			// nothing to do
+			return
+		}
+		remote.dropInProgress = true
+		if sendDrop {
+			if let channel = remote.controlInChannel {
+				logger.log("Explicitly dropping \(remote.kind) remote: \(remote.id)")
+				let chunk = WhisperProtocol.ProtocolChunk.dropping()
+				remote.peripheral.writeValue(chunk.toData(), for: channel, type: .withoutResponse)
+			} else {
+				logger.error("Can't send drop packet to \(remote.kind) remote: \(remote.id)")
+			}
+		}
+		if let channel = remote.contentOutChannel {
+			remote.pendingNotifyCount += 1
+			remote.peripheral.setNotifyValue(false, for: channel)
+		}
+		if let channel = remote.controlOutChannel {
+			remote.pendingNotifyCount += 1
+			remote.peripheral.setNotifyValue(false, for: channel)
+		}
+		// disconnect won't happen until we finish notifications
+	}
+	
     private func startDiscovery() {
+		guard running else { return }
         guard !isInBackground else {
             // can't do discovery in the background
             return
@@ -373,6 +399,7 @@ final class BluetoothListenTransport: SubscribeTransport {
             return
         }
         logger.log("Start scanning for whisperers")
+		advertisers = []
         factory.scan(forServices: [BluetoothData.whisperServiceUuid], allow_repeats: true)
         startAdvertising()
     }
@@ -382,27 +409,62 @@ final class BluetoothListenTransport: SubscribeTransport {
         stopAdvertising()
         factory.stopScan()
     }
-    
-    /// There are several race conditions on qualifying publishers;
-    /// this is the gate that resolves them and notifies when appropriate.
-    private func maybeAddRemote(remote: Remote) {
-        guard remote.canBePublisher() else {
-            // nothing to do
-            return
-        }
-        addRemoteSubject.send(remote)
-    }
-    
+
     private func startAdvertising() {
         logger.log("Start advertising listener")
         Timer.scheduledTimer(withTimeInterval: listenerAdTime, repeats: false) { _ in
             self.stopAdvertising()
         }
-        factory.advertise(services: [BluetoothData.listenServiceUuid])
+		if let c = conversation {
+			factory.advertise(services: [BluetoothData.listenServiceUuid], localName: BluetoothData.deviceId(c.id))
+		} else {
+			factory.advertise(services: [BluetoothData.listenServiceUuid], localName: "discover")
+		}
     }
     
     private func stopAdvertising() {
         logger.log("Stop advertising listener")
         factory.stopAdvertising()
     }
+
+	private func registerCallbacks() {
+		logger.info("Registering Bluetooth callbacks")
+		factory.advertisementSubject
+			.sink{ [weak self] in self?.discoveredRemote($0) }
+			.store(in: &cancellables)
+		factory.servicesSubject
+			.sink{ [weak self] in self?.connectedService($0) }
+			.store(in: &cancellables)
+		factory.characteristicsSubject
+			.sink{ [weak self] in self?.pairWithWhisperer($0) }
+			.store(in: &cancellables)
+		factory.receivedValueSubject
+			.sink{ [weak self] in self?.readValue($0) }
+			.store(in: &cancellables)
+		factory.writeResultSubject
+			.sink{ [weak self] in self?.wroteValue($0) }
+			.store(in: &cancellables)
+		factory.notifyResultSubject
+			.sink{ [weak self] in self?.subscribedValue($0) }
+			.store(in: &cancellables)
+		factory.connectedSubject
+			.sink{ [weak self] in self?.connectedRemote($0) }
+			.store(in: &cancellables)
+		factory.disconnectedSubject
+			.sink{ [weak self] in self?.disconnectedRemote($0) }
+			.store(in: &cancellables)
+	}
+
+	private func unregisterCallbacks() {
+		logger.info("Unregistering Bluetooth callbacks")
+		cancellables.cancel()
+		cancellables.removeAll()
+		if !remotes.isEmpty {
+			logger.warning("Force disconnecting \(self.remotes.count) remotes")
+			for remote in Array(remotes.values) {
+				remotes.removeValue(forKey: remote.peripheral)
+				factory.disconnect(remote.peripheral)
+			}
+		}
+	}
 }

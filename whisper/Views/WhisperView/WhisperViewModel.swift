@@ -11,31 +11,70 @@ final class WhisperViewModel: ObservableObject {
     typealias Remote = ComboFactory.Publisher.Remote
     typealias Transport = ComboFactory.Publisher
     
+	final class Candidate: Identifiable, Comparable {
+		private(set) var id: String
+		private(set) var remote: Remote
+		var info: WhisperProtocol.ClientInfo
+		var isPending: Bool
+		var hasJoined: Bool
+		private(set) var created: Date
+
+		init(remote: Remote, info: WhisperProtocol.ClientInfo, isPending: Bool) {
+			self.id = remote.id
+			self.remote = remote
+			self.info = info
+			self.isPending = isPending
+			self.hasJoined = false
+			self.created = Date.now
+		}
+
+		// compare by id
+		static func == (lhs: WhisperViewModel.Candidate, rhs: WhisperViewModel.Candidate) -> Bool {
+			return lhs.id == rhs.id
+		}
+
+		// sort by username then id
+		static func < (lhs: WhisperViewModel.Candidate, rhs: WhisperViewModel.Candidate) -> Bool {
+			if lhs.info.username == rhs.info.username {
+				return lhs.id < rhs.id
+			} else {
+				return lhs.info.username < rhs.info.username
+			}
+		}
+	}
+
     @Published var statusText: String = ""
     @Published var connectionError = false
     @Published var connectionErrorDescription: String = ""
-    @Published var remotes: [String:Remote] = [:]
+	@Published var candidates: [String: Candidate] = [:]		// id -> Candidate
+	@Published var invites: [Candidate] = []
     @Published var pastText: PastTextModel = .init(mode: .whisper)
+	@Published var showStatusDetail: Bool = false
+	private(set) var conversation: WhisperConversation
 
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
-    
     private var liveText: String = ""
     private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
-    init(_ publisherUrl: TransportUrl) {
+	let profile = UserProfile.shared.whisperProfile
+	let contentId = UUID().uuidString
+
+    init(_ conversation: WhisperConversation) {
         logger.log("Initializing WhisperView model")
-        self.transport = ComboFactory.shared.publisher(publisherUrl)
-        self.transport.addRemoteSubject
-            .sink { [weak self] in self?.addListener($0) }
+		self.conversation = conversation
+        self.transport = ComboFactory.shared.publisher(conversation)
+        self.transport.lostRemoteSubject
+            .sink { [weak self] in self?.lostRemote($0) }
             .store(in: &cancellables)
-        self.transport.dropRemoteSubject
-            .sink { [weak self] in self?.removeListener($0) }
-            .store(in: &cancellables)
-        self.transport.receivedChunkSubject
-            .sink { [weak self] in self?.sendAllText($0) }
-            .store(in: &cancellables)
+		self.transport.contentSubject
+			.sink { [weak self] in self?.receiveContentChunk($0) }
+			.store(in: &cancellables)
+		self.transport.controlSubject
+			.sink { [weak self] in self?.receiveControlChunk($0) }
+			.store(in: &cancellables)
+		PreferenceData.contentId = contentId
     }
     
     deinit {
@@ -65,7 +104,7 @@ final class WhisperViewModel: ObservableObject {
         guard old != new else {
             return liveText
         }
-        let chunks = TextProtocol.diffLines(old: old, new: new)
+        let chunks = WhisperProtocol.diffLines(old: old, new: new)
         for chunk in chunks {
             if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
@@ -74,7 +113,7 @@ final class WhisperViewModel: ObservableObject {
                 }
                 liveText = ""
             } else {
-                liveText = TextProtocol.applyDiff(old: liveText, chunk: chunk)
+                liveText = WhisperProtocol.applyDiff(old: liveText, chunk: chunk)
             }
         }
         transport.publish(chunks: chunks)
@@ -92,31 +131,68 @@ final class WhisperViewModel: ObservableObject {
         if PreferenceData.speakWhenWhispering {
             playSoundLocally(soundName)
         }
-        let chunk = TextProtocol.ProtocolChunk.sound(soundName)
+        let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
         transport.publish(chunks: [chunk])
     }
     
     /// Send the alert sound to a specific listener
-    func playSound(_ remote: Remote) {
-        guard remotes[remote.id] != nil else {
-            logger.log("Ignoring alert request for non-remote: \(remote.id)")
+    func playSound(_ candidate: Candidate) {
+        guard candidates[candidate.id] != nil else {
+			logger.log("Ignoring alert request for \(candidate.remote.kind) non-candidate: \(candidate.id)")
             return
         }
         let soundName = PreferenceData.alertSound
-        let chunk = TextProtocol.ProtocolChunk.sound(soundName)
-        transport.send(remote: remote, chunks: [chunk])
+        let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
+		transport.sendContent(remote: candidate.remote, chunks: [chunk])
     }
-    
+
+	func acceptRequest(_ id: String) {
+		guard let invitee = candidates[id] else {
+			logger.error("Ignoring accepted invite from unknown invitee: \(id)")
+			return
+		}
+		logger.info("Accepted listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
+		invitee.isPending = false
+		invites = candidates.values.filter{$0.isPending}.sorted()
+		showStatusDetail = !invites.isEmpty
+		profile.addListener(conversation, info: invitee.info)
+		transport.authorize(remote: invitee.remote)
+		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation, contentId: contentId)
+		transport.sendControl(remote: invitee.remote, chunk: chunk)
+	}
+
+	func refuseRequest(_ id: String) {
+		guard let invitee = candidates[id] else {
+			logger.error("Ignoring refused invite from unknown invitee: \(id)")
+			return
+		}
+		logger.info("Rejected listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
+		invitee.isPending = false
+		invites = candidates.values.filter{$0.isPending}.sorted()
+		showStatusDetail = !invites.isEmpty
+		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
+		transport.sendControl(remote: invitee.remote, chunk: chunk)
+		dropListener(invitee)
+	}
+
     /// Drop a listener from the authorized list
-    func dropListener(_ remote: Remote) {
-        guard let listener = remotes[remote.id] else {
-            logger.log("Ignoring drop request for non-remote: \(remote.id)")
+    func dropListener(_ candidate: Candidate) {
+        guard let listener = candidates[candidate.id] else {
+			logger.log("Ignoring drop request for \(candidate.remote.kind) non-candidate: \(candidate.id)")
             return
         }
-        logger.notice("Dropping remote \(listener.id) with name \(listener.name)")
-        transport.drop(remote: remote)
+		logger.notice("De-authorizing \(listener.remote.kind) candidate \(listener.id)")
+		profile.removeListener(conversation, profileId: candidate.info.profileId)
+		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
+		transport.sendControl(remote: candidate.remote, chunk: chunk)
+		transport.deauthorize(remote: candidate.remote)
+		candidate.hasJoined = false
     }
-    
+
+	func listeners() -> [Candidate] {
+		candidates.values.filter{$0.hasJoined}.sorted()
+	}
+
     func wentToBackground() {
         transport.goToBackground()
     }
@@ -138,35 +214,105 @@ final class WhisperViewModel: ObservableObject {
         }
     }
     
-    private func addListener(_ remote: Remote) {
-        guard remotes[remote.id] == nil else {
-            logger.warning("Notified of new remote \(remote.id) which is already known")
-            return
-        }
-        logger.log("Notified of new remote \(remote.id) with name \(remote.name)")
-        remotes[remote.id] = remote
-        refreshStatusText()
-    }
-    
-    private func removeListener(_ remote: Remote) {
-        guard let removed = remotes.removeValue(forKey: remote.id) else {
-            logger.warning("Notified of dropped remote \(remote.id) which is not known")
-            return
-        }
-        logger.log("Lost\(self.remotes.isEmpty ? " last" : "") remote \(removed.id) with name \(removed.name)")
+    private func lostRemote(_ remote: Remote) {
+		guard let removed = candidates.removeValue(forKey: remote.id) else {
+			logger.info("Ignoring dropped \(remote.kind) non-candidate \(remote.id)")
+			return
+		}
+		logger.info("Dropped \(remote.kind) listener \(removed.id)")
         refreshStatusText()
     }
 
-    // send live text to a specific listener who requests it
-    private func sendAllText(_ pair: (remote: Remote, chunk: TextProtocol.ProtocolChunk)) {
-        guard let remote = remotes[pair.remote.id] else {
-            logger.warning("Read requested by unknown remote \(pair.remote.id)")
-            return
-        }
-        let chunks = [TextProtocol.ProtocolChunk.fromLiveText(text: liveText)]
-        transport.send(remote: remote, chunks: chunks)
-    }
-    
+	private func receiveContentChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
+		fatalError("Whisperer received content (\(pair.chunk.toString())) from \(pair.remote.id)")
+	}
+
+	private func receiveControlChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
+		processControlChunk(remote: pair.remote, chunk: pair.chunk)
+	}
+
+	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
+		if chunk.isPresenceMessage() {
+			guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
+				fatalError("Received a presence message with invalid data: \(chunk.toString())")
+			}
+			guard info.conversationId == "discover" || info.conversationId == conversation.id else {
+				logger.info("Ignoring a presence message about the wrong conversation: \(info.conversationId)")
+				return
+			}
+			let offset = WhisperProtocol.ControlOffset(rawValue: chunk.offset)
+			switch offset {
+			case .listenOffer, .listenRequest:
+				let candidate = candidateFor(remote: remote, info: info)
+				if candidate.isPending {
+					if offset == .listenOffer {
+						if info.conversationId == "discover" {
+							// this is a user who has never been in this conversation before,
+							// so he's not allowed to discover this conversation is available
+							logger.info("Ignoring a discovery offer an from unknown listener")
+						} else {
+							logger.info("Sending whisper offer to new \(remote.kind) listener: \(candidate.id)")
+							let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
+							transport.sendControl(remote: candidate.remote, chunk: chunk)
+						}
+					} else {
+						logger.info("Making invite for new \(remote.kind) listener: \(candidate.id)")
+						invites = candidates.values.filter{$0.isPending}.sorted()
+						showStatusDetail = !invites.isEmpty
+					}
+				} else {
+					logger.info("Authorizing known \(remote.kind) listener: \(candidate.id)")
+					transport.authorize(remote: candidate.remote)
+					let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation, contentId: contentId)
+					transport.sendControl(remote: candidate.remote, chunk: chunk)
+				}
+			case .joining:
+				let candidate = candidateFor(remote: remote, info: info)
+				logger.info("\(remote.kind) Listener has joined the conversation: \(candidate.id)")
+				candidate.hasJoined = true
+				refreshStatusText()
+			default:
+				fatalError("\(remote.kind) Listener sent an unexpected presence message: \(chunk)")
+			}
+		} else if chunk.isReplayRequest() {
+			guard let candidate = candidates[remote.id], !candidate.isPending else {
+				logger.warning("Ignoring replay request from \(remote.kind) unknown/unauthorized remote \(remote.id)")
+				return
+			}
+			let chunks = [WhisperProtocol.ProtocolChunk.fromLiveText(text: liveText)]
+			transport.sendContent(remote: candidate.remote, chunks: chunks)
+		}
+	}
+
+	private func candidateFor(
+		remote: Remote,
+		info: WhisperProtocol.ClientInfo
+	) -> Candidate {
+		let authorized = profile.isListener(conversation, info: info)
+		if let existing = candidates[remote.id] {
+			// update info if we need to and can
+			if existing.info.username.isEmpty {
+				// if it's a request, use the username from the request
+				if !info.username.isEmpty {
+					existing.info.username = info.username
+				}
+				// otherwise, if it's an offer, use the last known username if any
+				else if let auth = authorized {
+					existing.info.username = auth.username
+				}
+			}
+			return existing
+		} else {
+			let candidate = Candidate(remote: remote, info: info, isPending: authorized == nil)
+			// if it's an offer, use the last known username if any
+			if info.username.isEmpty, let auth = authorized {
+				candidate.info.username = auth.username
+			}
+			candidates[candidate.id] = candidate
+			return candidate
+		}
+	}
+
 	private func speak(_ text: String) {
 		if PreferenceData.elevenLabsApiKey().isEmpty || PreferenceData.elevenLabsVoiceId().isEmpty {
 			let utterance = AVSpeechUtterance(string: text)
@@ -175,7 +321,7 @@ final class WhisperViewModel: ObservableObject {
 			ElevenLabs.shared.speakText(text: text)
 		}
 	}
-
+    
     // play the alert sound locally
     private func playSoundLocally(_ name: String) {
         var name = name
@@ -201,14 +347,25 @@ final class WhisperViewModel: ObservableObject {
     }
 
     private func refreshStatusText() {
-        guard !remotes.isEmpty else {
-            statusText = "No listeners yet, but you can type"
-            return
-        }
-        if remotes.count == 1 {
-            statusText = "Whispering to \(remotes.first!.value.name)"
+		let listeners = candidates.values.filter{$0.hasJoined}
+		if listeners.isEmpty {
+			if invites.isEmpty {
+				statusText = "\(conversation.name): No listeners yet, but you can type"
+			} else {
+				statusText = "\(conversation.name): Tap to see pending listeners"
+			}
+		} else if listeners.count == 1 {
+			if invites.isEmpty {
+				statusText = "\(conversation.name): Whispering to \(listeners.first!.info.username)"
+			} else {
+				statusText = "\(conversation.name): Whispering to \(listeners.first!.info.username) (+ \(invites.count) pending)"
+			}
         } else {
-            statusText = "Whispering to \(remotes.count) listeners"
+			if invites.isEmpty {
+				statusText = "\(conversation.name): Whispering to \(listeners.count) listeners"
+			} else {
+				statusText = "\(conversation.name): Whispering to \(listeners.count) listeners (+ \(invites.count) pending)"
+			}
         }
     }
 }

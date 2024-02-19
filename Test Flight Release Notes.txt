@@ -1,4 +1,4 @@
-BUILD 18:
+v1 BUILD 18:
 OK, Whisper fans, it's the moment you've been waiting for: Whisper can now talk over the internet!!  That's definitely what you will want to try out on this build.  (There are a few other small improvements, but they are not as important.) In the released version on the App Store, whispering over the internet will be a paid feature (because the cloud infrastructure it uses has to be rented), but as my greatly valued testers you can all try it for free!
 
 You will see a new row of buttons for whispering or listening over the internet (look for the network symbol on the buttons). Under the Whisper to internet button you will see a "Share URL" button - that's the URL you need to give to your internet listeners so they can connect - messaging them works well.  (Bluetooth listeners don't need the URL, of course, and yes you are whispering over both Bluetooth and the internet at the same time.) Under the Listen to Internet button you will see a "Retrieve URL" button - that looks for a whisper URL on the clipboard and copies to the app so it can be listened to.
@@ -10,7 +10,7 @@ There is a single "Whisper URL" for each device, so once you've shared your devi
 Please give it a try and let me know what you think.  Feel free to text me your whisper URL and we can connect.
 
 
-BUILD 19:
+v1 BUILD 19:
 This is a bug-fix build that addresses some of the issues noticed in the first internet-capable build.  Here are the issues that are definitely fixed:
 
 - the one where you had to manually select a whisperer in Bluetooth mode.
@@ -31,7 +31,7 @@ People with the whisper app should not need to do the copy/paste thing in order 
 
 There is a single "Whisper URL" for each device, so once you've shared your device's link with someone else they can always use it to listen to your device.  But of course messaging them again will let them know you're ready to whisper.
 
-BUILD 22:
+v1 BUILD 22:
 IMPORTANT NOTE FOR TESTERS: Delete your current build of Whisper before you install this one!!  On MacOS, that means not only deleting the application but also going into your ~/Library/Containers directory and deleting the Whisper item found there.
 
 This is a bug-fix build that addresses the flakiness in internet connectivity noticed on some devices.  In addition, the whisperer and listener views show whether the remote is connected via internet or bluetooth.
@@ -44,7 +44,7 @@ People with the whisper app should not need to do the copy/paste thing in order 
 
 There is a single "Whisper URL" for each device, so once you've shared your device's link with someone else they can always use it to listen to your device.  But of course messaging them again will let them know you're ready to whisper.
 
-BUILDS 30 (internal) & 31 (external):
+v1 BUILDS 30 (internal) & 31 (external):
 This is a cosmetic improvement and bug fix release:
 
 1. Hopefully it addresses the "nonny is gay" bug.  But I've been wrong about that before :).
@@ -52,7 +52,7 @@ This is a cosmetic improvement and bug fix release:
 3. I'm collecting a bit more diagnostic data to help track down bugs.  This data is never associated with user's identities in any way.
 4. Internet listening will more reliably show the name of the whisperer.
 
-BUILDS 32 (internal) & 33 (external):
+v1 BUILDS 32 (internal) & 33 (external):
 This build introduces several changes:
 
 1. Listeners don't stop when they disconnect from a whisperer.  Instead they try to reconnect.  So connections are much more stable.
@@ -63,7 +63,7 @@ This build introduces several changes:
 
 NOTE: If you get a message when internet whispering about not being able to authenticate, try quitting and restarting the app.  If that doesn't work, delete and then reinstall the app.
 
-BUILD 35 (external):
+v1 BUILD 35 (external):
 Another cosmetic improvement and bug fix release:
 
 1. Past text should now scroll correctly (so the most recent line is always visible).
@@ -82,16 +82,16 @@ Another cosmetic improvement and bug fix release:
 
 6. When there is only one listener, the whisper status text shows their name.
 
-BUILD 36 (external):
+v1 BUILD 36 (external):
 This build simplifies the choice screen: there is now just one Whisper button and one Listen button.  The Whisper button always sends whispers both via bluetooth and the internet, but the Listen button only listens via bluetooth. This means the only way to Listen via the internet is to click on a "Listen to ..." link sent from the whisperer, which will start a "listen to internet" session.
 
-BUILD 37 (internal):
+v1 BUILD 37 (internal):
 This build moves us to three documentation buttons: How To Use, About, and Support.
 
-BUILD 38 (internal):
+v1 BUILD 38 (internal):
 This build adds a version string to the main screen and updates the app icon.
 
-BUILD 39 (external):
+v1 BUILD 39 (external):
 This build improves the documentation and support options:
 
 - There are now How To Use, About, and Support buttons, which display appropriate info in a browser.
@@ -102,7 +102,7 @@ This build improves the documentation and support options:
 
 In addition, the app icon has been revamped to use a white dashed line, which is both prettier and more readable than the prior black dashed line.
 
-BUILD 40 (internal):
+v1 BUILD 40 (internal):
 This build makes preference changes recommended by the docs writer:
 
 - Make the whisper alert sound only changeable from the whisper view.
@@ -111,7 +111,7 @@ This build makes preference changes recommended by the docs writer:
 
 - Reword the bluetooth pairing setting so it's clearer that it is controlled by the Whisperer.
 
-BUILD 41 (internal):
+v1 BUILD 41 (internal):
 This build makes preference changes recommended by the docs writer:
 
 - Make the whisper alert sound only changeable from the whisper view.
@@ -122,7 +122,7 @@ This build makes preference changes recommended by the docs writer:
 
 This build also drops the background app refresh capability, which is not needed.
 
-BUILD 42 (withdrawn) and 43 (external):
+v1 BUILD 42 (withdrawn) and 43 (external):
 This build makes preference changes recommended by the docs writer:
 
 - Make the whisper alert sound only changeable from the whisper view.
@@ -133,21 +133,21 @@ This build makes preference changes recommended by the docs writer:
 
 In addition, Bluetooth is no longer required in order to use Whisper.  If it's not available, the Listen button is disabled and a message is shown explaining why.  If neither Bluetooth nor Internet are available, both Whisper and Listen are disabled and a message is shown explaining why.  If Bluetooth is available but internet is not, no message is shown but the "Share Listen Link" button is disabled when whispering.
 
-BUILD 44 (external):
+v1 BUILD 44 (external):
 This build fixes one bug and supports a better experience listening from a web browser:
 
 - The bug that was keeping Whisperers from dropping unwanted Listeners has been fixed.
 
 - The web listener now disconnects automatically whenever the Whisperer disconnects or when the Whisperer drops them.  So web listeners will no longer hang around on the Whisperer's sole conversation.
 
-BUILD 45 (external)
+v1 BUILD 45 (external)
 This build fixes one bug and supports a better experience when conversations end:
 
 - The bug that was keeping Whisperers from dropping unwanted Listeners has been fixed. Now the Whisperer can drop both app listeners and web Listeners from the conversation.
 
 - Listeners now disconnect automatically whenever the Whisperer disconnects.  So Listeners will no longer hang around on the Whisperer's sole conversation.
 
-BUILD 46 (external):
+v1 BUILD 46 (external):
 The last build made all Listeners stop listening whenever the Whisperer disconnected, but  Bluetooth Whisperers often suffer spontaneous, temporary disconnects from their Listeners.  So this build relaxes the auto-disconnect behavior for Bluetooth connections: when the Whisperer disconnects, the Listeners will keep connected and wait for the Whisperer to come back.
 
 This build also remembers from one session to the next what size of text is being used, and whether the regular or large set of sizes is in use.
@@ -160,6 +160,7 @@ To enable this feature, you have to enter a valid ElevenLabs api key and voice i
 BUILD 48 (external):
 This build introduces some creature comforts for generated speech:
 
+v2 BUILD 3 (external):
 1. If the Whisperer finishes typing a line while the previous line is still being spoken, the speaking of the new line will be queued until the speech of the previous line finishes.
 
 2. Blank lines are not spoken.  But typing two blank lines in a row while an earlier line is being spoken will stop the speech.  (If there are queued lines waiting to be spoken, the next one will start.  Typing two more blank lines will stop it.)
@@ -172,3 +173,48 @@ This build has a couple of small improvements and bug fixes:
 
 BUILD 50 (external):
 This build adds a preference to control latency suppression in speech generation.
+
+v2 BUILDS 1 & 2 (internal):
+This is the first build of v2, which supports multiple named conversations and requires both the Listeners and the Whisperer to explicitly approve (once) their participation in a given named conversation.
+
+This build only supports Bluetooth connections. Internet will come once the transports and server have been updated.  Links can be sent to other users and will work as long as the other user is in Bluetooth range, because the app will use the link to try a Bluetooth connection.
+
+v2 BUILD 3 (external):
+This is the first build of v2, which supports multiple, named conversations (controlled by the Whisperer) and requires both the Listeners and the Whisperer to explicitly approve mutual participation in a given named conversation.
+
+Like v1, Listeners can listen to a Whisperer either over Bluetooth or via the internet (aka Wireless).  Unlike v1, a user who clicks on a link to join a conversation in the app will join it via Bluetooth rather than Wireless if the Whisperer is local to them.
+
+To engage in a conversation for the first time, a Listener must have received a link from the Whisperer. The first step when using the link will be for the Listener and then the Whisperer to agree to be in conversation with each other. Thereafter the Listener can directly join the conversation without further prompting.
+
+The app remembers all conversations that its user has participated in, both as Whisperer and as Listener.  To see your Whisper conversations, long-press on the Whisper button: that will pop up an interface that allows you to create and edit conversations (including removing allowed Listeners), and to select which one will be used by default when you click the Whisper button.  To see your Listen conversations, long-press on the Listen button: that will pop up an interface that lets you see the conversation name and the Whisperer name for all conversations in which you have participated, as well as to select one of them to listen to anew (exactly like clicking on the link).
+
+For Whisperers and Listeners who are within Bluetooth range (such as members of the same household), the app can discover any conversations the Listener has been in before that are in progress at the time.  This allows these Listeners to rejoin any of these conversations simply by clicking on the Listen button.
+
+v2 BUILD 5 (external) & BUILD 6 (internal):
+This is the first public build of v2, which supports multiple, named conversations (controlled by the Whisperer) and requires both the Listeners and the Whisperer to explicitly approve mutual participation in a given named conversation.
+
+Like v1, Listeners can listen to a Whisperer either over Bluetooth or via the internet (aka Wireless).  Unlike v1, a user who clicks on a link to join a conversation in the app will join it via Bluetooth rather than Wireless if the Whisperer is local to them.
+
+To engage in a conversation for the first time, a Listener must have received a link from the Whisperer. The first step when using the link will be for the Listener and then the Whisperer to agree to be in conversation with each other. Thereafter the Listener can directly join the conversation without further prompting on either side.
+
+The app remembers all conversations that its user has participated in, both as Whisperer and as Listener.  To see your Whisper conversations, long-press on the Whisper button: that will pop up an interface that allows you to create and edit conversations (including removing allowed Listeners), and to select which one will be used by default when you click the Whisper button.  To see your Listen conversations, long-press on the Listen button: that will pop up an interface that lets you see the conversation name and the Whisperer name for all conversations in which you have participated, as well as to select one of them to listen to anew (exactly like clicking on the link).
+
+For Whisperers and Listeners who are within Bluetooth range (such as members of the same household), the app can discover any conversations the Listener has been in before that are in progress at the time.  This allows these Listeners to rejoin any of these conversations simply by clicking on the Listen button.
+
+Web listeners get a new, improved interface in v2.  Not only does it look better, it works more like the application in a number of ways.  First of all, the web interface always displays the name of the Whisperer and the name of the conversation, and won't connect to it until the user agrees to enter.  Second, the text typed by the Whisperer can't be copied by a web-based Listener.  Finally, the display areas for the Whisperer's live and past typing automatically adjust in size as needed.
+
+v2 BUILD 7 (external) & BUILD 8 (external):
+This is an updated public build of v2, which supports multiple, named conversations (controlled by the Whisperer) and requires both the Listeners and the Whisperer to explicitly approve mutual participation in a given named conversation.
+
+Like v1, Listeners can listen to a Whisperer either over Bluetooth or via the internet (aka Wireless).  Unlike v1, a user who clicks on a link to join a conversation in the app will join it via Bluetooth rather than Wireless if the Whisperer is local to them.
+
+To engage in a conversation for the first time, a Listener must have received a link from the Whisperer. The first step when using the link will be for the Listener and then the Whisperer to agree to be in conversation with each other. Thereafter the Listener can directly join the conversation without further prompting on either side.
+
+The app remembers all conversations that its user has participated in, both as Whisperer and as Listener.  To see your Whisper conversations, long-press on the Whisper button: that will pop up an interface that allows you to create and edit conversations (including removing allowed Listeners), and to select which one will be used by default when you click the Whisper button.  To see your Listen conversations, long-press on the Listen button: that will pop up an interface that lets you see the conversation name and the Whisperer name for all conversations in which you have participated, as well as to select one of them to listen to anew (exactly like clicking on the link).
+
+For Whisperers and Listeners who are within Bluetooth range (such as members of the same household), the app can discover any conversations the Listener has been in before that are in progress at the time.  This allows these Listeners to rejoin any of these conversations simply by clicking on the Listen button.
+
+Web listeners get a new, improved interface in v2.  Not only does it look better, it works more like the application in a number of ways.  First of all, the web interface always displays the name of the Whisperer and the name of the conversation, and won't connect to it until the user agrees to enter.  Second, the text typed by the Whisperer can't be copied by a web-based Listener.  Finally, the display areas for the Whisperer's live and past typing automatically adjust in size as needed.
+
+For Whisperers or Listeners who routinely use multiple devices, there is a new "Profile Sharing" feature which allows you to have the same user profile (including your name and all the conversations you whisper on or listen to) on all your devices.  Profile changes you make on one device will be synchronized to another device when you next open the app on that device (or long-press on the Whisper or Listen button, if the app is already open). To start using this feature, look for the "Profile Sharing" button at the bottom of the Whisper home screen.
+
