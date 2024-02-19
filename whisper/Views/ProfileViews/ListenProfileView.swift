@@ -44,6 +44,9 @@ struct ListenProfileView: View {
 					Text("(No past conversations)")
 						.padding()
 				}
+				#if DEBUG
+				ListenLinkView(maybeListen: maybeListen)
+				#endif
 			}
 			.toolbarTitleDisplayMode(.large)
 			.navigationTitle("Conversations")
@@ -63,6 +66,30 @@ struct ListenProfileView: View {
 		conversations = profile.listenProfile.conversations()
     }
 }
+
+#if DEBUG
+struct ListenLinkView: View {
+	var maybeListen: ((ListenConversation?) -> Void)?
+
+	@State var link: String = ""
+
+	var body: some View {
+		Form {
+			Section("Paste link here to listen") {
+				TextField("Conversation link", text: $link)
+					.onSubmit {
+						if let id = PreferenceData.publisherUrlToConversationId(url: link) {
+							let conversation = UserProfile.shared.listenProfile.fromLink(id)
+							maybeListen?(conversation)
+						} else {
+							link = "Not valid: \(link)"
+						}
+					}
+			}
+		}
+	}
+}
+#endif
 
 #Preview {
     ListenProfileView()

@@ -153,7 +153,7 @@ final class TcpListenTransport: SubscribeTransport {
 		logger.info("TCP listen transport: open control channel")
         controlChannel = getClient().channels.get(channelName + ":control")
         controlChannel?.on(.attached) { stateChange in
-			logger.info("TCP whisper transport: attach to control channel")
+			logger.info("TCP listen transport: attach to control channel")
         }
         controlChannel?.on(.detached) { stateChange in
             logger.log("TCP listen transport: detach from control channel")
@@ -162,7 +162,7 @@ final class TcpListenTransport: SubscribeTransport {
         controlChannel?.subscribe(clientId, callback: receiveControlMessage)
         controlChannel?.subscribe("all", callback: receiveControlMessage)
 		let chunk = WhisperProtocol.ProtocolChunk.listenOffer(conversation)
-		logger.info("TCP whisper transport: sending listen offer: \(chunk)")
+		logger.info("TCP listen transport: sending listen offer: \(chunk)")
 		controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
     }
     

@@ -24,7 +24,7 @@ final class TcpAuthenticator {
 	init(mode: OperatingMode, conversationId: String, conversationName: String, callback: @escaping (String) -> Void) {
         self.mode = mode
         self.conversationId = conversationId
-		self.conversationName = conversationName
+		self.conversationName = conversationName.isEmpty ? "ListenOffer" : conversationName
         self.failureCallback = callback
     }
     

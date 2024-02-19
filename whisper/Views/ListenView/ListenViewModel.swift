@@ -453,11 +453,12 @@ final class ListenViewModel: ObservableObject {
         if let whisperer = whisperer {
 			statusText = "\(conversation!.name): Listening to \(whisperer.info.username)"
 		} else if let c = conversation {
+			let prefix = c.name.isEmpty ? "" : "\(c.name): "
 			if discoveryInProgress {
 				let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
-				statusText = "\(c.name): Looking for the Whisperer…\(suffix)"
+				statusText = "\(prefix)Looking for the Whisperer…\(suffix)"
 			} else {
-				statusText = "\(c.name): Waiting for the Whisperer…"
+				statusText = "\(prefix)Waiting for the Whisperer…"
 			}
 		} else {
 			if discoveryInProgress {
