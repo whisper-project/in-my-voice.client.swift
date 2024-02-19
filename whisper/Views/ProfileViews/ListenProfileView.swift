@@ -22,13 +22,13 @@ struct ListenProfileView: View {
 				if (!conversations.isEmpty) {
 					VStack(alignment: .leading) {
 						ForEach(conversations) { c in
-							HStack(spacing: 20) {
-								Text("\(c.name) with \(c.ownerName)").lineLimit(nil)
-								Spacer(minLength: 25)
-								Button("Listen", systemImage: "icloud.and.arrow.down") {
+							HStack(spacing: 10) {
+								Button("Listen", systemImage: "ear") {
 									logger.info("Hit listen button on \(c.id) (\(c.name))")
 									maybeListen?(c)
 								}
+								Text("\(c.name) with \(c.ownerName)").lineLimit(nil)
+								Spacer(minLength: 25)
 								Button("Delete", systemImage: "delete.left") {
 									logger.info("Hit delete button on \(c.id) (\(c.name))")
 									profile.listenProfile.delete(c.id)

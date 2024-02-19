@@ -22,18 +22,16 @@ struct WhisperProfileView: View {
 			List {
 				ForEach(rows) { r in
 					NavigationLink(destination: WhisperProfileDetailView(conversation: r.conversation)) {
-						HStack(spacing: 15) {
-							Text(r.id)
-								.lineLimit(nil)
-								.bold(r.conversation == defaultConversation)
-							Spacer(minLength: 25)
-							Button("Whisper", systemImage: "icloud.and.arrow.up") {
+						HStack(spacing: 10) {
+							Button("Whisper", systemImage: "mouth") {
 								logger.info("Hit whisper button on \(r.conversation.id) (\(r.id))")
 								maybeWhisper?(r.conversation)
 							}
 							.labelStyle(.iconOnly)
 							.buttonStyle(.bordered)
-							Spacer().frame(width: 15)
+							Text(r.id)
+								.lineLimit(nil)
+								.bold(r.conversation == defaultConversation)
 						}
 					}
 				}
