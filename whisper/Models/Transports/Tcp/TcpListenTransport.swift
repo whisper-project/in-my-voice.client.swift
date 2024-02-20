@@ -175,8 +175,7 @@ final class TcpListenTransport: SubscribeTransport {
         contentChannel = nil
         controlChannel?.detach()
         controlChannel = nil
-        client?.close()
-        client = nil
+		authenticator.releaseClient()
     }
 
 	private func removeCandidate(_ remote: Remote, sendDrop: Bool = false) {

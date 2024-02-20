@@ -27,11 +27,16 @@ final class TcpAuthenticator {
 		self.conversationName = conversationName.isEmpty ? "ListenOffer" : conversationName
         self.failureCallback = callback
     }
-    
+
+	deinit {
+		releaseClient()
+	}
+
     func getClient() -> ARTRealtime {
         if let client = self.client {
             return client
         }
+		logger.info("TCP Authenticator: Creating ART Realtime client")
         let options = ARTClientOptions()
         options.clientId = self.clientId
         options.authCallback = getTokenRequest
@@ -41,7 +46,16 @@ final class TcpAuthenticator {
         self.client = client
         return client
     }
-    
+
+	func releaseClient() {
+		if let client = self.client {
+			logger.info("TCP Authenticator: Closing ART Realtime client")
+			client.close()
+		}
+		logger.info("TCP Authenticator: Releasing ART Realtime client")
+		client = nil
+	}
+
     struct ClientClaims: Claims {
         let iss: String
         let exp: Date

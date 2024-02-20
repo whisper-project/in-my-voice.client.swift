@@ -174,8 +174,8 @@ final class TcpWhisperTransport: PublishTransport {
         contentChannel = nil
         controlChannel?.detach()
         controlChannel = nil
-        client?.close()
-        client = nil
+		client = nil
+		authenticator.releaseClient()
     }
     
     private func receiveControlMessage(message: ARTMessage) {
