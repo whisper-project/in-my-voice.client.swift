@@ -111,6 +111,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		}
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpBody = data
 		Data.executeJSONRequest(request)
 	}
@@ -139,6 +140,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue("\"\(self.name)\"", forHTTPHeaderField: "If-None-Match")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 		func notifyChange() {
@@ -243,6 +245,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		}
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: nameHandler)
 	}
