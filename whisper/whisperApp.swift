@@ -60,7 +60,7 @@ let liveTextProportion = liveTextFifths/5.0
 
 /// global timeouts
 let listenerAdTime = TimeInterval(2)    // seconds of listener advertising for whisperers
-let listenerWaitTime = TimeInterval(3)  // seconds of listener wait for multiple whisperers to respond
+let listenerWaitTime = TimeInterval(2)  // seconds of Bluetooth listener search before checking the internet
 let whispererAdTime = TimeInterval(2)   // seconds of whisperer advertising to listeners
 
 /// logging
