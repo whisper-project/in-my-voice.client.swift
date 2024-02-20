@@ -143,7 +143,8 @@ final class ComboListenTransport: SubscribeTransport {
 		#else
 		if localStatus == .on {
 			logger.error("The Bluetooth connection was available but has dropped")
-			failureCallback?("The Bluetooth network has become unavailable")
+			// don't fail because this happens when we sleep and it comes back.
+			// failureCallback?("The Bluetooth network has become unavailable")
 		}
 		localStatus = status
 		#endif
