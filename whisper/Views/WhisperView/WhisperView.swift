@@ -18,7 +18,8 @@ struct WhisperView: View {
     @StateObject private var model: WhisperViewModel
 	@State private var size = PreferenceData.sizeWhenWhispering
 	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
-    
+	@State private var confirmStop: Bool = false
+
     init(mode: Binding<OperatingMode>, conversation: WhisperConversation) {
         self._mode = mode
         self.conversation = conversation
@@ -28,7 +29,7 @@ struct WhisperView: View {
     var body: some View {
         GeometryReader { proxy in
             VStack(spacing: 10) {
-                ControlView(size: $size, magnify: $magnify, mode: $mode, playSound: model.playSound)
+				ControlView(size: $size, magnify: $magnify, mode: .whisper, maybeStop: maybeStop, playSound: model.playSound)
                     .padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
                 PastTextView(mode: .whisper, model: model.pastText)
                     .font(FontSizes.fontFor(size))
@@ -71,38 +72,53 @@ struct WhisperView: View {
                     .padding(EdgeInsets(top: 0, leading: sidePad, bottom: whisperViewBottomPad, trailing: sidePad))
                     .dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
             }
-            .multilineTextAlignment(.leading)
-            .lineLimit(nil)
-			.alert("Connection Failure", isPresented: $model.connectionError) {
-				Button("OK") { mode = .ask }
-			} message: {
-				Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
+        }
+		.multilineTextAlignment(.leading)
+		.lineLimit(nil)
+		.alert("Confirm Stop", isPresented: $confirmStop) {
+			Button("Stop") {
+				mode = .ask
 			}
-			.onAppear {
-				logger.log("WhisperView appeared")
-				self.model.start()
+			Button("Don't Stop") { 
 				focusField = "liveText"
 			}
-			.onDisappear {
-				logger.log("WhisperView disappeared")
-				self.model.stop()
+		} message: {
+			Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+		}
+		.alert("Connection Failure", isPresented: $model.connectionError) {
+			Button("OK") { mode = .ask }
+		} message: {
+			Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
+		}
+		.onAppear {
+			logger.log("WhisperView appeared")
+			model.start()
+			focusField = "liveText"
+		}
+		.onDisappear {
+			logger.log("WhisperView disappeared")
+			model.stop()
+		}
+		.onChange(of: scenePhase) {
+			switch scenePhase {
+			case .background:
+				logger.log("Went to background")
+				model.wentToBackground()
+			case .inactive:
+				logger.log("Went inactive")
+			case .active:
+				logger.log("Went to foreground")
+				model.wentToForeground()
+			@unknown default:
+				logger.error("Went to unknown phase: \(String(describing: scenePhase))")
 			}
-			.onChange(of: scenePhase) {
-				switch scenePhase {
-				case .background:
-					logger.log("Went to background")
-					model.wentToBackground()
-				case .inactive:
-					logger.log("Went inactive")
-				case .active:
-					logger.log("Went to foreground")
-					model.wentToForeground()
-				@unknown default:
-					logger.error("Went to unknown phase: \(String(describing: scenePhase))")
-				}
-			}
-        }
+		}
     }
+
+	private func maybeStop() {
+		focusField = nil
+		confirmStop = true
+	}
 }
 
 #Preview {
