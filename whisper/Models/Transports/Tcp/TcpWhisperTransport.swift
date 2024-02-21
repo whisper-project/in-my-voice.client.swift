@@ -167,12 +167,18 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
     private func closeChannels() {
+		guard let control = controlChannel else {
+			// we never opened the channels, so nothing to do
+			return
+		}
 		logger.info("Send drop message to \(self.remotes.count) remotes")
         let chunk = WhisperProtocol.ProtocolChunk.dropping()
-        controlChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
-        contentChannel?.detach()
-        contentChannel = nil
-        controlChannel?.detach()
+        control.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
+		if let content = contentChannel {
+			content.detach()
+			contentChannel = nil
+		}
+        control.detach()
         controlChannel = nil
 		client = nil
 		authenticator.releaseClient()

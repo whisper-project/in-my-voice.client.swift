@@ -167,14 +167,21 @@ final class TcpListenTransport: SubscribeTransport {
     }
     
     private func closeChannels() {
+		guard let control = controlChannel else {
+			// we never opened the channels, so don't try to close them
+			return
+		}
 		logger.info("TCP listen transport: closing both channels")
 		logger.info("TCP listen transport: publishing drop to \(self.remotes.count) remotes")
 		let chunk = WhisperProtocol.ProtocolChunk.dropping()
-        controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
-        contentChannel?.detach()
-        contentChannel = nil
-        controlChannel?.detach()
+        control.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
+		if let content = contentChannel {
+			content.detach()
+			contentChannel = nil
+		}
+        control.detach()
         controlChannel = nil
+		client = nil
 		authenticator.releaseClient()
     }
 
