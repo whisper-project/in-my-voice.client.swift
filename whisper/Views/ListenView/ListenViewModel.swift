@@ -300,11 +300,20 @@ final class ListenViewModel: ObservableObject {
 			}
 		case .listenAuthNo:
 			logger.info("Received refusal from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
-			guard candidates[remote.id] != nil else {
+			guard let candidate = candidates[remote.id] else {
 				logger.error("Ignoring refusal from \(remote.kind) non-candidate \(remote.id)")
 				return
 			}
 			profile.delete(info.conversationId)
+			// drop the remote we heard this from
+			if candidate === whisperer {
+				logger.warning("Whisperer has deauthorized this listener")
+				// make sure we stop listening before we put up the dialog
+				stop()
+			} else {
+				logger.warning("Candidate has refused our listen request")
+				dropCandidate(remote)
+			}
 			connectionErrorDescription = "The Whisperer has refused to let you listen"
 			connectionError = true
 		default:
