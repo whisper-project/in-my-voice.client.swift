@@ -135,7 +135,7 @@ struct ListenView: View {
                 logger.log("Went to foreground")
                 model.wentToForeground()
             @unknown default:
-                logger.error("Went to unknown phase: \(String(describing: scenePhase))")
+                logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
             }
         }
     }

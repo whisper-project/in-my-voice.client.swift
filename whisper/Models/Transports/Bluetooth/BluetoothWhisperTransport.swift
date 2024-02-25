@@ -57,7 +57,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 
     func drop(remote: Remote) {
 		guard let existing = remotes[remote.central] else {
-            logger.error("Ignoring drop request for \(remote.kind) non-remote: \(remote.id)")
+            logger.error("Ignoring drop request for \(remote.kind, privacy: .public) non-remote: \(remote.id, privacy: .public)")
             return
         }
 		logger.info("Dropping \(remote.kind) remote \(existing.id)")
@@ -67,7 +67,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 	func authorize(remote: Remote) {
 		guard running else { return }
 		guard let existing = remotes[remote.central] else {
-			logger.error("Ignoring authorization for \(remote.kind) non-remote: \(remote.id)")
+			logger.error("Ignoring authorization for \(remote.kind, privacy: .public) non-remote: \(remote.id, privacy: .public)")
 			return
 		}
 		remote.isAuthorized = true
@@ -81,7 +81,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 	func deauthorize(remote: Remote) {
 		guard running else { return }
 		guard let existing = remotes[remote.central] else {
-			logger.error("Ignoring deauthorization for \(remote.kind) non-remote: \(remote.id)")
+			logger.error("Ignoring deauthorization for \(remote.kind, privacy: .public) non-remote: \(remote.id, privacy: .public)")
 			return
 		}
 		remote.isAuthorized = false
@@ -126,7 +126,7 @@ final class BluetoothWhisperTransport: PublishTransport {
                       let id = adName as? String,
 					  id == "discover" || id == BluetoothData.deviceId(conversation.id)
                 else {
-                    logger.error("Ignoring invalid advertisement from \(pair.0)")
+                    logger.error("Ignoring invalid advertisement from \(pair.0, privacy: .public)")
                     return
                 }
                 logger.debug("Responding to ad from local remote: \(pair.0)")
@@ -150,11 +150,11 @@ final class BluetoothWhisperTransport: PublishTransport {
 				listeners.append(pair.0)
 			} else {
 				// this is an eavesdropper
-				logger.error("Found an eavesdropper: \(pair.0)")
+				logger.error("Found an eavesdropper: \(pair.0, privacy: .public)")
 				eavesdroppers.append(pair.0)
 			}
 		} else {
-			logger.error("Ignoring subscribe for unexpected characteristic: \(pair.1)")
+			logger.error("Ignoring subscribe for unexpected characteristic: \(pair.1, privacy: .public)")
 		}
     }
     
@@ -162,7 +162,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 		if let remote = remotes[pair.0] {
 			// unexpected unsubscription, act as if the remote had dropped
 			remote.hasDropped = true
-			logger.error("Unsubscribe by \(remote.kind) remote \(remote.id) that hasn't dropped")
+			logger.error("Unsubscribe by \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public) that hasn't dropped")
 			removeRemote(remote)
 			lostRemoteSubject.send(remote)
 		}
@@ -176,14 +176,14 @@ final class BluetoothWhisperTransport: PublishTransport {
 			} else if pair.1.uuid == BluetoothData.controlOutUuid {
 				removed.controlSubscribed = false
 			} else {
-				logger.error("Got unsubscribe for a non-published characteristic: \(pair.1)")
+				logger.error("Got unsubscribe for a non-published characteristic: \(pair.1, privacy: .public)")
 			}
 			if !removed.contentSubscribed && !removed.controlSubscribed {
 				// the remote has fully disconnected, forget about it
 				removedRemotes.removeValue(forKey: pair.0)
 			}
 		} else {
-			logger.error("Ignoring unsubscribe from unknown central: \(pair.0)")
+			logger.error("Ignoring unsubscribe from unknown central: \(pair.0, privacy: .public)")
         }
 		if !running {
 			if remotes.isEmpty {
@@ -207,7 +207,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             return
         }
         let characteristic = request.characteristic
-		logger.error("Got a read request for an unexpected characteristic: \(characteristic)")
+		logger.error("Got a read request for an unexpected characteristic: \(characteristic, privacy: .public)")
 		factory.respondToReadRequest(request: request, withCode: .attributeNotFound)
     }
     
@@ -216,19 +216,19 @@ final class BluetoothWhisperTransport: PublishTransport {
             fatalError("Got an empty write request sequence")
         }
         guard requests.count == 1 else {
-            logger.error("Got multiple write requests in a batch: \(requests)")
+            logger.error("Got multiple write requests in a batch: \(requests, privacy: .public)")
             factory.respondToWriteRequest(request: request, withCode: .requestNotSupported)
             return
         }
 		guard request.characteristic.uuid == BluetoothData.controlInUuid else {
-            logger.error("Got a write request for an unexpected characteristic: \(request)")
+            logger.error("Got a write request for an unexpected characteristic: \(request, privacy: .public)")
             factory.respondToWriteRequest(request: request, withCode: .attributeNotFound)
             return
         }
         guard let value = request.value,
 			  let chunk = WhisperProtocol.ProtocolChunk.fromData(value)
         else {
-            logger.error("Ignoring a malformed packet: \(request)")
+            logger.error("Ignoring a malformed packet: \(request, privacy: .public)")
             factory.respondToWriteRequest(request: request, withCode: .unlikelyError)
 			PreferenceData.bluetoothErrorCount += 1
             return
@@ -242,6 +242,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 			lostRemoteSubject.send(remote)
 			return
 		}
+		logger.notice("Received control packet from \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public): \(chunk, privacy: .public)")
 		controlSubject.send((remote: remote, chunk: chunk))
         factory.respondToWriteRequest(request: request, withCode: .success)
     }

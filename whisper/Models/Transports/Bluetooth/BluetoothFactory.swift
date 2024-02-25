@@ -164,7 +164,7 @@ extension BluetoothFactory: CBPeripheralManagerDelegate {
     
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
         if let err = error {
-            logger.error("Add \(service) failed with \(err)")
+            logger.error("Add \(service, privacy: .public) failed with \(err, privacy: .public)")
             fatalError("Couldn't add the service \(service) - please report a bug!")
         }
     }
@@ -193,7 +193,7 @@ extension BluetoothFactory: CBPeripheralManagerDelegate {
 extension BluetoothFactory: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let err = error {
-            logger.error("Error discovering services for \(peripheral): \(err)")
+            logger.error("Error discovering services for \(peripheral, privacy: .public): \(err, privacy: .public)")
             return
         }
         servicesSubject.send((peripheral, peripheral.services ?? []))
@@ -201,7 +201,7 @@ extension BluetoothFactory: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         if let err = error {
-            logger.error("Error discovering characteristics for \(service) on \(peripheral): \(err)")
+            logger.error("Error discovering characteristics for \(service, privacy: .public) on \(peripheral, privacy: .public): \(err, privacy: .public)")
             return
         }
         characteristicsSubject.send((peripheral, service))

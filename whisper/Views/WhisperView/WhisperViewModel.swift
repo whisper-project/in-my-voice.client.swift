@@ -148,7 +148,7 @@ final class WhisperViewModel: ObservableObject {
 
 	func acceptRequest(_ id: String) {
 		guard let invitee = candidates[id] else {
-			logger.error("Ignoring accepted invite from unknown invitee: \(id)")
+			logger.error("Ignoring accepted invite from unknown invitee: \(id, privacy: .public)")
 			return
 		}
 		logger.info("Accepted listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
@@ -163,7 +163,7 @@ final class WhisperViewModel: ObservableObject {
 
 	func refuseRequest(_ id: String) {
 		guard let invitee = candidates[id] else {
-			logger.error("Ignoring refused invite from unknown invitee: \(id)")
+			logger.error("Ignoring refused invite from unknown invitee: \(id, privacy: .public)")
 			return
 		}
 		logger.info("Rejected listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
@@ -332,17 +332,17 @@ final class WhisperViewModel: ObservableObject {
             path = Bundle.main.path(forResource: name, ofType: "caf")
         }
         guard path != nil else {
-            logger.error("Couldn't find sound file for '\(name)'")
+            logger.error("Couldn't find sound file for '\(name, privacy: .public)'")
             return
         }
         let url = URL(fileURLWithPath: path!)
         soundEffect = try? AVAudioPlayer(contentsOf: url)
         if let player = soundEffect {
             if !player.play() {
-                logger.error("Couldn't play sound '\(name)'")
+                logger.error("Couldn't play sound '\(name, privacy: .public)'")
             }
         } else {
-            logger.error("Couldn't create player for sound '\(name)'")
+            logger.error("Couldn't create player for sound '\(name, privacy: .public)'")
         }
     }
 

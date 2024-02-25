@@ -92,7 +92,7 @@ final class WhisperProtocol {
         static func fromString(_ s: String) -> ClientInfo? {
             let parts = s.split(separator: "|", omittingEmptySubsequences: false)
             if parts.count != 6 {
-                logger.error("Malformed TextProtocol.ClientInfo data: \(s))")
+                logger.error("Malformed TextProtocol.ClientInfo data: \(s, privacy: .public))")
                 return nil
             }
             return ClientInfo(conversationId: String(parts[0]),
@@ -129,13 +129,13 @@ final class WhisperProtocol {
             let parts = s.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
             if parts.count != 2 {
                 // data packets with no "|" character are malformed
-                logger.error("Malformed TextProtocol.ProtocolChunk data: \(s))")
+                logger.error("Malformed TextProtocol.ProtocolChunk data: \(s, privacy: .public))")
                 return nil
             } else if let offset = Int(parts[0]) {
                 return ProtocolChunk(offset: offset, text: String(parts[1]))
             } else {
                 // data packets with no int before the "|" are malformed
-                logger.error("Malformed TextProtocol.ProtocolChunk data: \(s))")
+                logger.error("Malformed TextProtocol.ProtocolChunk data: \(s, privacy: .public))")
                 return nil
             }
         }
