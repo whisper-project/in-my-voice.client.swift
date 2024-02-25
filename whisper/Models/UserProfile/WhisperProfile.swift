@@ -103,6 +103,7 @@ final class WhisperProfile: Codable {
 	/// Create a new whisper conversation
 	@discardableResult func new() -> WhisperConversation {
 		let c = newInternal()
+		postConversation(c)
 		save()
 		return c
 	}
@@ -272,5 +273,26 @@ final class WhisperProfile: Codable {
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
+	}
+
+	private func postConversation(_ conversation: WhisperConversation) {
+		let path = "/api/v2/postConversation"
+		guard let url = URL(string: PreferenceData.whisperServer + path) else {
+			fatalError("Can't create URL for user profile upload")
+		}
+		let localValue = [
+			"id": conversation.id,
+			"name": conversation.name,
+			"ownerId": UserProfile.shared.id,
+			"ownerName": UserProfile.shared.username
+		]
+		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
+			fatalError("Can't encode user profile data: \(localValue)")
+		}
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.httpBody = localData
+		Data.executeJSONRequest(request)
 	}
 }
