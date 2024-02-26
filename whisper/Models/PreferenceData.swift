@@ -80,6 +80,11 @@ struct PreferenceData {
         }
         defaults.setValue(secret, forKey: "whisper_client_secret")
     }
+	static func resetClientSecret() {
+		// apparently our secret has gone out of date with the server, so use the
+		// one it knows about from us until we receive the new one.
+		defaults.setValue(lastClientSecret(), forKey: "whisper_client_secret")
+	}
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
         let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)

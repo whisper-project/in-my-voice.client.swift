@@ -163,9 +163,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 logger.error("Received non-HTTP response on APNs token post: \(String(describing: response), privacy: .public)")
                 return
             }
-            if response.statusCode == 204 {
+			if response.statusCode == 201 || response.statusCode == 204 {
                 logger.info("Successful post of APNs token")
-                // if server has received error data, reset it
+				if response.statusCode == 201 {
+					// Our secret has gone out of sync with server, it will create a new one
+					// and post it to us.  Until that happens, we need to use our last
+					// secret because the server doesn't know the current secret.
+					PreferenceData.resetClientSecret()
+				}
+                // server has received error data, reset it
                 PreferenceData.droppedErrorCount = 0
 				PreferenceData.bluetoothErrorCount = 0
 				PreferenceData.tcpErrorCount = 0
