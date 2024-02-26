@@ -85,6 +85,18 @@ struct PreferenceData {
 		// one it knows about from us until we receive the new one.
 		defaults.setValue(lastClientSecret(), forKey: "whisper_client_secret")
 	}
+	static func resetSecretsIfServerHasChanged() {
+		// if we are operating against a different server than last run, we need
+		// to reset our secrets as if this were the very first run.
+		// NOTE: this needs to be run as early as possible in the launch sequence.
+		guard let server = defaults.string(forKey: "whisper_last_used_server"), server == whisperServer else {
+			// still using the same server, nothing to do
+			return
+		}
+		defaults.set(whisperServer, forKey: "whisper_last_used_server")
+		defaults.removeObject(forKey: "whisper_last_client_secret")
+		defaults.removeObject(forKey: "whisper_client_secret")
+	}
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
         let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
