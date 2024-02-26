@@ -83,6 +83,7 @@ struct PreferenceData {
 	static func resetClientSecret() {
 		// apparently our secret has gone out of date with the server, so use the
 		// one it knows about from us until we receive the new one.
+		logger.warning("Resetting client secret to match server expectations")
 		defaults.setValue(lastClientSecret(), forKey: "whisper_client_secret")
 	}
 	static func resetSecretsIfServerHasChanged() {
@@ -93,6 +94,7 @@ struct PreferenceData {
 			// still using the same server, nothing to do
 			return
 		}
+		logger.warning("Server change noticed: resetting client secrets")
 		defaults.set(whisperServer, forKey: "whisper_last_used_server")
 		defaults.removeObject(forKey: "whisper_last_client_secret")
 		defaults.removeObject(forKey: "whisper_client_secret")
