@@ -59,6 +59,7 @@ final class UserProfile: Identifiable, ObservableObject {
 				return
 			}
 			name = newName
+			postUsername()
 			save()
 		}
 	}
@@ -248,5 +249,27 @@ final class UserProfile: Identifiable, ObservableObject {
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: nameHandler)
+	}
+
+	private func postUsername() {
+		guard userPassword.isEmpty else {
+			// this is a shared profile, the change will be posted automatically
+			return
+		}
+		let path = "/api/v2/username"
+		guard let url = URL(string: PreferenceData.whisperServer + path) else {
+			fatalError("Can't create URL for username upload")
+		}
+		let localValue = [ "id": id, "name": username ]
+		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
+			fatalError("Can't encode user profile data: \(localValue)")
+		}
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
+		request.httpBody = localData
+		logger.info("Posting updated username for profile \(self.id) to the server")
+		Data.executeJSONRequest(request)
 	}
 }

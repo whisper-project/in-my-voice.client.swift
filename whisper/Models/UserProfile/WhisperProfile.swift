@@ -91,6 +91,7 @@ final class WhisperProfile: Codable {
 		new.name = "Conversation \(table.count + 1)"
 		logger.info("Adding whisper conversation \(new.id) (\(new.name))")
 		table[new.id] = new
+		postConversation(new)
 		return new
 	}
 
@@ -103,7 +104,6 @@ final class WhisperProfile: Codable {
 	/// Create a new whisper conversation
 	@discardableResult func new() -> WhisperConversation {
 		let c = newInternal()
-		postConversation(c)
 		save()
 		return c
 	}
@@ -114,6 +114,7 @@ final class WhisperProfile: Codable {
 			fatalError("Not a Whisper conversation: \(conversation.id)")
 		}
 		c.name = name
+		postConversation(c)
 		save()
 	}
 
@@ -276,9 +277,9 @@ final class WhisperProfile: Codable {
 	}
 
 	private func postConversation(_ conversation: WhisperConversation) {
-		let path = "/api/v2/postConversation"
+		let path = "/api/v2/conversation"
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
-			fatalError("Can't create URL for user profile upload")
+			fatalError("Can't create URL for conversation upload")
 		}
 		let localValue = [
 			"id": conversation.id,
@@ -292,7 +293,9 @@ final class WhisperProfile: Codable {
 		var request = URLRequest(url: url)
 		request.httpMethod = "POST"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpBody = localData
+		logger.info("Posting updated conversation \(conversation.id) to the server")
 		Data.executeJSONRequest(request)
 	}
 }
