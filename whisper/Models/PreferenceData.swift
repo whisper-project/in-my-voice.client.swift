@@ -20,11 +20,14 @@ struct PreferenceData {
     static var whisperServer = "https://whisper.clickonetwo.io"
     #endif
     static func publisherUrlToConversationId(url: String) -> String? {
-        let publisherRegex = /https:\/\/(stage\.)?whisper.clickonetwo.io\/listen\/([-a-zA-Z0-9]{36})/
-        guard let match = url.wholeMatch(of: publisherRegex) else {
-            return nil
-        }
-        return String(match.2)
+		let expectedPrefix = whisperServer + "/listen/"
+		if url.starts(with: expectedPrefix) {
+			let tail = url.suffix(36)
+			if tail.wholeMatch(of: /[-a-zA-Z0-9]{36}/) != nil {
+				return String(tail)
+			}
+		}
+        return nil
     }
     static func publisherUrl(_ conversationId: String) -> String {
         return "\(whisperServer)/listen/\(conversationId)"
