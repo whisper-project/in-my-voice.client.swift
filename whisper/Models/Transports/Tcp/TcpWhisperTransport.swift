@@ -113,7 +113,7 @@ final class TcpWhisperTransport: PublishTransport {
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
-			logger.error("TCP Send/Receive Error: \(error.message, privacy: .public)")
+			logger.error("TCP send/receive error: \(error.message, privacy: .public)")
             PreferenceData.tcpErrorCount += 1
         }
     }
@@ -132,42 +132,53 @@ final class TcpWhisperTransport: PublishTransport {
         client?.connection.on(.disconnected) { _ in
             logger.log("TCP whisper transport realtime client has disconnected")
         }
-		contentChannel = client?.channels.get(conversation.id + ":" + PreferenceData.contentId)
-        contentChannel?.on(.attached) { stateChange in
-            logger.log("TCP whisper transport realtime client has attached the content channel")
-        }
-        contentChannel?.on(.detached) { stateChange in
-            logger.log("TCP whisper transport realtime client has detached the content channel")
-        }
-        contentChannel?.on(.suspended) { stateChange in
-            logger.warning("TCP whisper transport realtime client: the content channel is suspended")
-        }
-        contentChannel?.on(.failed) { stateChange in
-            logger.error("TCP whisper transport realtime client: there is a content channel failure")
-        }
-        contentChannel?.attach()
-        controlChannel = client?.channels.get(conversation.id + ":control")
-        controlChannel?.on(.attached) { stateChange in
-            logger.log("TCP whisper transport realtime client has attached the control channel")
-        }
-        controlChannel?.on(.detached) { stateChange in
-            logger.log("TCP whisper transport realtime client has detached the control channel")
-        }
-        controlChannel?.on(.suspended) { stateChange in
-            logger.warning("TCP whisper transport realtime client: the control channel is suspended")
-        }
-        controlChannel?.on(.failed) { stateChange in
-            logger.error("TCP whisper transport realtime client: there is a control channel failure")
-        }
-        controlChannel?.attach()
+		contentChannel = tryOpenChannel(channelType: "content")
+        controlChannel = tryOpenChannel(channelType: "control")
 		controlChannel?.subscribe(PreferenceData.clientId, callback: receiveControlMessage)
 		controlChannel?.subscribe("whisperer", callback: receiveControlMessage)
 		controlChannel?.presence.subscribe(receivePresenceMessage)
         let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
-		logger.info("Broadcasting whisper offer to control channel: \(chunk)")
+		logger.notice("Broadcasting whisper offer to control channel: \(chunk, privacy: .public)")
 		sendControlInternal(id: "all", data: chunk.toString())
     }
-    
+
+	private func tryOpenChannel(channelType: String) -> ARTRealtimeChannel {
+		let suffix = channelType == "control" ? "control" : PreferenceData.contentId
+		let name = conversation.id + ":" + suffix
+		guard let channel = client?.channels.get(name) else {
+			fatalError("Can't open channel \(name)")
+		}
+		func receiveFirstError(_ error: ARTErrorInfo?) {
+			if let error = error {
+				logger.error("TCP first send Error: \(error.message, privacy: .public)")
+				DispatchQueue.main.async {
+					logger.error("Stopping and restarting TCP whisper transport due to initialization error")
+					self.stop()
+					self.start(failureCallback: self.failureCallback!)
+				}
+			}
+		}
+		func noticeChange(_ change: ARTChannelStateChange) {
+			switch change.event {
+			case .attaching, .attached:
+				logger.notice("TCP whisper transport is attaching/has attached the \(channelType) channel")
+			case .detaching, .detached:
+				logger.notice("TCP whisper transport is detaching/has detached the \(channelType) channel")
+			case .suspended:
+				logger.notice("TCP whisper transport has suspended the \(channelType) channel")
+			case .failed:
+				logger.notice("TCP whisper transport has failed the \(channelType) channel")
+			default:
+				break
+			}
+		}
+		channel.on(noticeChange)
+		channel.attach()
+		// try to send on the channel to see if we trigger an error and need to restart
+		channel.publish("noone", data: "test data", callback: receiveFirstError)
+		return channel
+	}
+
     private func closeChannels() {
 		guard let control = controlChannel else {
 			// we never opened the channels, so nothing to do
@@ -187,32 +198,38 @@ final class TcpWhisperTransport: PublishTransport {
     }
     
 	private func sendControlInternal(id: String, data: String) {
-		// we send control packets three times to make sure one gets through
-		// Because we don't want to interleave packets, we keep a queue of the ones to send
+		// we may send control packets more than once to make sure one gets through
+		// Because we don't want to interleave packets of different types, we keep a queue of the ones to send
+		let suffix = controlChannelPacketRepeatCount > 1 ? " \(controlChannelPacketRepeatCount) times" : ""
 		if controlQueue.isEmpty {
-			var current = (id: id, data: data)
-			controlQueue.append(current)
+			logger.debug("TCP whisper transport: sending control packet\(suffix)")
 			controlChannel?.publish(id, data: data, callback: receiveErrorInfo)
-			var count = 1
-			Timer.scheduledTimer(withTimeInterval: TimeInterval(0.05), repeats: true) { [weak self] timer in
-				guard self != nil else {
-					timer.invalidate()
-					return
-				}
-				if count >= 3 {
-					self?.controlQueue.removeFirst()
-					if let next = self?.controlQueue.first {
-						current = next
-						count = 0
-					} else {
+			if controlChannelPacketRepeatCount > 1 {
+				var current = (id: id, data: data)
+				controlQueue.append(current)
+				var count = 1
+				Timer.scheduledTimer(withTimeInterval: TimeInterval(0.05), repeats: true) { [weak self] timer in
+					guard self != nil else {
 						timer.invalidate()
 						return
 					}
+					if count >= controlChannelPacketRepeatCount {
+						self?.controlQueue.removeFirst()
+						if let next = self?.controlQueue.first {
+							logger.debug("TCP whisper transport: dequeing control packet")
+							current = next
+							count = 0
+						} else {
+							timer.invalidate()
+							return
+						}
+					}
+					self?.controlChannel?.publish(current.id, data: current.data, callback: self?.receiveErrorInfo)
+					count += 1
 				}
-				self?.controlChannel?.publish(current.id, data: current.data, callback: self?.receiveErrorInfo)
-				count += 1
 			}
 		} else {
+			logger.debug("TCP whisper transport: queueing control packet")
 			controlQueue.append((id: id, data: data))
 		}
 	}

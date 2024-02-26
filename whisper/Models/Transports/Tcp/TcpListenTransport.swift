@@ -189,31 +189,38 @@ final class TcpListenTransport: SubscribeTransport {
     }
 
 	private func sendControlInternal(id: String, data: String) {
-		// we send control packets three times to make sure one gets through
-		// Because we don't want to interleave packets, we keep a queue of the ones to send
+		// we may send control packets more than once to make sure one gets through
+		// Because we don't want to interleave packets of different types, we keep a queue of the ones to send
+		let suffix = controlChannelPacketRepeatCount > 1 ? " \(controlChannelPacketRepeatCount) times" : ""
 		if controlQueue.isEmpty {
-			var current = (id: id, data: data)
+			logger.debug("TCP whisper transport: sending control packet\(suffix)")
 			controlChannel?.publish(id, data: data, callback: receiveErrorInfo)
-			var count = 1
-			Timer.scheduledTimer(withTimeInterval: TimeInterval(0.1), repeats: true) { [weak self] timer in
-				guard self != nil else {
-					timer.invalidate()
-					return
-				}
-				if count >= 3 {
-					if let next = self?.controlQueue.first {
-						self?.controlQueue.removeFirst()
-						current = next
-						count = 0
-					} else {
+			if controlChannelPacketRepeatCount > 1 {
+				var current = (id: id, data: data)
+				controlQueue.append(current)
+				var count = 1
+				Timer.scheduledTimer(withTimeInterval: TimeInterval(0.05), repeats: true) { [weak self] timer in
+					guard self != nil else {
 						timer.invalidate()
 						return
 					}
+					if count >= controlChannelPacketRepeatCount {
+						self?.controlQueue.removeFirst()
+						if let next = self?.controlQueue.first {
+							logger.debug("TCP whisper transport: dequeing control packet")
+							current = next
+							count = 0
+						} else {
+							timer.invalidate()
+							return
+						}
+					}
+					self?.controlChannel?.publish(current.id, data: current.data, callback: self?.receiveErrorInfo)
+					count += 1
 				}
-				self?.controlChannel?.publish(current.id, data: current.data, callback: self?.receiveErrorInfo)
-				count += 1
 			}
 		} else {
+			logger.debug("TCP whisper transport: queueing control packet")
 			controlQueue.append((id: id, data: data))
 		}
 	}
