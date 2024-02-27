@@ -17,7 +17,8 @@ struct ListenView: View {
     @StateObject private var model: ListenViewModel
 	@State private var size = PreferenceData.sizeWhenListening
 	@State private var magnify: Bool = PreferenceData.magnifyWhenListening
-    
+	@State private var confirmStop: Bool = false
+
     // set this once at view creation
     private var listenerLiveTextOnTop = !PreferenceData.listenerMatchesWhisperer()
     
@@ -30,7 +31,7 @@ struct ListenView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 10) {
-                ControlView(size: $size, magnify: $magnify, mode: $mode)
+				ControlView(size: $size, magnify: $magnify, mode: mode, maybeStop: maybeStop)
                     .padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
                 if (listenerLiveTextOnTop) {
                     Text(model.liveText)
@@ -92,9 +93,19 @@ struct ListenView: View {
                         .textSelection(.enabled)
                 }
             }
-            .multilineTextAlignment(.leading)
-            .lineLimit(nil)
         }
+		.multilineTextAlignment(.leading)
+		.lineLimit(nil)
+		.alert("Confirm Stop", isPresented: $confirmStop) {
+			Button("Stop") {
+				model.stop()
+				mode = .ask
+			}
+			Button("Don't Stop") {
+			}
+		} message: {
+			Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+		}
         .alert("Connection Failure", isPresented: $model.connectionError) {
             Button("OK") { mode = .ask }
         } message: {
@@ -124,10 +135,14 @@ struct ListenView: View {
                 logger.log("Went to foreground")
                 model.wentToForeground()
             @unknown default:
-                logger.error("Went to unknown phase: \(String(describing: scenePhase))")
+                logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
             }
         }
     }
+
+	private func maybeStop() {
+		confirmStop = true
+	}
 }
 
 struct ListenView_Previews: PreviewProvider {

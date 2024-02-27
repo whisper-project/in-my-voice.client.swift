@@ -20,11 +20,14 @@ struct PreferenceData {
     static var whisperServer = "https://whisper.clickonetwo.io"
     #endif
     static func publisherUrlToConversationId(url: String) -> String? {
-        let publisherRegex = /https:\/\/(stage\.)?whisper.clickonetwo.io\/listen\/([-a-zA-Z0-9]{36})/
-        guard let match = url.wholeMatch(of: publisherRegex) else {
-            return nil
-        }
-        return String(match.2)
+		let expectedPrefix = whisperServer + "/listen/"
+		if url.starts(with: expectedPrefix) {
+			let tail = url.suffix(36)
+			if tail.wholeMatch(of: /[-a-zA-Z0-9]{36}/) != nil {
+				return String(tail)
+			}
+		}
+        return nil
     }
     static func publisherUrl(_ conversationId: String) -> String {
         return "\(whisperServer)/listen/\(conversationId)"
@@ -77,6 +80,25 @@ struct PreferenceData {
         }
         defaults.setValue(secret, forKey: "whisper_client_secret")
     }
+	static func resetClientSecret() {
+		// apparently our secret has gone out of date with the server, so use the
+		// one it knows about from us until we receive the new one.
+		logger.warning("Resetting client secret to match server expectations")
+		defaults.setValue(lastClientSecret(), forKey: "whisper_client_secret")
+	}
+	static func resetSecretsIfServerHasChanged() {
+		// if we are operating against a different server than last run, we need
+		// to reset our secrets as if this were the very first run.
+		// NOTE: this needs to be run as early as possible in the launch sequence.
+		if let server = defaults.string(forKey: "whisper_last_used_server"), server == whisperServer {
+			// still using the same server, nothing to do
+			return
+		}
+		logger.warning("Server change noticed: resetting client secrets")
+		defaults.set(whisperServer, forKey: "whisper_last_used_server")
+		defaults.removeObject(forKey: "whisper_last_client_secret")
+		defaults.removeObject(forKey: "whisper_client_secret")
+	}
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
         let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)

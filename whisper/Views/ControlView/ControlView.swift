@@ -10,10 +10,10 @@ struct ControlView: View {
 
     @Binding var size: FontSizes.FontSize
     @Binding var magnify: Bool
-    @Binding var mode: OperatingMode
-    var playSound: (() -> ())?
-    
-    @State var confirmDisconnect = false
+	let mode: OperatingMode
+	var maybeStop: (() -> Void)? = nil
+    var playSound: (() -> Void)? = nil
+
     @State var alertSound = PreferenceData.alertSound
     @State var speaking: Bool = false
 
@@ -23,7 +23,7 @@ struct ControlView: View {
             speechButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
-			Button(action: { confirmDisconnect.toggle() }) {
+			Button(action: { maybeStop?() }) {
                 stopButtonLabel()
             }
             .background(Color.accentColor)
@@ -31,12 +31,6 @@ struct ControlView: View {
         }
         .dynamicTypeSize(.large)
         .font(FontSizes.fontFor(FontSizes.minTextSize))
-        .alert("Confirm Stop", isPresented: $confirmDisconnect) {
-            Button("Stop") { mode = .ask }
-            Button("Don't Stop") { }
-        } message: {
-            Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
-        }
         .onAppear {
             speaking = mode == .listen ? PreferenceData.speakWhenListening : PreferenceData.speakWhenWhispering
         }
@@ -179,10 +173,8 @@ struct ControlView_Previews: PreviewProvider {
             set: { _ = $0 })
     }
 
-    static func modeB(_ i: Int) -> Binding<OperatingMode> {
-        return Binding(
-            get: { options[i].2 },
-            set: { _ = $0 })
+    static func modeB(_ i: Int) -> OperatingMode {
+        return options[i].2
     }
     
     static var previews: some View {

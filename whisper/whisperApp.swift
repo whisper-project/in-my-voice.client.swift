@@ -60,7 +60,7 @@ let liveTextProportion = liveTextFifths/5.0
 
 /// global timeouts
 let listenerAdTime = TimeInterval(2)    // seconds of listener advertising for whisperers
-let listenerWaitTime = TimeInterval(3)  // seconds of listener wait for multiple whisperers to respond
+let listenerWaitTime = TimeInterval(2)  // seconds of Bluetooth listener search before checking the internet
 let whispererAdTime = TimeInterval(2)   // seconds of whisperer advertising to listeners
 
 /// logging
@@ -119,11 +119,12 @@ struct whisperApp: App {
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+		PreferenceData.resetSecretsIfServerHasChanged()
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers])
         } catch (let err) {
-            logger.error("Failed to set audio session category: \(err)")
+			logger.error("Failed to set audio session category: \(err, privacy: .public)")
         }
         logger.info("Registering for remote notifications")
         application.registerForRemoteNotifications()
@@ -156,37 +157,43 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         request.httpBody = body
         let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
             guard error == nil else {
-                logger.error("Failed to post APNs token: \(String(describing: error))")
+				logger.error("Failed to post APNs token: \(String(describing: error), privacy: .public)")
                 return
             }
             guard let response = response as? HTTPURLResponse else {
-                logger.error("Received non-HTTP response on APNs token post: \(String(describing: response))")
+                logger.error("Received non-HTTP response on APNs token post: \(String(describing: response), privacy: .public)")
                 return
             }
-            if response.statusCode == 204 {
+			if response.statusCode == 201 || response.statusCode == 204 {
                 logger.info("Successful post of APNs token")
-                // if server has received error data, reset it
+				if response.statusCode == 201 {
+					// Our secret has gone out of sync with server, it will create a new one
+					// and post it to us.  Until that happens, we need to use our last
+					// secret because the server doesn't know the current secret.
+					PreferenceData.resetClientSecret()
+				}
+                // server has received error data, reset it
                 PreferenceData.droppedErrorCount = 0
 				PreferenceData.bluetoothErrorCount = 0
 				PreferenceData.tcpErrorCount = 0
                 PreferenceData.authenticationErrorCount = 0
                 return
             }
-            logger.error("Received unexpected response on APNs token post: \(response.statusCode)")
+            logger.error("Received unexpected response on APNs token post: \(response.statusCode, privacy: .public)")
             guard let data = data,
                   let body = try? JSONSerialization.jsonObject(with: data),
                   let obj = body as? [String:String] else {
-                logger.error("Can't deserialize APNs token post response body: \(String(describing: data))")
+                logger.error("Can't deserialize APNs token post response body: \(String(describing: data), privacy: .public)")
                 return
             }
-            logger.error("Response body of APNs token post: \(obj)")
+            logger.error("Response body of APNs token post: \(obj, privacy: .public)")
         }
         logger.info("Posting APNs token to whisper-server")
         task.resume()
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        logger.error("Failed to get APNs token: \(error)")
+        logger.error("Failed to get APNs token: \(error, privacy: .public)")
     }
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
@@ -220,13 +227,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                     completionHandler(.newData)
                     return
                 }
-                logger.error("Received unexpected response on notification confirmation post: \(response.statusCode)")
+                logger.error("Received unexpected response on notification confirmation post: \(response.statusCode, privacy: .public)")
                 completionHandler(.failed)
             }
             logger.info("Posting notification confirmation to whisper-server")
             task.resume()
         } else {
-            logger.error("Background notification has unexpected data: \(String(describing: userInfo))")
+            logger.error("Background notification has unexpected data: \(String(describing: userInfo), privacy: .public)")
             completionHandler(.failed)
         }
     }

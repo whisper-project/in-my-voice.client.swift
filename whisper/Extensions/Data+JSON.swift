@@ -19,7 +19,7 @@ extension Data {
 			return true
 		}
 		catch (let err) {
-			logger.error("Failed to write \(filename).json: \(err)")
+			logger.error("Failed to write \(filename, privacy: .public).json: \(err, privacy: .public)")
 			return false
 		}
 	}
@@ -37,7 +37,7 @@ extension Data {
 			return data
 		}
 		catch (let err) {
-			logger.error("Failure reading \(filename).json: \(err)")
+			logger.error("Failure reading \(filename, privacy: .public).json: \(err, privacy: .public)")
 			return nil
 		}
 	}
@@ -55,7 +55,7 @@ extension Data {
 			return true
 		}
 		catch (let err) {
-			logger.error("Failure deleting \(filename).json: \(err)")
+			logger.error("Failure deleting \(filename, privacy: .public).json: \(err, privacy: .public)")
 			return false
 		}
 	}
@@ -63,11 +63,11 @@ extension Data {
 	static func executeJSONRequest(_ request: URLRequest, handler: ((Int, Data) -> Void)? = nil) {
 		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
 			guard error == nil else {
-				logger.error("Failed to execute \(request): \(String(describing: error))")
+				logger.error("Failed to execute \(request, privacy: .public): \(String(describing: error), privacy: .public)")
 				return
 			}
 			guard let response = response as? HTTPURLResponse else {
-				logger.error("Received non-HTTP response to \(request): \(String(describing: response))")
+				logger.error("Received non-HTTP response to \(request, privacy: .public): \(String(describing: response), privacy: .public)")
 				return
 			}
 			if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -81,13 +81,13 @@ extension Data {
 			} else {
 				if let data = data, data.count > 0 {
 					if let message = String(data: data, encoding: .utf8) {
-						logger.error("Received \(response.statusCode) response with message: \(message)")
+						logger.error("Received \(response.statusCode, privacy: .public) response with message: \(message, privacy: .public)")
 					} else {
-						logger.error("Received \(response.statusCode) reponse with non-UTF8 body: \(String(describing: data))")
+						logger.error("Received \(response.statusCode, privacy: .public) reponse with non-UTF8 body: \(String(describing: data), privacy: .public)")
 					}
 					handler?(response.statusCode, data)
 				} else {
-					logger.error("Received \(response.statusCode) response with no body")
+					logger.error("Received \(response.statusCode, privacy: .public) response with no body")
 					handler?(response.statusCode, Data())
 				}
 			}

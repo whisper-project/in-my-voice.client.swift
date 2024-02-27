@@ -6,6 +6,16 @@
 import Foundation
 import Combine
 
+let controlChannelPacketRepeatCount: Int = {
+	guard let count = ProcessInfo.processInfo.environment["WHISPER_CONTROL_CHANNEL_REPEAT_COUNT"] else {
+		return 1
+	}
+	guard let parsed = Int(count) else {
+		return 1
+	}
+	return parsed > 1 ? parsed : 1
+}()
+
 final class TcpFactory: TransportFactory {
     // MARK: protocol properties and methods
     typealias Publisher = TcpWhisperTransport

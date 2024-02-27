@@ -95,7 +95,7 @@ final class ListenViewModel: ObservableObject {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if error != nil {
-                logger.error("Error asking the user to approve alerts: \(error!)")
+                logger.error("Error asking the user to approve alerts: \(error!, privacy: .public)")
             }
             self.notifySoundInBackground = granted
         }
@@ -271,7 +271,7 @@ final class ListenViewModel: ObservableObject {
 			fatalError("Received a presence message with invalid data: \(chunk)")
 		}
 		guard conversation == nil || conversation!.id == info.conversationId else {
-			logger.error("Ignoring a presence message about the wrong conversation: \(info.conversationId)")
+			logger.error("Ignoring a presence message about the wrong conversation: \(info.conversationId, privacy: .public)")
 			return
 		}
 		switch WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
@@ -300,11 +300,20 @@ final class ListenViewModel: ObservableObject {
 			}
 		case .listenAuthNo:
 			logger.info("Received refusal from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
-			guard candidates[remote.id] != nil else {
-				logger.error("Ignoring refusal from \(remote.kind) non-candidate \(remote.id)")
+			guard let candidate = candidates[remote.id] else {
+				logger.error("Ignoring refusal from \(remote.kind, privacy: .public) non-candidate \(remote.id, privacy: .public)")
 				return
 			}
 			profile.delete(info.conversationId)
+			// drop the remote we heard this from
+			if candidate === whisperer {
+				logger.warning("Whisperer has deauthorized this listener")
+				// make sure we stop listening before we put up the dialog
+				stop()
+			} else {
+				logger.warning("Candidate has refused our listen request")
+				dropCandidate(remote)
+			}
 			connectionErrorDescription = "The Whisperer has refused to let you listen"
 			connectionError = true
 		default:
@@ -334,7 +343,7 @@ final class ListenViewModel: ObservableObject {
             path = Bundle.main.path(forResource: name, ofType: "caf")
         }
         guard path != nil else {
-            logger.error("Couldn't find sound file for '\(name)'")
+            logger.error("Couldn't find sound file for '\(name, privacy: .public)'")
             return
         }
         guard !isInBackground else {
@@ -345,16 +354,16 @@ final class ListenViewModel: ObservableObject {
         soundEffect = try? AVAudioPlayer(contentsOf: url)
         if let player = soundEffect {
             if !player.play() {
-                logger.error("Couldn't play sound '\(name)'")
+                logger.error("Couldn't play sound '\(name, privacy: .public)'")
             }
         } else {
-            logger.error("Couldn't create player for sound '\(name)'")
+            logger.error("Couldn't create player for sound '\(name, privacy: .public)'")
         }
     }
     
     private func notifySound(_ name: String) {
         guard notifySoundInBackground else {
-            logger.error("Received background request to play sound '\(name)' but don't have permission.")
+            logger.error("Received background request to play sound '\(name, privacy: .public)' but don't have permission.")
             return
         }
         let soundName = UNNotificationSoundName(name + ".caf")
@@ -367,7 +376,7 @@ final class ListenViewModel: ObservableObject {
         let uuid = UUID().uuidString
         let request = UNNotificationRequest(identifier: uuid, content: content, trigger: trigger)
         let center = UNUserNotificationCenter.current()
-        center.add(request) { error in if error != nil { logger.error("Couldn't notify: \(error!)") } }
+        center.add(request) { error in if error != nil { logger.error("Couldn't notify: \(error!, privacy: .public)") } }
     }
     
 	private func speak(_ text: String) {

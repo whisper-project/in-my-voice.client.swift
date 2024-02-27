@@ -38,11 +38,11 @@ final class TcpListenTransport: SubscribeTransport {
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let target = remotes[remote.id] else {
-            logger.error("Ignoring request to send chunk to an unknown \(remote.kind) remote: \(remote.id)")
+            logger.error("Ignoring request to send chunk to an unknown \(remote.kind, privacy: .public) remote: \(remote.id, privacy: .public)")
             return
         }
-		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
-		controlChannel?.publish(target.id, data: chunk.toString(), callback: receiveErrorInfo)
+		logger.notice("Sending control packet to \(remote.kind) remote: \(remote.id, privacy: .public): \(chunk, privacy: .public)")
+		sendControlInternal(id: target.id, data: chunk.toString())
     }
     
     func drop(remote: Remote) {
@@ -54,7 +54,7 @@ final class TcpListenTransport: SubscribeTransport {
     
 	func subscribe(remote: Remote, conversation: ListenConversation) {
         guard let remote = remotes[remote.id] else {
-            logger.error("Ignoring request to subscribe to an unknown \(remote.kind) remote: \(remote.id)")
+            logger.error("Ignoring request to subscribe to an unknown \(remote.kind, privacy: .public) remote: \(remote.id, privacy: .public)")
             return
         }
 		if whisperer === remote {
@@ -81,6 +81,7 @@ final class TcpListenTransport: SubscribeTransport {
 		let kind: TransportKind = .global
 
 		fileprivate var contentId = ""
+		fileprivate var lastControlPacketOffset: Int = 0
 
         fileprivate init(id: String) {
             self.id = id
@@ -95,6 +96,7 @@ final class TcpListenTransport: SubscribeTransport {
     private var channelName: String
     private var contentChannel: ARTRealtimeChannel?
     private var controlChannel: ARTRealtimeChannel?
+	private var controlQueue: [(id: String, data: String)] = []
     private var remotes: [String:Remote] = [:]
     private var whisperer: Remote?
 
@@ -110,7 +112,7 @@ final class TcpListenTransport: SubscribeTransport {
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
-            logger.error("TCP Listener: \(error.message)")
+			logger.error("TCP Listener: \(error.message, privacy: .public)")
         }
     }
     
@@ -161,23 +163,67 @@ final class TcpListenTransport: SubscribeTransport {
         controlChannel?.attach()
         controlChannel?.subscribe(clientId, callback: receiveControlMessage)
         controlChannel?.subscribe("all", callback: receiveControlMessage)
+		// send a listen offer so the whisperer knows we're here
 		let chunk = WhisperProtocol.ProtocolChunk.listenOffer(conversation)
 		logger.info("TCP listen transport: sending listen offer: \(chunk)")
-		controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
+		sendControlInternal(id: "whisperer", data: chunk.toString())
     }
     
     private func closeChannels() {
+		guard let control = controlChannel else {
+			// we never opened the channels, so don't try to close them
+			return
+		}
 		logger.info("TCP listen transport: closing both channels")
 		logger.info("TCP listen transport: publishing drop to \(self.remotes.count) remotes")
 		let chunk = WhisperProtocol.ProtocolChunk.dropping()
-        controlChannel?.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
-        contentChannel?.detach()
-        contentChannel = nil
-        controlChannel?.detach()
+        control.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
+		if let content = contentChannel {
+			content.detach()
+			contentChannel = nil
+		}
+        control.detach()
         controlChannel = nil
-        client?.close()
-        client = nil
+		client = nil
+		authenticator.releaseClient()
     }
+
+	private func sendControlInternal(id: String, data: String) {
+		// we may send control packets more than once to make sure one gets through
+		// Because we don't want to interleave packets of different types, we keep a queue of the ones to send
+		let suffix = controlChannelPacketRepeatCount > 1 ? " \(controlChannelPacketRepeatCount) times" : ""
+		if controlQueue.isEmpty {
+			logger.debug("TCP whisper transport: sending control packet\(suffix)")
+			controlChannel?.publish(id, data: data, callback: receiveErrorInfo)
+			if controlChannelPacketRepeatCount > 1 {
+				var current = (id: id, data: data)
+				controlQueue.append(current)
+				var count = 1
+				Timer.scheduledTimer(withTimeInterval: TimeInterval(0.05), repeats: true) { [weak self] timer in
+					guard self != nil else {
+						timer.invalidate()
+						return
+					}
+					if count >= controlChannelPacketRepeatCount {
+						self?.controlQueue.removeFirst()
+						if let next = self?.controlQueue.first {
+							logger.debug("TCP whisper transport: dequeing control packet")
+							current = next
+							count = 0
+						} else {
+							timer.invalidate()
+							return
+						}
+					}
+					self?.controlChannel?.publish(current.id, data: current.data, callback: self?.receiveErrorInfo)
+					count += 1
+				}
+			}
+		} else {
+			logger.debug("TCP whisper transport: queueing control packet")
+			controlQueue.append((id: id, data: data))
+		}
+	}
 
 	private func removeCandidate(_ remote: Remote, sendDrop: Bool = false) {
 		logger.log("Removing \(remote.kind) remote \(remote.id)")
@@ -190,12 +236,12 @@ final class TcpListenTransport: SubscribeTransport {
 
 	func receiveContentMessage(message: ARTMessage) {
 		guard let remote = remoteFor(message.clientId) else {
-			logger.error("Ignoring a message with a missing client id: \(message)")
+			logger.error("Ignoring a message with a missing client id: \(message, privacy: .public)")
 			return
 		}
 		guard let payload = message.data as? String,
 			  let chunk = WhisperProtocol.ProtocolChunk.fromString(payload) else {
-			logger.error("Ignoring a message with a non-chunk payload: \(message)")
+			logger.error("Ignoring a message with a non-chunk payload: \(message, privacy: .public)")
 			return
 		}
 		contentSubject.send((remote: remote, chunk: chunk))
@@ -203,19 +249,24 @@ final class TcpListenTransport: SubscribeTransport {
 
     func receiveControlMessage(message: ARTMessage) {
 		guard let remote = remoteFor(message.clientId) else {
-			logger.error("Ignoring a message with a missing client id: \(message)")
+			logger.error("Ignoring a message with a missing client id: \(message, privacy: .public)")
 			return
 		}
         guard let payload = message.data as? String,
               let chunk = WhisperProtocol.ProtocolChunk.fromString(payload) else {
-            logger.error("Ignoring a message with a non-chunk payload: \(message)")
+			logger.error("Ignoring a message with a non-chunk payload: \(message, privacy: .public)")
             return
         }
+		guard chunk.offset != remote.lastControlPacketOffset else {
+			logger.notice("Ignoring repeated packet: \(chunk, privacy: .public)")
+			return
+		}
+		remote.lastControlPacketOffset = chunk.offset
         if chunk.isPresenceMessage() {
             guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text),
                   info.clientId == message.clientId
             else {
-                logger.error("Ignoring a malformed or misdirected packet: \(chunk)")
+				logger.error("Ignoring a malformed or misdirected packet: \(chunk, privacy: .public)")
                 return
             }
             if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
@@ -238,6 +289,7 @@ final class TcpListenTransport: SubscribeTransport {
                 }
             }
         }
+		logger.notice("Received control packet from \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public): \(chunk, privacy: .public)")
 		logger.info("Received control packet: \(chunk)")
         controlSubject.send((remote: remote, chunk: chunk))
     }

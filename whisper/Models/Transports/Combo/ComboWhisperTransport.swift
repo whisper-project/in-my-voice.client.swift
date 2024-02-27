@@ -210,7 +210,7 @@ final class ComboWhisperTransport: PublishTransport {
     
     private func removeRemote(remote: any TransportRemote) {
         guard let removed = remotes.removeValue(forKey: remote.id) else {
-            logger.error("Ignoring drop of unknown \(remote.kind) remote \(remote.id)")
+            logger.error("Ignoring drop of unknown \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public)")
             return
         }
 		clients.removeValue(forKey: removed.clientId)

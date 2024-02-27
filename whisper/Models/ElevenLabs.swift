@@ -61,7 +61,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				return
 			}
 			guard let response = response as? HTTPURLResponse else {
-				logger.error("Received non-HTTP response on speech generation: \(String(describing: response))")
+				logger.error("Received non-HTTP response on speech generation: \(String(describing: response), privacy: .public)")
 				return
 			}
 			if response.statusCode == 200,
@@ -70,14 +70,14 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				self.queueSpeech(data)
 				return
 			}
-			logger.error("Speech generation of \(text) got status \(response.statusCode)")
+			logger.error("Speech generation of \(text, privacy: .public) got status \(response.statusCode, privacy: .public)")
 			guard let data = data,
 				  let body = try? JSONSerialization.jsonObject(with: data),
 				  let obj = body as? [String:Any] else {
-				logger.error("Can't deserialize speech generation response body: \(String(describing: data))")
+				logger.error("Can't deserialize speech generation response body: \(String(describing: data), privacy: .public)")
 				return
 			}
-			logger.error("Error details of speech generation: \(obj)")
+			logger.error("Error details of speech generation: \(obj, privacy: .public)")
 		}
 		logger.info("Posting generation request to ElevenLabs")
 		task.resume()
@@ -109,7 +109,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 			}
 		}
 		catch {
-			logger.error("Couldn't create player for speech: \(error)")
+			logger.error("Couldn't create player for speech: \(error, privacy: .public)")
 		}
 	}
 

@@ -91,6 +91,7 @@ final class WhisperProfile: Codable {
 		new.name = "Conversation \(table.count + 1)"
 		logger.info("Adding whisper conversation \(new.id) (\(new.name))")
 		table[new.id] = new
+		postConversation(new)
 		return new
 	}
 
@@ -113,6 +114,7 @@ final class WhisperProfile: Codable {
 			fatalError("Not a Whisper conversation: \(conversation.id)")
 		}
 		c.name = name
+		postConversation(c)
 		save()
 	}
 
@@ -198,6 +200,7 @@ final class WhisperProfile: Codable {
 			request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		}
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpBody = data
 		Data.executeJSONRequest(request)
 	}
@@ -225,6 +228,7 @@ final class WhisperProfile: Codable {
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue("\"\(self.timestamp)\"", forHTTPHeaderField: "If-None-Match")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 	}
@@ -267,7 +271,31 @@ final class WhisperProfile: Codable {
 		}
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
+	}
+
+	private func postConversation(_ conversation: WhisperConversation) {
+		let path = "/api/v2/conversation"
+		guard let url = URL(string: PreferenceData.whisperServer + path) else {
+			fatalError("Can't create URL for conversation upload")
+		}
+		let localValue = [
+			"id": conversation.id,
+			"name": conversation.name,
+			"ownerId": UserProfile.shared.id,
+			"ownerName": UserProfile.shared.username
+		]
+		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
+			fatalError("Can't encode user profile data: \(localValue)")
+		}
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
+		request.httpBody = localData
+		logger.info("Posting updated conversation \(conversation.id) to the server")
+		Data.executeJSONRequest(request)
 	}
 }

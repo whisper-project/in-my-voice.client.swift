@@ -143,7 +143,8 @@ final class ComboListenTransport: SubscribeTransport {
 		#else
 		if localStatus == .on {
 			logger.error("The Bluetooth connection was available but has dropped")
-			failureCallback?("The Bluetooth network has become unavailable")
+			// don't fail because this happens when we sleep and it comes back.
+			// failureCallback?("The Bluetooth network has become unavailable")
 		}
 		localStatus = status
 		#endif
@@ -232,7 +233,7 @@ final class ComboListenTransport: SubscribeTransport {
 
 	private func removeRemote(remote: any TransportRemote) {
 		guard let removed = remotes.removeValue(forKey: remote.id) else {
-			logger.error("Ignoring drop of unknown \(remote.kind) remote \(remote.id)")
+			logger.error("Ignoring drop of unknown \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public)")
 			return
 		}
 		clients.removeValue(forKey: removed.clientId)
@@ -242,7 +243,7 @@ final class ComboListenTransport: SubscribeTransport {
     private func receiveContentChunk(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
 		// we should already have the Whisperer as a remote
         guard let remote = remotes[pair.remote.id] else {
-			logger.error("Ignoring chunk from \(pair.remote.kind) unknown remote \(pair.remote.id)")
+			logger.error("Ignoring chunk from \(pair.remote.kind, privacy: .public) unknown remote \(pair.remote.id, privacy: .public)")
             return
         }
         contentSubject.send((remote: remote, chunk: pair.chunk))

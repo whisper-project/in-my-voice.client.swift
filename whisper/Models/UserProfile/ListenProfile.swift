@@ -147,6 +147,7 @@ final class ListenProfile: Codable {
 			request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		}
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpBody = data
 		Data.executeJSONRequest(request)
 	}
@@ -173,6 +174,7 @@ final class ListenProfile: Codable {
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue("\"\(self.timestamp)\"", forHTTPHeaderField: "If-None-Match")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 	}
@@ -213,6 +215,7 @@ final class ListenProfile: Codable {
 		}
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 	}
