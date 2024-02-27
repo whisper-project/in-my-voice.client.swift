@@ -90,7 +90,7 @@ struct PreferenceData {
 		// if we are operating against a different server than last run, we need
 		// to reset our secrets as if this were the very first run.
 		// NOTE: this needs to be run as early as possible in the launch sequence.
-		guard let server = defaults.string(forKey: "whisper_last_used_server"), server == whisperServer else {
+		if let server = defaults.string(forKey: "whisper_last_used_server"), server == whisperServer {
 			// still using the same server, nothing to do
 			return
 		}
