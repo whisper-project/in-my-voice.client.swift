@@ -11,6 +11,10 @@ If you have a question about using Whisper, please start by reading the [Instruc
 
 ## FAQ
 
+### Can more than one person Whisper in the same conversation?
+
+No.  There can only be one Whisperer in each conversation.  There is no limit on the number of Listeners.
+
 ### Do I need an iPhone or iPad to use Whisper?
 
 You need an Apple device (iPhone, iPad, or Mac computer) to be the Whisperer, but not to listen. If you don't have an Apple device and want to listen, have the Whisperer send you a link from their app.
@@ -21,31 +25,31 @@ To learn how to listen either in the app or in a browser, see the [instructions 
 
 ### If I don't have the app on my device, can I still listen?
 
-Yes, you can still listen using your browser. Just click on the link sent to you by the Whisperer to join the conversation. If this is the first time you've used your browser to listen, you will be prompted to put in your name before joining.
+Yes, you can still listen using your browser. Just click on the link sent to you by the Whisperer to join the conversation. You will be shown the name of the Whisperer and the name of the conversation, and then asked for your name and to confirm that you want to join the conversation.
 
 ### Why do I have to enter my name?
 
-Both Listeners and Whisperers enter their names to make it clear who's in the conversation. You can choose whether your name is saved in the app (see [Settings](instructions.md/#settings)). Browsers will automatically remember your name as a Listener after you enter it the first time.
+Both Listeners and Whisperers enter their names to make it clear who's in the conversation. Both the app and browsers will remember your name once you have entered it.
 
 ### My browser used to know my name -- why did it forget?
 
-The browser will forget your name if you clear cookies for the site [whisper-server.clickonetwo.io](https://whisper-server.clickonetwo.io), and you will be asked for your name again the next time you join a conversation. 
+The browser will forget your name if you clear cookies for the site [whisper.clickonetwo.io](https://whisper.clickonetwo.io), and you will be asked for your name again the next time you join a conversation. 
 
-### How do I change my name between conversations in my browser?
+### How do I change my name?
 
-Clear your cookies for the site [whisper-server.clickonetwo.io](https://whisper-server.clickonetwo.io). This will make your browser forget whatever name you had previously entered. The next time you join a conversation via browser, you will have to put a new name in, which will be remembered until you next clear your cookies.
+You can change your name in the home screen of the Whisper app, and you can change your name whenever you join a conversation in the browser.
 
-### Does Whisper store my conversations?
+### Does Whisper store the text of my conversations?
 
 Nope! The contents of conversations held through Whisper are not stored *anywhere*, even on your local device. See our [Privacy statement](index.md/#privacy) for more information.
 
 ### Can I copy and paste text from my conversations?
 
-The Whisperer can copy and paste what they have typed in the app, but Listeners cannot copy any text from the app. (Whisperers should be aware that browser Listeners can copy and paste text from the conversation. If this is undesirable, converse only via Bluetooth.)
+The Whisperer can copy and paste what they have typed in the app, but Listeners cannot copy any text from the app or the browser.
 
 ## Need More Support?
 
 If the answers above have not solved your problem, please contact us through [this form](https://forms.gle/GE9BjX6MPMi8kTkFA) and we will get back to you as soon as we can. Please note that this is a single-developer app, so response times will not be immediate (or maybe not even quick).
 
-At [ClickOneTwo](https://clickonetwo.io), we are firm believers that there are NO stupid questions, especially when it comes to using computers. We want to make Whisper as helpful as possible to everyone, so we truly appreciate your feedback.
+At [ClickOneTwo](https://clickonetwo.io), we are firm believers that there are NO stupid questions, especially when it comes to using technology. We want to make Whisper as helpful as possible to everyone, so we truly appreciate your feedback.
 
