@@ -217,3 +217,6 @@ For Whisperers and Listeners who are within Bluetooth range (such as members of 
 Web listeners get a new, improved interface in v2.  Not only does it look better, it works more like the application in a number of ways.  First of all, the web interface always displays the name of the Whisperer and the name of the conversation, and won't connect to it until the user agrees to enter.  Second, the text typed by the Whisperer can't be copied by a web-based Listener.  Finally, the display areas for the Whisperer's live and past typing automatically adjust in size as needed.
 
 For Whisperers or Listeners who routinely use multiple devices, there is a new "Profile Sharing" feature which allows you to have the same user profile (including your name and all the conversations you whisper on or listen to) on all your devices.  Profile changes you make on one device will be synchronized to another device when you next open the app on that device (or long-press on the Whisper or Listen button, if the app is already open). To start using this feature, look for the "Profile Sharing" button at the bottom of the Whisper home screen.
+
+v2 BUILD 12 (external):
+This build updates the in-app instructions so they are correct for version 2.  It also matches the Bluetooth and Internet Listener behavior: when the Whisperer leaves the conversation, all the Listeners do too.
