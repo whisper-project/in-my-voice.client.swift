@@ -188,11 +188,7 @@ final class ListenViewModel: ObservableObject {
             // we have lost the whisperer
             resetTextForConnection()
             refreshStatusText()
-			if case .global = remote.kind {
-				// Internet connection drops are permanent,
-				// whereas Bluetooth connection drops are ephemeral
-				conversationEnded = true
-			}
+			conversationEnded = true
         } else {
             logger.info("Dropped \(remote.kind) candidate \(removed.id)")
         }
