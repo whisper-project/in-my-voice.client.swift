@@ -28,6 +28,7 @@ final class WhisperProtocol {
         case joining = -24          // An allowed listener is joining the conversation.
         case dropping = -25         // A whisperer or listener is dropping from the conversation.
         case listenOffer = -26      // A Listener is looking to rejoin a conversation: only client ID and profile ID are included.
+		case restart = -27			// A Whisperer has had to restart, so all Listeners must as well (like drop but with reconnect)
 
 		/// flow control messages
 		case requestReread = -40    // Request re-read. Packet data is `ReadType` of request.
@@ -64,6 +65,8 @@ final class WhisperProtocol {
                 return "leaving conversation"
             case .listenOffer:
                 return "listen offer"
+			case .restart:
+				return "leaving and rejoining conversation"
             }
         }
     }
@@ -171,13 +174,17 @@ final class WhisperProtocol {
         
         func isPresenceMessage() -> Bool {
             return (offset <= ControlOffset.whisperOffer.rawValue &&
-                    offset >= ControlOffset.listenOffer.rawValue)
+                    offset >= ControlOffset.restart.rawValue)
         }
         
         func isListenOffer() -> Bool {
             return offset == ControlOffset.listenOffer.rawValue
         }
-        
+
+		func isRestart() -> Bool {
+			return offset == ControlOffset.restart.rawValue
+		}
+
         static func fromPastText(text: String) -> ProtocolChunk {
             return ProtocolChunk(offset: ControlOffset.pastText.rawValue, text: text)
         }
@@ -248,7 +255,17 @@ final class WhisperProtocol {
                                   contentId: "")
             return ProtocolChunk(offset: ControlOffset.listenOffer.rawValue, text: info.toString())
         }
-        
+
+		static func restart() -> ProtocolChunk {
+			let info = ClientInfo(conversationId: "",
+								  conversationName: "",
+								  clientId: PreferenceData.clientId,
+								  profileId: "",
+								  username: "",
+								  contentId: "")
+			return ProtocolChunk(offset: ControlOffset.restart.rawValue, text: info.toString())
+		}
+
         static func fromLiveTyping(text: String, start: Int) -> [ProtocolChunk] {
             guard text.count > start else {
                 return []

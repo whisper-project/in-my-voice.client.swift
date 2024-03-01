@@ -38,7 +38,7 @@ final class TcpAuthenticator {
         }
 		logger.info("TCP Authenticator: Creating ART Realtime client")
         let options = ARTClientOptions()
-		options.logLevel = .debug
+		// options.logLevel = .debug
 		options.clientId = self.clientId
         options.authCallback = getTokenRequest
         options.autoConnect = true

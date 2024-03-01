@@ -97,7 +97,15 @@ final class WhisperViewModel: ObservableObject {
         resetText()
         refreshStatusText()
     }
-    
+
+	func sendRestart() {
+		logger.log("Send restart message to all listeners")
+		let chunk = WhisperProtocol.ProtocolChunk.restart()
+		for candidate in candidates.values {
+			transport.sendControl(remote: candidate.remote, chunk: chunk)
+		}
+	}
+
     /// Receive an updated live text from the view.
     /// Returns the new live text the view should display.
     func updateLiveText(old: String, new: String) -> String {

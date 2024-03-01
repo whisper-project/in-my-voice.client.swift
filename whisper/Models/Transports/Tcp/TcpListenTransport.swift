@@ -81,7 +81,6 @@ final class TcpListenTransport: SubscribeTransport {
 		let kind: TransportKind = .global
 
 		fileprivate var contentId = ""
-		fileprivate var lastControlPacketOffset: Int = 0
 
         fileprivate init(id: String) {
             self.id = id
@@ -96,7 +95,6 @@ final class TcpListenTransport: SubscribeTransport {
     private var channelName: String
     private var contentChannel: ARTRealtimeChannel?
     private var controlChannel: ARTRealtimeChannel?
-	private var controlQueue: [(id: String, data: String)] = []
     private var remotes: [String:Remote] = [:]
     private var whisperer: Remote?
 
@@ -189,40 +187,7 @@ final class TcpListenTransport: SubscribeTransport {
     }
 
 	private func sendControlInternal(id: String, data: String) {
-		// we may send control packets more than once to make sure one gets through
-		// Because we don't want to interleave packets of different types, we keep a queue of the ones to send
-		let suffix = controlChannelPacketRepeatCount > 1 ? " \(controlChannelPacketRepeatCount) times" : ""
-		if controlQueue.isEmpty {
-			logger.debug("TCP whisper transport: sending control packet\(suffix)")
-			controlChannel?.publish(id, data: data, callback: receiveErrorInfo)
-			if controlChannelPacketRepeatCount > 1 {
-				var current = (id: id, data: data)
-				controlQueue.append(current)
-				var count = 1
-				Timer.scheduledTimer(withTimeInterval: TimeInterval(0.05), repeats: true) { [weak self] timer in
-					guard self != nil else {
-						timer.invalidate()
-						return
-					}
-					if count >= controlChannelPacketRepeatCount {
-						self?.controlQueue.removeFirst()
-						if let next = self?.controlQueue.first {
-							logger.debug("TCP whisper transport: dequeing control packet")
-							current = next
-							count = 0
-						} else {
-							timer.invalidate()
-							return
-						}
-					}
-					self?.controlChannel?.publish(current.id, data: current.data, callback: self?.receiveErrorInfo)
-					count += 1
-				}
-			}
-		} else {
-			logger.debug("TCP whisper transport: queueing control packet")
-			controlQueue.append((id: id, data: data))
-		}
+		controlChannel?.publish(id, data: data, callback: receiveErrorInfo)
 	}
 
 	private func removeCandidate(_ remote: Remote, sendDrop: Bool = false) {
@@ -257,11 +222,6 @@ final class TcpListenTransport: SubscribeTransport {
 			logger.error("Ignoring a message with a non-chunk payload: \(message, privacy: .public)")
             return
         }
-		guard chunk.offset != remote.lastControlPacketOffset else {
-			logger.notice("Ignoring repeated packet: \(chunk, privacy: .public)")
-			return
-		}
-		remote.lastControlPacketOffset = chunk.offset
         if chunk.isPresenceMessage() {
             guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text),
                   info.clientId == message.clientId
