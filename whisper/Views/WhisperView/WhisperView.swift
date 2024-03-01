@@ -96,6 +96,11 @@ struct WhisperView: View {
 		} message: {
 			Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
 		}
+		.alert("Restart Warning", isPresented: $model.restartWarning) {
+			Button("OK") { }
+		} message: {
+			Text("The Ably infrastructure had an initialization error, so the Whisper session is being restarted. Please report this via TestFlight.")
+		}
 		.onAppear {
 			logger.log("WhisperView appeared")
 			model.start()

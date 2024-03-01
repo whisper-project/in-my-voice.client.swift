@@ -45,6 +45,7 @@ final class WhisperViewModel: ObservableObject {
 
     @Published var statusText: String = ""
     @Published var connectionError = false
+	@Published var restartWarning = false
     @Published var connectionErrorDescription: String = ""
 	@Published var candidates: [String: Candidate] = [:]		// id -> Candidate
 	@Published var invites: [Candidate] = []
@@ -216,10 +217,16 @@ final class WhisperViewModel: ObservableObject {
     }
     
     private func signalConnectionError(_ reason: String) {
-        Task { @MainActor in
-            connectionError = true
-            connectionErrorDescription = reason
-        }
+		if reason == "notify-restart" {
+			Task { @MainActor in
+				restartWarning = true
+			}
+		} else {
+			Task { @MainActor in
+				connectionError = true
+				connectionErrorDescription = reason
+			}
+		}
     }
     
     private func lostRemote(_ remote: Remote) {
