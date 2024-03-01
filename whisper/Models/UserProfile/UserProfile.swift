@@ -155,6 +155,10 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	func stopSharing() {
+		guard !userPassword.isEmpty else {
+			// we're not sharing this profile, so nothing to do
+			return
+		}
 		// reset the profile, but leave the name alone
 		id = UUID().uuidString
 		userPassword = ""
@@ -165,6 +169,10 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	func startSharing() {
+		guard userPassword.isEmpty else {
+			// we're already sharing this profile, so nothing to do
+			return
+		}
 		// set the password, post the profile to server
 		let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%_+-="
 		userPassword = String((0..<20).map{ _ in letters.randomElement()! })
