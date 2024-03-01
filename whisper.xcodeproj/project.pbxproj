@@ -10,6 +10,7 @@
 		37076DE52B12DB97003AC2FD /* ListenProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37076DE42B12DB97003AC2FD /* ListenProfileView.swift */; };
 		3712340E29E20BD700CBF49C /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712340D29E20BD700CBF49C /* ControlView.swift */; };
 		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
+		373FE5202B9270BB00568B42 /* Ably in Frameworks */ = {isa = PBXBuildFile; productRef = 373FE51F2B9270BB00568B42 /* Ably */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
 		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
 		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
@@ -47,7 +48,6 @@
 		379570CD29EA314A0033CF14 /* air-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CC29EA313D0033CF14 /* air-horn.caf */; };
 		379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CA29EA313D0033CF14 /* bike-bell.caf */; };
 		379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CB29EA313D0033CF14 /* bike-horn.caf */; };
-		3796EF6D2AA12986009C716F /* Ably in Frameworks */ = {isa = PBXBuildFile; productRef = 3796EF6C2AA12986009C716F /* Ably */; };
 		3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */; };
 		37B6236F29EF166800213790 /* ListenersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6236E29EF166800213790 /* ListenersView.swift */; };
 		37B6237629F78AA500213790 /* WhisperersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B6237529F78AA500213790 /* WhisperersView.swift */; };
@@ -149,7 +149,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3796EF6D2AA12986009C716F /* Ably in Frameworks */,
+				373FE5202B9270BB00568B42 /* Ably in Frameworks */,
 				377D71192A956B4C009B416F /* SwiftJWT in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -433,7 +433,7 @@
 			name = whisper;
 			packageProductDependencies = (
 				377D71182A956B4C009B416F /* SwiftJWT */,
-				3796EF6C2AA12986009C716F /* Ably */,
+				373FE51F2B9270BB00568B42 /* Ably */,
 			);
 			productName = whisper;
 			productReference = 37763CE129AAC1E50051CFE5 /* whisper.app */;
@@ -508,8 +508,8 @@
 			);
 			mainGroup = 37763CD829AAC1E50051CFE5;
 			packageReferences = (
-				377D70F12A899B07009B416F /* XCRemoteSwiftPackageReference "ably-cocoa" */,
 				377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */,
+				373FE51E2B9270BB00568B42 /* XCRemoteSwiftPackageReference "ably-cocoa" */,
 			);
 			productRefGroup = 37763CE229AAC1E50051CFE5 /* Products */;
 			projectDirPath = "";
@@ -763,7 +763,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -805,7 +805,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -957,12 +957,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		377D70F12A899B07009B416F /* XCRemoteSwiftPackageReference "ably-cocoa" */ = {
+		373FE51E2B9270BB00568B42 /* XCRemoteSwiftPackageReference "ably-cocoa" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ably/ably-cocoa";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.0;
+				branch = "fix/1882-fix-reachability-activation";
+				kind = branch;
 			};
 		};
 		377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */ = {
@@ -976,15 +976,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		373FE51F2B9270BB00568B42 /* Ably */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 373FE51E2B9270BB00568B42 /* XCRemoteSwiftPackageReference "ably-cocoa" */;
+			productName = Ably;
+		};
 		377D71182A956B4C009B416F /* SwiftJWT */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */;
 			productName = SwiftJWT;
-		};
-		3796EF6C2AA12986009C716F /* Ably */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 377D70F12A899B07009B416F /* XCRemoteSwiftPackageReference "ably-cocoa" */;
-			productName = Ably;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

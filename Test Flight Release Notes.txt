@@ -229,3 +229,8 @@ This build fixes a few issues related to internet connectivity, and adds a featu
 - When the Whisperer has an internet connectivity issue, it advises all the listeners to disconnect and reconnect immediately.  This allows them to see the Whisperer once connectivity is restored.
 
 - If a user has multiple devices on the same shared profile, they can now stop whispering by indicating they are changing devices. This drops all listeners but sends them a message explaining they should reconnect.
+
+v2 BUILD 14 (external):
+This build uses a new Ably infrastructure library, one that fixes the bug with initial Whisper startup after launching the app.  With any luck, this should make internet-based connections very stable and reliable.
+
+A warning dialog has been added so the Whisperer will be told when his connection had to be restarted due to the Ably initialization issue.  Please report (via TestFlight) anytime you see this dialog.
