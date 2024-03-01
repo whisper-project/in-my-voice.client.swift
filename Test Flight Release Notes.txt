@@ -220,3 +220,12 @@ For Whisperers or Listeners who routinely use multiple devices, there is a new "
 
 v2 BUILD 12 (external):
 This build updates the in-app instructions so they are correct for version 2.  It also matches the Bluetooth and Internet Listener behavior: when the Whisperer leaves the conversation, all the Listeners do too.
+
+v2 BUILD 13 (external):
+This build fixes a few issues related to internet connectivity, and adds a feature for users with multiple devices on a shared profile.
+
+- Web browser listeners are now more immune to dropped packets, and should connect with fewer issues.
+
+- When the Whisperer has an internet connectivity issue, it advises all the listeners to disconnect and reconnect immediately.  This allows them to see the Whisperer once connectivity is restored.
+
+- If a user has multiple devices on the same shared profile, they can now stop whispering by indicating they are changing devices. This drops all listeners but sends them a message explaining they should reconnect.
