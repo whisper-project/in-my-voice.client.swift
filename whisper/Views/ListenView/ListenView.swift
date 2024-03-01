@@ -11,6 +11,7 @@ struct ListenView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
+	@Binding var restart: Bool
     var conversation: ListenConversation?
 
     @FocusState var focusField: Bool
@@ -22,10 +23,11 @@ struct ListenView: View {
     // set this once at view creation
     private var listenerLiveTextOnTop = !PreferenceData.listenerMatchesWhisperer()
     
-    init(mode: Binding<OperatingMode>, conversation: ListenConversation?) {
+	init(mode: Binding<OperatingMode>, restart: Binding<Bool>, conversation: ListenConversation?) {
         self._mode = mode
+		self._restart = restart
 		self.conversation = conversation
-        self._model = StateObject(wrappedValue: ListenViewModel(conversation))
+		self._model = StateObject(wrappedValue: ListenViewModel(conversation))
     }
 
     var body: some View {
@@ -124,6 +126,10 @@ struct ListenView: View {
             logger.log("ListenView disappeared")
             self.model.stop()
         }
+		.onChange(of: model.conversationRestarted) {
+			restart = true
+			mode = .ask
+		}
         .onChange(of: scenePhase) {
             switch scenePhase {
             case .background:
@@ -146,9 +152,10 @@ struct ListenView: View {
 }
 
 struct ListenView_Previews: PreviewProvider {
-    static let mode = Binding<OperatingMode>(get: { .listen }, set: { _ = $0 })
+	static let mode: Binding<OperatingMode> = makeBinding(.listen)
+	static let restart: Binding<Bool> = makeBinding(false)
 
     static var previews: some View {
-        ListenView(mode: mode, conversation: nil)
+		ListenView(mode: mode, restart: restart, conversation: nil)
     }
 }

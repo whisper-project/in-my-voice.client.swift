@@ -14,6 +14,7 @@ struct MainView: View {
     @Binding var mode: OperatingMode
     @Binding var conversation: (any Conversation)?
 
+	@State var restart: Bool = false
     @StateObject private var model: MainViewModel = .init()
             
     var body: some View {
@@ -29,8 +30,14 @@ struct MainView: View {
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     .padding(EdgeInsets(top: 20, leading: 0, bottom: 5, trailing: 0))
             }
+			.alert("Conversation Paused", isPresented: $restart) {
+				Button("OK") { mode = .listen }
+				Button("Cancel") {}
+			} message: {
+				Text("The Whisperer has paused the conversation. Click OK to reconnect, Cancel to stop listening.")
+			}
         case .listen:
-            ListenView(mode: $mode, conversation: conversation as? ListenConversation)
+			ListenView(mode: $mode, restart: $restart, conversation: conversation as? ListenConversation)
         case .whisper:
 			WhisperView(mode: $mode, conversation: conversation as? WhisperConversation ?? UserProfile.shared.whisperProfile.fallback)
         }

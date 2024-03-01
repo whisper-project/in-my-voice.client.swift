@@ -45,6 +45,7 @@ final class ListenViewModel: ObservableObject {
     @Published var statusText: String = ""
     @Published var liveText: String = ""
 	@Published var conversationEnded: Bool = false
+	@Published var conversationRestarted: Bool = false
     @Published var connectionError: Bool = false
     @Published var connectionErrorDescription: String = "The connection to the whisperer was lost"
     @Published var showStatusDetail: Bool = false
@@ -69,7 +70,7 @@ final class ListenViewModel: ObservableObject {
 
 	let profile = UserProfile.shared.listenProfile
 
-    init(_ conversation: ListenConversation?) {
+	init(_ conversation: ListenConversation?) {
 		logger.log("Initializing ListenView model")
 		self.conversation = conversation
         transport = ComboFactory.shared.subscriber(conversation)
@@ -224,11 +225,28 @@ final class ListenViewModel: ObservableObject {
         if chunk.isSound() {
             logger.log("Received request to play sound '\(chunk.text)'")
             playSound(chunk.text)
-        } else if resetInProgress {
+		} else if chunk.isDiff() {
+			// Whisperers don't send diffs during replay, so maybe we missed the terminator
+			resetInProgress = false
+			if chunk.offset == 0 {
+				liveText = chunk.text
+			} else if chunk.isCompleteLine() {
+				if !isInBackground && PreferenceData.speakWhenListening {
+					speak(liveText)
+				}
+				pastText.addLine(liveText)
+				liveText = ""
+			} else if chunk.offset > liveText.count {
+				// we must have missed a packet, read the full state to reset
+				PreferenceData.droppedErrorCount += 1
+				logger.log("Resetting live text after missed packet...")
+				readLiveText()
+			} else {
+				liveText = WhisperProtocol.applyDiff(old: liveText, chunk: chunk)
+			}
+		} else if resetInProgress {
             if chunk.isFirstRead() {
                 logger.log("Received reset acknowledgement from whisperer")
-            } else if chunk.isDiff() {
-                logger.log("Ignoring diff chunk because a read is in progress")
             } else if chunk.isCompleteLine() {
                 logger.debug("Got past line \(self.pastText.pastText.count) in read")
                 pastText.addLine(chunk.text)
@@ -237,26 +255,9 @@ final class ListenViewModel: ObservableObject {
                 liveText = chunk.text
                 resetInProgress = false
             }
-        } else {
-            if !chunk.isDiff() {
-                logger.log("Ignoring non-diff chunk because no read in progress")
-            } else if chunk.offset == 0 {
-                liveText = chunk.text
-            } else if chunk.isCompleteLine() {
-                if !isInBackground && PreferenceData.speakWhenListening {
-                    speak(liveText)
-                }
-                pastText.addLine(liveText)
-                liveText = ""
-            } else if chunk.offset > liveText.count {
-                // we must have missed a packet, read the full state to reset
-                PreferenceData.droppedErrorCount += 1
-                logger.log("Resetting live text after missed packet...")
-                readLiveText()
-            } else {
-                liveText = WhisperProtocol.applyDiff(old: liveText, chunk: chunk)
-            }
-        }
+		} else {
+			logger.error("Received unexpected content chunk: \(chunk, privacy: .public)")
+		}
     }
 
 	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
@@ -265,6 +266,11 @@ final class ListenViewModel: ObservableObject {
 		}
 		guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
 			fatalError("Received a presence message with invalid data: \(chunk)")
+		}
+		guard !chunk.isRestart() else {
+			logger.info("Received restart from \(remote.kind) remote \(remote.id)")
+			conversationRestarted = true
+			return
 		}
 		guard conversation == nil || conversation!.id == info.conversationId else {
 			logger.error("Ignoring a presence message about the wrong conversation: \(info.conversationId, privacy: .public)")

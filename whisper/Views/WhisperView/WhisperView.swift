@@ -82,6 +82,12 @@ struct WhisperView: View {
 			Button("Don't Stop") { 
 				focusField = "liveText"
 			}
+			if !UserProfile.shared.userPassword.isEmpty {
+				Button("Change Device") {
+					model.sendRestart()
+					mode = .ask
+				}
+			}
 		} message: {
 			Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
 		}
