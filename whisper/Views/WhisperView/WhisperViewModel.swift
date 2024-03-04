@@ -304,28 +304,19 @@ final class WhisperViewModel: ObservableObject {
 		info: WhisperProtocol.ClientInfo
 	) -> Candidate {
 		let authorized = profile.isListener(conversation, info: info)
-		if let existing = candidates[remote.id] {
-			// update info if we need to and can
-			if existing.info.username.isEmpty {
-				// if it's a request, use the username from the request
-				if !info.username.isEmpty {
-					existing.info.username = info.username
-				}
-				// otherwise, if it's an offer, use the last known username if any
-				else if let auth = authorized {
-					existing.info.username = auth.username
-				}
+		let candidate = candidates[remote.id] ?? Candidate(remote: remote, info: info, isPending: authorized == nil)
+		candidates[candidate.id] = candidate
+		if !info.username.isEmpty {
+			// always use the latest username we are sent (see #59)
+			candidate.info.username = info.username
+			if authorized != nil {
+				// this is a known listener, also update their name in our profile
+				profile.addListener(conversation, info: info)
 			}
-			return existing
-		} else {
-			let candidate = Candidate(remote: remote, info: info, isPending: authorized == nil)
-			// if it's an offer, use the last known username if any
-			if info.username.isEmpty, let auth = authorized {
-				candidate.info.username = auth.username
-			}
-			candidates[candidate.id] = candidate
-			return candidate
+		} else if candidate.info.username.isEmpty, let auth = authorized {
+			candidate.info.username = auth.username
 		}
+		return candidate
 	}
 
 	private func speak(_ text: String) {
