@@ -234,3 +234,8 @@ v2 BUILD 14 (external):
 This build uses a new Ably infrastructure library, one that fixes the bug with initial Whisper startup after launching the app.  With any luck, this should make internet-based connections very stable and reliable.
 
 A warning dialog has been added so the Whisperer will be told when his connection had to be restarted due to the Ably initialization issue.  Please report (via TestFlight) anytime you see this dialog.
+
+v2 BUILD 15 (external):
+This build fixes a bug that always showed the Whisperer the name of a Listener as it existed when the Listener was first accepted into the conversation.  If the Listener later changed their name (either in their browser, or in their app), the Whisperer would never see the new name. With this fix, the Whisperer will always see the latest name provided by a Listener (and remember that name in the approved-Listener list).
+
+To test this, a Whisperer can listen to themselves from a browser using one name, accept themselves into the conversation, exit the conversation in the browser, and then rejoin from the browser specifying a new name.  The Whisperer will see the new name in their status line when they rejoin from the browser.  And once they exit the session, they will see the new name in the accepted user list for that conversation.
