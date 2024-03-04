@@ -86,18 +86,20 @@ struct PreferenceData {
 		logger.warning("Resetting client secret to match server expectations")
 		defaults.setValue(lastClientSecret(), forKey: "whisper_client_secret")
 	}
-	static func resetSecretsIfServerHasChanged() {
+	static func resetSecretsAndSharingIfServerHasChanged() {
 		// if we are operating against a different server than last run, we need
 		// to reset our secrets as if this were the very first run.
+		// we also have to stop sharing our profile, because the new server doesn't have it
 		// NOTE: this needs to be run as early as possible in the launch sequence.
 		if let server = defaults.string(forKey: "whisper_last_used_server"), server == whisperServer {
 			// still using the same server, nothing to do
 			return
 		}
-		logger.warning("Server change noticed: resetting client secrets")
+		logger.warning("Server change noticed: resetting client secrets and sharing")
 		defaults.set(whisperServer, forKey: "whisper_last_used_server")
 		defaults.removeObject(forKey: "whisper_last_client_secret")
 		defaults.removeObject(forKey: "whisper_client_secret")
+		UserProfile.shared.stopSharing()
 	}
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)

@@ -160,6 +160,7 @@ final class TcpWhisperTransport: PublishTransport {
 					logger.error("Stopping and restarting TCP whisper transport due to initialization error")
 					self.stop()
 					self.isRestart = true
+					self.failureCallback?("notify-restart")
 					self.start(failureCallback: self.failureCallback!)
 				}
 			}
