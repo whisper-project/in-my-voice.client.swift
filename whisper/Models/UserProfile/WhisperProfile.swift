@@ -118,7 +118,7 @@ final class WhisperProfile: Codable {
 		save()
 	}
 
-	/// add a user to a conversation
+	/// add a user to a conversation and/or update their name in the conversation
 	func addListener(_ conversation: WhisperConversation, info: WhisperProtocol.ClientInfo) {
 		if let username = conversation.allowed[info.profileId], username == info.username {
 			// nothing to do
