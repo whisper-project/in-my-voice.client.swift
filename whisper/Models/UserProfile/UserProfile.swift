@@ -22,7 +22,7 @@ final class UserProfile: Identifiable, ObservableObject {
 	static private(set) var shared = load() ?? create()
 
 	private(set) var id: String
-	private(set) var name: String = ""
+	private(set) var name: String
 	private(set) var whisperProfile: WhisperProfile
 	private(set) var listenProfile: ListenProfile
 	@Published private(set) var userPassword: String
@@ -32,9 +32,10 @@ final class UserProfile: Identifiable, ObservableObject {
 	private init() {
 		let profileId = UUID().uuidString
 		id = profileId
+		name = ""
 		userPassword = ""
 		serverPassword = ""
-		whisperProfile = WhisperProfile(profileId)
+		whisperProfile = WhisperProfile(profileId, profileName: "")
 		listenProfile = ListenProfile(profileId)
 	}
 
@@ -47,7 +48,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		} else {
 			serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		}
-		whisperProfile = WhisperProfile.load(id, serverPassword: serverPassword) ?? WhisperProfile(id)
+		whisperProfile = WhisperProfile.load(id, serverPassword: serverPassword) ?? WhisperProfile(id, profileName: name)
 		listenProfile = ListenProfile.load(id, serverPassword: serverPassword) ?? ListenProfile(id)
 	}
 
@@ -163,7 +164,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		id = UUID().uuidString
 		userPassword = ""
 		serverPassword = ""
-		whisperProfile = WhisperProfile(id)
+		whisperProfile = WhisperProfile(id, profileName: name)
 		listenProfile = ListenProfile(id)
 		save()
 	}
@@ -189,7 +190,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			if !success {
 				userPassword = ""
 				serverPassword = ""
-				whisperProfile = WhisperProfile(self.id)
+				whisperProfile = WhisperProfile(self.id, profileName: name)
 				listenProfile = ListenProfile(self.id)
 			}
 			completionHandler(success, message)

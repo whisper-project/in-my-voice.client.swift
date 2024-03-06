@@ -44,12 +44,12 @@ final class WhisperProfile: Codable {
 		case id, table, defaultId, timestamp
 	}
 
-	init(_ profileId: String) {
+	init(_ profileId: String, profileName: String) {
 		id = profileId
 		table = [:]
 		defaultId = "none"
 		timestamp = Int(Date.now.timeIntervalSince1970)
-		ensureFallback()
+		ensureFallback(profileName)
 	}
 
 	var fallback: WhisperConversation {
@@ -71,7 +71,7 @@ final class WhisperProfile: Codable {
 	}
 
 	// make sure there is a default conversation, and return it
-	@discardableResult private func ensureFallback() -> WhisperConversation {
+	@discardableResult private func ensureFallback(_ profileName: String? = nil) -> WhisperConversation {
 		if let c = table[defaultId] {
 			return c
 		} else if let firstC = table.first?.value {
@@ -79,19 +79,19 @@ final class WhisperProfile: Codable {
 			save()
 			return firstC
 		} else {
-			let newC = newInternal()
+			let newC = newInternal(profileName)
 			defaultId = newC.id
 			save()
 			return newC
 		}
 	}
 
-	private func newInternal() -> WhisperConversation {
+	private func newInternal(_ profileName: String? = nil) -> WhisperConversation {
 		let new = WhisperConversation()
 		new.name = "Conversation \(table.count + 1)"
 		logger.info("Adding whisper conversation \(new.id) (\(new.name))")
 		table[new.id] = new
-		postConversation(new)
+		postConversation(new, profileName: profileName)
 		return new
 	}
 
@@ -276,7 +276,7 @@ final class WhisperProfile: Codable {
 		Data.executeJSONRequest(request, handler: handler)
 	}
 
-	private func postConversation(_ conversation: WhisperConversation) {
+	private func postConversation(_ conversation: WhisperConversation, profileName: String? = nil) {
 		let path = "/api/v2/conversation"
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for conversation upload")
@@ -284,8 +284,8 @@ final class WhisperProfile: Codable {
 		let localValue = [
 			"id": conversation.id,
 			"name": conversation.name,
-			"ownerId": UserProfile.shared.id,
-			"ownerName": UserProfile.shared.username
+			"ownerId": id,
+			"ownerName": profileName ?? UserProfile.shared.username
 		]
 		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
 			fatalError("Can't encode user profile data: \(localValue)")
