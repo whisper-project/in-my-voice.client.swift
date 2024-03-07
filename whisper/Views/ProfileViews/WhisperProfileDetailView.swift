@@ -43,7 +43,7 @@ struct WhisperProfileDetailView: View {
 						updateConversation()
 					}
 				}
-				ShareLink("Listen link", item: PreferenceData.publisherUrl(conversation.id))
+				ShareLink("Listen link", item: PreferenceData.publisherUrl(conversation))
 			}
 			Section(header: allowedParticipants.isEmpty ? Text("No Allowed Participants") : Text("Allowed Participants")) {
 				List {
