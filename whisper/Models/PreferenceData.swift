@@ -22,15 +22,23 @@ struct PreferenceData {
     static func publisherUrlToConversationId(url: String) -> String? {
 		let expectedPrefix = whisperServer + "/listen/"
 		if url.starts(with: expectedPrefix) {
-			let tail = url.suffix(36)
+			let tailEnd = url.index(expectedPrefix.endIndex, offsetBy: 36)
+			let tail = url[expectedPrefix.endIndex..<tailEnd]
 			if tail.wholeMatch(of: /[-a-zA-Z0-9]{36}/) != nil {
 				return String(tail)
 			}
 		}
         return nil
     }
-    static func publisherUrl(_ conversationId: String) -> String {
-        return "\(whisperServer)/listen/\(conversationId)"
+    static func publisherUrl(_ conversation: WhisperConversation) -> String {
+		let urlName = conversation.name.compactMap{char in
+			if char.isLetter || char.isNumber {
+				return String(char)
+			} else {
+				return "-"
+			}
+		}.joined()
+		return "\(whisperServer)/listen/\(conversation.id)/\(urlName)"
     }
     
     // server (and Ably) client ID for this device

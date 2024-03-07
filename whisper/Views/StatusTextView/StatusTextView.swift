@@ -13,8 +13,8 @@ struct StatusTextView: View {
 	var conversation: (any Conversation)?
 
 	private var shareLinkUrl: URL {
-		if let c = conversation {
-			return URL(string: PreferenceData.publisherUrl(c.id))!
+		if let c = conversation as? WhisperConversation {
+			return URL(string: PreferenceData.publisherUrl(c))!
 		} else {
 			return URL(string: "https://localhost")!
 		}
