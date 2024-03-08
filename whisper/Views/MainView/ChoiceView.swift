@@ -174,7 +174,6 @@ struct ChoiceView: View {
 			Text("You must enable a Bluetooth and/or Wireless connection before you can whisper or listen")
 		}
 		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
-		.onChange(of: scenePhase, initial: true, profile.update)
         .onChange(of: nameEdit) {
             if nameEdit {
                 withAnimation { showWhisperButtons = false }
@@ -182,6 +181,13 @@ struct ChoiceView: View {
                 updateOrRevertProfile()
             }
         }
+		.onChange(of: scenePhase) {
+			if scenePhase == .active {
+				logger.info("ChoiceView has become active")
+				profile.update()
+			}
+		}
+		.onAppear(perform: profile.update)
     }
     
     func updateFromProfile() {
