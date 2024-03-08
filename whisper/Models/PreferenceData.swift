@@ -140,7 +140,7 @@ struct PreferenceData {
 
     // layout control of listeners
     static func listenerMatchesWhisperer() -> Bool {
-        return defaults.string(forKey: "newest_whisper_location_preference") == "bottom"
+        return (defaults.string(forKey: "newest_whisper_location_preference") ?? "bottom") == "bottom"
     }
     
 	// size of text
