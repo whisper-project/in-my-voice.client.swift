@@ -120,6 +120,10 @@ final class WhisperProfile: Codable {
 
 	/// add a user to a conversation and/or update their name in the conversation
 	func addListener(_ conversation: WhisperConversation, info: WhisperProtocol.ClientInfo) {
+		guard info.profileId != id else {
+			// we never add ourselves as a listener
+			return
+		}
 		if let username = conversation.allowed[info.profileId], username == info.username {
 			// nothing to do
 			return
@@ -214,6 +218,7 @@ final class WhisperProfile: Codable {
 			if code == 200,
 			   let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
 			{
+				logger.info("Received updated whisper profile, timestamp is \(profile.timestamp)")
 				self.table = profile.table
 				self.defaultId = profile.defaultId
 				self.timestamp = profile.timestamp

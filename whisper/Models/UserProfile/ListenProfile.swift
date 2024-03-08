@@ -51,6 +51,15 @@ final class ListenProfile: Codable {
 		return sorted
 	}
 
+	func fromMyWhisperConversation(_ conversation: WhisperConversation) -> ListenConversation {
+		let c = ListenConversation(uuid: conversation.id)
+		c.name = conversation.name
+		c.owner = id
+		c.ownerName = UserProfile.shared.username
+		c.lastListened = Date.now
+		return c
+	}
+
 	/// get a listen conversation from a web link conversation ID
 	func fromLink(_ id: String) -> ListenConversation {
 		if let existing = table[id] {
@@ -91,6 +100,10 @@ final class ListenProfile: Codable {
 	/// Add a newly used conversation for a Listener
 	func addForInvite(info: WhisperProtocol.ClientInfo) -> ListenConversation {
 		let c = forInvite(info: info)
+		guard info.profileId != id else {
+			// we never add one of our own conversations
+			return c
+		}
 		if table[c.id] == nil {
 			logger.info("Adding new listen conversation")
 			table[c.id] = c
@@ -161,6 +174,7 @@ final class ListenProfile: Codable {
 			if code == 200,
 			   let profile = try? JSONDecoder().decode(ListenProfile.self, from: data)
 			{
+				logger.info("Received updated listen profile, timestamp is \(profile.timestamp)")
 				self.table = profile.table
 				self.timestamp = profile.timestamp
 				save(localOnly: true)

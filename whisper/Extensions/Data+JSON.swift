@@ -72,27 +72,27 @@ extension Data {
 			}
 			if (response.statusCode >= 200 && response.statusCode < 300) {
 				if let data = data, data.count > 0 {
-					logger.info("Received \(response.statusCode) response with \(data.count) byte body")
+					// logger.info("Received \(response.statusCode) response with \(data.count) byte body")
 					handler?(response.statusCode, data)
 				} else {
-					logger.info("Received \(response.statusCode) response with empty body")
+					// logger.info("Received \(response.statusCode) response with empty body")
 					handler?(response.statusCode, Data())
 				}
 			} else {
 				if let data = data, data.count > 0 {
-					if let message = String(data: data, encoding: .utf8) {
-						logger.error("Received \(response.statusCode, privacy: .public) response with message: \(message, privacy: .public)")
-					} else {
-						logger.error("Received \(response.statusCode, privacy: .public) reponse with non-UTF8 body: \(String(describing: data), privacy: .public)")
-					}
+					// if let message = String(data: data, encoding: .utf8) {
+					// 	logger.error("Received \(response.statusCode, privacy: .public) response with message: \(message, privacy: .public)")
+					// } else {
+					// 	logger.error("Received \(response.statusCode, privacy: .public) reponse with non-UTF8 body: \(String(describing: data), privacy: .public)")
+					// }
 					handler?(response.statusCode, data)
 				} else {
-					logger.error("Received \(response.statusCode, privacy: .public) response with no body")
+					// logger.error("Received \(response.statusCode, privacy: .public) response with no body")
 					handler?(response.statusCode, Data())
 				}
 			}
 		}
-		logger.info("Executing \(request.httpMethod!) \(request.url!)")
+		// logger.info("Executing \(request.httpMethod!) \(request.url!)")
 		task.resume()
 	}
 }

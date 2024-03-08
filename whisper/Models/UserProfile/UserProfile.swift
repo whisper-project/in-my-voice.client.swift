@@ -28,6 +28,7 @@ final class UserProfile: Identifiable, ObservableObject {
 	@Published private(set) var userPassword: String
 	private var serverPassword: String
 	@Published private(set) var timestamp = Date.now
+	private var lastUpdateRequestTime: Date = Date.distantPast
 
 	private init() {
 		let profileId = UUID().uuidString
@@ -46,7 +47,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		if password.isEmpty {
 			serverPassword = ""
 		} else {
-			serverPassword = SHA256.hash(data: Data(password.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
+			serverPassword = SHA256.hash(data: Data(password.utf8)).map{ String(format: "%02x", $0) }.joined()
 		}
 		whisperProfile = WhisperProfile.load(id, serverPassword: serverPassword) ?? WhisperProfile(id, profileName: name)
 		listenProfile = ListenProfile.load(id, serverPassword: serverPassword) ?? ListenProfile(id)
@@ -60,8 +61,11 @@ final class UserProfile: Identifiable, ObservableObject {
 				return
 			}
 			name = newName
-			postUsername()
-			save()
+			if userPassword.isEmpty {
+				postUsername()
+			} else {
+				save()
+			}
 		}
 	}
 
@@ -74,7 +78,9 @@ final class UserProfile: Identifiable, ObservableObject {
 		guard localData.saveJsonToDocumentsDirectory("UserProfile") else {
 			fatalError("Can't save user profile data")
 		}
-		if !localOnly && !serverPassword.isEmpty {
+		if localOnly || serverPassword.isEmpty {
+			postUsername()
+		} else {
 			let serverValue = ["id": id, "name": name, "password": serverPassword]
 			guard let serverData = try? JSONSerialization.data(withJSONObject: serverValue) else {
 				fatalError("Can't encode user profile data: \(serverValue)")
@@ -115,6 +121,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpBody = data
+		logger.info("Saving shared profile \(self.id, privacy: .public) to server")
 		Data.executeJSONRequest(request)
 	}
 
@@ -123,12 +130,19 @@ final class UserProfile: Identifiable, ObservableObject {
 			// not a shared profile, so no way to update
 			return
 		}
+		guard lastUpdateRequestTime.timeIntervalSinceNow < -10.0 else {
+			// no need for two updates that close together
+			return
+		}
+		logger.info("Fetching profile update...")
+		lastUpdateRequestTime = Date.now
 		func handler(_ code: Int, _ data: Data) {
 			if code == 200,
 			   let obj = try? JSONSerialization.jsonObject(with: data),
 			   let value = obj as? [String:String],
 			   let name = value["name"]
 			{
+				logger.info("Received updated user profile name: \(name)")
 				DispatchQueue.main.async {
 					self.name = name
 					self.save(localOnly: true)
@@ -166,6 +180,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		serverPassword = ""
 		whisperProfile = WhisperProfile(id, profileName: name)
 		listenProfile = ListenProfile(id)
+		logger.info("Using new profile for id \(self.id, privacy: .public), username \(self.username, privacy: .public)")
 		save()
 	}
 
@@ -188,6 +203,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		// because they may have been loaded successfully from the server.
 		func loadHandler(_ success: Bool, _ message: String) {
 			if !success {
+				logger.error("Resetting user profile \(id, privacy: .public) due to failure receiving shared profile.")
 				userPassword = ""
 				serverPassword = ""
 				whisperProfile = WhisperProfile(self.id, profileName: name)
@@ -261,10 +277,6 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	private func postUsername() {
-		guard userPassword.isEmpty else {
-			// this is a shared profile, the change will be posted automatically
-			return
-		}
 		let path = "/api/v2/username"
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for username upload")

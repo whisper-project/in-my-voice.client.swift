@@ -331,7 +331,9 @@ final class ListenViewModel: ObservableObject {
 		if let existing = candidates[remote.id] {
 			return existing
 		}
-		let candidate = Candidate(remote: remote, info: info, isPending: !conversation.authorized)
+		// we are always authorized to listen to our own conversations
+		let isPending = info.profileId == UserProfile.shared.id ? false : !conversation.authorized
+		let candidate = Candidate(remote: remote, info: info, isPending: isPending)
 		candidates[candidate.id] = candidate
 		return candidate
 	}

@@ -70,7 +70,7 @@ let logger = Logger()
 
 @main
 struct whisperApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+	@UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     @State var mode: OperatingMode = .ask
     @State var conversation: (any Conversation)? = nil

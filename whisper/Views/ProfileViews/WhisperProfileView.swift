@@ -41,8 +41,8 @@ struct WhisperProfileView: View {
 					updateFromProfile()
 				}
 			}
-			.toolbarTitleDisplayMode(.large)
-			.navigationTitle("Conversations")
+			.listStyle(.inset)
+			.navigationTitle("Whisper")
 			.toolbar {
 				Button(action: addConversation, label: { Text("Add") } )
 				EditButton()
@@ -52,7 +52,7 @@ struct WhisperProfileView: View {
 			}
 			.onChange(of: profile.timestamp, initial: true, updateFromProfile)
         }
-		.onChange(of: scenePhase, initial: true, profile.update)
+		.onAppear(perform: profile.update)
 		.onDisappear(perform: profile.update)
     }
 

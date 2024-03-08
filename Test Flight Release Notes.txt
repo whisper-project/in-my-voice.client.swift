@@ -247,3 +247,10 @@ v2 BUILD 17 (external):
 Starting with this build, the Share Links for conversations show the name of the conversation right after the conversation ID.  (The name has all non-letter, non-number characters replaced with '-' so the link is a valid URL.)
 
 For example, the link for "Conversation 1" might look like this: https://whisper.clickonetwo.io/listen/664ED54A-8DE4-4CF7-9427-0E83A1495BEE/Conversation-1
+
+v2 BUILD 18 (external):
+The app now recognizes when a user is whispering to themself and automatically authorizes them to join the conversation. This allows people who use shared profiles to have one of their devices be dedicated to listening and have it always be able to listen to every conversation (including via local discovery) without ever being sent a link or using the "accept" UI.
+
+To support this, the view that shows all the conversations you have listened to now separates conversations sent you by others from conversations you own.  This allows you both to select one of the ones you own to listen to and it always shows all your conversations whether you have listened to it before or not.
+
+Users who don't use shared profiles won't notice any changes in this build.
