@@ -254,3 +254,8 @@ The app now recognizes when a user is whispering to themself and automatically a
 To support this, the view that shows all the conversations you have listened to now separates conversations sent you by others from conversations you own.  This allows you both to select one of the ones you own to listen to and it always shows all your conversations whether you have listened to it before or not.
 
 Users who don't use shared profiles won't notice any changes in this build.
+
+v2 BUILD 19 (external):
+The default Listener layout now matches the Whisperer's (live text on the bottom, past text on the top).  This makes the past text read from top to bottom, which is a lot easier for most people to understand.
+
+If you never explicitly set your preference (in Settings) for this, your Listener layout will switch when you install this build.  If you did explicitly set it to be "top" or "bottom" live text, then it will stay the way you set it.
