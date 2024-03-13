@@ -255,7 +255,7 @@ To support this, the view that shows all the conversations you have listened to 
 
 Users who don't use shared profiles won't notice any changes in this build.
 
-v2 BUILD 19 (external):
+v2 BUILD 19 and 20 (external):
 The default Listener layout now matches the Whisperer's (live text on the bottom, past text on the top).  This makes the past text read from top to bottom, which is a lot easier for most people to understand.
 
 If you never explicitly set your preference (in Settings) for this, your Listener layout will switch when you install this build.  If you did explicitly set it to be "top" or "bottom" live text, then it will stay the way you set it.
