@@ -14,7 +14,7 @@
 			<key>Key</key>
 			<string>newest_whisper_location_preference</string>
 			<key>DefaultValue</key>
-			<string>top</string>
+			<string>bottom</string>
 			<key>Values</key>
 			<array>
 				<string>top</string>
