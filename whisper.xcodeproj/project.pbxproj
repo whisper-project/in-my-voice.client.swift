@@ -118,6 +118,7 @@
 		37D6B35D29BCF66400F952FE /* ListenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenViewModel.swift; sourceTree = "<group>"; };
 		37D78A152B2FB50D002494CD /* MakeBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakeBinding.swift; sourceTree = "<group>"; };
 		37D78A172B2FE017002494CD /* WhisperProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperProfileDetailView.swift; sourceTree = "<group>"; };
+		37DE2B282BA2AFDD00EDA9D0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		37ED7A812A24FB8C007A0EA7 /* whisper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = whisper.entitlements; sourceTree = "<group>"; };
 		37F8C26D2A87DFA7004DED77 /* TransportProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransportProtocol.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -190,6 +191,7 @@
 			children = (
 				37ED7A812A24FB8C007A0EA7 /* whisper.entitlements */,
 				37594DCA29C224660043C152 /* Info.plist */,
+				37DE2B282BA2AFDD00EDA9D0 /* PrivacyInfo.xcprivacy */,
 				37763CE429AAC1E50051CFE5 /* whisperApp.swift */,
 				37763D0F29AB54F80051CFE5 /* Views */,
 				37763D1329AC034B0051CFE5 /* Models */,
