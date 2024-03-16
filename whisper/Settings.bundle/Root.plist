@@ -10,6 +10,48 @@
 			<key>Type</key>
 			<string>PSMultiValueSpecifier</string>
 			<key>Title</key>
+			<string>Tap on Whisper to</string>
+			<key>Key</key>
+			<string>whisper_tap_preference</string>
+			<key>DefaultValue</key>
+			<string>show</string>
+			<key>Titles</key>
+			<array>
+				<string>show conversations</string>
+				<string>start default conversation</string>
+				<string>start last-used conversation</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>show</string>
+				<string>default</string>
+				<string>last</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>Tap on Listen to</string>
+			<key>Key</key>
+			<string>listen_tap_preference</string>
+			<key>DefaultValue</key>
+			<string>show</string>
+			<key>Titles</key>
+			<array>
+				<string>show conversations</string>
+				<string>listen to last-used conversation</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>show</string>
+				<string>last</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
 			<string>Listener sees newest whisper in</string>
 			<key>Key</key>
 			<string>newest_whisper_location_preference</string>

@@ -37,19 +37,46 @@ final class WhisperProfile: Codable {
 	private var id: String
 	private var table: [String: WhisperConversation]
 	private var defaultId: String
+	private var lastId: String
 	private var timestamp: Int
 	private var serverPassword: String = ""
 
 	private enum CodingKeys: String, CodingKey {
-		case id, table, defaultId, timestamp
+		case id, table, defaultId, lastId, timestamp
 	}
 
 	init(_ profileId: String, profileName: String) {
 		id = profileId
 		table = [:]
 		defaultId = "none"
+		lastId = "none"
 		timestamp = Int(Date.now.timeIntervalSince1970)
 		ensureFallback(profileName)
+	}
+
+	var lastUsed: WhisperConversation? {
+		get {
+			if let existing = table[lastId] {
+				return existing
+			}
+			return nil
+		}
+		set(c) {
+			guard let c = c else {
+				lastId = "none"
+				return
+			}
+			guard c.id != lastId else {
+				// nothing to do
+				return
+			}
+			guard let existing = table[c.id] else {
+				fatalError("Tried to set last whisper conversation to one not in whisper table")
+			}
+			lastId = c.id
+			timestamp = Int(Date.now.timeIntervalSince1970)
+			save()
+		}
 	}
 
 	var fallback: WhisperConversation {

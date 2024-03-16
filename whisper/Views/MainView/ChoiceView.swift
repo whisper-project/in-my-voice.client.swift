@@ -87,7 +87,20 @@ struct ChoiceView: View {
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
-								maybeWhisper(profile.whisperProfile.fallback)
+								switch PreferenceData.whisperTapAction() {
+								case "show":
+									showWhisperConversations = true
+								case "default":
+									maybeWhisper(profile.whisperProfile.fallback)
+								case "last":
+									if let c = profile.whisperProfile.lastUsed {
+										maybeWhisper(c)
+									} else {
+										showWhisperConversations = true
+									}
+								default:
+									fatalError("Illegal preference value for Whisper tap action: \(PreferenceData.whisperTapAction())")
+								}
                             }
                     )
                     .sheet(isPresented: $showWhisperConversations) {
@@ -111,11 +124,17 @@ struct ChoiceView: View {
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
-								if transportStatus == .on {
-									conversation = nil
-									mode = .listen
-								} else {
+								switch PreferenceData.listenTapAction() {
+								case "show":
 									showListenConversations = true
+								case "last":
+									if let c = profile.listenProfile.conversations().first {
+										maybeListen(c)
+									} else {
+										showListenConversations = true
+									}
+								default:
+									fatalError("Illegal preference value for Listen tap action: \(PreferenceData.listenTapAction())")
 								}
                             }
                     )
@@ -220,6 +239,7 @@ struct ChoiceView: View {
 				showNoConnection = true
 			} else {
 				conversation = c
+				profile.whisperProfile.lastUsed = c
 				mode = .whisper
 			}
 		}
