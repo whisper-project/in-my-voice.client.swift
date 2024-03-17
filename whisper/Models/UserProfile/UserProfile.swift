@@ -12,12 +12,6 @@ protocol Conversation: Identifiable, Equatable, Comparable {
 	var name: String { get }
 }
 
-extension Conversation {
-	static func ==(_ left: Self, _ right: Self) -> Bool {
-		return left.id == right.id
-	}
-}
-
 final class UserProfile: Identifiable, ObservableObject {
 	static private(set) var shared = load() ?? create()
 

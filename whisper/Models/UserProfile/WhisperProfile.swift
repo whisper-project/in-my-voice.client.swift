@@ -15,6 +15,11 @@ final class WhisperConversation: Conversation, Encodable, Decodable {
 		self.id = uuid ?? UUID().uuidString
 	}
 
+	// equality by id
+	static func ==(_ left: WhisperConversation, _ right: WhisperConversation) -> Bool {
+		return left.id == right.id
+	}
+
 	// lexicographic ordering by name
 	// since two conversations can have the same name, we fall back
 	// to lexicographic ID order to break ties with stability.
@@ -73,7 +78,7 @@ final class WhisperProfile: Codable {
 			guard let existing = table[c.id] else {
 				fatalError("Tried to set last whisper conversation to one not in whisper table")
 			}
-			lastId = c.id
+			lastId = existing.id
 			timestamp = Int(Date.now.timeIntervalSince1970)
 			save()
 		}

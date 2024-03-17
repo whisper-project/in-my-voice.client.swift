@@ -18,10 +18,19 @@ final class ListenConversation: Conversation, Encodable, Decodable {
 		self.id = uuid ?? UUID().uuidString
 	}
 
-	// decreasing sort by last-used date then increasing sort by name within date bucket
+	// equality by id
+	static func ==(_ left: ListenConversation, _ right: ListenConversation) -> Bool {
+		return left.id == right.id
+	}
+
+	// decreasing sort by last-used date then increasing sort by name (then ID) within date bucket
 	static func <(_ left: ListenConversation, _ right: ListenConversation) -> Bool {
 		if left.lastListened == right.lastListened {
-			return left < right
+			if left.name == right.name {
+				return left.id < right.id
+			} else {
+				return left.name < right.name
+			}
 		} else {
 			return left.lastListened > right.lastListened
 		}
