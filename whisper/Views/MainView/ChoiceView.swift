@@ -87,6 +87,11 @@ struct ChoiceView: View {
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
+								let conversations = profile.whisperProfile.conversations()
+								if conversations.count == 1 {
+									maybeWhisper(conversations.first)
+									return
+								}
 								switch PreferenceData.whisperTapAction() {
 								case "show":
 									showWhisperConversations = true
@@ -124,6 +129,11 @@ struct ChoiceView: View {
                     .highPriorityGesture(
                         TapGesture()
                             .onEnded { _ in
+								let conversations = profile.listenProfile.conversations()
+								if conversations.count == 1 {
+									maybeListen(conversations.first)
+									return
+								}
 								switch PreferenceData.listenTapAction() {
 								case "show":
 									showListenConversations = true
