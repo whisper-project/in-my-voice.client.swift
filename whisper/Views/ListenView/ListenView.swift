@@ -12,7 +12,7 @@ struct ListenView: View {
 
     @Binding var mode: OperatingMode
 	@Binding var restart: Bool
-    var conversation: ListenConversation?
+    var conversation: ListenConversation
 
     @FocusState var focusField: Bool
     @StateObject private var model: ListenViewModel
@@ -23,7 +23,7 @@ struct ListenView: View {
     // set this once at view creation
     private var listenerLiveTextOnTop = !PreferenceData.listenerMatchesWhisperer()
     
-	init(mode: Binding<OperatingMode>, restart: Binding<Bool>, conversation: ListenConversation?) {
+	init(mode: Binding<OperatingMode>, restart: Binding<Bool>, conversation: ListenConversation) {
         self._mode = mode
 		self._restart = restart
 		self.conversation = conversation
@@ -156,6 +156,9 @@ struct ListenView_Previews: PreviewProvider {
 	static let restart: Binding<Bool> = makeBinding(false)
 
     static var previews: some View {
-		ListenView(mode: mode, restart: restart, conversation: nil)
+		ListenView(mode: mode, 
+				   restart: restart,
+				   conversation: UserProfile.shared.listenProfile.fromMyWhisperConversation(UserProfile.shared.whisperProfile.fallback)
+				   )
     }
 }

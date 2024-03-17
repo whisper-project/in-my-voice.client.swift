@@ -124,7 +124,7 @@ final class BluetoothWhisperTransport: PublishTransport {
             if uuids.contains(BluetoothData.listenServiceUuid) {
                 guard let adName = pair.1[CBAdvertisementDataLocalNameKey],
                       let id = adName as? String,
-					  id == "discover" || id == BluetoothData.deviceId(conversation.id)
+					  id == BluetoothData.deviceId(conversation.id)
                 else {
                     logger.error("Ignoring invalid advertisement from \(pair.0, privacy: .public)")
                     return

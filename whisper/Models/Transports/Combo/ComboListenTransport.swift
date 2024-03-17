@@ -104,7 +104,7 @@ final class ComboListenTransport: SubscribeTransport {
 		}
     }
     
-	private var conversation: ListenConversation?
+	private var conversation: ListenConversation
 	private var localFactory = BluetoothFactory.shared
 	private var localStatus: TransportStatus = .off
 	private var localTransport: LocalTransport?
@@ -117,7 +117,7 @@ final class ComboListenTransport: SubscribeTransport {
     private var cancellables: Set<AnyCancellable> = []
 	private var failureCallback: ((String) -> Void)?
 
-    init(_ conversation: ListenConversation?) {
+    init(_ conversation: ListenConversation) {
         logger.log("Initializing combo listen transport")
 		self.conversation = conversation
 		self.localFactory.statusSubject
@@ -166,8 +166,8 @@ final class ComboListenTransport: SubscribeTransport {
 	}
 
 	private func initializeTransports() {
-		if let c = conversation, globalStatus == .on {
-			let globalTransport = GlobalTransport(c)
+		if globalStatus == .on {
+			let globalTransport = GlobalTransport(conversation)
 			self.globalTransport = globalTransport
 			globalTransport.lostRemoteSubject
 				.sink { [weak self] in self?.removeRemote(remote: $0) }

@@ -18,7 +18,7 @@ final class ComboFactory: TransportFactory {
         return Publisher(conversation)
     }
     
-    func subscriber(_ conversation: ListenConversation?) -> Subscriber {
+    func subscriber(_ conversation: ListenConversation) -> Subscriber {
         return Subscriber(conversation)
     }
     

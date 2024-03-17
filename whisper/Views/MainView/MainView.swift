@@ -37,9 +37,9 @@ struct MainView: View {
 				Text("The Whisperer has paused the conversation. Click OK to reconnect, Cancel to stop listening.")
 			}
         case .listen:
-			ListenView(mode: $mode, restart: $restart, conversation: conversation as? ListenConversation)
+			ListenView(mode: $mode, restart: $restart, conversation: conversation as! ListenConversation)
         case .whisper:
-			WhisperView(mode: $mode, conversation: conversation as? WhisperConversation ?? UserProfile.shared.whisperProfile.fallback)
+			WhisperView(mode: $mode, conversation: conversation as! WhisperConversation)
         }
     }
 }

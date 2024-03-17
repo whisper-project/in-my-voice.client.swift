@@ -98,10 +98,7 @@ final class TcpListenTransport: SubscribeTransport {
     private var remotes: [String:Remote] = [:]
     private var whisperer: Remote?
 
-    init(_ conversation: ListenConversation?) {
-		guard let conversation = conversation else {
-			fatalError("Can't listen over the network without a conversation")
-		}
+    init(_ conversation: ListenConversation) {
         self.clientId = PreferenceData.clientId
         self.conversation = conversation
 		self.channelName = conversation.id
