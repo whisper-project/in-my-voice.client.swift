@@ -18,10 +18,19 @@ final class ListenConversation: Conversation, Encodable, Decodable {
 		self.id = uuid ?? UUID().uuidString
 	}
 
-	// decreasing sort by last-used date then increasing sort by name within date bucket
+	// equality by id
+	static func ==(_ left: ListenConversation, _ right: ListenConversation) -> Bool {
+		return left.id == right.id
+	}
+
+	// decreasing sort by last-used date then increasing sort by name (then ID) within date bucket
 	static func <(_ left: ListenConversation, _ right: ListenConversation) -> Bool {
 		if left.lastListened == right.lastListened {
-			return left < right
+			if left.name == right.name {
+				return left.id < right.id
+			} else {
+				return left.name < right.name
+			}
 		} else {
 			return left.lastListened > right.lastListened
 		}
@@ -179,6 +188,9 @@ final class ListenProfile: Codable {
 				self.timestamp = profile.timestamp
 				save(localOnly: true)
 				notifyChange?()
+			} else if code == 404 {
+				// this is supposed to be a shared profile, but the server doesn't have it?!
+				save(verb: "POST")
 			}
 		}
 		let path = "/api/v2/listenProfile/\(id)"
@@ -230,6 +242,7 @@ final class ListenProfile: Codable {
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
+		request.setValue("\"  impossible-timestamp   \"", forHTTPHeaderField: "If-None-Match")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 	}

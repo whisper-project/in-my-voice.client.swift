@@ -12,12 +12,6 @@ protocol Conversation: Identifiable, Equatable, Comparable {
 	var name: String { get }
 }
 
-extension Conversation {
-	static func ==(_ left: Self, _ right: Self) -> Bool {
-		return left.id == right.id
-	}
-}
-
 final class UserProfile: Identifiable, ObservableObject {
 	static private(set) var shared = load() ?? create()
 
@@ -49,8 +43,18 @@ final class UserProfile: Identifiable, ObservableObject {
 		} else {
 			serverPassword = SHA256.hash(data: Data(password.utf8)).map{ String(format: "%02x", $0) }.joined()
 		}
-		whisperProfile = WhisperProfile.load(id, serverPassword: serverPassword) ?? WhisperProfile(id, profileName: name)
-		listenProfile = ListenProfile.load(id, serverPassword: serverPassword) ?? ListenProfile(id)
+		if let wp = WhisperProfile.load(id, serverPassword: serverPassword),
+		   let lp = ListenProfile.load(id, serverPassword: serverPassword) {
+			whisperProfile = wp
+			listenProfile = lp
+		} else {
+			// we failed to load completely, so reset the profile completely except for the name
+			self.id = UUID().uuidString
+			userPassword = ""
+			serverPassword = ""
+			whisperProfile = WhisperProfile(id, profileName: name)
+			listenProfile = ListenProfile(id)
+		}
 	}
 
 	var username: String {
@@ -147,6 +151,9 @@ final class UserProfile: Identifiable, ObservableObject {
 					self.name = name
 					self.save(localOnly: true)
 				}
+			} else if code == 404 {
+				// this is supposed to be a shared profile, but the server doesn't have it?!
+				save(verb: "POST")
 			}
 		}
 		let path = "/api/v2/userProfile/\(id)"
@@ -204,10 +211,12 @@ final class UserProfile: Identifiable, ObservableObject {
 		func loadHandler(_ success: Bool, _ message: String) {
 			if !success {
 				logger.error("Resetting user profile \(id, privacy: .public) due to failure receiving shared profile.")
-				userPassword = ""
-				serverPassword = ""
-				whisperProfile = WhisperProfile(self.id, profileName: name)
-				listenProfile = ListenProfile(self.id)
+				DispatchQueue.main.async {
+					self.userPassword = ""
+					self.serverPassword = ""
+					self.whisperProfile = WhisperProfile(self.id, profileName: self.name)
+					self.listenProfile = ListenProfile(self.id)
+				}
 			}
 			completionHandler(success, message)
 		}
@@ -272,6 +281,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
+		request.setValue("\"  impossible-name   \"", forHTTPHeaderField: "If-None-Match")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: nameHandler)
 	}

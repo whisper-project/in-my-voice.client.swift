@@ -36,7 +36,7 @@ protocol TransportFactory {
     var statusSubject: CurrentValueSubject<TransportStatus, Never> { get }
     
     func publisher(_ conversation: WhisperConversation) -> Publisher
-    func subscriber(_ conversation: ListenConversation?) -> Subscriber
+    func subscriber(_ conversation: ListenConversation) -> Subscriber
 }
 
 protocol TransportRemote: Identifiable {
@@ -72,7 +72,7 @@ protocol PublishTransport: Transport {
 }
 
 protocol SubscribeTransport: Transport {
-	init(_ conversation: ListenConversation?)
+	init(_ conversation: ListenConversation)
 
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> { get }
 

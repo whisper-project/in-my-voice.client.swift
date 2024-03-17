@@ -51,7 +51,7 @@ final class ListenViewModel: ObservableObject {
     @Published var showStatusDetail: Bool = false
 	@Published var candidates: [String: Candidate] = [:]	// remoteId -> Candidate
 	@Published var invites: [Candidate] = []
-	@Published var conversation: ListenConversation?
+	@Published var conversation: ListenConversation
     @Published var whisperer: Candidate?
     @Published var pastText: PastTextModel = .init(mode: .listen)
 
@@ -70,7 +70,7 @@ final class ListenViewModel: ObservableObject {
 
 	let profile = UserProfile.shared.listenProfile
 
-	init(_ conversation: ListenConversation?) {
+	init(_ conversation: ListenConversation) {
 		logger.log("Initializing ListenView model")
 		self.conversation = conversation
         transport = ComboFactory.shared.subscriber(conversation)
@@ -109,7 +109,6 @@ final class ListenViewModel: ObservableObject {
     func stop() {
 		logger.info("Stopping listen session")
 		transport.stop()
-		conversation = nil
 		whisperer = nil
 		invites.removeAll()
 		candidates.removeAll()
@@ -272,7 +271,7 @@ final class ListenViewModel: ObservableObject {
 			conversationRestarted = true
 			return
 		}
-		guard conversation == nil || conversation!.id == info.conversationId else {
+		guard conversation.id == info.conversationId else {
 			logger.error("Ignoring a presence message about the wrong conversation: \(info.conversationId, privacy: .public)")
 			return
 		}
@@ -464,21 +463,14 @@ final class ListenViewModel: ObservableObject {
 
 	private func refreshStatusText() {
         if let whisperer = whisperer {
-			statusText = "\(conversation!.name): Listening to \(whisperer.info.username)"
-		} else if let c = conversation {
-			let prefix = c.name.isEmpty ? "" : "\(c.name): "
+			statusText = "\(conversation.name): Listening to \(whisperer.info.username)"
+		} else {
+			let prefix = conversation.name.isEmpty ? "" : "\(conversation.name): "
 			if discoveryInProgress {
 				let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
 				statusText = "\(prefix)Looking for the Whisperer…\(suffix)"
 			} else {
 				statusText = "\(prefix)Waiting for the Whisperer…"
-			}
-		} else {
-			if discoveryInProgress {
-				let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
-				statusText = "Looking for local conversations…\(suffix)"
-			} else {
-				statusText = "Waiting for a local conversation to be started…"
 			}
 		}
     }

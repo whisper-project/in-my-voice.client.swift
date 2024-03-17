@@ -29,11 +29,8 @@ final class TcpFactory: TransportFactory {
         return TcpWhisperTransport(conversation)
     }
     
-    func subscriber(_ conversation: ListenConversation?) -> Subscriber {
-        guard let c = conversation else {
-            fatalError("TCP listen transport requires a whisper URL")
-        }
-        return TcpListenTransport(c)
+    func subscriber(_ conversation: ListenConversation) -> Subscriber {
+        return TcpListenTransport(conversation)
     }
     
     //MARK: private types, properties, and initialization

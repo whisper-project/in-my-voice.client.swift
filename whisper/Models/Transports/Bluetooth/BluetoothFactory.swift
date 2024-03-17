@@ -18,7 +18,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
 		return Publisher(c)
 	}
 
-	func subscriber(_ c: ListenConversation?) -> Subscriber {
+	func subscriber(_ c: ListenConversation) -> Subscriber {
 		return Subscriber(c)
 	}
 

@@ -116,7 +116,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 					logger.error("Ignoring advertisement with no conversation id from: \(pair.0, privacy: .public)")
                     return
                 }
-				guard conversation == nil || BluetoothData.deviceId(conversation!.id) == id else {
+				guard BluetoothData.deviceId(conversation.id) == id else {
 					logger.info("Ignoring advertisement with non-matching conversation id from: \(pair.0)")
 					return
 				}
@@ -348,10 +348,10 @@ final class BluetoothListenTransport: SubscribeTransport {
     private var cancellables: Set<AnyCancellable> = []
     private var isInBackground = false
     private var scanRefreshCount = 0
-	private var conversation: ListenConversation? = nil
+	private var conversation: ListenConversation
 	private var failureCallback: ((String) -> Void)?
 
-	init(_ c: ListenConversation?) {
+	init(_ c: ListenConversation) {
         logger.log("Initializing Bluetooth listen transport")
 		self.conversation = c
     }
@@ -415,11 +415,7 @@ final class BluetoothListenTransport: SubscribeTransport {
         Timer.scheduledTimer(withTimeInterval: listenerAdTime, repeats: false) { _ in
             self.stopAdvertising()
         }
-		if let c = conversation {
-			factory.advertise(services: [BluetoothData.listenServiceUuid], localName: BluetoothData.deviceId(c.id))
-		} else {
-			factory.advertise(services: [BluetoothData.listenServiceUuid], localName: "discover")
-		}
+		factory.advertise(services: [BluetoothData.listenServiceUuid], localName: BluetoothData.deviceId(conversation.id))
     }
     
     private func stopAdvertising() {

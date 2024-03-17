@@ -138,6 +138,16 @@ struct PreferenceData {
 		}
 	}
 
+	// behavior for Whisper tap
+	static func whisperTapAction() -> String {
+		return defaults.string(forKey: "whisper_tap_preference") ?? "show"
+	}
+
+	// behavior for Listen tap
+	static func listenTapAction() -> String {
+		return defaults.string(forKey: "listen_tap_preference") ?? "show"
+	}
+
     // layout control of listeners
     static func listenerMatchesWhisperer() -> Bool {
         return (defaults.string(forKey: "newest_whisper_location_preference") ?? "bottom") == "bottom"

@@ -84,11 +84,6 @@ final class ComboListenTransport: SubscribeTransport {
     typealias GlobalTransport = TcpListenTransport
     typealias GlobalRemote = TcpListenTransport.Remote
     
-    enum Owner {
-        case local
-        case global
-    }
-    
     final class Wrapper: TransportRemote {
 		let id: String
 		let kind: TransportKind
@@ -104,7 +99,7 @@ final class ComboListenTransport: SubscribeTransport {
 		}
     }
     
-	private var conversation: ListenConversation?
+	private var conversation: ListenConversation
 	private var localFactory = BluetoothFactory.shared
 	private var localStatus: TransportStatus = .off
 	private var localTransport: LocalTransport?
@@ -117,7 +112,7 @@ final class ComboListenTransport: SubscribeTransport {
     private var cancellables: Set<AnyCancellable> = []
 	private var failureCallback: ((String) -> Void)?
 
-    init(_ conversation: ListenConversation?) {
+    init(_ conversation: ListenConversation) {
         logger.log("Initializing combo listen transport")
 		self.conversation = conversation
 		self.localFactory.statusSubject
@@ -166,8 +161,8 @@ final class ComboListenTransport: SubscribeTransport {
 	}
 
 	private func initializeTransports() {
-		if let c = conversation, globalStatus == .on {
-			let globalTransport = GlobalTransport(c)
+		if globalStatus == .on {
+			let globalTransport = GlobalTransport(conversation)
 			self.globalTransport = globalTransport
 			globalTransport.lostRemoteSubject
 				.sink { [weak self] in self?.removeRemote(remote: $0) }
@@ -199,26 +194,26 @@ final class ComboListenTransport: SubscribeTransport {
 	}
 
 	private func staggerStart() {
-		if let local = localTransport {
-			logger.info("Starting Bluetooth in advance of Internet")
-			local.start(failureCallback: failureCallback!)
+		if let global = globalTransport {
+			logger.info("Starting Internet in advance of Bluetooth")
+			global.start(failureCallback: self.failureCallback!)
 			staggerTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(listenerWaitTime), repeats: false) { _ in
 				// run loop will invalidate the timer
 				self.staggerTimer = nil
-				if let global = self.globalTransport {
-					logger.info("Starting Internet after Bluetooth")
-					global.start(failureCallback: self.failureCallback!)
+				if let local = self.localTransport {
+					logger.info("Starting Bluetooth after Internet")
+					local.start(failureCallback: self.failureCallback!)
 				}
 			}
-		} else if let global = globalTransport {
-			logger.info("Starting Internet only because Bluetooth not available")
-			global.start(failureCallback: self.failureCallback!)
+		} else if let local = localTransport {
+			logger.info("Starting only Bluetooth because Internet not available")
+			local.start(failureCallback: failureCallback!)
 		} else {
 			fatalError("Cannot listen because neither Bluetooth nor Internet is available")
 		}
 	}
 
-	private func staggerStop(_ kind: Owner) {
+	private func staggerStop(_ kind: TransportKind) {
 		if let timer = staggerTimer {
 			staggerTimer = nil
 			timer.invalidate()

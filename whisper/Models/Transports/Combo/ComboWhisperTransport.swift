@@ -18,18 +18,13 @@ final class ComboWhisperTransport: PublishTransport {
         logger.log("Starting combo whisper transport")
         self.failureCallback = failureCallback
         initializeTransports()
-        if let local = localTransport {
-            local.start(failureCallback: failureCallback)
-        }
-        if let global = globalTransport {
-            global.start(failureCallback: failureCallback)
-        }
+        staggerStart()
     }
     
     func stop() {
         logger.log("Stopping combo whisper transport")
-        localTransport?.stop()
-        globalTransport?.stop()
+		staggerStop(.local)
+		staggerStop(.global)
     }
     
     func goToBackground() {
@@ -140,6 +135,7 @@ final class ComboWhisperTransport: PublishTransport {
     private var cancellables: Set<AnyCancellable> = []
     private var conversation: WhisperConversation
     private var failureCallback: ((String) -> Void)?
+	private var staggerTimer: Timer?
 
     init(_ c: WhisperConversation) {
         logger.log("Initializing combo whisper transport")
@@ -208,7 +204,40 @@ final class ComboWhisperTransport: PublishTransport {
         }
     }
     
-    private func removeRemote(remote: any TransportRemote) {
+	private func staggerStart() {
+		if let global = globalTransport {
+			logger.info("Starting Internet whispering in advance of Bluetooth")
+			global.start(failureCallback: self.failureCallback!)
+			staggerTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(listenerWaitTime), repeats: false) { _ in
+				// run loop will invalidate the timer
+				self.staggerTimer = nil
+				if let local = self.localTransport {
+					logger.info("Starting Bluetooth whispering after Internet")
+					local.start(failureCallback: self.failureCallback!)
+				}
+			}
+		} else if let local = localTransport {
+			logger.info("Starting only Bluetooth whispering because Internet not available")
+			local.start(failureCallback: failureCallback!)
+		} else {
+			fatalError("Cannot whisper because neither Bluetooth nor Internet is available")
+		}
+	}
+
+	private func staggerStop(_ kind: TransportKind) {
+		if let timer = staggerTimer {
+			staggerTimer = nil
+			timer.invalidate()
+		}
+		switch kind {
+		case .local:
+			localTransport?.stop()
+		case .global:
+			globalTransport?.stop()
+		}
+	}
+
+private func removeRemote(remote: any TransportRemote) {
         guard let removed = remotes.removeValue(forKey: remote.id) else {
             logger.error("Ignoring drop of unknown \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public)")
             return

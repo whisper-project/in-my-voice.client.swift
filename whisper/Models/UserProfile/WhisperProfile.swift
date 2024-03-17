@@ -15,6 +15,11 @@ final class WhisperConversation: Conversation, Encodable, Decodable {
 		self.id = uuid ?? UUID().uuidString
 	}
 
+	// equality by id
+	static func ==(_ left: WhisperConversation, _ right: WhisperConversation) -> Bool {
+		return left.id == right.id
+	}
+
 	// lexicographic ordering by name
 	// since two conversations can have the same name, we fall back
 	// to lexicographic ID order to break ties with stability.
@@ -37,19 +42,46 @@ final class WhisperProfile: Codable {
 	private var id: String
 	private var table: [String: WhisperConversation]
 	private var defaultId: String
+	private var lastId: String?
 	private var timestamp: Int
 	private var serverPassword: String = ""
 
 	private enum CodingKeys: String, CodingKey {
-		case id, table, defaultId, timestamp
+		case id, table, defaultId, lastId, timestamp
 	}
 
 	init(_ profileId: String, profileName: String) {
 		id = profileId
 		table = [:]
 		defaultId = "none"
+		lastId = nil
 		timestamp = Int(Date.now.timeIntervalSince1970)
 		ensureFallback(profileName)
+	}
+
+	var lastUsed: WhisperConversation? {
+		get {
+			if let val = lastId, let existing = table[val] {
+				return existing
+			}
+			return nil
+		}
+		set(c) {
+			guard let c = c else {
+				lastId = nil
+				return
+			}
+			guard c.id != lastId else {
+				// nothing to do
+				return
+			}
+			guard let existing = table[c.id] else {
+				fatalError("Tried to set last whisper conversation to one not in whisper table")
+			}
+			lastId = existing.id
+			timestamp = Int(Date.now.timeIntervalSince1970)
+			save()
+		}
 	}
 
 	var fallback: WhisperConversation {
@@ -224,6 +256,9 @@ final class WhisperProfile: Codable {
 				self.timestamp = profile.timestamp
 				save(localOnly: true)
 				notifyChange?()
+			} else if code == 404 {
+				// this is supposed to be a shared profile, but the server doesn't have it?!
+				save(verb: "POST")
 			}
 		}
 		let path = "/api/v2/whisperProfile/\(id)"
@@ -277,6 +312,7 @@ final class WhisperProfile: Codable {
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
+		request.setValue("\"  impossible-timestamp   \"", forHTTPHeaderField: "If-None-Match")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 	}

@@ -59,5 +59,5 @@ struct WhisperersView: View {
 }
 
 #Preview {
-	WhisperersView(model: ListenViewModel(nil))
+	WhisperersView(model: ListenViewModel(UserProfile.shared.listenProfile.fromMyWhisperConversation(UserProfile.shared.whisperProfile.fallback)))
 }

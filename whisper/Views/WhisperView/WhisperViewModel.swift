@@ -251,7 +251,7 @@ final class WhisperViewModel: ObservableObject {
 			guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
 				fatalError("Received a presence message with invalid data: \(chunk.toString())")
 			}
-			guard info.conversationId == "discover" || info.conversationId == conversation.id else {
+			guard info.conversationId == conversation.id else {
 				logger.info("Ignoring a presence message about the wrong conversation: \(info.conversationId)")
 				return
 			}
@@ -261,15 +261,9 @@ final class WhisperViewModel: ObservableObject {
 				let candidate = candidateFor(remote: remote, info: info)
 				if candidate.isPending {
 					if offset == .listenOffer {
-						if info.conversationId == "discover" {
-							// this is a user who has never been in this conversation before,
-							// so he's not allowed to discover this conversation is available
-							logger.info("Ignoring a discovery offer an from unknown listener")
-						} else {
-							logger.info("Sending whisper offer to new \(remote.kind) listener: \(candidate.id)")
-							let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
-							transport.sendControl(remote: candidate.remote, chunk: chunk)
-						}
+						logger.info("Sending whisper offer to new \(remote.kind) listener: \(candidate.id)")
+						let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
+						transport.sendControl(remote: candidate.remote, chunk: chunk)
 					} else {
 						logger.info("Making invite for new \(remote.kind) listener: \(candidate.id)")
 						invites = candidates.values.filter{$0.isPending}.sorted()

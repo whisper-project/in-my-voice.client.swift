@@ -42,7 +42,7 @@ struct ListenProfileView: View {
 						.buttonStyle(.borderless)
 					}
 				} else {
-					Text("(None yet)")
+					Text("(No past conversations)")
 				}
 				if (!myConversations.isEmpty) {
 					Text("My Conversations").font(.title3)
@@ -92,7 +92,11 @@ struct ListenLinkView: View {
 	var body: some View {
 		Form {
 			Section("Paste link here to listen") {
-				TextField("Conversation link", text: $link)
+				TextField("Conversation link", text: $link, axis: .vertical)
+					.lineLimit(2...5)
+					.submitLabel(.join)
+					.textInputAutocapitalization(.never)
+					.disableAutocorrection(true)
 					.onSubmit {
 						if let id = PreferenceData.publisherUrlToConversationId(url: link) {
 							let conversation = UserProfile.shared.listenProfile.fromLink(id)

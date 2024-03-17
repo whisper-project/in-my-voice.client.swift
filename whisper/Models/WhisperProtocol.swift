@@ -246,9 +246,9 @@ final class WhisperProtocol {
 			return ProtocolChunk(offset: ControlOffset.dropping.rawValue, text: info.toString())
         }
         
-		static func listenOffer(_ c: (any Conversation)? = nil) -> ProtocolChunk {
-			let info = ClientInfo(conversationId: c?.id ?? "discover",
-                                  conversationName: "",
+		static func listenOffer(_ c: any Conversation) -> ProtocolChunk {
+			let info = ClientInfo(conversationId: c.id,
+								  conversationName: c.name,
                                   clientId: PreferenceData.clientId,
                                   profileId: UserProfile.shared.id,
                                   username: "",
