@@ -188,6 +188,9 @@ final class ListenProfile: Codable {
 				self.timestamp = profile.timestamp
 				save(localOnly: true)
 				notifyChange?()
+			} else if code == 404 {
+				// this is supposed to be a shared profile, but the server doesn't have it?!
+				save(verb: "POST")
 			}
 		}
 		let path = "/api/v2/listenProfile/\(id)"

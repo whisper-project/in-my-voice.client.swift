@@ -42,7 +42,7 @@ final class WhisperProfile: Codable {
 	private var id: String
 	private var table: [String: WhisperConversation]
 	private var defaultId: String
-	private var lastId: String
+	private var lastId: String?
 	private var timestamp: Int
 	private var serverPassword: String = ""
 
@@ -54,21 +54,21 @@ final class WhisperProfile: Codable {
 		id = profileId
 		table = [:]
 		defaultId = "none"
-		lastId = "none"
+		lastId = nil
 		timestamp = Int(Date.now.timeIntervalSince1970)
 		ensureFallback(profileName)
 	}
 
 	var lastUsed: WhisperConversation? {
 		get {
-			if let existing = table[lastId] {
+			if let val = lastId, let existing = table[val] {
 				return existing
 			}
 			return nil
 		}
 		set(c) {
 			guard let c = c else {
-				lastId = "none"
+				lastId = nil
 				return
 			}
 			guard c.id != lastId else {
@@ -256,6 +256,9 @@ final class WhisperProfile: Codable {
 				self.timestamp = profile.timestamp
 				save(localOnly: true)
 				notifyChange?()
+			} else if code == 404 {
+				// this is supposed to be a shared profile, but the server doesn't have it?!
+				save(verb: "POST")
 			}
 		}
 		let path = "/api/v2/whisperProfile/\(id)"
