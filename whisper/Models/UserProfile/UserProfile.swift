@@ -281,6 +281,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
+		request.setValue("\"  impossible-name   \"", forHTTPHeaderField: "If-None-Match")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: nameHandler)
 	}
