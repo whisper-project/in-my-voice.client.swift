@@ -199,20 +199,20 @@ final class ComboListenTransport: SubscribeTransport {
 	}
 
 	private func staggerStart() {
-		if let local = localTransport {
-			logger.info("Starting Bluetooth in advance of Internet")
-			local.start(failureCallback: failureCallback!)
+		if let global = globalTransport {
+			logger.info("Starting Internet in advance of Bluetooth")
+			global.start(failureCallback: self.failureCallback!)
 			staggerTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(listenerWaitTime), repeats: false) { _ in
 				// run loop will invalidate the timer
 				self.staggerTimer = nil
-				if let global = self.globalTransport {
-					logger.info("Starting Internet after Bluetooth")
-					global.start(failureCallback: self.failureCallback!)
+				if let local = self.localTransport {
+					logger.info("Starting Bluetooth after Internet")
+					local.start(failureCallback: self.failureCallback!)
 				}
 			}
-		} else if let global = globalTransport {
-			logger.info("Starting Internet only because Bluetooth not available")
-			global.start(failureCallback: self.failureCallback!)
+		} else if let local = localTransport {
+			logger.info("Starting only Bluetooth because Internet not available")
+			local.start(failureCallback: failureCallback!)
 		} else {
 			fatalError("Cannot listen because neither Bluetooth nor Internet is available")
 		}
