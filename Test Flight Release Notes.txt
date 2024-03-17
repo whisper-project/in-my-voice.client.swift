@@ -259,3 +259,14 @@ v2 BUILD 19 and 20 (external):
 The default Listener layout now matches the Whisperer's (live text on the bottom, past text on the top).  This makes the past text read from top to bottom, which is a lot easier for most people to understand.
 
 If you never explicitly set your preference (in Settings) for this, your Listener layout will switch when you install this build.  If you did explicitly set it to be "top" or "bottom" live text, then it will stay the way you set it.
+
+v2 BUILD 21 (external):
+This build introduces changes in the way you start whispering or listening:
+
+1. There is no more "discovery" of ongoing conversations.  You always have to pick a specific conversation to whisper on or listen to.
+
+2. The default behavior of tapping the Whisper button is now customizable (via Settings). You can either have it (a) pop up the list of conversations for you to choose one, (b) start your default conversation, or (c) start the last conversation you were whispering on.
+
+3. The default behavior of tapping the Listen button is now customizable (via Settings). You can either have it (a) pop up the list of conversations for you to choose one or (b) reconnect to the last conversation you were listening to.
+
+No matter your preference settings, if there is only one conversation you have ever used (for whispering or listening, respectively), then tapping the Whisper or Listen button will always select that conversation.  You can always long-press the button to pop up the list of conversations.
