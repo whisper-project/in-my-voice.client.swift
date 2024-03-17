@@ -84,11 +84,6 @@ final class ComboListenTransport: SubscribeTransport {
     typealias GlobalTransport = TcpListenTransport
     typealias GlobalRemote = TcpListenTransport.Remote
     
-    enum Owner {
-        case local
-        case global
-    }
-    
     final class Wrapper: TransportRemote {
 		let id: String
 		let kind: TransportKind
@@ -218,7 +213,7 @@ final class ComboListenTransport: SubscribeTransport {
 		}
 	}
 
-	private func staggerStop(_ kind: Owner) {
+	private func staggerStop(_ kind: TransportKind) {
 		if let timer = staggerTimer {
 			staggerTimer = nil
 			timer.invalidate()
