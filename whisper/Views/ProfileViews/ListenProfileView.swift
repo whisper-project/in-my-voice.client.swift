@@ -94,18 +94,27 @@ struct ListenLinkView: View {
 			Section("Paste link here to listen") {
 				TextField("Conversation link", text: $link, axis: .vertical)
 					.lineLimit(2...5)
+					.onChange(of: link) { old, new in
+						if new.hasSuffix("\n") {
+							link = old
+							maybeJoin()
+						}
+					}
 					.submitLabel(.join)
 					.textInputAutocapitalization(.never)
 					.disableAutocorrection(true)
-					.onSubmit {
-						if let id = PreferenceData.publisherUrlToConversationId(url: link) {
-							let conversation = UserProfile.shared.listenProfile.fromLink(id)
-							maybeListen?(conversation)
-						} else {
-							link = "Not valid: \(link)"
-						}
-					}
+					.onSubmit(maybeJoin)
+				Button("Join", action: maybeJoin)
 			}
+		}
+	}
+
+	func maybeJoin() {
+		if let id = PreferenceData.publisherUrlToConversationId(url: link) {
+			let conversation = UserProfile.shared.listenProfile.fromLink(id)
+			maybeListen?(conversation)
+		} else {
+			link = "Not valid: \(link)"
 		}
 	}
 }
