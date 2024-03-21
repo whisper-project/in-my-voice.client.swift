@@ -207,12 +207,6 @@ struct PreferenceData {
 		}
     }
 
-    // require Bluetooth listeners to pair?
-    static func requireAuthentication() -> Bool {
-        let result = defaults.bool(forKey: "listener_authentication_preference")
-        return result
-    }
-    
     // alert sounds
     struct AlertSoundChoice: Identifiable {
         var id: String
@@ -225,10 +219,10 @@ struct PreferenceData {
     ]
     static var alertSound: String {
         get {
-            return defaults.string(forKey: "alert_sound_preference") ?? "bike-horn"
+            return defaults.string(forKey: "alert_sound_setting") ?? "bike-horn"
         }
         set(new) {
-            defaults.setValue(new, forKey: "alert_sound_preference")
+            defaults.setValue(new, forKey: "alert_sound_setting")
         }
     }
     

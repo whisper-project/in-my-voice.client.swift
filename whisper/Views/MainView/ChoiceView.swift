@@ -10,6 +10,8 @@ import SafariServices
 struct ChoiceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
+	@AppStorage("whisper_tap_preference") private var whisperTapAction: String?
+	@AppStorage("listen_tap_preference") private var listenTapAction: String?
 
     @Binding var mode: OperatingMode
 	@Binding var conversation: (any Conversation)?
@@ -92,7 +94,7 @@ struct ChoiceView: View {
 									maybeWhisper(conversations.first)
 									return
 								}
-								switch PreferenceData.whisperTapAction() {
+								switch whisperTapAction {
 								case "show":
 									showWhisperConversations = true
 								case "default":
@@ -104,7 +106,8 @@ struct ChoiceView: View {
 										showWhisperConversations = true
 									}
 								default:
-									fatalError("Illegal preference value for Whisper tap action: \(PreferenceData.whisperTapAction())")
+									// not set or set to something illegal
+									showWhisperConversations = true
 								}
                             }
                     )
@@ -144,7 +147,8 @@ struct ChoiceView: View {
 										showListenConversations = true
 									}
 								default:
-									fatalError("Illegal preference value for Listen tap action: \(PreferenceData.listenTapAction())")
+									// not set or set to something illegal
+									showListenConversations = true
 								}
                             }
                     )
