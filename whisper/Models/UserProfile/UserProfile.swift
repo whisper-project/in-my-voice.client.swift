@@ -65,11 +65,7 @@ final class UserProfile: Identifiable, ObservableObject {
 				return
 			}
 			name = newName
-			if userPassword.isEmpty {
-				postUsername()
-			} else {
-				save()
-			}
+			save()
 		}
 	}
 
