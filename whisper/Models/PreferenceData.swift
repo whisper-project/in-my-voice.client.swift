@@ -296,7 +296,7 @@ struct PreferenceData {
 			"\(defaults.integer(forKey: "elevenlabs_latency_reduction_preference") + 1)"
 		}
 		set(val) {
-			defaults.setValue(Int(val) ?? 1 - 1, forKey: "elevenlabs_latency_reduction_preference")
+			defaults.setValue((Int(val) ?? 1) - 1, forKey: "elevenlabs_latency_reduction_preference")
 		}
 	}
 
