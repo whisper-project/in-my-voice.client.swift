@@ -80,6 +80,7 @@ final class SettingsProfile: Codable {
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for listen profile upload")
 		}
+		logger.info("\(verb) of settings profile to server, current Tag: \(self.eTag)")
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
 		if verb == "PUT" {
@@ -101,15 +102,17 @@ final class SettingsProfile: Codable {
 			return
 		}
 		func handler(_ code: Int, _ data: Data) {
-			if code == 200,
-			   let profile = try? JSONDecoder().decode(SettingsProfile.self, from: data)
-			{
-				logger.info("Received updated settings profile, eTag is \(profile.eTag)")
-				self.settings = profile.settings
-				self.eTag = profile.eTag
-				PreferenceData.jsonToPreferences(profile.settings)
-				save(localOnly: true)
-				notifyChange?()
+			if code == 200 {
+				if let profile = try? JSONDecoder().decode(SettingsProfile.self, from: data) {
+					logger.info("Received updated settings profile, eTag is \(profile.eTag)")
+					self.settings = profile.settings
+					self.eTag = profile.eTag
+					PreferenceData.jsonToPreferences(profile.settings)
+					save(localOnly: true)
+					notifyChange?()
+				} else {
+					logger.error("Received invalid settings profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+				}
 			} else if code == 404 {
 				logger.info("Posting missing settings profile, eTag is \(self.eTag)")
 				save(verb: "POST")
@@ -160,6 +163,7 @@ final class SettingsProfile: Codable {
 				save(localOnly: true)
 				completionHandler(200)
 			} else {
+				logger.error("Received invalid settings profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
 				completionHandler(-1)
 			}
 		}

@@ -118,6 +118,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for user profile upload")
 		}
+		logger.info("\(verb) of user profile to server, current name: \(self.name)")
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
 		if verb == "PUT" {
@@ -142,15 +143,18 @@ final class UserProfile: Identifiable, ObservableObject {
 		logger.info("Fetching profile update...")
 		lastUpdateRequestTime = Date.now
 		func handler(_ code: Int, _ data: Data) {
-			if code == 200,
-			   let obj = try? JSONSerialization.jsonObject(with: data),
-			   let value = obj as? [String:String],
-			   let name = value["name"]
-			{
-				logger.info("Received updated user profile name: \(name)")
-				DispatchQueue.main.async {
-					self.name = name
-					self.save(localOnly: true)
+			if code == 200 {
+				if let obj = try? JSONSerialization.jsonObject(with: data),
+				   let value = obj as? [String:String],
+				   let name = value["name"]
+				{
+					logger.info("Received updated user profile name: \(name)")
+					DispatchQueue.main.async {
+						self.name = name
+						self.save(localOnly: true)
+					}
+				} else {
+					logger.error("Received invalid user profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
 				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
@@ -248,6 +252,7 @@ final class UserProfile: Identifiable, ObservableObject {
 					whichUpdate = "settings"
 					settingsProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
 				} else {
+					logger.info("Successfully switched to shared profile \(id)")
 					DispatchQueue.main.async {
 						self.id = id
 						self.name = newName
@@ -279,6 +284,7 @@ final class UserProfile: Identifiable, ObservableObject {
 				newName = name
 				dualHandler(200)
 			} else {
+				logger.error("Received invalid user profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
 				dualHandler(-1)
 			}
 		}

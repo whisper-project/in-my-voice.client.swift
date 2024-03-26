@@ -230,6 +230,7 @@ final class WhisperProfile: Codable {
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for whisper profile upload")
 		}
+		logger.info("\(verb) of  whisper profile to server, current timestamp: \(self.timestamp)")
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
 		if verb == "PUT" {
@@ -247,15 +248,17 @@ final class WhisperProfile: Codable {
 			return
 		}
 		func handler(_ code: Int, _ data: Data) {
-			if code == 200,
-			   let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
-			{
-				logger.info("Received updated whisper profile, timestamp is \(profile.timestamp)")
-				self.table = profile.table
-				self.defaultId = profile.defaultId
-				self.timestamp = profile.timestamp
-				save(localOnly: true)
-				notifyChange?()
+			if code == 200 {
+				if let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data) {
+					logger.info("Received updated whisper profile, timestamp is \(profile.timestamp)")
+					self.table = profile.table
+					self.defaultId = profile.defaultId
+					self.timestamp = profile.timestamp
+					save(localOnly: true)
+					notifyChange?()
+				} else {
+					logger.error("Received invalid whisper profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
 				save(verb: "POST")
@@ -292,6 +295,7 @@ final class WhisperProfile: Codable {
 				save(localOnly: true)
 				completionHandler(200)
 			} else {
+				logger.error("Received invalid whisper profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
 				completionHandler(-1)
 			}
 		}
