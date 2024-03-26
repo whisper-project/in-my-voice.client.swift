@@ -188,13 +188,14 @@ final class UserProfile: Identifiable, ObservableObject {
 			return
 		}
 		// reset the profile, but leave the name alone
-		id = UUID().uuidString
+		let newId = UUID().uuidString
+		logger.info("Stop sharing: create new profile \(newId, privacy: .public), username \(self.username, privacy: .public)")
+		id = newId
 		userPassword = ""
 		serverPassword = ""
 		whisperProfile = WhisperProfile(id, profileName: name)
 		listenProfile = ListenProfile(id)
 		settingsProfile = SettingsProfile.load(id, serverPassword: "")
-		logger.info("Using new profile for id \(self.id, privacy: .public), username \(self.username, privacy: .public)")
 		save()
 	}
 
@@ -314,7 +315,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpBody = localData
-		logger.info("Posting updated username for profile \(self.id) to the server")
+		logger.info("Posting username \(self.name) for profile \(self.id)")
 		Data.executeJSONRequest(request)
 	}
 }
