@@ -273,16 +273,6 @@ final class WhisperProfile: Codable {
 		Data.executeJSONRequest(request, handler: handler)
 	}
 
-	func stopSharing() {
-		// reset the profile
-		id = UUID().uuidString
-		serverPassword = ""
-		table = [:]
-		defaultId = "none"
-		timestamp = Int(Date.now.timeIntervalSince1970)
-		save()
-	}
-
 	func startSharing(serverPassword: String) {
 		self.serverPassword = serverPassword
 		save(verb: "POST")

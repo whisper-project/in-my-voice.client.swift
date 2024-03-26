@@ -19,6 +19,7 @@ final class UserProfile: Identifiable, ObservableObject {
 	private(set) var name: String
 	private(set) var whisperProfile: WhisperProfile
 	private(set) var listenProfile: ListenProfile
+	private(set) var settingsProfile: SettingsProfile
 	@Published private(set) var userPassword: String
 	private var serverPassword: String
 	@Published private(set) var timestamp = Date.now
@@ -32,6 +33,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		serverPassword = ""
 		whisperProfile = WhisperProfile(profileId, profileName: "")
 		listenProfile = ListenProfile(profileId)
+		settingsProfile = SettingsProfile.load(profileId, serverPassword: "")
 	}
 
 	private init(id: String, name: String, password: String) {
@@ -44,9 +46,11 @@ final class UserProfile: Identifiable, ObservableObject {
 			serverPassword = SHA256.hash(data: Data(password.utf8)).map{ String(format: "%02x", $0) }.joined()
 		}
 		if let wp = WhisperProfile.load(id, serverPassword: serverPassword),
-		   let lp = ListenProfile.load(id, serverPassword: serverPassword) {
+		   let lp = ListenProfile.load(id, serverPassword: serverPassword)
+		{
 			whisperProfile = wp
 			listenProfile = lp
+			settingsProfile = SettingsProfile.load(id, serverPassword: serverPassword)
 		} else {
 			// we failed to load completely, so reset the profile completely except for the name
 			self.id = UUID().uuidString
@@ -54,6 +58,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			serverPassword = ""
 			whisperProfile = WhisperProfile(id, profileName: name)
 			listenProfile = ListenProfile(id)
+			settingsProfile = SettingsProfile.load(id, serverPassword: "")
 		}
 	}
 
@@ -170,6 +175,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		}
 		whisperProfile.update(notifyChange)
 		listenProfile.update(notifyChange)
+		settingsProfile.update(notifyChange)
 	}
 
 	func stopSharing() {
@@ -183,6 +189,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		serverPassword = ""
 		whisperProfile = WhisperProfile(id, profileName: name)
 		listenProfile = ListenProfile(id)
+		settingsProfile = SettingsProfile.load(id, serverPassword: "")
 		logger.info("Using new profile for id \(self.id, privacy: .public), username \(self.username, privacy: .public)")
 		save()
 	}
@@ -199,6 +206,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		save(verb: "POST")
 		whisperProfile.startSharing(serverPassword: serverPassword)
 		listenProfile.startSharing(serverPassword: serverPassword)
+		settingsProfile.startSharing(serverPassword: serverPassword)
 	}
 
 	func receiveSharing(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
@@ -212,6 +220,7 @@ final class UserProfile: Identifiable, ObservableObject {
 					self.serverPassword = ""
 					self.whisperProfile = WhisperProfile(self.id, profileName: self.name)
 					self.listenProfile = ListenProfile(self.id)
+					self.settingsProfile = SettingsProfile.load(self.id, serverPassword: "")
 				}
 			}
 			completionHandler(success, message)
@@ -235,6 +244,9 @@ final class UserProfile: Identifiable, ObservableObject {
 				} else if whichUpdate == "whisper" {
 					whichUpdate = "listen"
 					listenProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
+				} else if whichUpdate == "listen" {
+					whichUpdate = "settings"
+					settingsProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
 				} else {
 					DispatchQueue.main.async {
 						self.id = id
@@ -254,7 +266,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			case -1:
 				completionHandler(false, "The whisper server returned invalid profile data. Please report a bug.")
 			default:
-				completionHandler(false, "There was a problem on the Whisper server: error code \(result).  Please try again.")
+				completionHandler(false, "There was a \(whichUpdate) problem on the Whisper server: error code \(result).  Please try again.")
 			}
 		}
 		func nameHandler(_ code: Int, _ data: Data) {

@@ -138,21 +138,6 @@ struct PreferenceData {
 		}
 	}
 
-	// behavior for Whisper tap
-	static func whisperTapAction() -> String {
-		return defaults.string(forKey: "whisper_tap_preference") ?? "show"
-	}
-
-	// behavior for Listen tap
-	static func listenTapAction() -> String {
-		return defaults.string(forKey: "listen_tap_preference") ?? "show"
-	}
-
-    // layout control of listeners
-    static func listenerMatchesWhisperer() -> Bool {
-        return (defaults.string(forKey: "newest_whisper_location_preference") ?? "bottom") == "bottom"
-    }
-    
 	// size of text
 	static var sizeWhenWhispering: FontSizes.FontSize {
 		get {
@@ -260,14 +245,113 @@ struct PreferenceData {
         }
     }
 
+	/// Preferences
+	static private var whisperTapPreference: String {
+		get {
+			defaults.string(forKey: "whisper_tap_preference") ?? "show"
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "whisper_tap_preference")
+		}
+	}
+
+	static private var listenTapPreference: String {
+		get {
+			defaults.string(forKey: "listen_tap_preference") ?? "show"
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "listen_tap_preference")
+		}
+	}
+
+	static private var newestWhisperLocationPreference: String {
+		get {
+			defaults.string(forKey: "newest_whisper_location_preference") ?? "bottom"
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "newest_whisper_location_preference")
+		}
+	}
+
+	static private var elevenLabsApiKeyPreference: String {
+		get {
+			defaults.string(forKey: "elevenlabs_api_key_preference") ?? ""
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "elevenlabs_api_key_preference")
+		}
+	}
+
+	static private var elevenLabsVoiceIdPreference: String {
+		get {
+			defaults.string(forKey: "elevenlabs_voice_id_preference") ?? ""
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "elevenlabs_voice_id_preference")
+		}
+	}
+
+	static private var elevenLabsLatencyReductionPreference: String {
+		get {
+			"\(defaults.integer(forKey: "elevenlabs_latency_reduction_preference") + 1)"
+		}
+		set(val) {
+			defaults.setValue(Int(val) ?? 1 - 1, forKey: "elevenlabs_latency_reduction_preference")
+		}
+	}
+
+	// behavior for Whisper tap
+	static func whisperTapAction() -> String {
+		return whisperTapPreference
+	}
+
+	// behavior for Listen tap
+	static func listenTapAction() -> String {
+		return defaults.string(forKey: "listen_tap_preference") ?? "show"
+	}
+
+	// layout control of listeners
+	static func listenerMatchesWhisperer() -> Bool {
+		return newestWhisperLocationPreference == "bottom"
+	}
+
 	// speech keys
 	static func elevenLabsApiKey() -> String {
-		return defaults.string(forKey: "elevenlabs_api_key_preference") ?? ""
+		return elevenLabsApiKeyPreference
 	}
 	static func elevenLabsVoiceId() -> String {
-		return defaults.string(forKey: "elevenlabs_voice_id_preference") ?? ""
+		return elevenLabsVoiceIdPreference
 	}
 	static func elevenLabsLatencyReduction() -> Int {
-		return defaults.integer(forKey: "elevenlabs_latency_reduction_preference") + 1
+		return Int(elevenLabsLatencyReductionPreference) ?? 1
+	}
+
+	static func preferencesToJson() -> String {
+		let preferences = [
+			"whisper_tap_preference": whisperTapPreference,
+			"listen_tap_preference": listenTapPreference,
+			"newest_whisper_location_preference": newestWhisperLocationPreference,
+			"elevenlabs_api_key_preference": elevenLabsApiKeyPreference,
+			"elevenlabs_voice_id_preference": elevenLabsVoiceIdPreference,
+			"elevenlabs_latency_reduction_preference": elevenLabsLatencyReductionPreference,
+		]
+		guard let json = try? JSONSerialization.data(withJSONObject: preferences, options: .sortedKeys) else {
+			fatalError("Can't encode preferences data: \(preferences)")
+		}
+		return String(decoding: json, as: UTF8.self)
+	}
+
+	static func jsonToPreferences(_ json: String) {
+		guard let val = try? JSONSerialization.jsonObject(with: Data(json.utf8)),
+			  let preferences = val as? [String:String]
+		else {
+			fatalError("Can't decode preferences data: \(json)")
+		}
+		whisperTapPreference = preferences["whisper_tap_preference"] ?? "show"
+		listenTapPreference = preferences["listen_tap_preference"] ?? "show"
+		newestWhisperLocationPreference = preferences["newest_whisper_location_preference"] ?? "bottom"
+		elevenLabsApiKeyPreference = preferences["elevenlabs_api_key_preference"] ?? ""
+		elevenLabsVoiceIdPreference = preferences["elevenlabs_voice_id_preference"] ?? ""
+		elevenLabsLatencyReductionPreference = preferences["elevenlabs_latency_reduction_preference"] ?? "1"
 	}
 }

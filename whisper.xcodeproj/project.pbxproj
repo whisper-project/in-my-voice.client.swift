@@ -10,6 +10,7 @@
 		37076DE52B12DB97003AC2FD /* ListenProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37076DE42B12DB97003AC2FD /* ListenProfileView.swift */; };
 		3712340E29E20BD700CBF49C /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712340D29E20BD700CBF49C /* ControlView.swift */; };
 		3731510F2BA760EC005E989D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 37DE2B282BA2AFDD00EDA9D0 /* PrivacyInfo.xcprivacy */; };
+		373151112BA7624D005E989D /* SettingsProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373151102BA7624D005E989D /* SettingsProfile.swift */; };
 		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
 		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
@@ -64,6 +65,7 @@
 		37076DE42B12DB97003AC2FD /* ListenProfileView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListenProfileView.swift; sourceTree = "<group>"; };
 		3712340D29E20BD700CBF49C /* ControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlView.swift; sourceTree = "<group>"; };
 		3712341129E2151100CBF49C /* Binding+Convert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Binding+Convert.swift"; sourceTree = "<group>"; };
+		373151102BA7624D005E989D /* SettingsProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsProfile.swift; sourceTree = "<group>"; };
 		373748782AD66D150053858B /* TcpMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpMonitor.swift; sourceTree = "<group>"; };
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
 		375152A02B61E6990045FEBD /* ElevenLabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabs.swift; sourceTree = "<group>"; };
@@ -306,6 +308,7 @@
 				37CBBD0B2AF8CAC7006AE49F /* UserProfile.swift */,
 				377C01052B7A65CC00489C05 /* WhisperProfile.swift */,
 				377C01072B7A65DB00489C05 /* ListenProfile.swift */,
+				373151102BA7624D005E989D /* SettingsProfile.swift */,
 			);
 			path = UserProfile;
 			sourceTree = "<group>";
@@ -466,6 +469,7 @@
 			files = (
 				376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */,
 				377646C829BACB73002C411C /* MainView.swift in Sources */,
+				373151112BA7624D005E989D /* SettingsProfile.swift in Sources */,
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
 				377C010C2B7C1EEF00489C05 /* ShareProfileView.swift in Sources */,
 				377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */,

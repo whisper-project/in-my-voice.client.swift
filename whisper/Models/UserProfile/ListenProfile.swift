@@ -205,15 +205,6 @@ final class ListenProfile: Codable {
 		Data.executeJSONRequest(request, handler: handler)
 	}
 
-	func stopSharing() {
-		// reset the profile
-		id = UUID().uuidString
-		serverPassword = ""
-		table = [:]
-		timestamp = Int(Date.now.timeIntervalSince1970)
-		save()
-	}
-
 	func startSharing(serverPassword: String) {
 		self.serverPassword = serverPassword
 		save(verb: "POST")
