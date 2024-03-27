@@ -163,6 +163,7 @@ final class ListenProfile: Codable {
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for listen profile upload")
 		}
+		logger.info("\(verb) of listen profile to server, current timestamp: \(self.timestamp)")
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
 		if verb == "PUT" {
@@ -180,14 +181,16 @@ final class ListenProfile: Codable {
 			return
 		}
 		func handler(_ code: Int, _ data: Data) {
-			if code == 200,
-			   let profile = try? JSONDecoder().decode(ListenProfile.self, from: data)
-			{
-				logger.info("Received updated listen profile, timestamp is \(profile.timestamp)")
-				self.table = profile.table
-				self.timestamp = profile.timestamp
-				save(localOnly: true)
-				notifyChange?()
+			if code == 200 {
+				if let profile = try? JSONDecoder().decode(ListenProfile.self, from: data) {
+					logger.info("Received updated listen profile, timestamp is \(profile.timestamp)")
+					self.table = profile.table
+					self.timestamp = profile.timestamp
+					save(localOnly: true)
+					notifyChange?()
+				} else {
+					logger.error("Received invalid listen profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
 				save(verb: "POST")
@@ -203,15 +206,6 @@ final class ListenProfile: Codable {
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
-	}
-
-	func stopSharing() {
-		// reset the profile
-		id = UUID().uuidString
-		serverPassword = ""
-		table = [:]
-		timestamp = Int(Date.now.timeIntervalSince1970)
-		save()
 	}
 
 	func startSharing(serverPassword: String) {
@@ -232,6 +226,7 @@ final class ListenProfile: Codable {
 				save(localOnly: true)
 				completionHandler(200)
 			} else {
+				logger.error("Received invalid listen profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
 				completionHandler(-1)
 			}
 		}

@@ -19,6 +19,7 @@ final class UserProfile: Identifiable, ObservableObject {
 	private(set) var name: String
 	private(set) var whisperProfile: WhisperProfile
 	private(set) var listenProfile: ListenProfile
+	private(set) var settingsProfile: SettingsProfile
 	@Published private(set) var userPassword: String
 	private var serverPassword: String
 	@Published private(set) var timestamp = Date.now
@@ -32,6 +33,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		serverPassword = ""
 		whisperProfile = WhisperProfile(profileId, profileName: "")
 		listenProfile = ListenProfile(profileId)
+		settingsProfile = SettingsProfile.load(profileId, serverPassword: "")
 	}
 
 	private init(id: String, name: String, password: String) {
@@ -44,9 +46,11 @@ final class UserProfile: Identifiable, ObservableObject {
 			serverPassword = SHA256.hash(data: Data(password.utf8)).map{ String(format: "%02x", $0) }.joined()
 		}
 		if let wp = WhisperProfile.load(id, serverPassword: serverPassword),
-		   let lp = ListenProfile.load(id, serverPassword: serverPassword) {
+		   let lp = ListenProfile.load(id, serverPassword: serverPassword)
+		{
 			whisperProfile = wp
 			listenProfile = lp
+			settingsProfile = SettingsProfile.load(id, serverPassword: serverPassword)
 		} else {
 			// we failed to load completely, so reset the profile completely except for the name
 			self.id = UUID().uuidString
@@ -54,6 +58,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			serverPassword = ""
 			whisperProfile = WhisperProfile(id, profileName: name)
 			listenProfile = ListenProfile(id)
+			settingsProfile = SettingsProfile.load(id, serverPassword: "")
 		}
 	}
 
@@ -65,11 +70,7 @@ final class UserProfile: Identifiable, ObservableObject {
 				return
 			}
 			name = newName
-			if userPassword.isEmpty {
-				postUsername()
-			} else {
-				save()
-			}
+			save()
 		}
 	}
 
@@ -117,6 +118,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for user profile upload")
 		}
+		logger.info("\(verb) of user profile to server, current name: \(self.name)")
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
 		if verb == "PUT" {
@@ -141,15 +143,18 @@ final class UserProfile: Identifiable, ObservableObject {
 		logger.info("Fetching profile update...")
 		lastUpdateRequestTime = Date.now
 		func handler(_ code: Int, _ data: Data) {
-			if code == 200,
-			   let obj = try? JSONSerialization.jsonObject(with: data),
-			   let value = obj as? [String:String],
-			   let name = value["name"]
-			{
-				logger.info("Received updated user profile name: \(name)")
-				DispatchQueue.main.async {
-					self.name = name
-					self.save(localOnly: true)
+			if code == 200 {
+				if let obj = try? JSONSerialization.jsonObject(with: data),
+				   let value = obj as? [String:String],
+				   let name = value["name"]
+				{
+					logger.info("Received updated user profile name: \(name)")
+					DispatchQueue.main.async {
+						self.name = name
+						self.save(localOnly: true)
+					}
+				} else {
+					logger.error("Received invalid user profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
 				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
@@ -174,6 +179,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		}
 		whisperProfile.update(notifyChange)
 		listenProfile.update(notifyChange)
+		settingsProfile.update(notifyChange)
 	}
 
 	func stopSharing() {
@@ -182,12 +188,14 @@ final class UserProfile: Identifiable, ObservableObject {
 			return
 		}
 		// reset the profile, but leave the name alone
-		id = UUID().uuidString
+		let newId = UUID().uuidString
+		logger.info("Stop sharing: create new profile \(newId, privacy: .public), username \(self.username, privacy: .public)")
+		id = newId
 		userPassword = ""
 		serverPassword = ""
 		whisperProfile = WhisperProfile(id, profileName: name)
 		listenProfile = ListenProfile(id)
-		logger.info("Using new profile for id \(self.id, privacy: .public), username \(self.username, privacy: .public)")
+		settingsProfile = SettingsProfile.load(id, serverPassword: "")
 		save()
 	}
 
@@ -203,6 +211,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		save(verb: "POST")
 		whisperProfile.startSharing(serverPassword: serverPassword)
 		listenProfile.startSharing(serverPassword: serverPassword)
+		settingsProfile.startSharing(serverPassword: serverPassword)
 	}
 
 	func receiveSharing(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
@@ -216,6 +225,7 @@ final class UserProfile: Identifiable, ObservableObject {
 					self.serverPassword = ""
 					self.whisperProfile = WhisperProfile(self.id, profileName: self.name)
 					self.listenProfile = ListenProfile(self.id)
+					self.settingsProfile = SettingsProfile.load(self.id, serverPassword: "")
 				}
 			}
 			completionHandler(success, message)
@@ -239,7 +249,11 @@ final class UserProfile: Identifiable, ObservableObject {
 				} else if whichUpdate == "whisper" {
 					whichUpdate = "listen"
 					listenProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
+				} else if whichUpdate == "listen" {
+					whichUpdate = "settings"
+					settingsProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
 				} else {
+					logger.info("Successfully switched to shared profile \(id)")
 					DispatchQueue.main.async {
 						self.id = id
 						self.name = newName
@@ -258,7 +272,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			case -1:
 				completionHandler(false, "The whisper server returned invalid profile data. Please report a bug.")
 			default:
-				completionHandler(false, "There was a problem on the Whisper server: error code \(result).  Please try again.")
+				completionHandler(false, "There was a \(whichUpdate) problem on the Whisper server: error code \(result).  Please try again.")
 			}
 		}
 		func nameHandler(_ code: Int, _ data: Data) {
@@ -271,6 +285,7 @@ final class UserProfile: Identifiable, ObservableObject {
 				newName = name
 				dualHandler(200)
 			} else {
+				logger.error("Received invalid user profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
 				dualHandler(-1)
 			}
 		}
@@ -300,7 +315,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.httpBody = localData
-		logger.info("Posting updated username for profile \(self.id) to the server")
+		logger.info("Posting username \(self.name) for profile \(self.id)")
 		Data.executeJSONRequest(request)
 	}
 }

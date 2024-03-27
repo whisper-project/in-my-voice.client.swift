@@ -132,8 +132,10 @@ final class ListenViewModel: ObservableObject {
         isInBackground = false
         transport.goToForeground()
         // after going to background, assume not waiting any more
-        logger.log("End initial wait for whisperers due to background transition")
-        cancelDiscovery()
+		if discoveryTimer != nil {
+			logger.log("End initial wait for whisperers due to background transition")
+			cancelDiscovery()
+		}
     }
 
 	func acceptInvite(_ id: String) {

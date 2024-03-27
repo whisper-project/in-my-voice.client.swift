@@ -270,3 +270,10 @@ This build introduces changes in the way you start whispering or listening:
 3. The default behavior of tapping the Listen button is now customizable (via Settings). You can either have it (a) pop up the list of conversations for you to choose one or (b) reconnect to the last conversation you were listening to.
 
 No matter your preference settings, if there is only one conversation you have ever used (for whispering or listening, respectively), then tapping the Whisper or Listen button will always select that conversation.  You can always long-press the button to pop up the list of conversations.
+
+v2 BUILD 22 (external):
+This build extends profile sharing to include the user's Whisper preferences (in the Settings app), that is, to include the ElevenLabs API preferences, listener layout, and the behavior of the Whisper and Listen buttons when tapped.
+
+If you are already using a shared profile, the first device on which you launch this build will update your shared profile with the current preferences on that device.  These preferences will then be copied to your other devices as you launch them with this build.
+
+CAUTION: Although this "add the current settings to an existing shared profile" behavior has been pretty well tested on multiple devices, bugs are always possible. Users with existing shared profiles are advised to document their preferences (especially the Elevenlabs magic numbers) before they launch this build in order to make sure they don't get lost.
