@@ -10,6 +10,8 @@ let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
 struct MainView: View {
     @Environment(\.colorScheme) private var colorScheme
+	@Environment(\.openWindow) private var openWindow
+	@Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
 
     @Binding var mode: OperatingMode
     @Binding var conversation: (any Conversation)?
@@ -23,6 +25,8 @@ struct MainView: View {
             VStack {
                 Spacer()
                 ChoiceView(mode: $mode, conversation: $conversation, transportStatus: $model.status)
+					.handlesExternalEvents(preferring: [PreferenceData.publisherUrlEventMatchString],
+										   allowing: [PreferenceData.publisherUrlEventMatchString])
                 Spacer()
                 Text("v\(versionString)")
                     .textSelection(.enabled)

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		37076DE52B12DB97003AC2FD /* ListenProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37076DE42B12DB97003AC2FD /* ListenProfileView.swift */; };
 		3712340E29E20BD700CBF49C /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712340D29E20BD700CBF49C /* ControlView.swift */; };
+		3724D7C42BB4A3EA00BC6741 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3724D7C32BB4A3EA00BC6741 /* RootView.swift */; };
 		3731510F2BA760EC005E989D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 37DE2B282BA2AFDD00EDA9D0 /* PrivacyInfo.xcprivacy */; };
 		373151112BA7624D005E989D /* SettingsProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373151102BA7624D005E989D /* SettingsProfile.swift */; };
 		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
@@ -65,6 +66,7 @@
 		37076DE42B12DB97003AC2FD /* ListenProfileView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListenProfileView.swift; sourceTree = "<group>"; };
 		3712340D29E20BD700CBF49C /* ControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlView.swift; sourceTree = "<group>"; };
 		3712341129E2151100CBF49C /* Binding+Convert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Binding+Convert.swift"; sourceTree = "<group>"; };
+		3724D7C32BB4A3EA00BC6741 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		373151102BA7624D005E989D /* SettingsProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsProfile.swift; sourceTree = "<group>"; };
 		373748782AD66D150053858B /* TcpMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpMonitor.swift; sourceTree = "<group>"; };
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
@@ -295,6 +297,7 @@
 		377646C229BAC589002C411C /* MainView */ = {
 			isa = PBXGroup;
 			children = (
+				3724D7C32BB4A3EA00BC6741 /* RootView.swift */,
 				377646C729BACB73002C411C /* MainView.swift */,
 				377646C529BACB4B002C411C /* MainViewModel.swift */,
 				3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */,
@@ -487,6 +490,7 @@
 				377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
 				37CBBD0F2AFB112B006AE49F /* WhisperProfileView.swift in Sources */,
+				3724D7C42BB4A3EA00BC6741 /* RootView.swift in Sources */,
 				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
 				377C01082B7A65DB00489C05 /* ListenProfile.swift in Sources */,
 				377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */,
@@ -643,7 +647,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -685,7 +689,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;

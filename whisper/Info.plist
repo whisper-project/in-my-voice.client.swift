@@ -7,9 +7,7 @@
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
-		<dict/>
+		<true/>
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
