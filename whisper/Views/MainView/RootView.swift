@@ -6,6 +6,9 @@
 import SwiftUI
 
 struct RootView: View {
+	@Environment(\.openWindow) private var openWindow
+	@Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
+
 	@State var mode: OperatingMode = .ask
 	@State var conversation: (any Conversation)? = nil
 	@State var showWarning: Bool = false
@@ -27,20 +30,22 @@ struct RootView: View {
 					showWarning = true
 					return
 				}
-				guard mode == .ask else {
-					let activity = mode == .whisper ? "whispering" : "listening"
-					warningMessage = "Already \(activity) to someone else. Stop \(activity) and click the link again."
+				let url = urlObj.absoluteString
+				guard let cid = PreferenceData.publisherUrlToConversationId(url: url) else {
+					logger.warning("Ignoring invalid universal URL: \(url)")
+					warningMessage = "There is no whisperer at that link. Please get a new link and try again."
 					showWarning = true
 					return
 				}
-				let url = urlObj.absoluteString
-				if let cid = PreferenceData.publisherUrlToConversationId(url: url) {
-					logger.log("Handling valid universal URL: \(url)")
+				logger.log("Handling valid universal URL: \(url)")
+				if mode == .ask {
 					conversation = profile.listenProfile.fromLink(cid)
 					mode = .listen
+				} else if (supportsMultipleWindows) {
+					openWindow(value: profile.listenProfile.fromLink(cid))
 				} else {
-					logger.warning("Ignoring invalid universal URL: \(url)")
-					warningMessage = "There is no whisperer at that link. Please get a new link and try again."
+					let activity = mode == .whisper ? "whispering" : "listening"
+					warningMessage = "Already \(activity) to someone else. Stop \(activity) and click the link again."
 					showWarning = true
 				}
 			}

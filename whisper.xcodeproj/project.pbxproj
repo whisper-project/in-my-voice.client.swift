@@ -17,6 +17,7 @@
 		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
 		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
+		377237252BB8F5BE0062A833 /* LinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377237242BB8F5BE0062A833 /* LinkView.swift */; };
 		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
 		37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CE429AAC1E50051CFE5 /* whisperApp.swift */; };
 		37763CE929AAC1E60051CFE5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37763CE829AAC1E60051CFE5 /* Assets.xcassets */; };
@@ -77,6 +78,7 @@
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		376388CC29DDFB77006E5686 /* StatusTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusTextView.swift; sourceTree = "<group>"; };
 		3771F83429DD2F900011419E /* FontSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizes.swift; sourceTree = "<group>"; };
+		377237242BB8F5BE0062A833 /* LinkView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinkView.swift; sourceTree = "<group>"; };
 		3775A13929AD4EB6007159F5 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		37763CE129AAC1E50051CFE5 /* whisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = whisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37763CE429AAC1E50051CFE5 /* whisperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperApp.swift; sourceTree = "<group>"; };
@@ -298,6 +300,7 @@
 			isa = PBXGroup;
 			children = (
 				3724D7C32BB4A3EA00BC6741 /* RootView.swift */,
+				377237242BB8F5BE0062A833 /* LinkView.swift */,
 				377646C729BACB73002C411C /* MainView.swift */,
 				377646C529BACB4B002C411C /* MainViewModel.swift */,
 				3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */,
@@ -512,6 +515,7 @@
 				37C5142229CA2B35001A121B /* PastTextView.swift in Sources */,
 				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,
 				374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */,
+				377237252BB8F5BE0062A833 /* LinkView.swift in Sources */,
 				37C5142429CA2B44001A121B /* PastTextModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

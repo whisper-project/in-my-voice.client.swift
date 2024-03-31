@@ -5,47 +5,19 @@
 
 import SwiftUI
 
-struct RootView: View {
-	@State var mode: OperatingMode = .ask
-	@State var conversation: (any Conversation)? = nil
-	@State var showWarning: Bool = false
-	@State var warningMessage: String = ""
+struct LinkView: View {
+	@Environment(\.dismiss) private var dismiss
 
-	let profile = UserProfile.shared
+	var conversation: ListenConversation
+
+	@State private var mode: OperatingMode = .listen
+	@State private var restart: Bool = false
 
     var body: some View {
-		MainView(mode: $mode, conversation: $conversation)
-			.onAppear {
-				profile.update()
-				if (mode != .listen) {
-					conversation = nil
-				}
+		ListenView(mode: $mode, restart: $restart, conversation: conversation)
+			.onChange(of: mode, initial: false) {
+				dismiss()
 			}
-			.onOpenURL { urlObj in
-				guard !profile.username.isEmpty else {
-					warningMessage = "You must create your initial profile before you can listen."
-					showWarning = true
-					return
-				}
-				guard mode == .ask else {
-					let activity = mode == .whisper ? "whispering" : "listening"
-					warningMessage = "Already \(activity) to someone else. Stop \(activity) and click the link again."
-					showWarning = true
-					return
-				}
-				let url = urlObj.absoluteString
-				if let cid = PreferenceData.publisherUrlToConversationId(url: url) {
-					logger.log("Handling valid universal URL: \(url)")
-					conversation = profile.listenProfile.fromLink(cid)
-					mode = .listen
-				} else {
-					logger.warning("Ignoring invalid universal URL: \(url)")
-					warningMessage = "There is no whisperer at that link. Please get a new link and try again."
-					showWarning = true
-				}
-			}
-			.alert("Cannot Listen", isPresented: $showWarning,
-				   actions: { Button("OK", action: { })}, message: { Text(warningMessage) })
     }
 }
 

@@ -76,6 +76,10 @@ struct whisperApp: App {
         WindowGroup {
 			RootView()
         }
+
+		WindowGroup(for: ListenConversation.self) { $conversation in
+			LinkView(conversation: conversation!)
+		}
     }
 }
 
