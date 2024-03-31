@@ -46,6 +46,11 @@ final class BluetoothFactory: NSObject, TransportFactory {
 		super.init()
 		centralManager = .init(delegate: self, queue: .main)
 		peripheralManager = .init(delegate: self, queue: .main)
+		peripheralManager.add(BluetoothData.whisperService)
+	}
+
+	deinit {
+		peripheralManager.remove(BluetoothData.whisperService)
 	}
 
 	func connectedPeripherals(forServices: [CBUUID]) -> [CBPeripheral] {

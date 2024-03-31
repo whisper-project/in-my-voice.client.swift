@@ -5,7 +5,7 @@
 
 import Foundation
 
-final class ListenConversation: Conversation, Encodable, Decodable {
+final class ListenConversation: Conversation, Hashable, Encodable, Decodable {
 	private(set) var id: String
 	fileprivate(set) var name: String = ""
 	fileprivate(set) var owner: String = ""
@@ -21,6 +21,11 @@ final class ListenConversation: Conversation, Encodable, Decodable {
 	// equality by id
 	static func ==(_ left: ListenConversation, _ right: ListenConversation) -> Bool {
 		return left.id == right.id
+	}
+
+	// hash by id
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(id)
 	}
 
 	// decreasing sort by last-used date then increasing sort by name (then ID) within date bucket
