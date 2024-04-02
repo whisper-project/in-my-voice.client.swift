@@ -277,3 +277,10 @@ This build extends profile sharing to include the user's Whisper preferences (in
 If you are already using a shared profile, the first device on which you launch this build will update your shared profile with the current preferences on that device.  These preferences will then be copied to your other devices as you launch them with this build.
 
 CAUTION: Although this "add the current settings to an existing shared profile" behavior has been pretty well tested on multiple devices, bugs are always possible. Users with existing shared profiles are advised to document their preferences (especially the Elevenlabs magic numbers) before they launch this build in order to make sure they don't get lost.
+
+v2 BUILD 23 (external):
+This build introduces the ability to have multiple app windows (except on iPhone), each with their own whisper or listen session.
+
+On Mac, the windows appear in tabs by default, but the tabs can be pulled out into a separate window so multiple sessions are visible at once.  You create a new window with the File>New Window command (Command-N).
+
+On iPad, you can use the three-dot control at the top of the screen to open new windows (and arrange two windows side-by-side), or you can use the Stage Manager to control your windows.
