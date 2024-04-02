@@ -25,8 +25,6 @@ struct MainView: View {
             VStack {
                 Spacer()
                 ChoiceView(mode: $mode, conversation: $conversation, transportStatus: $model.status)
-					.handlesExternalEvents(preferring: [PreferenceData.publisherUrlEventMatchString],
-										   allowing: [PreferenceData.publisherUrlEventMatchString])
                 Spacer()
                 Text("v\(versionString)")
                     .textSelection(.enabled)

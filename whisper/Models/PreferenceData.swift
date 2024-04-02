@@ -19,13 +19,18 @@ struct PreferenceData {
     #else
     static let whisperServer = "https://whisper.clickonetwo.io"
     #endif
-    static func publisherUrlToConversationId(url: String) -> String? {
+    static func publisherUrlToConversationId(url: String) -> (String, String)? {
 		let expectedPrefix = whisperServer + "/listen/"
 		if url.starts(with: expectedPrefix) {
 			let tailEnd = url.index(expectedPrefix.endIndex, offsetBy: 36)
 			let tail = url[expectedPrefix.endIndex..<tailEnd]
 			if tail.wholeMatch(of: /[-a-zA-Z0-9]{36}/) != nil {
-				return String(tail)
+				let rest = url.suffix(from: url.index(tailEnd, offsetBy: 1))
+				if rest.isEmpty {
+					return (String(tail), String(tail.suffix(12)))
+				} else {
+					return (String(tail), String(rest))
+				}
 			}
 		}
         return nil

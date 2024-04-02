@@ -14,8 +14,9 @@ final class ListenConversation: Conversation, Hashable, Encodable, Decodable {
 
 	var authorized: Bool { get { lastListened != Date.distantPast } }
 
-	fileprivate init(uuid: String? = nil) {
+	fileprivate init(uuid: String? = nil, name: String? = nil) {
 		self.id = uuid ?? UUID().uuidString
+		self.name = name ?? ""
 	}
 
 	// equality by id
@@ -74,12 +75,15 @@ final class ListenProfile: Codable {
 		return c
 	}
 
-	/// get a listen conversation from a web link conversation ID
-	func fromLink(_ id: String) -> ListenConversation {
+	/// get a listen conversation from a web link
+	func fromLink(_ url: String) -> ListenConversation? {
+		guard let (id, name) = PreferenceData.publisherUrlToConversationId(url: url) else {
+			return nil
+		}
 		if let existing = table[id] {
 			return existing
 		} else {
-			return ListenConversation(uuid: id)
+			return ListenConversation(uuid: id, name: name)
 		}
 	}
 

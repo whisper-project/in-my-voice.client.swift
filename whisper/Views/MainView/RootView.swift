@@ -31,19 +31,21 @@ struct RootView: View {
 					return
 				}
 				let url = urlObj.absoluteString
-				guard let cid = PreferenceData.publisherUrlToConversationId(url: url) else {
+				guard let convo = profile.listenProfile.fromLink(url) else {
 					logger.warning("Ignoring invalid universal URL: \(url)")
 					warningMessage = "There is no whisperer at that link. Please get a new link and try again."
 					showWarning = true
 					return
 				}
-				logger.log("Handling valid universal URL: \(url)")
 				if mode == .ask {
-					conversation = profile.listenProfile.fromLink(cid)
+					logger.info("Opening conversation in existing root view: \(convo.id) (\(convo.name))")
+					conversation = convo
 					mode = .listen
 				} else if (supportsMultipleWindows) {
-					openWindow(value: profile.listenProfile.fromLink(cid))
+					logger.info("Opening conversation in new link view: \(convo.id) (\(convo.name))")
+					openWindow(value: convo)
 				} else {
+					logger.warning("Rejecting conversation because only available window is busy: \(convo.id) (\(convo.name))")
 					let activity = mode == .whisper ? "whispering" : "listening"
 					warningMessage = "Already \(activity) to someone else. Stop \(activity) and click the link again."
 					showWarning = true

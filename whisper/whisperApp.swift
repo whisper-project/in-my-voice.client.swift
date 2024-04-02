@@ -76,6 +76,7 @@ struct whisperApp: App {
         WindowGroup {
 			RootView()
         }
+		.handlesExternalEvents(matching: [PreferenceData.publisherUrlEventMatchString])
 
 		WindowGroup(for: ListenConversation.self) { $conversation in
 			LinkView(conversation: conversation!)
