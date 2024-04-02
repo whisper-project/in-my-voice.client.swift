@@ -20,6 +20,7 @@ struct ListenView: View {
 	@State private var size = PreferenceData.sizeWhenListening
 	@State private var magnify: Bool = PreferenceData.magnifyWhenListening
 	@State private var confirmStop: Bool = false
+	@State private var inBackground: Bool = false
 
 	init(mode: Binding<OperatingMode>, restart: Binding<Bool>, conversation: ListenConversation) {
         self._mode = mode
@@ -29,76 +30,97 @@ struct ListenView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 10) {
-				ControlView(size: $size, magnify: $magnify, mode: mode, maybeStop: maybeStop)
-                    .padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
-                if (liveWindowPosition ?? "bottom" != "bottom") {
-					liveView(geometry)
-                } else {
-					pastView(geometry)
-                }
-                StatusTextView(text: $model.statusText, mode: .listen, conversation: nil)
-                    .onTapGesture {
-						if (model.whisperer == nil && !model.invites.isEmpty) {
-							model.showStatusDetail = true
+		GeometryReader { geometry in
+			if inBackground && platformInfo != "mac" {
+				VStack(alignment: .center) {
+					Spacer()
+					Text("Listening to \(conversation.name)")
+						.font(.system(size: geometry.size.height / 4.5, weight: .bold))
+						.lineLimit(nil)
+						.multilineTextAlignment(.center)
+						.foregroundColor(.white)
+					Spacer()
+				}
+				.background(Color.accentColor)
+			} else {
+				VStack(spacing: 10) {
+					ControlView(size: $size, magnify: $magnify, mode: mode, maybeStop: maybeStop)
+						.padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
+					if (liveWindowPosition ?? "bottom" != "bottom") {
+						liveView(geometry)
+					} else {
+						pastView(geometry)
+					}
+					StatusTextView(text: $model.statusText, mode: .listen, conversation: nil)
+						.onTapGesture {
+							if (model.whisperer == nil && !model.invites.isEmpty) {
+								model.showStatusDetail = true
+							}
 						}
-                    }
-                    .popover(isPresented: $model.showStatusDetail) {
-                        WhisperersView(model: model)
-                    }
-                if (liveWindowPosition ?? "bottom" == "bottom") {
-					liveView(geometry)
-                } else {
-					pastView(geometry)
-                }
-            }
-        }
-		.multilineTextAlignment(.leading)
-		.lineLimit(nil)
-		.alert("Confirm Stop", isPresented: $confirmStop) {
-			Button("Stop") {
-				model.stop()
-				mode = .ask
+						.popover(isPresented: $model.showStatusDetail) {
+							WhisperersView(model: model)
+						}
+					if (liveWindowPosition ?? "bottom" == "bottom") {
+						liveView(geometry)
+					} else {
+						pastView(geometry)
+					}
+				}
+				.multilineTextAlignment(.leading)
+				.lineLimit(nil)
+				.alert("Confirm Stop", isPresented: $confirmStop) {
+					Button("Stop") {
+						model.stop()
+						mode = .ask
+					}
+					Button("Don't Stop") {
+					}
+				} message: {
+					Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+				}
+				.alert("Connection Failure", isPresented: $model.connectionError) {
+					Button("OK") { mode = .ask }
+				} message: {
+					Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
+				}
+				.alert("Conversation Ended", isPresented: $model.conversationEnded) {
+					Button("OK") { mode = .ask }
+				} message: {
+					Text("The Whisperer has ended the conversation")
+				}
 			}
-			Button("Don't Stop") {
-			}
-		} message: {
-			Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
 		}
-        .alert("Connection Failure", isPresented: $model.connectionError) {
-            Button("OK") { mode = .ask }
-        } message: {
-            Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
-        }
-        .alert("Conversation Ended", isPresented: $model.conversationEnded) {
-            Button("OK") { mode = .ask }
-        } message: {
-            Text("The Whisperer has ended the conversation")
-        }
-        .onAppear {
-            logger.log("ListenView appeared")
-            self.model.start()
-        }
-        .onDisappear {
-            logger.log("ListenView disappeared")
-            self.model.stop()
-        }
+		.onAppear {
+			logger.log("ListenView appeared")
+			self.model.start()
+		}
+		.onDisappear {
+			logger.log("ListenView disappeared")
+			self.model.stop()
+		}
 		.onChange(of: model.conversationRestarted) {
 			restart = true
 			mode = .ask
 		}
-        .onChange(of: scenePhase) {
+		.onChange(of: conversation.name, initial: true) {
+			UIApplication.shared.firstKeyWindow?.windowScene?.title = "Listening to \(conversation.name)"
+		}
+		.onChange(of: scenePhase) {
             switch scenePhase {
             case .background:
                 logger.log("Went to background")
+				inBackground = true
                 model.wentToBackground()
-            case .inactive:
+			case .inactive:
                 logger.log("Went inactive")
+				inBackground = false
+				model.wentToForeground()
             case .active:
                 logger.log("Went to foreground")
+				inBackground = false
                 model.wentToForeground()
             @unknown default:
+				inBackground = false
                 logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
             }
         }
