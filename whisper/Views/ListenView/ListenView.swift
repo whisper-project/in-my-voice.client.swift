@@ -31,63 +31,34 @@ struct ListenView: View {
 
     var body: some View {
 		GeometryReader { geometry in
-			if inBackground && platformInfo != "mac" {
-				VStack(alignment: .center) {
-					Spacer()
-					Text("Listening to \(conversation.name)")
-						.font(.system(size: geometry.size.height / 4.5, weight: .bold))
-						.lineLimit(nil)
-						.multilineTextAlignment(.center)
-						.foregroundColor(.white)
-					Spacer()
+			VStack(spacing: 10) {
+				if inBackground && platformInfo == "pad" {
+					backgroundView(geometry)
+				} else {
+					foregroundView(geometry)
 				}
-				.background(Color.accentColor)
-			} else {
-				VStack(spacing: 10) {
-					ControlView(size: $size, magnify: $magnify, mode: mode, maybeStop: maybeStop)
-						.padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
-					if (liveWindowPosition ?? "bottom" != "bottom") {
-						liveView(geometry)
-					} else {
-						pastView(geometry)
-					}
-					StatusTextView(text: $model.statusText, mode: .listen, conversation: nil)
-						.onTapGesture {
-							if (model.whisperer == nil && !model.invites.isEmpty) {
-								model.showStatusDetail = true
-							}
-						}
-						.popover(isPresented: $model.showStatusDetail) {
-							WhisperersView(model: model)
-						}
-					if (liveWindowPosition ?? "bottom" == "bottom") {
-						liveView(geometry)
-					} else {
-						pastView(geometry)
-					}
+			}
+			.multilineTextAlignment(.leading)
+			.lineLimit(nil)
+			.alert("Confirm Stop", isPresented: $confirmStop) {
+				Button("Stop") {
+					model.stop()
+					mode = .ask
 				}
-				.multilineTextAlignment(.leading)
-				.lineLimit(nil)
-				.alert("Confirm Stop", isPresented: $confirmStop) {
-					Button("Stop") {
-						model.stop()
-						mode = .ask
-					}
-					Button("Don't Stop") {
-					}
-				} message: {
-					Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+				Button("Don't Stop") {
 				}
-				.alert("Connection Failure", isPresented: $model.connectionError) {
-					Button("OK") { mode = .ask }
-				} message: {
-					Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
-				}
-				.alert("Conversation Ended", isPresented: $model.conversationEnded) {
-					Button("OK") { mode = .ask }
-				} message: {
-					Text("The Whisperer has ended the conversation")
-				}
+			} message: {
+				Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+			}
+			.alert("Connection Failure", isPresented: $model.connectionError) {
+				Button("OK") { mode = .ask }
+			} message: {
+				Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
+			}
+			.alert("Conversation Ended", isPresented: $model.conversationEnded) {
+				Button("OK") { mode = .ask }
+			} message: {
+				Text("The Whisperer has ended the conversation")
 			}
 		}
 		.onAppear {
@@ -130,6 +101,30 @@ struct ListenView: View {
 		confirmStop = true
 	}
 
+	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
+		ControlView(size: $size, magnify: $magnify, mode: mode, maybeStop: maybeStop)
+			.padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
+		if (liveWindowPosition ?? "bottom" != "bottom") {
+			liveView(geometry)
+		} else {
+			pastView(geometry)
+		}
+		StatusTextView(text: $model.statusText, mode: .listen, conversation: nil)
+			.onTapGesture {
+				if (model.whisperer == nil && !model.invites.isEmpty) {
+					model.showStatusDetail = true
+				}
+			}
+			.popover(isPresented: $model.showStatusDetail) {
+				WhisperersView(model: model)
+			}
+		if (liveWindowPosition ?? "bottom" == "bottom") {
+			liveView(geometry)
+		} else {
+			pastView(geometry)
+		}
+	}
+
 	private func liveView(_ geometry: GeometryProxy) -> some View {
 		Text(model.liveText)
 			.font(FontSizes.fontFor(size))
@@ -157,6 +152,23 @@ struct ListenView: View {
 			.padding(EdgeInsets(top: 0, leading: sidePad, bottom: listenViewBottomPad, trailing: sidePad))
 			.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 			.textSelection(.enabled)
+	}
+
+	private func backgroundView(_ geometry: GeometryProxy) -> some View {
+		VStack(alignment: .center) {
+			Spacer()
+			HStack {
+				Spacer()
+				Text("Listening to \(conversation.name)")
+					.font(.system(size: geometry.size.height / 4.5, weight: .bold))
+					.lineLimit(nil)
+					.multilineTextAlignment(.center)
+					.foregroundColor(.white)
+				Spacer()
+			}
+			Spacer()
+		}
+		.background(Color.accentColor)
 	}
 }
 
