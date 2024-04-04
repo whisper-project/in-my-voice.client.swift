@@ -15,17 +15,22 @@ struct PreferenceData {
     
     // publisher URLs
     #if DEBUG
-	static var whisperServer = ProcessInfo.processInfo.environment["WHISPER_SERVER"] ?? "https://stage.whisper.clickonetwo.io"
+	static let whisperServer = ProcessInfo.processInfo.environment["WHISPER_SERVER"] ?? "https://stage.whisper.clickonetwo.io"
     #else
-    static var whisperServer = "https://whisper.clickonetwo.io"
+    static let whisperServer = "https://whisper.clickonetwo.io"
     #endif
-    static func publisherUrlToConversationId(url: String) -> String? {
+    static func publisherUrlToConversationId(url: String) -> (String, String)? {
 		let expectedPrefix = whisperServer + "/listen/"
 		if url.starts(with: expectedPrefix) {
 			let tailEnd = url.index(expectedPrefix.endIndex, offsetBy: 36)
 			let tail = url[expectedPrefix.endIndex..<tailEnd]
 			if tail.wholeMatch(of: /[-a-zA-Z0-9]{36}/) != nil {
-				return String(tail)
+				let rest = url.suffix(from: url.index(tailEnd, offsetBy: 1))
+				if rest.isEmpty {
+					return (String(tail), String(tail.suffix(12)))
+				} else {
+					return (String(tail), String(rest))
+				}
 			}
 		}
         return nil
@@ -40,7 +45,8 @@ struct PreferenceData {
 		}.joined()
 		return "\(whisperServer)/listen/\(conversation.id)/\(urlName)"
     }
-    
+	static let publisherUrlEventMatchString = "\(whisperServer)/listen/*"
+
     // server (and Ably) client ID for this device
     static var clientId: String {
         if let id = defaults.string(forKey: "whisper_client_id") {

@@ -110,8 +110,7 @@ struct ListenLinkView: View {
 	}
 
 	func maybeJoin() {
-		if let id = PreferenceData.publisherUrlToConversationId(url: link) {
-			let conversation = UserProfile.shared.listenProfile.fromLink(id)
+		if let conversation = UserProfile.shared.listenProfile.fromLink(link) {
 			maybeListen?(conversation)
 		} else {
 			link = "Not valid: \(link)"

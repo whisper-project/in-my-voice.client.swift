@@ -288,7 +288,6 @@ final class BluetoothWhisperTransport: PublishTransport {
 	private var listeners: [CBCentral] = []
 	private var eavesdroppers: [CBCentral] = []
     private var advertisers: [CBPeripheral] = []
-    private var whisperService: CBMutableService?
     private var isInBackground = false
     private var conversation: WhisperConversation
 
@@ -480,10 +479,6 @@ final class BluetoothWhisperTransport: PublishTransport {
     }
 
 	private func registerCallbacks() {
-		if whisperService == nil {
-			whisperService = BluetoothData.whisperService()
-			factory.publish(service: whisperService!)
-		}
 		logger.info("Registering Bluetooth callbacks")
 		factory.advertisementSubject
 			.sink { [weak self] in self?.noticeAd($0) }
@@ -509,10 +504,5 @@ final class BluetoothWhisperTransport: PublishTransport {
 		logger.info("Unregistering Bluetooth callbacks")
 		cancellables.cancel()
 		cancellables.removeAll()
-		if let service = whisperService {
-			logger.info("Unpublishing whisper service")
-			factory.unpublish(service: service)
-			whisperService = nil
-		}
 	}
 }
