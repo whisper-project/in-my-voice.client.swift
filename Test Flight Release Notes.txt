@@ -284,3 +284,8 @@ This build introduces the ability to have multiple app windows (except on iPhone
 On Mac, the windows appear in tabs by default, but the tabs can be pulled out into a separate window so multiple sessions are visible at once.  You create a new window with the File>New Window command (Command-N).
 
 On iPad, you can use the three-dot control at the top of the screen to open new windows (and arrange two windows side-by-side), or you can use the Stage Manager to control your windows.
+
+v2 BUILD 24 (external):
+This build rebrands the app to be named "See Me Type!"
+
+This build also fixes a bug on phone and iPad where moving the app to the background would quit any existing whisper session.
