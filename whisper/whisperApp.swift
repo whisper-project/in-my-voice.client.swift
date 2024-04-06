@@ -79,7 +79,7 @@ struct whisperApp: App {
 		.handlesExternalEvents(matching: [PreferenceData.publisherUrlEventMatchString])
 
 		WindowGroup(for: ListenConversation.self) { $conversation in
-			LinkView(conversation: conversation!)
+			LinkView(conversation: conversation)
 		}
     }
 }

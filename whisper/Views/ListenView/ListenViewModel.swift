@@ -430,7 +430,8 @@ final class ListenViewModel: ObservableObject {
 	/// subscribe to this candidate
 	func setWhisperer(candidate: Candidate, conversation: ListenConversation) {
 		guard whisperer == nil else {
-			fatalError("Ignoring attempt to set whisperer when we already have one")
+			logger.error("Ignoring attempt to set whisperer (\(candidate.remote.kind, privacy: .public) \(candidate.id, privacy: .public)) when we already have one (\(self.whisperer!.remote.kind, privacy: .public) \(self.whisperer!.id, privacy: .public))")
+			return
 		}
 		logger.info("Selecting \(candidate.remote.kind) whisperer \(candidate.id) for conversation \(conversation.id)")
 		whisperer = candidate

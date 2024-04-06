@@ -38,6 +38,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
 
 	private var centralManager: CBCentralManager!
 	private var peripheralManager: CBPeripheralManager!
+	private var haveAddedWhisperService: Bool = false
 
 	private var central_state: CBManagerState = .unknown
 	private var peripheral_state: CBManagerState = .unknown
@@ -46,10 +47,13 @@ final class BluetoothFactory: NSObject, TransportFactory {
 		super.init()
 		centralManager = .init(delegate: self, queue: .main)
 		peripheralManager = .init(delegate: self, queue: .main)
-		peripheralManager.add(BluetoothData.whisperService)
 	}
 
 	deinit {
+		guard haveAddedWhisperService else {
+			// nothing to do
+			return
+		}
 		peripheralManager.remove(BluetoothData.whisperService)
 	}
 
@@ -164,6 +168,10 @@ extension BluetoothFactory: CBCentralManagerDelegate {
 extension BluetoothFactory: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         peripheral_state = peripheral.state
+		if peripheral.state == .poweredOn && !haveAddedWhisperService {
+			peripheralManager.add(BluetoothData.whisperService)
+			haveAddedWhisperService = true
+		}
         statusSubject.send(compositeStatus())
     }
     
