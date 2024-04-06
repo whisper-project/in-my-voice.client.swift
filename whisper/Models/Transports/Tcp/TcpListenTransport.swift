@@ -188,12 +188,12 @@ final class TcpListenTransport: SubscribeTransport {
 	}
 
 	private func removeCandidate(_ remote: Remote, sendDrop: Bool = false) {
-		logger.log("Removing \(remote.kind) remote \(remote.id)")
-		remotes.removeValue(forKey: remote.id)
+		logger.log("Removing \(remote.kind) remote \(remote.id) \(sendDrop ? "with" : "without") drop message")
 		if sendDrop {
 				let chunk = WhisperProtocol.ProtocolChunk.dropping()
 				sendControl(remote: remote, chunk: chunk)
 		}
+		remotes.removeValue(forKey: remote.id)
 	}
 
 	func receiveContentMessage(message: ARTMessage) {
