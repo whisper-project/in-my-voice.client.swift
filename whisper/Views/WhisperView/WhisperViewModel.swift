@@ -16,7 +16,7 @@ final class WhisperViewModel: ObservableObject {
 		private(set) var remote: Remote
 		var info: WhisperProtocol.ClientInfo
 		var isPending: Bool
-		var hasJoined: Bool
+		var joinDate: Date?
 		private(set) var created: Date
 
 		init(remote: Remote, info: WhisperProtocol.ClientInfo, isPending: Bool) {
@@ -24,7 +24,7 @@ final class WhisperViewModel: ObservableObject {
 			self.remote = remote
 			self.info = info
 			self.isPending = isPending
-			self.hasJoined = false
+			self.joinDate = nil
 			self.created = Date.now
 		}
 
@@ -33,9 +33,17 @@ final class WhisperViewModel: ObservableObject {
 			return lhs.id == rhs.id
 		}
 
-		// sort by username then id
+		// sort by reverse join date else username else id
 		static func < (lhs: WhisperViewModel.Candidate, rhs: WhisperViewModel.Candidate) -> Bool {
-			if lhs.info.username == rhs.info.username {
+			if let ldate = lhs.joinDate {
+				if let rdate = lhs.joinDate {
+					return ldate < rdate
+				} else {
+					return true
+				}
+			} else if rhs.joinDate != nil {
+				return false
+			} else if lhs.info.username == rhs.info.username {
 				return lhs.id < rhs.id
 			} else {
 				return lhs.info.username < rhs.info.username
@@ -48,6 +56,7 @@ final class WhisperViewModel: ObservableObject {
 	@Published var restartWarning = false
     @Published var connectionErrorDescription: String = ""
 	@Published var candidates: [String: Candidate] = [:]		// id -> Candidate
+	@Published var listeners: [Candidate] = []
 	@Published var invites: [Candidate] = []
     @Published var pastText: PastTextModel = .init(mode: .whisper)
 	@Published var showStatusDetail: Bool = false
@@ -162,8 +171,7 @@ final class WhisperViewModel: ObservableObject {
 		}
 		logger.info("Accepted listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
 		invitee.isPending = false
-		invites = candidates.values.filter{$0.isPending}.sorted()
-		showStatusDetail = !invites.isEmpty
+		refreshStatusText()
 		profile.addListener(conversation, info: invitee.info)
 		transport.authorize(remote: invitee.remote)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation, contentId: contentId)
@@ -177,8 +185,7 @@ final class WhisperViewModel: ObservableObject {
 		}
 		logger.info("Rejected listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
 		invitee.isPending = false
-		invites = candidates.values.filter{$0.isPending}.sorted()
-		showStatusDetail = !invites.isEmpty
+		refreshStatusText()
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
 		transport.sendControl(remote: invitee.remote, chunk: chunk)
 		dropListener(invitee)
@@ -195,12 +202,9 @@ final class WhisperViewModel: ObservableObject {
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
 		transport.sendControl(remote: candidate.remote, chunk: chunk)
 		transport.deauthorize(remote: candidate.remote)
-		candidate.hasJoined = false
+		candidate.joinDate = nil
+		refreshStatusText()
     }
-
-	func listeners() -> [Candidate] {
-		candidates.values.filter{$0.hasJoined}.sorted()
-	}
 
     func wentToBackground() {
         transport.goToBackground()
@@ -266,8 +270,7 @@ final class WhisperViewModel: ObservableObject {
 						transport.sendControl(remote: candidate.remote, chunk: chunk)
 					} else {
 						logger.info("Making invite for new \(remote.kind) listener: \(candidate.id)")
-						invites = candidates.values.filter{$0.isPending}.sorted()
-						showStatusDetail = !invites.isEmpty
+						refreshStatusText()
 					}
 				} else {
 					logger.info("Authorizing known \(remote.kind) listener: \(candidate.id)")
@@ -278,8 +281,9 @@ final class WhisperViewModel: ObservableObject {
 			case .joining:
 				let candidate = candidateFor(remote: remote, info: info)
 				logger.info("\(remote.kind) Listener has joined the conversation: \(candidate.id)")
-				candidate.hasJoined = true
+				candidate.joinDate = Date.now
 				refreshStatusText()
+				showStatusDetail = true
 			default:
 				fatalError("\(remote.kind) Listener sent an unexpected presence message: \(chunk)")
 			}
@@ -349,7 +353,8 @@ final class WhisperViewModel: ObservableObject {
     }
 
     private func refreshStatusText() {
-		let listeners = candidates.values.filter{$0.hasJoined}
+		listeners = candidates.values.filter{$0.joinDate != nil}.sorted()
+		invites = candidates.values.filter{$0.isPending}.sorted()
 		if listeners.isEmpty {
 			if invites.isEmpty {
 				statusText = "\(conversation.name): No listeners yet, but you can type"
@@ -369,5 +374,10 @@ final class WhisperViewModel: ObservableObject {
 				statusText = "\(conversation.name): Whispering to \(listeners.count) listeners (+ \(invites.count) pending)"
 			}
         }
+		if !invites.isEmpty {
+			showStatusDetail = true
+		} else if listeners.isEmpty {
+			showStatusDetail = false
+		}
     }
 }

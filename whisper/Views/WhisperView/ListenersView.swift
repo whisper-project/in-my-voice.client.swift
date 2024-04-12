@@ -10,7 +10,6 @@ struct ListenersView: View {
     @Environment(\.colorScheme) var colorScheme
     
     @ObservedObject var model: WhisperViewModel
-	@State var listeners: [WhisperViewModel.Candidate] = []
 
     var body: some View {
 		VStack {
@@ -35,11 +34,11 @@ struct ListenersView: View {
 				}
 				Spacer(minLength: 20)
 			}
-			if model.listeners().isEmpty {
+			if model.listeners.isEmpty {
 				Text("No Listeners")
 			} else {
 				VStack(alignment: .leading, spacing: 10) {
-					ForEach(model.listeners()) { candidate in
+					ForEach(model.listeners) { candidate in
 						HStack(spacing: 0) {
 							Text(candidate.info.username)
 								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
@@ -55,7 +54,6 @@ struct ListenersView: View {
 				}
 			}
 		}
-		.onAppear{ loadListeners() }
 		.font(FontSizes.fontFor(FontSizes.minTextSize + 1))
 		.padding()
     }
@@ -71,13 +69,8 @@ struct ListenersView: View {
 		}
 	}
 
-	func loadListeners() {
-		listeners = model.listeners()
-	}
-
 	func dropListener(_ candidate: WhisperViewModel.Candidate) {
 		model.dropListener(candidate)
-		loadListeners()
 	}
 }
 
