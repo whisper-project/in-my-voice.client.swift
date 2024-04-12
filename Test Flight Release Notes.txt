@@ -292,3 +292,8 @@ This build also fixes a bug on phone and iPad where moving the app to the backgr
 
 v2 BUILD 25 (external):
 This build fixes a number of subtle bugs that were crashing the app when a listen link was sent to it either at launch or immediately after launch.
+
+v2 BUILD 26 (external):
+This build changes the branding back to "Whisper".
+
+There is now better notification to the Whisperer whenever a Listener joins a conversation: the status detail view opens, and the newest Listener is at the top of the list.
