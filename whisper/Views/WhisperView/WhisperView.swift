@@ -81,13 +81,15 @@ struct WhisperView: View {
 			switch scenePhase {
 			case .background:
 				logger.log("Went to background")
+				focusField = nil
 				inBackground = true
 				model.wentToBackground()
 			case .inactive:
 				logger.log("Went inactive")
 			case .active:
-				inBackground = false
 				logger.log("Went to foreground")
+				focusField = "liveText"
+				inBackground = false
 				model.wentToForeground()
 			@unknown default:
 				inBackground = false
@@ -161,6 +163,7 @@ struct WhisperView: View {
 			Spacer()
 		}
 		.background(Color.accentColor)
+		.ignoresSafeArea()
 	}
 }
 
