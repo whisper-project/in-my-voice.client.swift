@@ -154,7 +154,7 @@ struct WhisperView: View {
 			HStack {
 				Spacer()
 				Text("Whispering to \(conversation.name)")
-					.font(.system(size: geometry.size.height / 4.5, weight: .bold))
+					.font(.system(size: geometry.size.height / 5, weight: .bold))
 					.lineLimit(nil)
 					.multilineTextAlignment(.center)
 					.foregroundColor(.white)

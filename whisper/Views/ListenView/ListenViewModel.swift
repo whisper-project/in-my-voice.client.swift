@@ -52,6 +52,7 @@ final class ListenViewModel: ObservableObject {
 	@Published var candidates: [String: Candidate] = [:]	// remoteId -> Candidate
 	@Published var invites: [Candidate] = []
 	@Published var conversation: ListenConversation
+	@Published var conversationName: String
     @Published var whisperer: Candidate?
     @Published var pastText: PastTextModel = .init(mode: .listen)
 
@@ -73,6 +74,7 @@ final class ListenViewModel: ObservableObject {
 	init(_ conversation: ListenConversation) {
 		logger.log("Initializing ListenView model")
 		self.conversation = conversation
+		self.conversationName = conversation.name
         transport = ComboFactory.shared.subscriber(conversation)
         transport.lostRemoteSubject
             .sink{ [weak self] in self?.dropCandidate($0) }
@@ -144,11 +146,11 @@ final class ListenViewModel: ObservableObject {
 		}
 		logger.info("Accepted invite from \(inviter.remote.kind) remote \(inviter.id) conversation \(inviter.info.conversationName)")
 		inviter.isPending = false
-		invites = candidates.values.filter{$0.isPending}.sorted()
-		showStatusDetail = !invites.isEmpty
 		let conversation = profile.forInvite(info: inviter.info)
+		conversationName = conversation.name
 		let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
 		transport.sendControl(remote: inviter.remote, chunk: chunk)
+		refreshStatusText()
 	}
 
 	func refuseInvite(_ id: String) {
@@ -157,9 +159,8 @@ final class ListenViewModel: ObservableObject {
 		}
 		logger.info("Rejected invite from \(inviter.remote.kind) remote \(inviter.id) conversation \(inviter.info.conversationName)")
 		clients.removeValue(forKey: inviter.info.clientId)
-		invites = candidates.values.filter{$0.isPending}.sorted()
-		showStatusDetail = !invites.isEmpty
 		transport.drop(remote: inviter.remote)
+		refreshStatusText()
 	}
 
     // re-read the whispered text
@@ -284,8 +285,7 @@ final class ListenViewModel: ObservableObject {
 			let candidate = candidateFor(remote: remote, info: info, conversation: conversation)
 			if candidate.isPending {
 				// this is a new invite, so remake the invite list and show it
-				invites = candidates.values.filter{$0.isPending}.sorted()
-				showStatusDetail = !invites.isEmpty
+				refreshStatusText()
 			} else {
 				// we've already accepted this invite, so try to join
 				let conversation = profile.forInvite(info: candidate.info)
@@ -329,6 +329,7 @@ final class ListenViewModel: ObservableObject {
 		info: WhisperProtocol.ClientInfo,
 		conversation: ListenConversation
 	) -> Candidate {
+		conversationName = conversation.name
 		if let existing = candidates[remote.id] {
 			return existing
 		}
@@ -465,10 +466,11 @@ final class ListenViewModel: ObservableObject {
 	}
 
 	private func refreshStatusText() {
+		invites = candidates.values.filter{$0.isPending}.sorted()
         if let whisperer = whisperer {
 			statusText = "\(conversation.name): Listening to \(whisperer.info.username)"
 		} else {
-			let prefix = conversation.name.isEmpty ? "" : "\(conversation.name): "
+			let prefix = conversationName.isEmpty ? "" : "\(conversationName): "
 			if discoveryInProgress {
 				let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
 				statusText = "\(prefix)Looking for the Whisperer…\(suffix)"
@@ -476,6 +478,7 @@ final class ListenViewModel: ObservableObject {
 				statusText = "\(prefix)Waiting for the Whisperer…"
 			}
 		}
+		showStatusDetail = !invites.isEmpty
     }
 
 	private func leaveConversation() {
