@@ -38,6 +38,10 @@ struct MainView: View {
 			} message: {
 				Text("The Whisperer has paused the conversation. Click OK to reconnect, Cancel to stop listening.")
 			}
+			.onAppear {
+				// reset the title if we came from ListenView or WhisperView
+				UIApplication.shared.firstKeyWindow?.windowScene?.title = nil
+			}
         case .listen:
 			ListenView(mode: $mode, restart: $restart, conversation: conversation as! ListenConversation)
         case .whisper:

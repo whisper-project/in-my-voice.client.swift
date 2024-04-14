@@ -73,8 +73,8 @@ struct ListenView: View {
 			restart = true
 			mode = .ask
 		}
-		.onChange(of: conversation.name, initial: true) {
-			UIApplication.shared.firstKeyWindow?.windowScene?.title = "Listening to \(conversation.name)"
+		.onChange(of: model.conversationName, initial: true) {
+			UIApplication.shared.firstKeyWindow?.windowScene?.title = "Listening to \(model.conversationName)"
 		}
 		.onChange(of: scenePhase) {
             switch scenePhase {
@@ -159,8 +159,8 @@ struct ListenView: View {
 			Spacer()
 			HStack {
 				Spacer()
-				Text("Listening to \(conversation.name)")
-					.font(.system(size: geometry.size.height / 4.5, weight: .bold))
+				Text("Listening to \(model.conversationName)")
+					.font(.system(size: geometry.size.height / 5, weight: .bold))
 					.lineLimit(nil)
 					.multilineTextAlignment(.center)
 					.foregroundColor(.white)
@@ -169,6 +169,7 @@ struct ListenView: View {
 			Spacer()
 		}
 		.background(Color.accentColor)
+		.ignoresSafeArea()
 	}
 }
 

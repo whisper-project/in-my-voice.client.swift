@@ -81,13 +81,15 @@ struct WhisperView: View {
 			switch scenePhase {
 			case .background:
 				logger.log("Went to background")
+				focusField = nil
 				inBackground = true
 				model.wentToBackground()
 			case .inactive:
 				logger.log("Went inactive")
 			case .active:
-				inBackground = false
 				logger.log("Went to foreground")
+				focusField = "liveText"
+				inBackground = false
 				model.wentToForeground()
 			@unknown default:
 				inBackground = false
@@ -152,7 +154,7 @@ struct WhisperView: View {
 			HStack {
 				Spacer()
 				Text("Whispering to \(conversation.name)")
-					.font(.system(size: geometry.size.height / 4.5, weight: .bold))
+					.font(.system(size: geometry.size.height / 5, weight: .bold))
 					.lineLimit(nil)
 					.multilineTextAlignment(.center)
 					.foregroundColor(.white)
@@ -161,6 +163,7 @@ struct WhisperView: View {
 			Spacer()
 		}
 		.background(Color.accentColor)
+		.ignoresSafeArea()
 	}
 }
 

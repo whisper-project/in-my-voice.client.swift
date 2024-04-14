@@ -297,3 +297,11 @@ v2 BUILD 26 (external):
 This build changes the branding back to "Whisper".
 
 There is now better notification to the Whisperer whenever a Listener joins a conversation: the status detail view opens, and the newest Listener is at the top of the list.
+
+v2 BUILD 27 (external):
+This build fixes a number of convenience and cosmetic issues:
+
+1. The Whisper view now focuses the live text area when returning from the background.
+2. The Listen view was not always updating the conversation name properly; now it does.
+3. The titles of windows are now always correct.
+4. On the iPad, the titles of windows in the background are more readable.
