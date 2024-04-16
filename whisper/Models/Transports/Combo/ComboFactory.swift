@@ -57,7 +57,9 @@ final class ComboFactory: TransportFactory {
     
     private func compositeStatus() -> TransportStatus {
         switch localStatus {
-        case .off, .waiting:
+		case .off:
+			return globalStatus == .on ? .globalOnly : .off
+		case .waiting:
             if case .on = globalStatus {
                 #if targetEnvironment(simulator)
                 // the simulator always has Bluetooth off,
@@ -71,13 +73,11 @@ final class ComboFactory: TransportFactory {
                 return .off
             }
         case .disabled:
-            if case .on = globalStatus {
-                return .disabled
-            } else {
-                return .off
-            }
+			return globalStatus == .on ? .disabled : .off
         case .on:
-            return .on
+			return globalStatus == .on ? .on : .localOnly
+		default:
+			fatalError("Can't happen: localStatus was \(localStatus)")
         }
     }
 }

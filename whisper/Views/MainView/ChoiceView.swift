@@ -58,6 +58,14 @@ struct ChoiceView: View {
                         Link("Enable Bluetooth or Wireless to whisper or listen...", destination: settingsUrl)
                             .font(FontSizes.fontFor(name: .normal))
                             .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+					case .localOnly:
+						Text("Bluetooth ready, Wireless not available")
+							.font(FontSizes.fontFor(name: .normal))
+							.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+					case .globalOnly:
+						Text("Bluetooth not available, Wireless available")
+							.font(FontSizes.fontFor(name: .normal))
+							.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     case .disabled:
                         Link("Bluetooth not enabled, Wireless available", destination: settingsUrl)
                             .font(FontSizes.fontFor(name: .normal))
@@ -66,8 +74,8 @@ struct ChoiceView: View {
                         Text("Waiting for Bluetooth, Wireless available")
                             .font(FontSizes.fontFor(name: .normal))
                             .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                    case .on:
-                        fatalError("Can't happen")
+					case .on:
+                        fatalError("Can't happen: transport status is .on")
                     }
                 }
                 HStack(spacing: 30) {
