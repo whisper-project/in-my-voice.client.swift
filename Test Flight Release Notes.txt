@@ -305,3 +305,8 @@ This build fixes a number of convenience and cosmetic issues:
 2. The Listen view was not always updating the conversation name properly; now it does.
 3. The titles of windows are now always correct.
 4. On the iPad, the titles of windows in the background are more readable.
+
+v2 BUILD 28 (external):
+This build shows network status when only one of Bluetooth or Wifi is available.  This is needed to guide users as to what kinds of connections are possible.
+
+This is the App Store submit build for version 2.
