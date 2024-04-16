@@ -8,6 +8,8 @@ import Combine
 
 enum TransportStatus {
     case off
+	case localOnly
+	case globalOnly
     case disabled
     case waiting
     case on
