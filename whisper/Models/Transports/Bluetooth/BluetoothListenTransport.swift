@@ -54,6 +54,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 			fatalError("Missing control channel on remote: \(remote)")
 		}
 		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
+		logControlChunk(sentOrReceived: "sent", chunk: chunk, kind: .local)
 		remote.peripheral.writeValue(chunk.toData(), for: channel, type: .withResponse)
     }
     
@@ -303,6 +304,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 				failureCallback?("Bluetooth read failure while connecting")
 			} else if let textData = triple.1.value,
 					  let chunk = WhisperProtocol.ProtocolChunk.fromData(textData) {
+				logControlChunk(sentOrReceived: "received", chunk: chunk, kind: .local)
 				if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset),
 				   case .dropping = value {
 					logger.notice("Advised of drop by \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public)")

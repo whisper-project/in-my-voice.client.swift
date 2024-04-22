@@ -47,6 +47,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 	func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
 		guard running else { return }
 		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
+		logControlChunk(sentOrReceived: "sent", chunk: chunk, kind: .local)
 		if var existing = directedControl[remote.central] {
 			existing.append(chunk)
 		} else {
@@ -233,6 +234,7 @@ final class BluetoothWhisperTransport: PublishTransport {
 			PreferenceData.bluetoothErrorCount += 1
             return
         }
+		logControlChunk(sentOrReceived: "received", chunk: chunk, kind: .local)
 		let remote = ensureRemote(request.central)
 		if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset),
 		   case .dropping = value {

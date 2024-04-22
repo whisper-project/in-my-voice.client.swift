@@ -309,3 +309,25 @@ final class WhisperProtocol {
         return prefix + chunk.text
     }
 }
+
+func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChunk, kind: TransportKind = .global) {
+	let path = "/api/v2/logChunk"
+	guard let url = URL(string: PreferenceData.whisperServer + path) else {
+		fatalError("Can't create URL for whisper profile upload")
+	}
+	logger.debug("Posting \(sentOrReceived) chunk: \(chunk)")
+	var request = URLRequest(url: url)
+	let localValue = [
+		"clientId": PreferenceData.clientId,
+		"kind": kind == .global ? "TCP" : "Bluetooth",
+		"sentOrReceived": sentOrReceived,
+		"chunk": chunk.toString()
+	]
+	guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
+		fatalError("Can't encode user profile data: \(localValue)")
+	}
+	request.httpMethod = "POST"
+	request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+	request.httpBody = localData
+	Data.executeJSONRequest(request)
+}

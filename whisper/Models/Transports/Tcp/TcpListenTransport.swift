@@ -42,6 +42,7 @@ final class TcpListenTransport: SubscribeTransport {
             return
         }
 		logger.notice("Sending control packet to \(remote.kind) remote: \(remote.id, privacy: .public): \(chunk, privacy: .public)")
+		logControlChunk(sentOrReceived: "sent", chunk: chunk)
 		sendControlInternal(id: target.id, data: chunk.toString())
     }
     
@@ -219,6 +220,7 @@ final class TcpListenTransport: SubscribeTransport {
 			logger.error("Ignoring a message with a non-chunk payload: \(message, privacy: .public)")
             return
         }
+		logControlChunk(sentOrReceived: "received", chunk: chunk)
         if chunk.isPresenceMessage() {
             guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text),
                   info.clientId == message.clientId

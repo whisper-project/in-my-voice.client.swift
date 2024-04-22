@@ -42,6 +42,7 @@ final class TcpWhisperTransport: PublishTransport {
             return
         }
 		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
+		logControlChunk(sentOrReceived: "sent", chunk: chunk)
 		sendControlInternal(id: remote.id, data: chunk.toString())
     }
 
@@ -219,6 +220,7 @@ final class TcpWhisperTransport: PublishTransport {
 			logger.error("Ignoring a message with a non-chunk payload: \(String(describing: message), privacy: .public)")
             return
         }
+		logControlChunk(sentOrReceived: "received", chunk: chunk)
 		if chunk.offset == WhisperProtocol.ControlOffset.dropping.rawValue {
 			logger.info("Received dropping message from \(remote.kind) remote \(remote.id)")
 			remote.hasDropped = true
