@@ -311,11 +311,27 @@ final class WhisperProtocol {
 }
 
 func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChunk, kind: TransportKind = .global) {
-	let path = "/api/v2/logChunk"
+	guard PreferenceData.doServerLogging else {
+		return
+	}
+	let path = "/api/v2/logControlChunk"
 	guard let url = URL(string: PreferenceData.whisperServer + path) else {
 		fatalError("Can't create URL for whisper profile upload")
 	}
-	logger.debug("Posting \(sentOrReceived) chunk: \(chunk)")
+	guard chunk.isPresenceMessage() else {
+		logger.debug("Not posting non-presence \(sentOrReceived) chunk to server: \(chunk)")
+		return
+	}
+	func handler(status: Int, data: Data) -> Void {
+		switch status {
+		case 201:
+			logger.debug("Server response turns off packet logging")
+			PreferenceData.doServerLogging = false
+		default:
+			break
+		}
+	}
+	logger.debug("Posting \(sentOrReceived) chunk to server: \(chunk)")
 	var request = URLRequest(url: url)
 	let localValue = [
 		"clientId": PreferenceData.clientId,
@@ -329,5 +345,5 @@ func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChun
 	request.httpMethod = "POST"
 	request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 	request.httpBody = localData
-	Data.executeJSONRequest(request)
+	Data.executeJSONRequest(request, handler: <#T##((Int, Data) -> Void)?##((Int, Data) -> Void)?##(Int, Data) -> Void#>)
 }

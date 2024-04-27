@@ -332,6 +332,16 @@ struct PreferenceData {
 		return Int(elevenLabsLatencyReductionPreference) ?? 1
 	}
 
+	// server-side logging
+	static var doServerLogging: Bool {
+		get {
+			return !defaults.bool(forKey: "do_not_log_to_server_setting")
+		}
+		set (val) {
+			defaults.setValue(!val, forKey: "do_not_log_to_server_setting")
+		}
+	}
+
 	static func preferencesToJson() -> String {
 		let preferences = [
 			"whisper_tap_preference": whisperTapPreference,

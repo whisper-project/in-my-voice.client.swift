@@ -134,10 +134,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 			if response.statusCode == 201 || response.statusCode == 204 {
                 logger.info("Successful post of APNs token")
 				if response.statusCode == 201 {
+					logger.info("Server reponse forces reset of client secret and turns on packet logging")
 					// Our secret has gone out of sync with server, it will create a new one
 					// and post it to us.  Until that happens, we need to use our last
 					// secret because the server doesn't know the current secret.
 					PreferenceData.resetClientSecret()
+					// Whenever we get a new secret, we start logging connections to the server
+					// for debugging purposes.  It will tell us to stop when it wants to.
+					PreferenceData.doServerLogging = true
 				}
                 // server has received error data, reset it
                 PreferenceData.droppedErrorCount = 0
