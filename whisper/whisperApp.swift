@@ -111,6 +111,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 			"bluetoothErrorCount": PreferenceData.bluetoothErrorCount,
             "tcpErrorCount": PreferenceData.tcpErrorCount,
             "authenticationErrorCount": PreferenceData.authenticationErrorCount,
+			"isPresenceLogging": PreferenceData.doServerLogging ? 1 : 0,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")

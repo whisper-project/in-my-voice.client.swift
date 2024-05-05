@@ -158,11 +158,7 @@ final class ComboWhisperTransport: PublishTransport {
         guard localStatus != status else {
             return
         }
-        if localStatus == .on {
-            logger.error("The Bluetooth connection was available but has dropped")
-			// Bluetooth drops whenever you sleep
-            // failureCallback?("The Bluetooth network has become unavailable")
-        }
+		logger.debug("The Bluetooth status has transitioned to \(status.rawValue, privacy: .public)")
         localStatus = status
     }
     
@@ -170,10 +166,7 @@ final class ComboWhisperTransport: PublishTransport {
         guard globalStatus != status else {
             return
         }
-		if globalStatus == .on {
-			logger.error("The Internet connection was available but has dropped")
-			failureCallback?("The Internet connection has become unavailable")
-		}
+		logger.debug("The TCP status has transitioned to \(status.rawValue, privacy: .public)")
         globalStatus = status
     }
     

@@ -36,7 +36,7 @@ struct PreferenceData {
         return nil
     }
     static func publisherUrl(_ conversation: WhisperConversation) -> String {
-		let urlName = conversation.name.compactMap{char in
+		let urlName = conversation.name.compactMap {char in
 			if char.isLetter || char.isNumber {
 				return String(char)
 			} else {
@@ -338,7 +338,7 @@ struct PreferenceData {
 			return !defaults.bool(forKey: "do_not_log_to_server_setting")
 		}
 		set (val) {
-			defaults.setValue(!val, forKey: "do_not_log_to_server_setting")
+			defaults.setValue(val, forKey: "do_not_log_to_server_setting")
 		}
 	}
 

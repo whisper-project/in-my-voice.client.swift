@@ -314,21 +314,17 @@ func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChun
 	guard PreferenceData.doServerLogging else {
 		return
 	}
-	let path = "/api/v2/logControlChunk"
-	guard let url = URL(string: PreferenceData.whisperServer + path) else {
-		fatalError("Can't create URL for whisper profile upload")
-	}
 	guard chunk.isPresenceMessage() else {
-		logger.debug("Not posting non-presence \(sentOrReceived) chunk to server: \(chunk)")
 		return
 	}
+	let path = "/api/v2/logPresenceChunk"
+	guard let url = URL(string: PreferenceData.whisperServer + path) else {
+		fatalError("Can't create URL for presence packet logging")
+	}
 	func handler(status: Int, data: Data) -> Void {
-		switch status {
-		case 201:
-			logger.debug("Server response turns off packet logging")
+		if status != 204 {
+			logger.error("\(status) response turns off packet logging")
 			PreferenceData.doServerLogging = false
-		default:
-			break
 		}
 	}
 	logger.debug("Posting \(sentOrReceived) chunk to server: \(chunk)")
@@ -340,10 +336,32 @@ func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChun
 		"chunk": chunk.toString()
 	]
 	guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
-		fatalError("Can't encode user profile data: \(localValue)")
+		fatalError("Can't encode presence chunk data: \(localValue)")
 	}
 	request.httpMethod = "POST"
 	request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 	request.httpBody = localData
-	Data.executeJSONRequest(request, handler: <#T##((Int, Data) -> Void)?##((Int, Data) -> Void)?##(Int, Data) -> Void#>)
+	Data.executeJSONRequest(request, handler: handler)
+}
+
+func logAnomaly(message: String, kind: TransportKind) {
+	let kindString = kind == .global ? "TCP" : "Bluetooth"
+	logger.error("\(kindString, privacy: .public) anomaly reported: \(message, privacy: .public)")
+	let path = "/api/v2/logAnomaly"
+	guard let url = URL(string: PreferenceData.whisperServer + path) else {
+		fatalError("Can't create URL for anomaly logging")
+	}
+	var request = URLRequest(url: url)
+	let localValue = [
+		"clientId": PreferenceData.clientId,
+		"kind": kindString,
+		"message": message
+	]
+	guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
+		fatalError("Can't encode anomaly data: \(localValue)")
+	}
+	request.httpMethod = "POST"
+	request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+	request.httpBody = localData
+	Data.executeJSONRequest(request)
 }

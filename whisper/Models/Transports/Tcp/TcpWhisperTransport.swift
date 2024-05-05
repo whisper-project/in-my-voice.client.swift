@@ -38,12 +38,12 @@ final class TcpWhisperTransport: PublishTransport {
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let remote = remotes[remote.id] else {
-            logger.error("Ignoring request to send chunk to an unknown \(remote.kind, privacy: .public) remote: \(remote.id, privacy: .public)")
+            logAnomaly(message: "Ignoring request to send chunk to an unknown remote: \(remote.id)", kind: .global)
             return
         }
 		logger.info("Sending control packet to \(remote.kind) remote: \(remote.id): \(chunk)")
-		logControlChunk(sentOrReceived: "sent", chunk: chunk)
 		sendControlInternal(id: remote.id, data: chunk.toString())
+		logControlChunk(sentOrReceived: "sent", chunk: chunk)
     }
 
     func drop(remote: Remote) {
@@ -64,7 +64,7 @@ final class TcpWhisperTransport: PublishTransport {
 
 	func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
 		guard let remote = remotes[remote.id] else {
-			logger.error("Ignoring request to send chunk to an unknown \(remote.kind, privacy: .public) remote: \(remote.id, privacy: .public)")
+			logAnomaly(message: "Ignoring request to send chunk to an unknown remote: \(remote.id)", kind: .global)
 			return
 		}
 		for chunk in chunks {
@@ -113,7 +113,7 @@ final class TcpWhisperTransport: PublishTransport {
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
-			logger.error("TCP send/receive error: \(error.message, privacy: .public)")
+			logAnomaly(message: "TCP send/receive error: \(error.message)", kind: .global)
             PreferenceData.tcpErrorCount += 1
         }
     }
@@ -126,65 +126,78 @@ final class TcpWhisperTransport: PublishTransport {
     
     private func openChannels() {
         client = self.authenticator.getClient()
-        client?.connection.on(.connected) { _ in
+        client!.connection.on(.connected) { _ in
             logger.log("TCP whisper transport realtime client has connected")
         }
-        client?.connection.on(.disconnected) { _ in
+        client!.connection.on(.disconnected) { _ in
             logger.log("TCP whisper transport realtime client has disconnected")
         }
-		contentChannel = tryOpenChannel(channelType: "content")
-        controlChannel = tryOpenChannel(channelType: "control")
-		controlChannel?.subscribe(PreferenceData.clientId, callback: receiveControlMessage)
-		controlChannel?.subscribe("whisperer", callback: receiveControlMessage)
-		controlChannel?.presence.subscribe(receivePresenceMessage)
-		if isRestart {
-			isRestart = false
-			let chunk = WhisperProtocol.ProtocolChunk.restart()
-			logger.notice("Broadcasting restart to control channel")
-			sendControlInternal(id: "all", data: chunk.toString())
-		}
-		let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(conversation)
-		logger.notice("Broadcasting whisper offer to control channel: \(chunk, privacy: .public)")
-		sendControlInternal(id: "all", data: chunk.toString())
+		openContentChannel()
+        openControlChannel()
     }
 
-	private func tryOpenChannel(channelType: String) -> ARTRealtimeChannel {
-		let suffix = channelType == "control" ? "control" : PreferenceData.contentId
-		let name = conversation.id + ":" + suffix
-		guard let channel = client?.channels.get(name) else {
-			fatalError("Can't open channel \(name)")
-		}
-		func receiveFirstError(_ error: ARTErrorInfo?) {
+	private func openContentChannel() {
+		let channel = client!.channels.get(conversation.id + ":" + PreferenceData.contentId)
+		contentChannel = channel
+	}
+
+	private func openControlChannel() {
+		let channel = client!.channels.get(conversation.id + ":control")
+		controlChannel = channel
+		channel.on(monitorControlChannelState)
+		// try a transient send on the channel to see if we trigger an error and need to restart
+		channel.publish("noone", data: "test data") { error in
 			if let error = error {
-				logger.error("TCP first send Error: \(error.message, privacy: .public)")
+				logAnomaly(message: "Control channel first send error: \(error.message)", kind: .global)
 				DispatchQueue.main.async {
-					logger.error("Stopping and restarting TCP whisper transport due to initialization error")
 					self.stop()
 					self.isRestart = true
-					self.failureCallback?("notify-restart")
+					self.failureCallback!("notify-restart")
+					logAnomaly(message: "Restarting whisper transport", kind: .global)
 					self.start(failureCallback: self.failureCallback!)
 				}
 			}
 		}
-		func noticeChange(_ change: ARTChannelStateChange) {
-			switch change.event {
-			case .attaching, .attached:
-				logger.notice("TCP whisper transport is attaching/has attached the \(channelType) channel")
-			case .detaching, .detached:
-				logger.notice("TCP whisper transport is detaching/has detached the \(channelType) channel")
-			case .suspended:
-				logger.notice("TCP whisper transport has suspended the \(channelType) channel")
-			case .failed:
-				logger.notice("TCP whisper transport has failed the \(channelType) channel")
-			default:
-				break
+		channel.once(ARTChannelEvent.attached) { _ in
+			if self.isRestart {
+				self.isRestart = false
+				let chunk = WhisperProtocol.ProtocolChunk.restart()
+				logger.notice("Broadcasting restart to control channel")
+				self.sendControlInternal(id: "all", data: chunk.toString())
+				logControlChunk(sentOrReceived: "sent", chunk: chunk)
 			}
+			let chunk = WhisperProtocol.ProtocolChunk.whisperOffer(self.conversation)
+			logger.notice("Broadcasting whisper offer to control channel: \(chunk, privacy: .public)")
+			self.sendControlInternal(id: "all", data: chunk.toString())
+			logControlChunk(sentOrReceived: "sent", chunk: chunk)
 		}
-		channel.on(noticeChange)
-		channel.attach()
-		// try to send on the channel to see if we trigger an error and need to restart
-		channel.publish("noone", data: "test data", callback: receiveFirstError)
-		return channel
+		channel.subscribe(receiveControlMessage)
+		channel.presence.subscribe(receivePresenceMessage)
+	}
+
+	private func monitorControlChannelState(_ change: ARTChannelStateChange) {
+		switch change.event {
+		case .attached:
+			if (change.resumed) {
+				logAnomaly(message: "Whisper control channel attached with continuity", kind: .global)
+			} else {
+				logAnomaly(message: "Whisper control channel attached without continuity", kind: .global)
+			}
+		case .suspended:
+			logAnomaly(message: "Whisper control channel suspended", kind: .global)
+		case .failed:
+			if let code = change.reason?.code, let message = change.reason?.message {
+				logAnomaly(message: "Whisper control channel failed (code \(code)): \(message)", kind: .global)
+			} else {
+				logAnomaly(message: "Whisper control channel failed for unknown reasons", kind: .global)
+			}
+		case .update:
+			if (!change.resumed) {
+				logAnomaly(message: "Whisper control channel lost continuity", kind: .global)
+			}
+		default:
+			break
+		}
 	}
 
     private func closeChannels() {
@@ -210,14 +223,19 @@ final class TcpWhisperTransport: PublishTransport {
 	}
 
     private func receiveControlMessage(message: ARTMessage) {
+		let topic = message.name ?? "unknown"
+		guard topic == "whisperer" || topic == PreferenceData.clientId else {
+			logger.debug("Ignoring control message meant for \(topic, privacy: .public): \(String(describing: message.data), privacy: .public)")
+			return
+		}
 		guard let remote = listenerFor(message.clientId) else {
-			logger.error("Ignoring a message with a missing client id: \(message, privacy: .public)")
+			logAnomaly(message: "Ignoring a message with a missing client id: \(message)", kind: .global)
 			return
 		}
         guard let payload = message.data as? String,
               let chunk = WhisperProtocol.ProtocolChunk.fromString(payload)
         else {
-			logger.error("Ignoring a message with a non-chunk payload: \(String(describing: message), privacy: .public)")
+			logAnomaly(message: "Ignoring a message with a non-chunk payload: \(String(describing: message))", kind: .global)
             return
         }
 		logControlChunk(sentOrReceived: "received", chunk: chunk)
