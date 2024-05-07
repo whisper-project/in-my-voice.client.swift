@@ -78,7 +78,7 @@ struct PreferenceData {
             return prior
         }
     }
-    static func clientSecret() -> String? {
+    static func clientSecret() -> String {
         if let current = defaults.string(forKey: "whisper_client_secret") {
             return current
         } else {
@@ -217,40 +217,6 @@ struct PreferenceData {
         }
     }
     
-    // metrics of errors to send in diagnostics to server
-    static var droppedErrorCount: Int {
-        get {
-            defaults.integer(forKey: "dropped_error_count")
-        }
-        set(newVal) {
-            defaults.setValue(newVal, forKey: "dropped_error_count")
-        }
-    }
-	static var bluetoothErrorCount: Int {
-		get {
-			defaults.integer(forKey: "bluetooth_error_count")
-		}
-		set(newVal) {
-			defaults.setValue(newVal, forKey: "bluetooth_error_count")
-		}
-	}
-	static var tcpErrorCount: Int {
-		get {
-			defaults.integer(forKey: "tcp_error_count")
-		}
-		set(newVal) {
-			defaults.setValue(newVal, forKey: "tcp_error_count")
-		}
-	}
-    static var authenticationErrorCount: Int {
-        get {
-            defaults.integer(forKey: "authentication_error_count")
-        }
-        set(newVal) {
-            defaults.setValue(newVal, forKey: "authentication_error_count")
-        }
-    }
-
 	/// Preferences
 	static private var whisperTapPreference: String {
 		get {
@@ -333,7 +299,7 @@ struct PreferenceData {
 	}
 
 	// server-side logging
-	static var doServerLogging: Bool {
+	static var doPresenceLogging: Bool {
 		get {
 			return !defaults.bool(forKey: "do_not_log_to_server_setting")
 		}

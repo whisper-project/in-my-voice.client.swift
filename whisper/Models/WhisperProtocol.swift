@@ -95,7 +95,7 @@ final class WhisperProtocol {
         static func fromString(_ s: String) -> ClientInfo? {
             let parts = s.split(separator: "|", omittingEmptySubsequences: false)
             if parts.count != 6 {
-                logger.error("Malformed TextProtocol.ClientInfo data: \(s, privacy: .public))")
+				logAnomaly("Malformed TextProtocol.ClientInfo data: \(s)")
                 return nil
             }
             return ClientInfo(conversationId: String(parts[0]),
@@ -132,13 +132,13 @@ final class WhisperProtocol {
             let parts = s.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
             if parts.count != 2 {
                 // data packets with no "|" character are malformed
-                logger.error("Malformed TextProtocol.ProtocolChunk data: \(s, privacy: .public))")
+				logAnomaly("Malformed TextProtocol.ProtocolChunk data: \(s)", kind: .global)
                 return nil
             } else if let offset = Int(parts[0]) {
                 return ProtocolChunk(offset: offset, text: String(parts[1]))
             } else {
                 // data packets with no int before the "|" are malformed
-                logger.error("Malformed TextProtocol.ProtocolChunk data: \(s, privacy: .public))")
+				logAnomaly("Malformed TextProtocol.ProtocolChunk data: \(s)")
                 return nil
             }
         }
@@ -311,7 +311,9 @@ final class WhisperProtocol {
 }
 
 func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChunk, kind: TransportKind = .global) {
-	guard PreferenceData.doServerLogging else {
+	logger.info("\(sentOrReceived, privacy: .public) \(kind, privacy: .public) control chunk: \(chunk, privacy: .public)")
+	guard kind == .local || PreferenceData.doPresenceLogging else {
+		// we always log Bluetooth presence packets, because the server doesn't see them
 		return
 	}
 	guard chunk.isPresenceMessage() else {
@@ -324,10 +326,9 @@ func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChun
 	func handler(status: Int, data: Data) -> Void {
 		if status != 204 {
 			logger.error("\(status) response turns off packet logging")
-			PreferenceData.doServerLogging = false
+			PreferenceData.doPresenceLogging = false
 		}
 	}
-	logger.debug("Posting \(sentOrReceived) chunk to server: \(chunk)")
 	var request = URLRequest(url: url)
 	let localValue = [
 		"clientId": PreferenceData.clientId,
@@ -344,8 +345,8 @@ func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChun
 	Data.executeJSONRequest(request, handler: handler)
 }
 
-func logAnomaly(message: String, kind: TransportKind) {
-	let kindString = kind == .global ? "TCP" : "Bluetooth"
+func logAnomaly(_ message: String, kind: TransportKind? = nil) {
+	let kindString = kind == nil ? "Non-transport" : kind == .global ? "TCP" : "Bluetooth"
 	logger.error("\(kindString, privacy: .public) anomaly reported: \(message, privacy: .public)")
 	let path = "/api/v2/logAnomaly"
 	guard let url = URL(string: PreferenceData.whisperServer + path) else {
@@ -363,5 +364,23 @@ func logAnomaly(message: String, kind: TransportKind) {
 	request.httpMethod = "POST"
 	request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 	request.httpBody = localData
+	Data.executeJSONRequest(request)
+}
+
+func logChannelEvent(_ info: [String: String]) {
+	var info = info
+	info["clientId"] = PreferenceData.clientId
+	logger.info("Channel event: \(info)")
+	let path = "/api/v2/logChannelEvent"
+	guard let url = URL(string: PreferenceData.whisperServer + path) else {
+		fatalError("Can't create URL for channel event logging")
+	}
+	var request = URLRequest(url: url)
+	guard let data = try? JSONSerialization.data(withJSONObject: info) else {
+		fatalError("Can't encode event data: \(info)")
+	}
+	request.httpMethod = "POST"
+	request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+	request.httpBody = data
 	Data.executeJSONRequest(request)
 }

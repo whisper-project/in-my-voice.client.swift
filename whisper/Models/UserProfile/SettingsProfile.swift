@@ -111,7 +111,7 @@ final class SettingsProfile: Codable {
 					save(localOnly: true)
 					notifyChange?()
 				} else {
-					logger.error("Received invalid settings profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+					logAnomaly("Received invalid settings profile data: \(String(decoding: data, as: UTF8.self))")
 				}
 			} else if code == 404 {
 				logger.info("Posting missing settings profile, eTag is \(self.eTag)")
@@ -163,7 +163,7 @@ final class SettingsProfile: Codable {
 				save(localOnly: true)
 				completionHandler(200)
 			} else {
-				logger.error("Received invalid settings profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+				logAnomaly("Received invalid settings profile data: \(String(decoding: data, as: UTF8.self))")
 				completionHandler(-1)
 			}
 		}

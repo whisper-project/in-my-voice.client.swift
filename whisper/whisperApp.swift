@@ -107,11 +107,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 			"profileId": UserProfile.shared.id,
             "lastSecret": PreferenceData.lastClientSecret(),
             "appInfo": "\(platformInfo)|\(versionString)",
-            "droppedErrorCount": PreferenceData.droppedErrorCount,
-			"bluetoothErrorCount": PreferenceData.bluetoothErrorCount,
-            "tcpErrorCount": PreferenceData.tcpErrorCount,
-            "authenticationErrorCount": PreferenceData.authenticationErrorCount,
-			"isPresenceLogging": PreferenceData.doServerLogging ? 1 : 0,
+			"isPresenceLogging": PreferenceData.doPresenceLogging ? 1 : 0,
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for device token call")
@@ -125,11 +121,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         request.httpBody = body
         let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
             guard error == nil else {
-				logger.error("Failed to post APNs token: \(String(describing: error), privacy: .public)")
+				logAnomaly("Failed to post APNs token: \(String(describing: error))")
                 return
             }
             guard let response = response as? HTTPURLResponse else {
-                logger.error("Received non-HTTP response on APNs token post: \(String(describing: response), privacy: .public)")
+				logAnomaly("Received non-HTTP response on APNs token post: \(String(describing: response))")
                 return
             }
 			if response.statusCode == 201 || response.statusCode == 204 {
@@ -140,32 +136,27 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 					// and post it to us.  Until that happens, we need to use our last
 					// secret because the server doesn't know the current secret.
 					PreferenceData.resetClientSecret()
-					// Whenever we get a new secret, we start logging connections to the server
+					// Whenever we get a new secret, we start logging packets to the server
 					// for debugging purposes.  It will tell us to stop when it wants to.
-					PreferenceData.doServerLogging = true
+					PreferenceData.doPresenceLogging = true
 				}
-                // server has received error data, reset it
-                PreferenceData.droppedErrorCount = 0
-				PreferenceData.bluetoothErrorCount = 0
-				PreferenceData.tcpErrorCount = 0
-                PreferenceData.authenticationErrorCount = 0
                 return
             }
-            logger.error("Received unexpected response on APNs token post: \(response.statusCode, privacy: .public)")
+			logAnomaly("Received unexpected response on APNs token post: \(response.statusCode)")
             guard let data = data,
                   let body = try? JSONSerialization.jsonObject(with: data),
                   let obj = body as? [String:String] else {
-                logger.error("Can't deserialize APNs token post response body: \(String(describing: data), privacy: .public)")
+				logAnomaly("Can't deserialize APNs token post response body: \(String(describing: data))")
                 return
             }
-            logger.error("Response body of APNs token post: \(obj, privacy: .public)")
+			logAnomaly("Response body of failed APNs token post: \(obj)")
         }
         logger.info("Posting APNs token to whisper-server")
         task.resume()
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        logger.error("Failed to get APNs token: \(error, privacy: .public)")
+		logAnomaly("Failed to get APNs token: \(error)")
     }
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
@@ -199,13 +190,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                     completionHandler(.newData)
                     return
                 }
-                logger.error("Received unexpected response on notification confirmation post: \(response.statusCode, privacy: .public)")
+				logAnomaly("Received unexpected response on notification confirmation post: \(response.statusCode)")
                 completionHandler(.failed)
             }
             logger.info("Posting notification confirmation to whisper-server")
             task.resume()
         } else {
-            logger.error("Background notification has unexpected data: \(String(describing: userInfo), privacy: .public)")
+			logAnomaly("Background notification has unexpected data: \(String(describing: userInfo))")
             completionHandler(.failed)
         }
     }

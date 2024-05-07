@@ -240,8 +240,7 @@ final class ListenViewModel: ObservableObject {
 				liveText = ""
 			} else if chunk.offset > liveText.count {
 				// we must have missed a packet, read the full state to reset
-				PreferenceData.droppedErrorCount += 1
-				logger.log("Resetting live text after missed packet...")
+				logAnomaly("Resetting live text after missed packet...", kind: whisperer!.remote.kind)
 				readLiveText()
 			} else {
 				liveText = WhisperProtocol.applyDiff(old: liveText, chunk: chunk)
@@ -258,7 +257,7 @@ final class ListenViewModel: ObservableObject {
                 resetInProgress = false
             }
 		} else {
-			logger.error("Received unexpected content chunk: \(chunk, privacy: .public)")
+			logAnomaly("Received unexpected content chunk: \(chunk)", kind: whisperer!.remote.kind)
 		}
     }
 
@@ -275,7 +274,7 @@ final class ListenViewModel: ObservableObject {
 			return
 		}
 		guard conversation.id == info.conversationId else {
-			logger.error("Ignoring a presence message about the wrong conversation: \(info.conversationId, privacy: .public)")
+			logAnomaly("Ignoring a presence message about the wrong conversation: \(info.conversationId)", kind: remote.kind)
 			return
 		}
 		switch WhisperProtocol.ControlOffset(rawValue: chunk.offset) {
@@ -297,14 +296,14 @@ final class ListenViewModel: ObservableObject {
 			let conversation = profile.addForInvite(info: info)
 			let candidate = candidateFor(remote: remote, info: info, conversation: conversation)
 			if whisperer === candidate {
-				logger.error("Received second approval for the same conversation")
+				logAnomaly("Received second approval for the same conversation", kind: candidate.remote.kind)
 			} else {
 				setWhisperer(candidate: candidate, conversation: conversation)
 			}
 		case .listenAuthNo:
 			logger.info("Received refusal from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
 			guard let candidate = candidates[remote.id] else {
-				logger.error("Ignoring refusal from \(remote.kind, privacy: .public) non-candidate \(remote.id, privacy: .public)")
+				logAnomaly("Ignoring refusal from \(remote.kind) non-candidate \(remote.id)", kind: remote.kind)
 				return
 			}
 			profile.delete(info.conversationId)
@@ -431,7 +430,7 @@ final class ListenViewModel: ObservableObject {
 	/// subscribe to this candidate
 	func setWhisperer(candidate: Candidate, conversation: ListenConversation) {
 		guard whisperer == nil else {
-			logger.error("Ignoring attempt to set whisperer (\(candidate.remote.kind, privacy: .public) \(candidate.id, privacy: .public)) when we already have one (\(self.whisperer!.remote.kind, privacy: .public) \(self.whisperer!.id, privacy: .public))")
+			logAnomaly("Ignoring attempt to set whisperer to \(candidate.id) when we already have one (\(self.whisperer!.remote.kind) \(self.whisperer!.id))", kind: candidate.remote.kind)
 			return
 		}
 		logger.info("Selecting \(candidate.remote.kind) whisperer \(candidate.id) for conversation \(conversation.id)")

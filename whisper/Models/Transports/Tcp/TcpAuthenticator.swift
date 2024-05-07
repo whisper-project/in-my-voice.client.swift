@@ -63,10 +63,10 @@ final class TcpAuthenticator {
     }
     
     func createJWT() -> String? {
-        guard let secret = PreferenceData.clientSecret(),
-              let secretData = Data(base64Encoded: Data(secret.utf8)) else {
-            logger.error("No secret data received from whisper-server")
-            failureCallback("Can't receive notifications from the whisper server.  Please quit and restart the app.")
+		let secret = PreferenceData.clientSecret()
+        guard let secretData = Data(base64Encoded: Data(secret.utf8)) else {
+			logAnomaly("Client secret is invalid: \(secret)")
+            failureCallback("Whisper's saved data is missing. Please delete and reinstall the app.")
             return nil
         }
         let claims = ClientClaims(iss: clientId, exp: Date(timeIntervalSinceNow: 300))
@@ -76,7 +76,8 @@ final class TcpAuthenticator {
             return try jwt.sign(using: signer)
         }
         catch let error {
-            logger.error("Can't create JWT for authentication: \(error, privacy: .public)")
+			logAnomaly("Can't create JWT for authentication: \(error)")
+			failureCallback("Whisper is missing a required library. Please delete and reinstall the app.")
             return nil
         }
     }
@@ -85,10 +86,10 @@ final class TcpAuthenticator {
         if let requestClientId = params.clientId,
            requestClientId != self.clientId
         {
-            logger.warning("Token request client \(requestClientId) doesn't match authenticator client \(self.clientId)")
+			logAnomaly("Token request client \(requestClientId) doesn't match authenticator client \(clientId)", kind: .global)
         }
         guard let jwt = createJWT() else {
-            logger.error("Couldn't create JWT to post token request")
+			logAnomaly("Couldn't create JWT to post token request")
             callback(nil, TcpAuthenticatorError.local("Can't create JWT"))
             return
         }
@@ -116,44 +117,44 @@ final class TcpAuthenticator {
         request.httpBody = body
         let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
             guard error == nil else {
-                logger.error("Failed to post \(activity, privacy: .public) token request: \(String(describing: error), privacy: .public)")
+				logAnomaly("Failed to post \(activity) token request: \(String(describing: error))")
                 self.failureCallback("Can't contact the whisper server.  Please make sure your network is working and restart the app.")
                 callback(nil, error)
                 return
             }
             guard let response = response as? HTTPURLResponse else {
-                logger.error("Received non-HTTP response on \(activity, privacy: .public) token request: \(String(describing: response), privacy: .public)")
+				logAnomaly("Received non-HTTP response on \(activity) token request: \(String(describing: response))")
                 self.failureCallback("Having trouble with the whisper server.  Please try again.")
                 callback(nil, TcpAuthenticatorError.server("Non-HTTP response"))
                 return
             }
             if response.statusCode == 403 {
-                logger.error("Received forbidden response status on \(activity, privacy: .public) token request.")
+				logAnomaly("Received 403 response on \(activity) token request")
                 self.failureCallback("Can't authenticate with the whisper server.  Please uninstall and reinstall the app.")
                 callback(nil, TcpAuthenticatorError.server("Authentication failed."))
                 return
             }
             if response.statusCode != 200 {
-                logger.warning("Received unexpected response status on \(activity) token request: \(response.statusCode)")
+				logAnomaly("Received \(response.statusCode) response on \(activity) token request")
             }
             guard let data = data,
                   let body = try? JSONSerialization.jsonObject(with: data),
                   let obj = body as? [String:String] else {
-                logger.error("Can't deserialize \(activity, privacy: .public) token response body: \(String(describing: data), privacy: .public)")
+				logAnomaly("Can't deserialize \(activity) token response body: \(String(describing: data))")
                 self.failureCallback("Having trouble with the whisper server.  Please try again later.")
                 callback(nil, TcpAuthenticatorError.server("Non-JSON response to token request"))
                 return
             }
             guard let tokenRequestString = obj["tokenRequest"] else {
-                logger.error("Didn't receive a token request value in \(activity, privacy: .public) response body: \(obj, privacy: .public)")
+				logAnomaly("Didn't receive a token request value in \(activity) response body: \(obj)")
                 self.failureCallback("Having trouble with the whisper server.  Please try again later.")
                 callback(nil, TcpAuthenticatorError.server("No token request in response"))
                 return
             }
             guard let tokenRequest = try? ARTTokenRequest.fromJson(tokenRequestString as ARTJsonCompatible) else {
-                logger.error("Can't deserialize token request JSON: \(tokenRequestString, privacy: .public)")
+				logAnomaly("Can't deserialize token request JSON: \(tokenRequestString)")
                 self.failureCallback("Having trouble with the whisper server.  Please try again later.")
-                callback(nil, TcpAuthenticatorError.server("Token request is not expected format: \(tokenRequestString)"))
+                callback(nil, TcpAuthenticatorError.server("Token request is not expected format"))
                 return
             }
             logger.info("Received \(activity) token from whisper-server")

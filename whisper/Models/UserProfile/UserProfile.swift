@@ -154,7 +154,7 @@ final class UserProfile: Identifiable, ObservableObject {
 						self.save(localOnly: true)
 					}
 				} else {
-					logger.error("Received invalid user profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+					logAnomaly("Received invalid user profile data: \(String(decoding: data, as: UTF8.self))")
 				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
@@ -219,7 +219,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		// because they may have been loaded successfully from the server.
 		func loadHandler(_ success: Bool, _ message: String) {
 			if !success {
-				logger.error("Resetting user profile \(id, privacy: .public) due to failure receiving shared profile.")
+				logAnomaly("Resetting user profile \(id) due to failure receiving shared profile.")
 				DispatchQueue.main.async {
 					self.userPassword = ""
 					self.serverPassword = ""
@@ -285,7 +285,7 @@ final class UserProfile: Identifiable, ObservableObject {
 				newName = name
 				dualHandler(200)
 			} else {
-				logger.error("Received invalid user profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+				logAnomaly("Received invalid user profile data: \(String(decoding: data, as: UTF8.self))")
 				dualHandler(-1)
 			}
 		}

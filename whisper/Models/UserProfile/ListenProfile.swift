@@ -198,7 +198,7 @@ final class ListenProfile: Codable {
 					save(localOnly: true)
 					notifyChange?()
 				} else {
-					logger.error("Received invalid listen profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+					logAnomaly("Received invalid listen profile data: \(String(decoding: data, as: UTF8.self))")
 				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
@@ -235,7 +235,7 @@ final class ListenProfile: Codable {
 				save(localOnly: true)
 				completionHandler(200)
 			} else {
-				logger.error("Received invalid listen profile data: \(String(decoding: data, as: UTF8.self), privacy: .public)")
+				logAnomaly("Received invalid listen profile data: \(String(decoding: data, as: UTF8.self))")
 				completionHandler(-1)
 			}
 		}
