@@ -106,7 +106,8 @@ struct PreferenceData {
 		// we also have to stop sharing our profile, because the new server doesn't have it
 		// NOTE: this needs to be run as early as possible in the launch sequence.
 		guard let server = defaults.string(forKey: "whisper_last_used_server") else {
-			// we've never launched before, so nothing to do
+			// we've never launched before, so nothing to do except save the current server
+			defaults.set(whisperServer, forKey: "whisper_last_used_server")
 			return
 		}
 		guard server != whisperServer else {
