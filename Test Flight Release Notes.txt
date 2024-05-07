@@ -310,3 +310,11 @@ v2 BUILD 28 (external):
 This build shows network status when only one of Bluetooth or Wifi is available.  This is needed to guide users as to what kinds of connections are possible.
 
 This is the App Store submit build for version 2.
+
+BUILD 2000101 (v2.0.1.1) (external):
+This build introduces a number of changes intended to make internet-based connections much more stable.  The following problems that users reported should now be fixed:
+
+- Listeners who tried to join a conversation, especially for the first time, were told they were waiting for the Whisperer forever.  They had to stop and reconnect to join the conversation. Now the connection will succeed the first time.
+- If a Whisperer slept their device, they would sometimes see a notice when they resumed that the conversation had ended, and would have to restart the session.  But their Listeners got no notice of this and had to be told to restart. Now sessions do not stop if either Whisperers or Listeners sleep their devices.
+
+This build also adds a lot logging from clients to the Whisper server, so reports of problems from clients can be diagnosed on the server side.  Please do submit screenshots whenever you encounter an issue, and give a description of what happened.
