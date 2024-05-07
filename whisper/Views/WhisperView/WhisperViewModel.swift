@@ -53,7 +53,6 @@ final class WhisperViewModel: ObservableObject {
 
     @Published var statusText: String = ""
     @Published var connectionError = false
-	@Published var restartWarning = false
     @Published var connectionErrorDescription: String = ""
 	@Published var candidates: [String: Candidate] = [:]		// id -> Candidate
 	@Published var listeners: [Candidate] = []
@@ -166,7 +165,7 @@ final class WhisperViewModel: ObservableObject {
 
 	func acceptRequest(_ id: String) {
 		guard let invitee = candidates[id] else {
-			logger.error("Ignoring accepted invite from unknown invitee: \(id, privacy: .public)")
+			logAnomaly("Ignoring user accept of unknown candidate: \(id)")
 			return
 		}
 		logger.info("Accepted listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
@@ -180,7 +179,7 @@ final class WhisperViewModel: ObservableObject {
 
 	func refuseRequest(_ id: String) {
 		guard let invitee = candidates[id] else {
-			logger.error("Ignoring refused invite from unknown invitee: \(id, privacy: .public)")
+			logAnomaly("Ignoring user refusal of unknown candidate: \(id)")
 			return
 		}
 		logger.info("Rejected listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
@@ -221,15 +220,9 @@ final class WhisperViewModel: ObservableObject {
     }
     
     private func signalConnectionError(_ reason: String) {
-		if reason == "notify-restart" {
-			Task { @MainActor in
-				restartWarning = true
-			}
-		} else {
-			Task { @MainActor in
-				connectionError = true
-				connectionErrorDescription = reason
-			}
+		Task { @MainActor in
+			connectionError = true
+			connectionErrorDescription = reason
 		}
     }
     

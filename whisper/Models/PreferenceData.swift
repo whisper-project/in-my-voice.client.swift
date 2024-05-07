@@ -36,7 +36,7 @@ struct PreferenceData {
         return nil
     }
     static func publisherUrl(_ conversation: WhisperConversation) -> String {
-		let urlName = conversation.name.compactMap{char in
+		let urlName = conversation.name.compactMap {char in
 			if char.isLetter || char.isNumber {
 				return String(char)
 			} else {
@@ -78,7 +78,7 @@ struct PreferenceData {
             return prior
         }
     }
-    static func clientSecret() -> String? {
+    static func clientSecret() -> String {
         if let current = defaults.string(forKey: "whisper_client_secret") {
             return current
         } else {
@@ -106,7 +106,8 @@ struct PreferenceData {
 		// we also have to stop sharing our profile, because the new server doesn't have it
 		// NOTE: this needs to be run as early as possible in the launch sequence.
 		guard let server = defaults.string(forKey: "whisper_last_used_server") else {
-			// we've never launched before, so nothing to do
+			// we've never launched before, so nothing to do except save the current server
+			defaults.set(whisperServer, forKey: "whisper_last_used_server")
 			return
 		}
 		guard server != whisperServer else {
@@ -217,40 +218,6 @@ struct PreferenceData {
         }
     }
     
-    // metrics of errors to send in diagnostics to server
-    static var droppedErrorCount: Int {
-        get {
-            defaults.integer(forKey: "dropped_error_count")
-        }
-        set(newVal) {
-            defaults.setValue(newVal, forKey: "dropped_error_count")
-        }
-    }
-	static var bluetoothErrorCount: Int {
-		get {
-			defaults.integer(forKey: "bluetooth_error_count")
-		}
-		set(newVal) {
-			defaults.setValue(newVal, forKey: "bluetooth_error_count")
-		}
-	}
-	static var tcpErrorCount: Int {
-		get {
-			defaults.integer(forKey: "tcp_error_count")
-		}
-		set(newVal) {
-			defaults.setValue(newVal, forKey: "tcp_error_count")
-		}
-	}
-    static var authenticationErrorCount: Int {
-        get {
-            defaults.integer(forKey: "authentication_error_count")
-        }
-        set(newVal) {
-            defaults.setValue(newVal, forKey: "authentication_error_count")
-        }
-    }
-
 	/// Preferences
 	static private var whisperTapPreference: String {
 		get {
@@ -330,6 +297,16 @@ struct PreferenceData {
 	}
 	static func elevenLabsLatencyReduction() -> Int {
 		return Int(elevenLabsLatencyReductionPreference) ?? 1
+	}
+
+	// server-side logging
+	static var doPresenceLogging: Bool {
+		get {
+			return !defaults.bool(forKey: "do_not_log_to_server_setting")
+		}
+		set (val) {
+			defaults.setValue(val, forKey: "do_not_log_to_server_setting")
+		}
 	}
 
 	static func preferencesToJson() -> String {

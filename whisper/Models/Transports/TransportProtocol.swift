@@ -6,13 +6,13 @@
 import Foundation
 import Combine
 
-enum TransportStatus {
-    case off
-	case localOnly
-	case globalOnly
-    case disabled
-    case waiting
-    case on
+enum TransportStatus: String {
+    case off = "off"
+	case localOnly = "localOnly"
+	case globalOnly = "globalOnly"
+    case disabled = "disabled"
+    case waiting = "waiting"
+    case on = "on"
 }
 
 enum TransportKind: CustomStringConvertible {

@@ -57,11 +57,11 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		request.httpBody = data
 		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
 			guard error == nil else {
-				logger.error("Failed to generate speech: \(String(describing: error))")
+				logAnomaly("Failed to generate speech: \(String(describing: error))")
 				return
 			}
 			guard let response = response as? HTTPURLResponse else {
-				logger.error("Received non-HTTP response on speech generation: \(String(describing: response), privacy: .public)")
+				logAnomaly("Received non-HTTP response on speech generation: \(String(describing: response))")
 				return
 			}
 			if response.statusCode == 200,
@@ -70,14 +70,14 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				self.queueSpeech(data)
 				return
 			}
-			logger.error("Speech generation of \(text, privacy: .public) got status \(response.statusCode, privacy: .public)")
+			logAnomaly("Speech generation of \(text) got response status \(response.statusCode)")
 			guard let data = data,
 				  let body = try? JSONSerialization.jsonObject(with: data),
 				  let obj = body as? [String:Any] else {
-				logger.error("Can't deserialize speech generation response body: \(String(describing: data), privacy: .public)")
+				logAnomaly("Can't deserialize speech generation response body: \(String(describing: data))")
 				return
 			}
-			logger.error("Error details of speech generation: \(obj, privacy: .public)")
+			logAnomaly("Error details of speech generation: \(obj)")
 		}
 		logger.info("Posting generation request to ElevenLabs")
 		task.resume()

@@ -38,13 +38,17 @@ final class TcpListenTransport: SubscribeTransport {
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let target = remotes[remote.id] else {
-            logger.error("Ignoring request to send chunk to an unknown \(remote.kind, privacy: .public) remote: \(remote.id, privacy: .public)")
+			logAnomaly("Ignoring request to send chunk to an unknown remote: \(remote.id)", kind: .global)
             return
         }
 		logger.notice("Sending control packet to \(remote.kind) remote: \(remote.id, privacy: .public): \(chunk, privacy: .public)")
-		sendControlInternal(id: target.id, data: chunk.toString())
+		if (chunk.isReplayRequest()) {
+			sendReplayRequest(remote: target, chunk: chunk)
+		} else {
+			sendControlInternal(id: target.id, data: chunk)
+		}
     }
-    
+
     func drop(remote: Remote) {
         guard remotes[remote.id] != nil else {
             fatalError("Ignoring request to drop an unknown remote: \(remote.id)")
@@ -54,11 +58,11 @@ final class TcpListenTransport: SubscribeTransport {
     
 	func subscribe(remote: Remote, conversation: ListenConversation) {
         guard let remote = remotes[remote.id] else {
-            logger.error("Ignoring request to subscribe to an unknown \(remote.kind, privacy: .public) remote: \(remote.id, privacy: .public)")
+            logAnomaly("Ignoring request to subscribe to an unknown remote: \(remote.id)", kind: .global)
             return
         }
 		if whisperer === remote {
-			logger.error("Ignoring duplicate subscribe")
+			logAnomaly("Ignoring duplicate subscribe", kind: .global)
 			return
 		} else if let w = whisperer {
 			fatalError("Got subscribe request to \(remote.id) but already subscribed to \(w.id)")
@@ -94,6 +98,8 @@ final class TcpListenTransport: SubscribeTransport {
     private var client: ARTRealtime?
     private var channelName: String
     private var contentChannel: ARTRealtimeChannel?
+	private var contentChannelAttached = false
+	private var pendingReplays: [(remote: Remote, chunk: WhisperProtocol.ProtocolChunk)] = []
     private var controlChannel: ARTRealtimeChannel?
     private var remotes: [String:Remote] = [:]
     private var whisperer: Remote?
@@ -107,7 +113,7 @@ final class TcpListenTransport: SubscribeTransport {
     //MARK: Internal methods
     private func receiveErrorInfo(_ error: ARTErrorInfo?) {
         if let error = error {
-			logger.error("TCP Listener: \(error.message, privacy: .public)")
+			logAnomaly("TCP Listener: \(error.message)", kind: .global)
         }
     }
     
@@ -134,36 +140,67 @@ final class TcpListenTransport: SubscribeTransport {
 		guard !remote.contentId.isEmpty else {
 			fatalError("Can't subscribe to remote with no content ID: \(remote)")
 		}
-		contentChannel = getClient().channels.get(channelName + ":" + remote.contentId)
-        contentChannel?.on(.attached) { stateChange in
-            logger.log("TCP listen transport realtime client has attached the content channel")
-        }
-        contentChannel?.on(.detached) { stateChange in
-            logger.log("TCP listen transport realtime client has detached the content channel")
-        }
-        contentChannel?.attach()
-        contentChannel?.subscribe(clientId, callback: receiveContentMessage)
-        contentChannel?.subscribe("all", callback: receiveContentMessage)
+		let channel = getClient().channels.get(channelName + ":" + remote.contentId)
+		contentChannel = channel
+		channel.on(monitorChannelState(remote.contentId))
+		channel.once(ARTChannelEvent.attached) { _ in
+			self.contentChannelAttached = true
+			for (remote, chunk) in self.pendingReplays {
+				logAnomaly("Replaying replay chunk after content attach: \(chunk)", kind: .global)
+				self.sendReplayRequest(remote: remote, chunk: chunk)
+			}
+		}
+		channel.subscribe(receiveContentMessage)
     }
     
-    private func openControlChannel() {
-		logger.info("TCP listen transport: open control channel")
-        controlChannel = getClient().channels.get(channelName + ":control")
-        controlChannel?.on(.attached) { stateChange in
-			logger.info("TCP listen transport: attach to control channel")
-        }
-        controlChannel?.on(.detached) { stateChange in
-            logger.log("TCP listen transport: detach from control channel")
-        }
-        controlChannel?.attach()
-        controlChannel?.subscribe(clientId, callback: receiveControlMessage)
-        controlChannel?.subscribe("all", callback: receiveControlMessage)
-		// send a listen offer so the whisperer knows we're here
-		let chunk = WhisperProtocol.ProtocolChunk.listenOffer(conversation)
-		logger.info("TCP listen transport: sending listen offer: \(chunk)")
-		sendControlInternal(id: "whisperer", data: chunk.toString())
-    }
-    
+	private func openControlChannel() {
+		let channel = getClient().channels.get(conversation.id + ":control")
+		controlChannel = channel
+		channel.on(monitorChannelState("control"))
+		channel.once(ARTChannelEvent.attached) { _ in
+			let chunk = WhisperProtocol.ProtocolChunk.listenOffer(self.conversation)
+			logger.info("TCP listen transport: sending listen offer: \(chunk)")
+			self.sendControlInternal(id: "whisperer", data: chunk)
+		}
+		channel.subscribe(receiveControlMessage)
+	}
+
+	private func monitorChannelState(_ channelId: String) -> (_ change: ARTChannelStateChange) -> Void {
+		return { change in
+			var event = "none"
+			var resumed = ""
+			var errCode = ""
+			var errMessage = ""
+			switch change.event {
+			case .attached:
+				event = "attached"
+				resumed = "\(change.resumed)"
+			case .suspended:
+				event = "suspended"
+			case .failed:
+				event = "failed"
+				if let code = change.reason?.code {
+					errCode = "\(code)"
+				}
+				if let message = change.reason?.message {
+					errMessage = message
+				}
+			case .update:
+				event = "update"
+				resumed = "\(change.resumed)"
+			default:
+				return
+			}
+			logChannelEvent(["participant": "Listener",
+							 "conversationId": self.conversation.id,
+							 "channelId": channelId,
+							 "event": event,
+							 "resumed": resumed,
+							 "errCode": errCode,
+							 "errMessage": errMessage])
+		}
+	}
+
     private func closeChannels() {
 		guard let control = controlChannel else {
 			// we never opened the channels, so don't try to close them
@@ -172,7 +209,7 @@ final class TcpListenTransport: SubscribeTransport {
 		logger.info("TCP listen transport: closing both channels")
 		logger.info("TCP listen transport: publishing drop to \(self.remotes.count) remotes")
 		let chunk = WhisperProtocol.ProtocolChunk.dropping()
-        control.publish("whisperer", data: chunk.toString(), callback: receiveErrorInfo)
+		sendControlInternal(id: "whisperer", data: chunk)
 		if let content = contentChannel {
 			content.detach()
 			contentChannel = nil
@@ -183,8 +220,17 @@ final class TcpListenTransport: SubscribeTransport {
 		authenticator.releaseClient()
     }
 
-	private func sendControlInternal(id: String, data: String) {
-		controlChannel?.publish(id, data: data, callback: receiveErrorInfo)
+	private func sendControlInternal(id: String, data: WhisperProtocol.ProtocolChunk) {
+		logControlChunk(sentOrReceived: "sent", chunk: data)
+		controlChannel?.publish(id, data: data.toString(), callback: receiveErrorInfo)
+	}
+
+	private func sendReplayRequest(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
+		if (contentChannelAttached) {
+			sendControlInternal(id: remote.id, data: chunk)
+		} else {
+			pendingReplays.append((remote: remote, chunk: chunk))
+		}
 	}
 
 	private func removeCandidate(_ remote: Remote, sendDrop: Bool = false) {
@@ -197,33 +243,44 @@ final class TcpListenTransport: SubscribeTransport {
 	}
 
 	func receiveContentMessage(message: ARTMessage) {
+		let topic = message.name ?? "unknown"
+		guard topic == "all" || topic == PreferenceData.clientId else {
+			logger.debug("Ignoring content message meant for \(topic, privacy: .public): \(String(describing: message.data), privacy: .public)")
+			return
+		}
 		guard let remote = remoteFor(message.clientId) else {
-			logger.error("Ignoring a message with a missing client id: \(message, privacy: .public)")
+			logAnomaly("Ignoring a message with a missing client id: \(message)", kind: .global)
 			return
 		}
 		guard let payload = message.data as? String,
 			  let chunk = WhisperProtocol.ProtocolChunk.fromString(payload) else {
-			logger.error("Ignoring a message with a non-chunk payload: \(message, privacy: .public)")
+			logAnomaly("Ignoring a message with a non-chunk payload: \(message)", kind: .global)
 			return
 		}
 		contentSubject.send((remote: remote, chunk: chunk))
 	}
 
-    func receiveControlMessage(message: ARTMessage) {
+	func receiveControlMessage(message: ARTMessage) {
+		let topic = message.name ?? "unknown"
+		guard topic == "all" || topic == PreferenceData.clientId else {
+			logger.debug("Ignoring control message meant for \(topic, privacy: .public): \(String(describing: message.data), privacy: .public)")
+			return
+		}
 		guard let remote = remoteFor(message.clientId) else {
-			logger.error("Ignoring a message with a missing client id: \(message, privacy: .public)")
+			logAnomaly("Ignoring a message with a missing client id: \(message)", kind: .global)
 			return
 		}
         guard let payload = message.data as? String,
               let chunk = WhisperProtocol.ProtocolChunk.fromString(payload) else {
-			logger.error("Ignoring a message with a non-chunk payload: \(message, privacy: .public)")
+			logAnomaly("Ignoring a message with a non-chunk payload: \(message)", kind: .global)
             return
         }
+		logControlChunk(sentOrReceived: "received", chunk: chunk)
         if chunk.isPresenceMessage() {
             guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text),
                   info.clientId == message.clientId
             else {
-				logger.error("Ignoring a malformed or misdirected packet: \(chunk, privacy: .public)")
+				logAnomaly("Ignoring a malformed or misdirected packet: \(chunk)", kind: .global)
                 return
             }
             if let value = WhisperProtocol.ControlOffset(rawValue: chunk.offset) {

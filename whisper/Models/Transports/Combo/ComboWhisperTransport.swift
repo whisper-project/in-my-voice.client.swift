@@ -158,11 +158,7 @@ final class ComboWhisperTransport: PublishTransport {
         guard localStatus != status else {
             return
         }
-        if localStatus == .on {
-            logger.error("The Bluetooth connection was available but has dropped")
-			// Bluetooth drops whenever you sleep
-            // failureCallback?("The Bluetooth network has become unavailable")
-        }
+		logger.debug("The Bluetooth status has transitioned to \(status.rawValue, privacy: .public)")
         localStatus = status
     }
     
@@ -170,10 +166,7 @@ final class ComboWhisperTransport: PublishTransport {
         guard globalStatus != status else {
             return
         }
-		if globalStatus == .on {
-			logger.error("The Internet connection was available but has dropped")
-			failureCallback?("The Internet connection has become unavailable")
-		}
+		logger.debug("The TCP status has transitioned to \(status.rawValue, privacy: .public)")
         globalStatus = status
     }
     
@@ -239,7 +232,7 @@ final class ComboWhisperTransport: PublishTransport {
 
 private func removeRemote(remote: any TransportRemote) {
         guard let removed = remotes.removeValue(forKey: remote.id) else {
-            logger.error("Ignoring drop of unknown \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public)")
+			logAnomaly("Ignoring drop of unknown remote \(remote.id)", kind: remote.kind)
             return
         }
 		clients.removeValue(forKey: removed.clientId)

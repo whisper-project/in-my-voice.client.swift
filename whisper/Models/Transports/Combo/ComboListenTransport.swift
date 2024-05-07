@@ -136,11 +136,7 @@ final class ComboListenTransport: SubscribeTransport {
 		#if DISABLE_BLUETOOTH
 		localStatus = .off
 		#else
-		if localStatus == .on {
-			logger.error("The Bluetooth connection was available but has dropped")
-			// don't fail because this happens when we sleep and it comes back.
-			// failureCallback?("The Bluetooth network has become unavailable")
-		}
+		logger.debug("The Bluetooth status has transitioned to \(status.rawValue, privacy: .public)")
 		localStatus = status
 		#endif
 	}
@@ -152,10 +148,7 @@ final class ComboListenTransport: SubscribeTransport {
 		#if DISABLE_INTERNET
 		globalStatus = .off
 		#else
-		if globalStatus == .on {
-			logger.error("The Internet connection was available but has dropped")
-			failureCallback?("The Internet connection has become unavailable")
-		}
+		logger.debug("The TCP status has transitioned to \(status.rawValue, privacy: .public)")
 		globalStatus = status
 		#endif
 	}
@@ -228,7 +221,7 @@ final class ComboListenTransport: SubscribeTransport {
 
 	private func removeRemote(remote: any TransportRemote) {
 		guard let removed = remotes.removeValue(forKey: remote.id) else {
-			logger.error("Ignoring drop of unknown \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public)")
+			logAnomaly("Ignoring drop of unknown remote \(remote.id)", kind: remote.kind)
 			return
 		}
 		clients.removeValue(forKey: removed.clientId)
@@ -238,7 +231,7 @@ final class ComboListenTransport: SubscribeTransport {
     private func receiveContentChunk(_ pair: (remote: any TransportRemote, chunk: WhisperProtocol.ProtocolChunk)) {
 		// we should already have the Whisperer as a remote
         guard let remote = remotes[pair.remote.id] else {
-			logger.error("Ignoring chunk from \(pair.remote.kind, privacy: .public) unknown remote \(pair.remote.id, privacy: .public)")
+			logAnomaly("Ignoring chunk from unknown remote \(pair.remote.id)", kind: pair.remote.kind)
             return
         }
         contentSubject.send((remote: remote, chunk: pair.chunk))

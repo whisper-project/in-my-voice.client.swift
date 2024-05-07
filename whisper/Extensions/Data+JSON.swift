@@ -19,7 +19,7 @@ extension Data {
 			return true
 		}
 		catch (let err) {
-			logger.error("Failed to write \(filename, privacy: .public).json: \(err, privacy: .public)")
+			logAnomaly("Failed to write \(filename).json: \(err)")
 			return false
 		}
 	}
@@ -37,7 +37,7 @@ extension Data {
 			return data
 		}
 		catch (let err) {
-			logger.error("Failure reading \(filename, privacy: .public).json: \(err, privacy: .public)")
+			logAnomaly("Failure reading \(filename).json: \(err)")
 			return nil
 		}
 	}
@@ -55,7 +55,7 @@ extension Data {
 			return true
 		}
 		catch (let err) {
-			logger.error("Failure deleting \(filename, privacy: .public).json: \(err, privacy: .public)")
+			logAnomaly("Failure deleting \(filename).json: \(err)")
 			return false
 		}
 	}
@@ -79,7 +79,10 @@ extension Data {
 					handler?(response.statusCode, Data())
 				}
 			} else {
-				if let data = data, data.count > 0 {
+				if response.statusCode == 404 {
+					logger.error("No such route: \(String(describing: request.httpMethod)) \(String(describing: request.url))")
+					handler?(response.statusCode, Data())
+				} else if let data = data, data.count > 0 {
 					// if let message = String(data: data, encoding: .utf8) {
 					// 	logger.error("Received \(response.statusCode, privacy: .public) response with message: \(message, privacy: .public)")
 					// } else {
