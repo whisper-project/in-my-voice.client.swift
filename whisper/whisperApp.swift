@@ -16,8 +16,11 @@ let platformInfo = UIDevice.current.userInterfaceIdiom == .phone ? "phone" : "pa
 #endif
 let versionInfo = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "??"
 let buildInfo = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "??"
-let versionString = "\(versionInfo).\(buildInfo)"
-
+#if DEBUG
+let versionString = buildInfo
+#else
+let versionString = "\(versionInfo)"
+#endif
 
 /// global strings
 let connectingLiveText = "This is where the line being typed by the whisperer will appear in real time... "

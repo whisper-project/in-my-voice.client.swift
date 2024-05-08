@@ -118,7 +118,11 @@ struct PreferenceData {
 		defaults.set(whisperServer, forKey: "whisper_last_used_server")
 		defaults.removeObject(forKey: "whisper_last_client_secret")
 		defaults.removeObject(forKey: "whisper_client_secret")
+		#if DEBUG
+		UserProfile.shared.stopSharing(newName: platformInfo)
+		#else
 		UserProfile.shared.stopSharing()
+		#endif
 	}
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
