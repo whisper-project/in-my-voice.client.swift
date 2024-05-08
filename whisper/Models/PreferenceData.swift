@@ -309,7 +309,7 @@ struct PreferenceData {
 			return !defaults.bool(forKey: "do_not_log_to_server_setting")
 		}
 		set (val) {
-			defaults.setValue(val, forKey: "do_not_log_to_server_setting")
+			defaults.setValue(!val, forKey: "do_not_log_to_server_setting")
 		}
 	}
 
