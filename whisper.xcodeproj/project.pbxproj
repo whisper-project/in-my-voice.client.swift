@@ -14,6 +14,7 @@
 		373151112BA7624D005E989D /* SettingsProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373151102BA7624D005E989D /* SettingsProfile.swift */; };
 		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
+		374D3E1F2BEC4D120096B953 /* FirstKeyWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */; };
 		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
 		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
@@ -71,6 +72,7 @@
 		373151102BA7624D005E989D /* SettingsProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsProfile.swift; sourceTree = "<group>"; };
 		373748782AD66D150053858B /* TcpMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpMonitor.swift; sourceTree = "<group>"; };
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
+		374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstKeyWindow.swift; sourceTree = "<group>"; };
 		375152A02B61E6990045FEBD /* ElevenLabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabs.swift; sourceTree = "<group>"; };
 		3758F3E929E7D9F50072F7A8 /* air-horn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "air-horn.mp3"; sourceTree = "<group>"; };
 		3758F3EB29E8C2C00072F7A8 /* bike-horn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "bike-horn.mp3"; sourceTree = "<group>"; };
@@ -292,6 +294,7 @@
 				37D553CB2A10717E00C27888 /* SizePrinter.swift */,
 				37D78A152B2FB50D002494CD /* MakeBinding.swift */,
 				377C01092B7AD47800489C05 /* Data+JSON.swift */,
+				374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -511,6 +514,7 @@
 				377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */,
 				377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */,
 				377D71162A913E8B009B416F /* PreferenceData.swift in Sources */,
+				374D3E1F2BEC4D120096B953 /* FirstKeyWindow.swift in Sources */,
 				377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */,
 				37C5142229CA2B35001A121B /* PastTextView.swift in Sources */,
 				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,
@@ -651,7 +655,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2000101;
+				CURRENT_PROJECT_VERSION = 2010001;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -671,7 +675,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -693,7 +697,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2000101;
+				CURRENT_PROJECT_VERSION = 2010001;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -713,7 +717,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

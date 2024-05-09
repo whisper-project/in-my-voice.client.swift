@@ -318,3 +318,8 @@ This build introduces a number of changes intended to make internet-based connec
 - If a Whisperer slept their device, they would sometimes see a notice when they resumed that the conversation had ended, and would have to restart the session.  But their Listeners got no notice of this and had to be told to restart. Now sessions do not stop if either Whisperers or Listeners sleep their devices.
 
 This build also adds a lot logging from clients to the Whisper server, so reports of problems from clients can be diagnosed on the server side.  Please do submit screenshots whenever you encounter an issue, and give a description of what happened.
+
+BUILD 2010001 (v2.1.0 build 1) (external):
+This build allows you to make use of ElevenLabs pronunciation dictionaries.  If you add a dictionary ID string and dictionary version string to the Whisper settings, that dictionary will be used when generating ElevenLabs speech.
+
+As with all settings, the dictionary settings will be sync'd to other devices that share your profile.  Just be sure you choose one device on which to install this build and add the dictionary settings on that device *before* you upgrade the build and launch Whisper on your other devices, so they will be sure to retrieve the new preferences.
