@@ -206,7 +206,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		serverPassword = SHA256.hash(data: Data(userPassword.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		save(verb: "POST")
 		whisperProfile.startSharing(serverPassword: serverPassword)
-		listenProfile.startSharing(serverPassword: serverPassword)
+		listenProfile.startSharing(serverPassword: serverPassword, ownConversations: whisperProfile.conversations())
 		settingsProfile.startSharing(serverPassword: serverPassword)
 	}
 

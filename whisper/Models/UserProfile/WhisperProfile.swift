@@ -152,8 +152,8 @@ final class WhisperProfile: Codable {
 
 	/// add a user to a conversation and/or update their name in the conversation
 	func addListener(_ conversation: WhisperConversation, info: WhisperProtocol.ClientInfo) {
-		guard info.profileId != id else {
-			// we never add ourselves as a listener
+		guard info.profileId != id || serverPassword.isEmpty else {
+			// if our profile is shared, we never add ourselves as a listener
 			return
 		}
 		if let username = conversation.allowed[info.profileId], username == info.username {
@@ -278,6 +278,11 @@ final class WhisperProfile: Codable {
 
 	func startSharing(serverPassword: String) {
 		self.serverPassword = serverPassword
+		// if we were an allowed listener for one of our conversations,
+		// remove us, because we are now automatically allowed
+		for conversation in table.values {
+			conversation.allowed.removeValue(forKey: id)
+		}
 		save(verb: "POST")
 	}
 
