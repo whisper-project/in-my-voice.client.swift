@@ -268,6 +268,24 @@ struct PreferenceData {
 		}
 	}
 
+	static private var elevenLabsDictionaryIdPreference: String {
+		get {
+			defaults.string(forKey: "elevenlabs_dictionary_id_preference") ?? ""
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "elevenlabs_dictionary_id_preference")
+		}
+	}
+
+	static private var elevenLabsDictionaryVersionPreference: String {
+		get {
+			defaults.string(forKey: "elevenlabs_dictionary_version_preference") ?? ""
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "elevenlabs_dictionary_version_preference")
+		}
+	}
+
 	static private var elevenLabsLatencyReductionPreference: String {
 		get {
 			"\(defaults.integer(forKey: "elevenlabs_latency_reduction_preference") + 1)"
@@ -299,6 +317,12 @@ struct PreferenceData {
 	static func elevenLabsVoiceId() -> String {
 		return elevenLabsVoiceIdPreference
 	}
+	static func elevenLabsDictionaryId() -> String {
+		return elevenLabsDictionaryIdPreference
+	}
+	static func elevenLabsDictionaryVersion() -> String {
+		return elevenLabsDictionaryVersionPreference
+	}
 	static func elevenLabsLatencyReduction() -> Int {
 		return Int(elevenLabsLatencyReductionPreference) ?? 1
 	}
@@ -320,6 +344,8 @@ struct PreferenceData {
 			"newest_whisper_location_preference": newestWhisperLocationPreference,
 			"elevenlabs_api_key_preference": elevenLabsApiKeyPreference,
 			"elevenlabs_voice_id_preference": elevenLabsVoiceIdPreference,
+			"elevenlabs_dictionary_id_preference": elevenLabsDictionaryIdPreference,
+			"elevenlabs_dictionary_version_preference": elevenLabsDictionaryVersionPreference,
 			"elevenlabs_latency_reduction_preference": elevenLabsLatencyReductionPreference,
 		]
 		guard let json = try? JSONSerialization.data(withJSONObject: preferences, options: .sortedKeys) else {
@@ -339,6 +365,8 @@ struct PreferenceData {
 		newestWhisperLocationPreference = preferences["newest_whisper_location_preference"] ?? "bottom"
 		elevenLabsApiKeyPreference = preferences["elevenlabs_api_key_preference"] ?? ""
 		elevenLabsVoiceIdPreference = preferences["elevenlabs_voice_id_preference"] ?? ""
+		elevenLabsDictionaryIdPreference = preferences["elevenlabs_dictionary_id_preference"] ?? ""
+		elevenLabsDictionaryVersionPreference = preferences["elevenlabs_dictionary_version_preference"] ?? ""
 		elevenLabsLatencyReductionPreference = preferences["elevenlabs_latency_reduction_preference"] ?? "1"
 	}
 }
