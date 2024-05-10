@@ -4,6 +4,7 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import SwiftUI
+import SwiftUIWindowBinder
 
 struct ListenView: View {
     @Environment(\.colorScheme) var colorScheme
@@ -21,6 +22,7 @@ struct ListenView: View {
 	@State private var magnify: Bool = PreferenceData.magnifyWhenListening
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
+	@State private var window: Window?
 
 	init(mode: Binding<OperatingMode>, restart: Binding<Bool>, conversation: ListenConversation) {
         self._mode = mode
@@ -30,71 +32,76 @@ struct ListenView: View {
     }
 
     var body: some View {
-		GeometryReader { geometry in
-			VStack(spacing: 10) {
-				if inBackground && platformInfo == "pad" {
-					backgroundView(geometry)
-				} else {
-					foregroundView(geometry)
+		WindowBinder(window: $window) {
+			GeometryReader { geometry in
+				VStack(spacing: 10) {
+					if inBackground && platformInfo == "pad" {
+						backgroundView(geometry)
+					} else {
+						foregroundView(geometry)
+					}
+				}
+				.multilineTextAlignment(.leading)
+				.lineLimit(nil)
+				.alert("Confirm Stop", isPresented: $confirmStop) {
+					Button("Stop") {
+						model.stop()
+						mode = .ask
+					}
+					Button("Don't Stop") {
+					}
+				} message: {
+					Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+				}
+				.alert("Connection Failure", isPresented: $model.connectionError) {
+					Button("OK") { mode = .ask }
+				} message: {
+					Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
+				}
+				.alert("Conversation Ended", isPresented: $model.conversationEnded) {
+					Button("OK") { mode = .ask }
+				} message: {
+					Text("The Whisperer has ended the conversation")
 				}
 			}
-			.multilineTextAlignment(.leading)
-			.lineLimit(nil)
-			.alert("Confirm Stop", isPresented: $confirmStop) {
-				Button("Stop") {
-					model.stop()
-					mode = .ask
+			.onAppear {
+				logger.log("ListenView appeared")
+				self.model.start()
+			}
+			.onDisappear {
+				logger.log("ListenView disappeared")
+				self.model.stop()
+			}
+			.onChange(of: model.conversationRestarted) {
+				restart = true
+				mode = .ask
+			}
+			.onChange(of: window) {
+				window?.windowScene?.title = "Listening to \(model.conversationName)"
+			}
+			.onChange(of: model.conversationName) {
+				window?.windowScene?.title = "Listening to \(model.conversationName)"
+			}
+			.onChange(of: scenePhase) {
+				switch scenePhase {
+				case .background:
+					logger.log("Went to background")
+					inBackground = true
+					model.wentToBackground()
+				case .inactive:
+					logger.log("Went inactive")
+					inBackground = false
+					model.wentToForeground()
+				case .active:
+					logger.log("Went to foreground")
+					inBackground = false
+					model.wentToForeground()
+				@unknown default:
+					inBackground = false
+					logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
 				}
-				Button("Don't Stop") {
-				}
-			} message: {
-				Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
-			}
-			.alert("Connection Failure", isPresented: $model.connectionError) {
-				Button("OK") { mode = .ask }
-			} message: {
-				Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
-			}
-			.alert("Conversation Ended", isPresented: $model.conversationEnded) {
-				Button("OK") { mode = .ask }
-			} message: {
-				Text("The Whisperer has ended the conversation")
 			}
 		}
-		.onAppear {
-			logger.log("ListenView appeared")
-			self.model.start()
-		}
-		.onDisappear {
-			logger.log("ListenView disappeared")
-			self.model.stop()
-		}
-		.onChange(of: model.conversationRestarted) {
-			restart = true
-			mode = .ask
-		}
-		.onChange(of: model.conversationName, initial: true) {
-			UIApplication.shared.firstKeyWindow?.windowScene?.title = "Listening to \(model.conversationName)"
-		}
-		.onChange(of: scenePhase) {
-            switch scenePhase {
-            case .background:
-                logger.log("Went to background")
-				inBackground = true
-                model.wentToBackground()
-			case .inactive:
-                logger.log("Went inactive")
-				inBackground = false
-				model.wentToForeground()
-            case .active:
-                logger.log("Went to foreground")
-				inBackground = false
-                model.wentToForeground()
-            @unknown default:
-				inBackground = false
-                logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
-            }
-        }
     }
 
 	private func maybeStop() {

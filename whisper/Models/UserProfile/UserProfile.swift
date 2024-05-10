@@ -182,15 +182,11 @@ final class UserProfile: Identifiable, ObservableObject {
 		settingsProfile.update(notifyChange)
 	}
 
-	func stopSharing() {
-		guard !userPassword.isEmpty else {
-			// we're not sharing this profile, so nothing to do
-			return
-		}
-		// reset the profile, but leave the name alone
-		let newId = UUID().uuidString
-		logger.info("Stop sharing: create new profile \(newId, privacy: .public), username \(self.username, privacy: .public)")
-		id = newId
+	func stopSharing(newName: String? = nil) {
+		// reset the profile
+		id = UUID().uuidString
+		name = newName ?? name
+		logger.info("Stop sharing: reset profile id \(self.id, privacy: .public), username \(self.name, privacy: .public)")
 		userPassword = ""
 		serverPassword = ""
 		whisperProfile = WhisperProfile(id, profileName: name)
@@ -210,7 +206,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		serverPassword = SHA256.hash(data: Data(userPassword.utf8)).compactMap{ String(format: "%02x", $0) }.joined()
 		save(verb: "POST")
 		whisperProfile.startSharing(serverPassword: serverPassword)
-		listenProfile.startSharing(serverPassword: serverPassword)
+		listenProfile.startSharing(serverPassword: serverPassword, ownConversations: whisperProfile.conversations())
 		settingsProfile.startSharing(serverPassword: serverPassword)
 	}
 

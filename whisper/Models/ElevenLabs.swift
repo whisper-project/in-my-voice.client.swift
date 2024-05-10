@@ -31,6 +31,8 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		emptyTextCount = 0
 		let apiKey = PreferenceData.elevenLabsApiKey()
 		let voiceId = PreferenceData.elevenLabsVoiceId()
+		let dictionaryId = PreferenceData.elevenLabsDictionaryId()
+		let dictionaryVersion = PreferenceData.elevenLabsDictionaryVersion()
 		let optimizeStreamingLatency = PreferenceData.elevenLabsLatencyReduction()
 		guard !apiKey.isEmpty, !voiceId.isEmpty else {
 			logger.error("Can't generate speech due to empty api key or voice id")
@@ -38,7 +40,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		}
 		let endpoint = "\(apiRoot)/text-to-speech/\(voiceId)/stream"
 		let query = "?output_format=\(outputFormat)&optimize_streaming_latency=\(optimizeStreamingLatency)"
-		let body: [String: Any] = [
+		var body: [String: Any] = [
 			"model_id": modelId,
 			"text": text,
 			"voice_settings": [
@@ -47,6 +49,14 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				"use_speaker_boost": useSpeakerBoost
 			]
 		]
+		if !dictionaryId.isEmpty && !dictionaryVersion.isEmpty {
+			body["pronunciation_dictionary_locators"] = [
+				[
+					"pronunciation_dictionary_id": dictionaryId,
+					"version_id": dictionaryVersion,
+				]
+			]
+		}
 		guard let data = try? JSONSerialization.data(withJSONObject: body) else {
 			fatalError("Can't encode body for voice generation call")
 		}

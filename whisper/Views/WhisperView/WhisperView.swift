@@ -4,6 +4,7 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import SwiftUI
+import SwiftUIWindowBinder
 
 struct WhisperView: View {
     @Environment(\.colorScheme) var colorScheme
@@ -20,6 +21,7 @@ struct WhisperView: View {
 	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
+	@State private var window: Window?
 
     init(mode: Binding<OperatingMode>, conversation: WhisperConversation) {
         self._mode = mode
@@ -28,67 +30,72 @@ struct WhisperView: View {
     }
 
     var body: some View {
-		GeometryReader { geometry in
-			VStack(spacing: 10) {
-				if inBackground && platformInfo == "pad" {
-					backgroundView(geometry)
-				} else {
-					foregroundView(geometry)
-				}
-			}
-			.multilineTextAlignment(.leading)
-			.lineLimit(nil)
-			.alert("Confirm Stop", isPresented: $confirmStop) {
-				Button("Stop") {
-					mode = .ask
-				}
-				Button("Don't Stop") {
-					focusField = "liveText"
-				}
-				if !UserProfile.shared.userPassword.isEmpty {
-					Button("Change Device") {
-						model.sendRestart()
-						mode = .ask
+		WindowBinder(window: $window) {
+			GeometryReader { geometry in
+				VStack(spacing: 10) {
+					if inBackground && platformInfo == "pad" {
+						backgroundView(geometry)
+					} else {
+						foregroundView(geometry)
 					}
 				}
-			} message: {
-				Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+				.multilineTextAlignment(.leading)
+				.lineLimit(nil)
+				.alert("Confirm Stop", isPresented: $confirmStop) {
+					Button("Stop") {
+						mode = .ask
+					}
+					Button("Don't Stop") {
+						focusField = "liveText"
+					}
+					if !UserProfile.shared.userPassword.isEmpty {
+						Button("Change Device") {
+							model.sendRestart()
+							mode = .ask
+						}
+					}
+				} message: {
+					Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
+				}
+				.alert("Connection Failure", isPresented: $model.connectionError) {
+					Button("OK") { mode = .ask }
+				} message: {
+					Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
+				}
 			}
-			.alert("Connection Failure", isPresented: $model.connectionError) {
-				Button("OK") { mode = .ask }
-			} message: {
-				Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
-			}
-		}
-		.onAppear {
-			logger.log("WhisperView appeared")
-			model.start()
-			focusField = "liveText"
-		}
-		.onDisappear {
-			logger.log("WhisperView disappeared")
-			model.stop()
-		}
-		.onChange(of: conversation.name, initial: true) {
-			UIApplication.shared.firstKeyWindow?.windowScene?.title = "Whispering to \(conversation.name)"
-		}
-		.onChange(of: scenePhase) {
-			switch scenePhase {
-			case .background:
-				logger.log("Went to background")
-				focusField = nil
-				inBackground = true
-				model.wentToBackground()
-			case .inactive:
-				logger.log("Went inactive")
-			case .active:
-				logger.log("Went to foreground")
+			.onAppear {
+				logger.log("WhisperView appeared")
+				model.start()
 				focusField = "liveText"
-				inBackground = false
-				model.wentToForeground()
-			@unknown default:
-				inBackground = false
-				logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
+			}
+			.onDisappear {
+				logger.log("WhisperView disappeared")
+				model.stop()
+			}
+			.onChange(of: window) {
+				window?.windowScene?.title = "Whispering to \(conversation.name)"
+			}
+			.onChange(of: conversation.name) {
+				window?.windowScene?.title = "Whispering to \(conversation.name)"
+			}
+			.onChange(of: scenePhase) {
+				switch scenePhase {
+				case .background:
+					logger.log("Went to background")
+					focusField = nil
+					inBackground = true
+					model.wentToBackground()
+				case .inactive:
+					logger.log("Went inactive")
+				case .active:
+					logger.log("Went to foreground")
+					focusField = "liveText"
+					inBackground = false
+					model.wentToForeground()
+				@unknown default:
+					inBackground = false
+					logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
+				}
 			}
 		}
     }

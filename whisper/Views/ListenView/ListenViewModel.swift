@@ -332,8 +332,11 @@ final class ListenViewModel: ObservableObject {
 		if let existing = candidates[remote.id] {
 			return existing
 		}
-		// we are always authorized to listen to our own conversations
-		let isPending = info.profileId == UserProfile.shared.id ? false : !conversation.authorized
+		var isPending = !conversation.authorized
+		// if my profile is shared, I am always an authorized listener for my own conversations
+		if (!UserProfile.shared.userPassword.isEmpty && info.profileId == UserProfile.shared.id) {
+			isPending = false
+		}
 		let candidate = Candidate(remote: remote, info: info, isPending: isPending)
 		candidates[candidate.id] = candidate
 		return candidate
@@ -470,7 +473,9 @@ final class ListenViewModel: ObservableObject {
 			statusText = "\(conversation.name): Listening to \(whisperer.info.username)"
 		} else {
 			let prefix = conversationName.isEmpty ? "" : "\(conversationName): "
-			if discoveryInProgress {
+			if !invites.isEmpty {
+				statusText = "\(prefix)Waiting for the Whisperer to approve..."
+			} else if discoveryInProgress {
 				let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
 				statusText = "\(prefix)Looking for the Whisperer…\(suffix)"
 			} else {

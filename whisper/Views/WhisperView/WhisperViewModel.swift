@@ -294,9 +294,11 @@ final class WhisperViewModel: ObservableObject {
 		remote: Remote,
 		info: WhisperProtocol.ClientInfo
 	) -> Candidate {
-		// I am always an authorized listener for my own conversations
-		let myself = ListenerInfo(id: UserProfile.shared.id, username: UserProfile.shared.username)
-		let authorized =  info.profileId == UserProfile.shared.id ? myself : profile.isListener(conversation, info: info)
+		var authorized = profile.isListener(conversation, info: info)
+		// if my profile is shared, I am always an authorized listener for my own conversations
+		if (!UserProfile.shared.userPassword.isEmpty && info.profileId == UserProfile.shared.id) {
+			authorized = ListenerInfo(id: UserProfile.shared.id, username: UserProfile.shared.username)
+		}
 		let candidate = candidates[remote.id] ?? Candidate(remote: remote, info: info, isPending: authorized == nil)
 		candidates[candidate.id] = candidate
 		if !info.username.isEmpty {

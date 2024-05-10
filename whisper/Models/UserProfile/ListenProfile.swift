@@ -118,8 +118,8 @@ final class ListenProfile: Codable {
 	/// Add a newly used conversation for a Listener
 	func addForInvite(info: WhisperProtocol.ClientInfo) -> ListenConversation {
 		let c = forInvite(info: info)
-		guard info.profileId != id else {
-			// we never add one of our own conversations
+		guard serverPassword.isEmpty || info.profileId != id else {
+			// in a shared profile, we never add one of our own conversations
 			return c
 		}
 		if table[c.id] == nil {
@@ -217,8 +217,13 @@ final class ListenProfile: Codable {
 		Data.executeJSONRequest(request, handler: handler)
 	}
 
-	func startSharing(serverPassword: String) {
+	func startSharing(serverPassword: String, ownConversations: [WhisperConversation] = []) {
 		self.serverPassword = serverPassword
+		// if we own any of our past listened conversations, remove it,
+		// because we will now see all of our whispered conversations automatically
+		for conversation in ownConversations {
+			table.removeValue(forKey: conversation.id)
+		}
 		save(verb: "POST")
 	}
 
