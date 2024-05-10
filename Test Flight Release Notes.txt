@@ -323,3 +323,6 @@ BUILD 2010001 (v2.1.0 build 1) (external):
 This build allows you to make use of ElevenLabs pronunciation dictionaries.  If you add a dictionary ID string and dictionary version string to the Whisper settings, that dictionary will be used when generating ElevenLabs speech.
 
 As with all settings, the dictionary settings will be sync'd to other devices that share your profile.  Just be sure you choose one device on which to install this build and add the dictionary settings on that device *before* you upgrade the build and launch Whisper on your other devices, so they will be sure to retrieve the new preferences.
+
+BUILD 201002 (v2.1.0 build 2) (external):
+This build fixes a few cosmetic issues with window titling on iPads and Macs.

@@ -13,8 +13,9 @@
 		3731510F2BA760EC005E989D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 37DE2B282BA2AFDD00EDA9D0 /* PrivacyInfo.xcprivacy */; };
 		373151112BA7624D005E989D /* SettingsProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373151102BA7624D005E989D /* SettingsProfile.swift */; };
 		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
+		373D3D092BED98F300FCD1F5 /* SwiftUIWindowBinder in Frameworks */ = {isa = PBXBuildFile; productRef = 373D3D082BED98F300FCD1F5 /* SwiftUIWindowBinder */; };
+		373D3D0A2BEDA60A00FCD1F5 /* FirstKeyWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
-		374D3E1F2BEC4D120096B953 /* FirstKeyWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */; };
 		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
 		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
@@ -86,9 +87,6 @@
 		37763CE429AAC1E50051CFE5 /* whisperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperApp.swift; sourceTree = "<group>"; };
 		37763CE829AAC1E60051CFE5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		37763CEB29AAC1E60051CFE5 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		37763CF529AAC1E60051CFE5 /* whisperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperTests.swift; sourceTree = "<group>"; };
-		37763CFF29AAC1E60051CFE5 /* whisperUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperUITests.swift; sourceTree = "<group>"; };
-		37763D0129AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whisperUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		37763D0E29AB3D5A0051CFE5 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		37763D1629AC2F710051CFE5 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		37763D1C29AC33230051CFE5 /* BluetoothData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothData.swift; sourceTree = "<group>"; };
@@ -137,6 +135,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				373D3D092BED98F300FCD1F5 /* SwiftUIWindowBinder in Frameworks */,
 				37DE2B272BA278DE00EDA9D0 /* Ably in Frameworks */,
 				377D71192A956B4C009B416F /* SwiftJWT in Frameworks */,
 			);
@@ -180,8 +179,6 @@
 				37763D0E29AB3D5A0051CFE5 /* README.md */,
 				37763D1629AC2F710051CFE5 /* LICENSE */,
 				37763CE329AAC1E50051CFE5 /* whisper */,
-				37763CF429AAC1E60051CFE5 /* whisperTests */,
-				37763CFE29AAC1E60051CFE5 /* whisperUITests */,
 				37763CE229AAC1E50051CFE5 /* Products */,
 				3796EF6B2AA12986009C716F /* Frameworks */,
 			);
@@ -219,23 +216,6 @@
 				37763CEB29AAC1E60051CFE5 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		37763CF429AAC1E60051CFE5 /* whisperTests */ = {
-			isa = PBXGroup;
-			children = (
-				37763CF529AAC1E60051CFE5 /* whisperTests.swift */,
-			);
-			path = whisperTests;
-			sourceTree = "<group>";
-		};
-		37763CFE29AAC1E60051CFE5 /* whisperUITests */ = {
-			isa = PBXGroup;
-			children = (
-				37763CFF29AAC1E60051CFE5 /* whisperUITests.swift */,
-				37763D0129AAC1E60051CFE5 /* whisperUITestsLaunchTests.swift */,
-			);
-			path = whisperUITests;
 			sourceTree = "<group>";
 		};
 		37763D0F29AB54F80051CFE5 /* Views */ = {
@@ -411,6 +391,7 @@
 			packageProductDependencies = (
 				377D71182A956B4C009B416F /* SwiftJWT */,
 				37DE2B262BA278DE00EDA9D0 /* Ably */,
+				373D3D082BED98F300FCD1F5 /* SwiftUIWindowBinder */,
 			);
 			productName = whisper;
 			productReference = 37763CE129AAC1E50051CFE5 /* whisper.app */;
@@ -443,6 +424,7 @@
 			packageReferences = (
 				377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */,
 				37DE2B252BA278DE00EDA9D0 /* XCRemoteSwiftPackageReference "ably-cocoa" */,
+				373D3D072BED98F300FCD1F5 /* XCRemoteSwiftPackageReference "SwiftUIWindowBinder" */,
 			);
 			productRefGroup = 37763CE229AAC1E50051CFE5 /* Products */;
 			projectDirPath = "";
@@ -494,6 +476,7 @@
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */,
 				377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */,
+				373D3D0A2BEDA60A00FCD1F5 /* FirstKeyWindow.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
 				37CBBD0F2AFB112B006AE49F /* WhisperProfileView.swift in Sources */,
 				3724D7C42BB4A3EA00BC6741 /* RootView.swift in Sources */,
@@ -514,7 +497,6 @@
 				377D70F82A8A909C009B416F /* BluetoothWhisperTransport.swift in Sources */,
 				377D711E2A95CE5E009B416F /* ComboFactory.swift in Sources */,
 				377D71162A913E8B009B416F /* PreferenceData.swift in Sources */,
-				374D3E1F2BEC4D120096B953 /* FirstKeyWindow.swift in Sources */,
 				377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */,
 				37C5142229CA2B35001A121B /* PastTextView.swift in Sources */,
 				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,
@@ -655,7 +637,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2010001;
+				CURRENT_PROJECT_VERSION = 2010002;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -697,7 +679,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2010001;
+				CURRENT_PROJECT_VERSION = 2010002;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -755,6 +737,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		373D3D072BED98F300FCD1F5 /* XCRemoteSwiftPackageReference "SwiftUIWindowBinder" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/happycodelucky/SwiftUIWindowBinder";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 		377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Kitura/Swift-JWT.git";
@@ -774,6 +764,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		373D3D082BED98F300FCD1F5 /* SwiftUIWindowBinder */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 373D3D072BED98F300FCD1F5 /* XCRemoteSwiftPackageReference "SwiftUIWindowBinder" */;
+			productName = SwiftUIWindowBinder;
+		};
 		377D71182A956B4C009B416F /* SwiftJWT */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 377D71172A956B4C009B416F /* XCRemoteSwiftPackageReference "Swift-JWT" */;
