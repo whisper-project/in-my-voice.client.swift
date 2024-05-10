@@ -261,7 +261,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 		if remote.dropInProgress {
 			remote.pendingNotifyCount -= 1
 			if let error = triple.2 {
-				logAnomaly("Error unsubscribing during drop of remote \(remote.id)", kind: .local)
+				logAnomaly("Error unsubscribing during drop of remote \(remote.id): \(error)", kind: .local)
 			}
 			if remote.pendingNotifyCount == 0 {
 				logger.info("Disconnecting after notifications completed to dropped \(remote.kind) remote: \(remote.id)")
