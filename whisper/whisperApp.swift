@@ -19,7 +19,7 @@ let buildInfo = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "??
 #if DEBUG
 let versionString = buildInfo
 #else
-let versionString = "\(versionInfo)"
+let versionString = "\(versionInfo).\(Int(buildInfo.suffix(2))!)"
 #endif
 
 /// global strings
