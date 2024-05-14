@@ -140,7 +140,7 @@ final class TcpAuthenticator {
             guard let data = data,
                   let body = try? JSONSerialization.jsonObject(with: data),
                   let obj = body as? [String:String] else {
-				logAnomaly("Can't deserialize \(activity) token response body: \(String(describing: data))")
+				logAnomaly("Can't deserialize \(activity) token response body: \(String(decoding: data ?? Data(), as: UTF8.self))")
                 self.failureCallback("Having trouble with the whisper server.  Please try again later.")
                 callback(nil, TcpAuthenticatorError.server("Non-JSON response to token request"))
                 return
