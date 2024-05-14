@@ -95,7 +95,7 @@ final class TcpAuthenticator {
         }
         let activity = mode == .whisper ? "publish" : "subscribe"
 		let contentChannelId = mode == .whisper ? contentId : "*"
-        let value = [
+        var value = [
             "clientId": clientId,
             "activity": mode == .whisper ? "publish" : "subscribe",
             "conversationId": conversationId,
@@ -104,6 +104,9 @@ final class TcpAuthenticator {
             "profileId": UserProfile.shared.id,
             "username": UserProfile.shared.username,
         ]
+		if (mode == .whisper) {
+			value["transcribe"] = PreferenceData.doServerSideTranscription() ? "yes" : "no"
+		}
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for \(activity) token request call")
         }

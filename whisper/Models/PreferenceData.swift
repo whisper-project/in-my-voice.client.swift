@@ -232,6 +232,15 @@ struct PreferenceData {
 		}
 	}
 
+	static var doServerSideTranscriptionPreference: Bool {
+		get {
+			return defaults.bool(forKey: "do_server_side_transcription_preference")
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "do_server_side_transcription_preference")
+		}
+	}
+
 	static private var listenTapPreference: String {
 		get {
 			defaults.string(forKey: "listen_tap_preference") ?? "show"
@@ -300,6 +309,11 @@ struct PreferenceData {
 		return whisperTapPreference
 	}
 
+	// whether to request server-side transcription
+	static func doServerSideTranscription() -> Bool {
+		return doServerSideTranscriptionPreference
+	}
+
 	// behavior for Listen tap
 	static func listenTapAction() -> String {
 		return defaults.string(forKey: "listen_tap_preference") ?? "show"
@@ -337,12 +351,13 @@ struct PreferenceData {
 		}
 	}
 
-	static let preferenceVersion = 1
+	static let preferenceVersion = 2
 
 	static func preferencesToJson() -> String {
 		let preferences = [
 			"version": "\(preferenceVersion)",
 			"whisper_tap_preference": whisperTapPreference,
+			"do_server_side_transcription_preference": doServerSideTranscriptionPreference ? "yes" : "no",
 			"listen_tap_preference": listenTapPreference,
 			"newest_whisper_location_preference": newestWhisperLocationPreference,
 			"elevenlabs_api_key_preference": elevenLabsApiKeyPreference,
@@ -368,6 +383,7 @@ struct PreferenceData {
 			logAnomaly("Setting preferences from v\(version) preference data, expected v\(preferenceVersion)")
 		}
 		whisperTapPreference = preferences["whisper_tap_preference"] ?? "show"
+		doServerSideTranscriptionPreference = preferences["do_server_side_transcription_preference"] ?? "no" == "yes"
 		listenTapPreference = preferences["listen_tap_preference"] ?? "show"
 		newestWhisperLocationPreference = preferences["newest_whisper_location_preference"] ?? "bottom"
 		elevenLabsApiKeyPreference = preferences["elevenlabs_api_key_preference"] ?? ""
