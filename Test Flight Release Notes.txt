@@ -329,3 +329,6 @@ This build fixes a few cosmetic issues with window titling on iPads and Macs.
 
 BUILD 2020001 - v2.2.0.1 - external:
 This build fixes a bug in v2.1 that caused shared profiles not to sync correctly when new preferences were added. It also displays the build number in the release version string.
+
+BUILD 2020002 - v2.2.0.2:
+This build adds a preference in the client that controls whether or not whisper conversations are auto-transcribed by the server.  The default value is NO, to maintain consistency with prior versions.
