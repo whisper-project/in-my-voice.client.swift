@@ -332,3 +332,7 @@ This build fixes a bug in v2.1 that caused shared profiles not to sync correctly
 
 BUILD 2020002 - v2.2.0.2:
 This build adds a preference in the client that controls whether or not whisper conversations are auto-transcribed by the server.  The default value is NO, to maintain consistency with prior versions.
+
+BUILD 2020003 - v2.2.3:
+This build provides Whisperers access to the transcripts of their past conversations (assuming they've turned on transcription). In the Whisper profile view (long press on Whisper), click on a conversation to go into its detail view.  You will see a new "See Transcripts" item that brings up a list of past transcripts, ordered reverse chronologically.
+ 
