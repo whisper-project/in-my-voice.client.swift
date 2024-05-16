@@ -52,8 +52,9 @@ struct WhisperTranscriptView: View {
 			default:
 				Link("Internal error, please report a bug!", destination: supportSite)
 			}
-			Spacer()
 		}
+		.navigationTitle("Transcripts of \(conversation.name)")
+		.navigationBarTitleDisplayMode(.inline)
 		#if targetEnvironment(macCatalyst)
 		.toolbar {
 			Button(action: { dismiss() }, label: { Text("Close") } )

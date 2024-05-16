@@ -9,6 +9,8 @@ struct WhisperProfileDetailView: View {
 #if targetEnvironment(macCatalyst)
 	@Environment(\.dismiss) private var dismiss
 #endif
+	@AppStorage("do_server_side_transcription_preference")
+	var transcriptionState: Bool = PreferenceData.doServerSideTranscription()
 
 	let conversation: WhisperConversation
 
@@ -50,14 +52,14 @@ struct WhisperProfileDetailView: View {
 					}
 				}
 				ShareLink("Listen link", item: PreferenceData.publisherUrl(conversation))
-				if (PreferenceData.doServerSideTranscription()) {
+				if (transcriptionState) {
 					NavigationLink(destination: WhisperTranscriptView(conversation: conversation,
 																	  transcripts: $transcripts,
 																	  fetchStatus: $fetchState)) {
 						Text("See Transcripts").onAppear(perform: fetchTranscripts)
 					}
 				} else {
-					Link("Enable transcription", destination: settingsUrl)
+					Button("Enable transcription", action: { transcriptionState.toggle() })
 				}
 			}
 			Section(header: allowedParticipants.isEmpty ? Text("No Allowed Participants") : Text("Allowed Participants")) {
@@ -76,6 +78,8 @@ struct WhisperProfileDetailView: View {
 				}
 			}
 		}
+		.navigationTitle("Details of \(conversation.name)")
+		.navigationBarTitleDisplayMode(.inline)
 		#if targetEnvironment(macCatalyst)
 		.toolbar {
 			Button(action: { dismiss() }, label: { Text("Close") } )
