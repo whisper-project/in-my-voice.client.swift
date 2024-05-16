@@ -24,12 +24,16 @@ struct WhisperTranscriptView: View {
 	let supportSite = URL(string: "https://clickonetwo.github.io/whisper/support.html")!
 
     var body: some View {
-		VStack {
+		Form {
 			switch fetchStatus {
 			case 0:
-				Text("Fetch of transcripts in progress...").italic()
+				Section("Fetch of transcripts in progress...") {
+					EmptyView()
+				}
 			case -1:
-				Text("Can't reach the server...\nPlease try again later").bold()
+				Section("Can't reach the server...\nPlease try again later") {
+					EmptyView()
+				}
 			case 1:
 				if let trs = transcripts, trs.count > 0 {
 					List {
@@ -47,7 +51,9 @@ struct WhisperTranscriptView: View {
 						}
 					}
 				} else {
-					Text("No transcripts from the past week")
+					Section("No transcripts from the past week") {
+						EmptyView()
+					}
 				}
 			default:
 				Link("Internal error, please report a bug!", destination: supportSite)
