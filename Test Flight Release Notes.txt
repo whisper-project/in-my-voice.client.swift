@@ -335,4 +335,6 @@ This build adds a preference in the client that controls whether or not whisper 
 
 BUILD 2020003 - v2.2.3:
 This build provides Whisperers access to the transcripts of their past conversations (assuming they've turned on transcription). In the Whisper profile view (long press on Whisper), click on a conversation to go into its detail view.  You will see a new "See Transcripts" item that brings up a list of past transcripts, ordered reverse chronologically.
- 
+
+Build v2.2.4 (2020004):
+This build provides cosmetic consistency to the Whisper and Listen profile views.  There are no new features.

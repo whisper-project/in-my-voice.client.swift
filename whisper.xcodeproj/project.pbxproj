@@ -77,9 +77,6 @@
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
 		374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstKeyWindow.swift; sourceTree = "<group>"; };
 		375152A02B61E6990045FEBD /* ElevenLabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabs.swift; sourceTree = "<group>"; };
-		3758F3E929E7D9F50072F7A8 /* air-horn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "air-horn.mp3"; sourceTree = "<group>"; };
-		3758F3EB29E8C2C00072F7A8 /* bike-horn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "bike-horn.mp3"; sourceTree = "<group>"; };
-		3758F3ED29E8C5590072F7A8 /* bike-bell.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "bike-bell.mp3"; sourceTree = "<group>"; };
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		376388CC29DDFB77006E5686 /* StatusTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusTextView.swift; sourceTree = "<group>"; };
 		3771F83429DD2F900011419E /* FontSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizes.swift; sourceTree = "<group>"; };
@@ -160,9 +157,6 @@
 				379570CC29EA313D0033CF14 /* air-horn.caf */,
 				379570CA29EA313D0033CF14 /* bike-bell.caf */,
 				379570CB29EA313D0033CF14 /* bike-horn.caf */,
-				3758F3E929E7D9F50072F7A8 /* air-horn.mp3 */,
-				3758F3ED29E8C5590072F7A8 /* bike-bell.mp3 */,
-				3758F3EB29E8C2C00072F7A8 /* bike-horn.mp3 */,
 			);
 			path = Sounds;
 			sourceTree = "<group>";
@@ -641,7 +635,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2020003;
+				CURRENT_PROJECT_VERSION = 2020004;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -683,7 +677,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2020003;
+				CURRENT_PROJECT_VERSION = 2020004;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
