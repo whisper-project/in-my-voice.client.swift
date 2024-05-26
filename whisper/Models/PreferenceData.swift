@@ -232,6 +232,15 @@ struct PreferenceData {
 		}
 	}
 
+	static var doServerSideTranscriptionPreference: Bool {
+		get {
+			return defaults.bool(forKey: "do_server_side_transcription_preference")
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "do_server_side_transcription_preference")
+		}
+	}
+
 	static private var listenTapPreference: String {
 		get {
 			defaults.string(forKey: "listen_tap_preference") ?? "show"
@@ -286,18 +295,23 @@ struct PreferenceData {
 		}
 	}
 
-	static private var elevenLabsLatencyReductionPreference: String {
+	static private var elevenLabsLatencyReductionPreference: Int {
 		get {
-			"\(defaults.integer(forKey: "elevenlabs_latency_reduction_preference") + 1)"
+			defaults.integer(forKey: "elevenlabs_latency_reduction_preference") + 1
 		}
 		set(val) {
-			defaults.setValue((Int(val) ?? 1) - 1, forKey: "elevenlabs_latency_reduction_preference")
+			defaults.setValue(val - 1, forKey: "elevenlabs_latency_reduction_preference")
 		}
 	}
 
 	// behavior for Whisper tap
 	static func whisperTapAction() -> String {
 		return whisperTapPreference
+	}
+
+	// whether to request server-side transcription
+	static func doServerSideTranscription() -> Bool {
+		return doServerSideTranscriptionPreference
 	}
 
 	// behavior for Listen tap
@@ -324,7 +338,7 @@ struct PreferenceData {
 		return elevenLabsDictionaryVersionPreference
 	}
 	static func elevenLabsLatencyReduction() -> Int {
-		return Int(elevenLabsLatencyReductionPreference) ?? 1
+		return elevenLabsLatencyReductionPreference
 	}
 
 	// server-side logging
@@ -337,16 +351,20 @@ struct PreferenceData {
 		}
 	}
 
+	static let preferenceVersion = 2
+
 	static func preferencesToJson() -> String {
 		let preferences = [
+			"version": "\(preferenceVersion)",
 			"whisper_tap_preference": whisperTapPreference,
+			"do_server_side_transcription_preference": doServerSideTranscriptionPreference ? "yes" : "no",
 			"listen_tap_preference": listenTapPreference,
 			"newest_whisper_location_preference": newestWhisperLocationPreference,
 			"elevenlabs_api_key_preference": elevenLabsApiKeyPreference,
 			"elevenlabs_voice_id_preference": elevenLabsVoiceIdPreference,
 			"elevenlabs_dictionary_id_preference": elevenLabsDictionaryIdPreference,
 			"elevenlabs_dictionary_version_preference": elevenLabsDictionaryVersionPreference,
-			"elevenlabs_latency_reduction_preference": elevenLabsLatencyReductionPreference,
+			"elevenlabs_latency_reduction_preference": "\(elevenLabsLatencyReductionPreference)",
 		]
 		guard let json = try? JSONSerialization.data(withJSONObject: preferences, options: .sortedKeys) else {
 			fatalError("Can't encode preferences data: \(preferences)")
@@ -356,17 +374,22 @@ struct PreferenceData {
 
 	static func jsonToPreferences(_ json: String) {
 		guard let val = try? JSONSerialization.jsonObject(with: Data(json.utf8)),
-			  let preferences = val as? [String:String]
+			  let preferences = val as? [String: String]
 		else {
 			fatalError("Can't decode preferences data: \(json)")
 		}
+		let version = Int(preferences["version"] ?? "") ?? 1
+		if version != preferenceVersion {
+			logAnomaly("Setting preferences from v\(version) preference data, expected v\(preferenceVersion)")
+		}
 		whisperTapPreference = preferences["whisper_tap_preference"] ?? "show"
+		doServerSideTranscriptionPreference = preferences["do_server_side_transcription_preference"] ?? "no" == "yes"
 		listenTapPreference = preferences["listen_tap_preference"] ?? "show"
 		newestWhisperLocationPreference = preferences["newest_whisper_location_preference"] ?? "bottom"
 		elevenLabsApiKeyPreference = preferences["elevenlabs_api_key_preference"] ?? ""
 		elevenLabsVoiceIdPreference = preferences["elevenlabs_voice_id_preference"] ?? ""
 		elevenLabsDictionaryIdPreference = preferences["elevenlabs_dictionary_id_preference"] ?? ""
 		elevenLabsDictionaryVersionPreference = preferences["elevenlabs_dictionary_version_preference"] ?? ""
-		elevenLabsLatencyReductionPreference = preferences["elevenlabs_latency_reduction_preference"] ?? "1"
+		elevenLabsLatencyReductionPreference = Int(preferences["elevenlabs_latency_reduction_preference"] ?? "") ?? 1
 	}
 }

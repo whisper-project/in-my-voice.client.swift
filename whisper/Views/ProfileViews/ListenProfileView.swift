@@ -19,60 +19,16 @@ struct ListenProfileView: View {
 
     var body: some View {
 		NavigationStack {
-			VStack(alignment: .leading, spacing: 20) {
-				if (!myConversations.isEmpty) {
-					Text("Conversations with Others").font(.title3)
+			chooseView()
+				.navigationTitle("Listen Conversations")
+				.navigationBarTitleDisplayMode(.inline)
+				#if targetEnvironment(macCatalyst)
+				.toolbar {
+					Button(action: { dismiss() }, label: { Text("Close") } )
 				}
-				if (!conversations.isEmpty) {
-					List(conversations) { c in
-						HStack(spacing: 10) {
-							Button("Listen", systemImage: "ear") {
-								logger.info("Hit listen button on \(c.id) (\(c.name))")
-								maybeListen?(c)
-							}
-							Text("\(c.name) with \(c.ownerName)").lineLimit(nil)
-							Spacer(minLength: 25)
-							Button("Delete", systemImage: "delete.left") {
-								logger.info("Hit delete button on \(c.id) (\(c.name))")
-								profile.listenProfile.delete(c.id)
-								updateFromProfile()
-							}
-						}
-						.labelStyle(.iconOnly)
-						.buttonStyle(.borderless)
-					}
-				} else {
-					Text("(No past conversations)")
-				}
-				if (!myConversations.isEmpty) {
-					Text("My Conversations").font(.title3)
-					List(myConversations) { c in
-						HStack(spacing: 10) {
-							Button("Listen", systemImage: "ear") {
-								logger.info("Hit listen button on \(c.id) (\(c.name))")
-								maybeListen?(profile.listenProfile.fromMyWhisperConversation(c))
-							}
-							Text("\(c.name)").lineLimit(nil)
-						}
-						.labelStyle(.iconOnly)
-						.buttonStyle(.borderless)
-					}
-					.listStyle(.inset)
-				}
-				Spacer()
-				#if DEBUG
-				ListenLinkView(maybeListen: maybeListen)
 				#endif
-			}
-			.navigationTitle("Listen")
-			#if targetEnvironment(macCatalyst)
-			.toolbar {
-				Button(action: { dismiss() }, label: { Text("Close") } )
-			}
-			#endif
-			.padding(10)
-			.onChange(of: profile.timestamp, initial: true, updateFromProfile)
 		}
+		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
 		.onAppear(perform: profile.update)
 		.onDisappear(perform: profile.update)
     }
@@ -81,6 +37,66 @@ struct ListenProfileView: View {
 		conversations = profile.listenProfile.conversations()
 		myConversations = profile.userPassword.isEmpty ? [] : profile.whisperProfile.conversations()
     }
+
+	@ViewBuilder func chooseView() -> some View {
+		if (myConversations.isEmpty) {
+			if (conversations.isEmpty) {
+				Form {
+					Section("No prior conversations") {
+						EmptyView()
+					}
+				}
+			} else {
+				listenConversations()
+			}
+		} else {
+			Form {
+				Section("Conversations with Others") {
+					listenConversations()
+				}
+				Section("My Conversations") {
+					whisperConversations()
+				}
+			}
+#if DEBUG
+			ListenLinkView(maybeListen: maybeListen)
+#endif
+		}
+	}
+
+	@ViewBuilder func listenConversations() -> some View {
+		List(conversations) { c in
+			HStack(spacing: 10) {
+				Button("Listen", systemImage: "ear") {
+					logger.info("Hit listen button on \(c.id) (\(c.name))")
+					maybeListen?(c)
+				}
+				Text("\(c.name) with \(c.ownerName)").lineLimit(nil)
+				Spacer(minLength: 25)
+				Button("Delete", systemImage: "delete.left") {
+					logger.info("Hit delete button on \(c.id) (\(c.name))")
+					profile.listenProfile.delete(c.id)
+					updateFromProfile()
+				}
+			}
+			.labelStyle(.iconOnly)
+			.buttonStyle(.borderless)
+		}
+	}
+
+	@ViewBuilder func whisperConversations() -> some View {
+		List(myConversations) { c in
+			HStack(spacing: 10) {
+				Button("Listen", systemImage: "ear") {
+					logger.info("Hit listen button on \(c.id) (\(c.name))")
+					maybeListen?(profile.listenProfile.fromMyWhisperConversation(c))
+				}
+				Text("\(c.name)").lineLimit(nil)
+			}
+			.labelStyle(.iconOnly)
+			.buttonStyle(.borderless)
+		}
+	}
 }
 
 #if DEBUG

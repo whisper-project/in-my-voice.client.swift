@@ -20,13 +20,20 @@ final class TcpAuthenticator {
 	private var contentId: String = PreferenceData.contentId
     private var client: ARTRealtime?
     private var failureCallback: (String) -> Void
-    
+
 	init(mode: OperatingMode, conversationId: String, conversationName: String, callback: @escaping (String) -> Void) {
         self.mode = mode
         self.conversationId = conversationId
 		self.conversationName = conversationName.isEmpty ? "ListenOffer" : conversationName
         self.failureCallback = callback
     }
+
+	init(conversationId: String) {
+		self.mode = .whisper
+		self.conversationId = conversationId
+		self.conversationName = ""
+		self.failureCallback = {s in }
+	}
 
 	deinit {
 		releaseClient()
@@ -52,17 +59,17 @@ final class TcpAuthenticator {
 		if let client = self.client {
 			logger.info("TCP Authenticator: Closing ART Realtime client")
 			client.close()
+			logger.info("TCP Authenticator: Releasing ART Realtime client")
+			self.client = nil
 		}
-		logger.info("TCP Authenticator: Releasing ART Realtime client")
-		client = nil
 	}
 
-    struct ClientClaims: Claims {
+    private struct ClientClaims: Claims {
         let iss: String
         let exp: Date
     }
     
-    func createJWT() -> String? {
+    private func createJWT() -> String? {
 		let secret = PreferenceData.clientSecret()
         guard let secretData = Data(base64Encoded: Data(secret.utf8)) else {
 			logAnomaly("Client secret is invalid: \(secret)")
@@ -95,7 +102,7 @@ final class TcpAuthenticator {
         }
         let activity = mode == .whisper ? "publish" : "subscribe"
 		let contentChannelId = mode == .whisper ? contentId : "*"
-        let value = [
+        var value = [
             "clientId": clientId,
             "activity": mode == .whisper ? "publish" : "subscribe",
             "conversationId": conversationId,
@@ -104,6 +111,9 @@ final class TcpAuthenticator {
             "profileId": UserProfile.shared.id,
             "username": UserProfile.shared.username,
         ]
+		if (mode == .whisper) {
+			value["transcribe"] = PreferenceData.doServerSideTranscription() ? "yes" : "no"
+		}
         guard let body = try? JSONSerialization.data(withJSONObject: value) else {
             fatalError("Can't encode body for \(activity) token request call")
         }
@@ -140,7 +150,7 @@ final class TcpAuthenticator {
             guard let data = data,
                   let body = try? JSONSerialization.jsonObject(with: data),
                   let obj = body as? [String:String] else {
-				logAnomaly("Can't deserialize \(activity) token response body: \(String(describing: data))")
+				logAnomaly("Can't deserialize \(activity) token response body: \(String(decoding: data ?? Data(), as: UTF8.self))")
                 self.failureCallback("Having trouble with the whisper server.  Please try again later.")
                 callback(nil, TcpAuthenticatorError.server("Non-JSON response to token request"))
                 return
@@ -163,4 +173,49 @@ final class TcpAuthenticator {
         logger.info("Posting \(activity) token request to whisper-server")
         task.resume()
     }
+
+	func getTranscripts(callback: @escaping ([TranscriptData]?) -> Void) {
+		guard let jwt = createJWT() else {
+			logAnomaly("Couldn't create JWT to post transcript request")
+			callback(nil)
+			return
+		}
+		let path = "/api/v2/listTranscripts/\(PreferenceData.clientId)/\(conversationId)"
+		guard let url = URL(string: PreferenceData.whisperServer + path) else {
+			fatalError("Can't create URL for list transcripts call")
+		}
+		var request = URLRequest(url: url)
+		request.httpMethod = "GET"
+		request.setValue("Bearer " + jwt, forHTTPHeaderField: "Authorization")
+		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+			guard error == nil else {
+				logAnomaly("Failed to make list transcripts request: \(String(describing: error))")
+				callback(nil)
+				return
+			}
+			guard let response = response as? HTTPURLResponse else {
+				logAnomaly("Received non-HTTP response on list transcripts request: \(String(describing: response))")
+				callback(nil)
+				return
+			}
+			if response.statusCode == 403 {
+				logAnomaly("Received 403 response on list transcripts request")
+				callback(nil)
+				return
+			}
+			if response.statusCode != 200 {
+				logAnomaly("Received \(response.statusCode) response on list transcripts request")
+			}
+			guard let data = data,
+				  let result = try? JSONDecoder().decode([TranscriptData].self, from: data) else {
+				logAnomaly("Can't deserialize list transcripts response body: \(String(decoding: data ?? Data(), as: UTF8.self))")
+				callback(nil)
+				return
+			}
+			logger.info("Received \(result.count) transcript descriptors from whisper-server")
+			callback(result)
+		}
+		logger.info("Posting list transcripts request to whisper-server")
+		task.resume()
+	}
 }

@@ -33,7 +33,6 @@ struct ChoiceView: View {
     let nameHeight = CGFloat(105)
     let choiceButtonWidth = CGFloat(140)
     let choiceButtonHeight = CGFloat(45)
-    let website = "https://clickonetwo.github.io/whisper/"
 
     var body: some View {
 		WindowBinder(window: $window) {
@@ -181,7 +180,7 @@ struct ChoiceView: View {
 				.cornerRadius(15)
 				VStack (spacing: 40) {
 					Button(action: {
-						let vc = SFSafariViewController(url: URL(string: "\(website)instructions.html")!)
+						let vc = SFSafariViewController(url: instructionSite)
 						UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
 					}) {
 						Text("How To Use")
@@ -196,12 +195,12 @@ struct ChoiceView: View {
 							.sheet(isPresented: $showSharingSheet, content: { ShareProfileView() })
 						Spacer()
 						Button("About", action: {
-							let vc = SFSafariViewController(url: URL(string: website)!)
+							let vc = SFSafariViewController(url: aboutSite)
 							UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
 						})
 						Spacer()
 						Button("Support", action: {
-							let vc = SFSafariViewController(url: URL(string: "\(website)support.html")!)
+							let vc = SFSafariViewController(url: supportSite)
 							UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
 						})
 					}.frame(width: nameWidth)

@@ -41,8 +41,8 @@ struct WhisperProfileView: View {
 					updateFromProfile()
 				}
 			}
-			.listStyle(.inset)
-			.navigationTitle("Whisper")
+			.navigationTitle("Whisper Conversations")
+			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				Button(action: addConversation, label: { Text("Add") } )
 				EditButton()

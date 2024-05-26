@@ -19,15 +19,19 @@ let buildInfo = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "??
 #if DEBUG
 let versionString = buildInfo
 #else
-let versionString = "\(versionInfo)"
+let versionString = "\(versionInfo).\(Int(buildInfo.suffix(4))!)"
 #endif
 
-/// global strings
+/// global strings and URLs
 let connectingLiveText = "This is where the line being typed by the whisperer will appear in real time... "
 let connectingPastText = """
     This is where lines will move after the whisperer hits return.
     The most recent line will be on the bottom.
     """
+let website = "https://clickonetwo.github.io/whisper"
+let aboutSite = URL(string: website)!
+let supportSite = URL(string: "\(website)/support.html")!
+let instructionSite = URL(string: "\(website)instructions.html")!
 
 /// global constants for light/dark mode
 let lightLiveTextColor = Color(.black)

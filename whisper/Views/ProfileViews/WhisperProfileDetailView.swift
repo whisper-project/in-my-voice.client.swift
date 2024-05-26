@@ -6,6 +6,12 @@
 import SwiftUI
 
 struct WhisperProfileDetailView: View {
+#if targetEnvironment(macCatalyst)
+	@Environment(\.dismiss) private var dismiss
+#endif
+	@AppStorage("do_server_side_transcription_preference")
+	var transcriptionState: Bool = PreferenceData.doServerSideTranscription()
+
 	let conversation: WhisperConversation
 
 	@State var name: String = ""
@@ -14,6 +20,8 @@ struct WhisperProfileDetailView: View {
 	@State var wasDefault: Bool = false
 	@State var allowedParticipants: [ListenerInfo] = []
 	@StateObject var profile = UserProfile.shared
+	@State var transcripts: [TranscriptData]?
+	@State var fetchState = 0
 
 	var body: some View {
 		Form {
@@ -44,6 +52,15 @@ struct WhisperProfileDetailView: View {
 					}
 				}
 				ShareLink("Listen link", item: PreferenceData.publisherUrl(conversation))
+				if (transcriptionState) {
+					NavigationLink(destination: WhisperTranscriptView(conversation: conversation,
+																	  transcripts: $transcripts,
+																	  fetchStatus: $fetchState)) {
+						Text("See Transcripts").onAppear(perform: fetchTranscripts)
+					}
+				} else {
+					Button("Enable transcription", action: { transcriptionState.toggle() })
+				}
 			}
 			Section(header: allowedParticipants.isEmpty ? Text("No Allowed Participants") : Text("Allowed Participants")) {
 				List {
@@ -61,6 +78,13 @@ struct WhisperProfileDetailView: View {
 				}
 			}
 		}
+		.navigationTitle("Details of \(conversation.name)")
+		.navigationBarTitleDisplayMode(.inline)
+		#if targetEnvironment(macCatalyst)
+		.toolbar {
+			Button(action: { dismiss() }, label: { Text("Close") } )
+		}
+		#endif
 		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
 	}
 
@@ -80,6 +104,21 @@ struct WhisperProfileDetailView: View {
 			profile.whisperProfile.fallback = conversation
 		}
 		updateFromProfile()
+	}
+
+	func fetchTranscripts() {
+		let fetcher = TcpAuthenticator(conversationId: conversation.id)
+		let callback: ([TranscriptData]?) -> Void = { trs in
+			if let trs = trs {
+				self.fetchState = 1
+				self.transcripts = trs
+			} else {
+				self.fetchState = -1
+				self.transcripts = nil
+			}
+		}
+		fetchState = 0
+		fetcher.getTranscripts(callback: callback)
 	}
 }
 

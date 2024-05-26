@@ -71,10 +71,7 @@ final class TcpWhisperTransport: PublishTransport {
 	}
 
     func publish(chunks: [WhisperProtocol.ProtocolChunk]) {
-        guard !remotes.isEmpty else {
-            // no one to publish to
-            return
-        }
+		// we always publish because the server is always listening
         for chunk in chunks {
             contentChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         }
@@ -147,6 +144,7 @@ final class TcpWhisperTransport: PublishTransport {
 		}
 		channel.subscribe(receiveControlMessage)
 		channel.presence.subscribe(receivePresenceMessage)
+		channel.presence.enter("whisperer")
 	}
 
 	private func monitorControlChannelState(_ change: ARTChannelStateChange) {
@@ -191,10 +189,8 @@ final class TcpWhisperTransport: PublishTransport {
 		logger.info("Send drop message to \(self.remotes.count) remotes")
         let chunk = WhisperProtocol.ProtocolChunk.dropping()
         control.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
-		if let content = contentChannel {
-			content.detach()
-			contentChannel = nil
-		}
+		contentChannel = nil
+		control.presence.leave("whisperer")
         control.detach()
         controlChannel = nil
 		client = nil

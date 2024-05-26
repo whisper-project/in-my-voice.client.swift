@@ -324,5 +324,20 @@ This build allows you to make use of ElevenLabs pronunciation dictionaries.  If 
 
 As with all settings, the dictionary settings will be sync'd to other devices that share your profile.  Just be sure you choose one device on which to install this build and add the dictionary settings on that device *before* you upgrade the build and launch Whisper on your other devices, so they will be sure to retrieve the new preferences.
 
-BUILD 201002 (v2.1.0 build 2) (external):
+BUILD 2010002 (v2.1.0 build 2) (external):
 This build fixes a few cosmetic issues with window titling on iPads and Macs.
+
+BUILD 2020001 - v2.2.0.1 - external:
+This build fixes a bug in v2.1 that caused shared profiles not to sync correctly when new preferences were added. It also displays the build number in the release version string.
+
+BUILD 2020002 - v2.2.0.2:
+This build adds a preference in the client that controls whether or not whisper conversations are auto-transcribed by the server.  The default value is NO, to maintain consistency with prior versions.
+
+BUILD 2020003 - v2.2.3:
+This build provides Whisperers access to the transcripts of their past conversations (assuming they've turned on transcription). In the Whisper profile view (long press on Whisper), click on a conversation to go into its detail view.  You will see a new "See Transcripts" item that brings up a list of past transcripts, ordered reverse chronologically.
+
+Build v2.2.4 (2020004):
+This build provides cosmetic consistency to the Whisper and Listen profile views.  There are no new features.
+
+Build v2.2.5 (202005):
+This build has cosmetic changes to transcript views, but no functional changes. It is being submitted to the app store for release.
