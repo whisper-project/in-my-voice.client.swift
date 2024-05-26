@@ -338,3 +338,6 @@ This build provides Whisperers access to the transcripts of their past conversat
 
 Build v2.2.4 (2020004):
 This build provides cosmetic consistency to the Whisper and Listen profile views.  There are no new features.
+
+Build v2.2.5 (202005):
+This build has cosmetic changes to transcript views, but no functional changes. It is being submitted to the app store for release.
