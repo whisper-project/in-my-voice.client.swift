@@ -117,6 +117,7 @@ struct WhisperProfileDetailView: View {
 				self.transcripts = nil
 			}
 		}
+		fetchState = 0
 		fetcher.getTranscripts(callback: callback)
 	}
 }
