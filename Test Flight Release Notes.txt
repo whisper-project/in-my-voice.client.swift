@@ -341,3 +341,6 @@ This build provides cosmetic consistency to the Whisper and Listen profile views
 
 Build v2.2.5 (202005):
 This build has cosmetic changes to transcript views, but no functional changes. It is being submitted to the app store for release.
+
+Build v2.3.1 (2030001):
+This build prevents iOS devices from sleeping when whispering or listening.
