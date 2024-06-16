@@ -127,10 +127,13 @@ struct PreferenceData {
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
         let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        guard result == errSecSuccess else {
-            fatalError("Couldn't generate random bytes")
-        }
-        return Data(bytes).base64EncodedString()
+        if result == errSecSuccess {
+			return Data(bytes).base64EncodedString()
+		} else {
+			logAnomaly("Couldn't generate random bytes for secret, falling back to UUID")
+			let fakeBytes = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+			return Data(fakeBytes.utf8).base64EncodedString()
+		}
     }
 
 	// content channel ID

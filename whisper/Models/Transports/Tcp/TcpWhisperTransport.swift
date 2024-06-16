@@ -46,7 +46,8 @@ final class TcpWhisperTransport: PublishTransport {
 
     func drop(remote: Remote) {
         guard let remote = remotes[remote.id] else {
-            fatalError("Ignoring request to drop an unknown \(remote.kind) remote: \(remote.id)")
+			logAnomaly("Ignoring request to drop unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
         logger.info("Dropping \(remote.kind) remote \(remote.id)")
 		removeRemote(remote)

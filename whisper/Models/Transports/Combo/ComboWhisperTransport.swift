@@ -39,7 +39,8 @@ final class ComboWhisperTransport: PublishTransport {
     
     func sendContent(remote: Remote, chunks: [WhisperProtocol.ProtocolChunk]) {
         guard let remote = remotes[remote.id] else {
-            fatalError("Sending content to an unknown remote: \(remote.id)")
+			logAnomaly("Sending content to an unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
         switch remote.kind {
         case .local:
@@ -51,7 +52,8 @@ final class ComboWhisperTransport: PublishTransport {
 
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let remote = remotes[remote.id] else {
-            fatalError("Sending control to an unknown remote: \(remote.id)")
+			logAnomaly("Sending control to an unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
         switch remote.kind {
         case .local:
@@ -63,7 +65,8 @@ final class ComboWhisperTransport: PublishTransport {
 
     func drop(remote: Remote) {
 		guard let remote = remotes.removeValue(forKey: remote.id) else {
-            fatalError("Dropping an unknown remote: \(remote.id)")
+			logAnomaly("Dropping an unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
 		clients.removeValue(forKey: remote.clientId)
         switch remote.kind {
@@ -76,7 +79,8 @@ final class ComboWhisperTransport: PublishTransport {
     
 	func authorize(remote: Remote) {
 		guard let remote = remotes[remote.id] else {
-			fatalError("Authorizing an unknown remote: \(remote.id)")
+			logAnomaly("Authorizing an unknown remote: \(remote.id)", kind: remote.kind)
+			return
 		}
 		switch remote.kind {
 		case .local:
@@ -88,7 +92,8 @@ final class ComboWhisperTransport: PublishTransport {
 
 	func deauthorize(remote: Remote) {
 		guard let remote = remotes[remote.id] else {
-			fatalError("Deauthorizing an unknown remote: \(remote.id)")
+			logAnomaly("Deauthorizing an unknown remote: \(remote.id)", kind: remote.kind)
+			return
 		}
 		switch remote.kind {
 		case .local:
@@ -213,7 +218,8 @@ final class ComboWhisperTransport: PublishTransport {
 			logger.info("Starting only Bluetooth whispering because Internet not available")
 			local.start(failureCallback: failureCallback!)
 		} else {
-			fatalError("Cannot whisper because neither Bluetooth nor Internet is available")
+			logAnomaly("Cannot whisper because neither Bluetooth nor Internet is available")
+			self.failureCallback?("Cannot whisper because neither Bluetooth nor Internet is available")
 		}
 	}
 
@@ -250,7 +256,8 @@ private func removeRemote(remote: any TransportRemote) {
 			return remote
 		}
 		guard chunk.isPresenceMessage(), let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
-			fatalError("Non-presence initial control packet received from \(remote.kind) remote: \(remote.id)")
+			logAnomaly("Non-presence initial control packet received from remote: \(remote.id)", kind: remote.kind)
+			return nil
 		}
 		guard clients[info.clientId] == nil else {
 			logger.info("Refusing second appearance of client via different network: \(remote.kind)")

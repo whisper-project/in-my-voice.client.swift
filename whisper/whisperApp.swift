@@ -187,10 +187,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             request.httpBody = body
             let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                 guard error == nil else {
-                    fatalError("Failed to post notification confirmation: \(String(describing: error))")
+                    logAnomaly("Failed to post notification confirmation: \(String(describing: error))")
+					completionHandler(.failed)
+					return
                 }
                 guard let response = response as? HTTPURLResponse else {
-                    fatalError("Received non-HTTP response on notification confirmation: \(String(describing: response))")
+                    logAnomaly("Received non-HTTP response on notification confirmation: \(String(describing: response))")
+					completionHandler(.failed)
+					return
                 }
                 if response.statusCode == 204 {
                     logger.info("Successful post of notification confirmation")

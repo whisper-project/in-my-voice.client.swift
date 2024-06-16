@@ -236,7 +236,7 @@ final class WhisperViewModel: ObservableObject {
     }
 
 	private func receiveContentChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
-		fatalError("Whisperer received content (\(pair.chunk.toString())) from \(pair.remote.id)")
+		logAnomaly("Shouldn't happen: Whisperer received content (\(pair.chunk.toString())) from \(pair.remote.id)", kind: pair.remote.kind)
 	}
 
 	private func receiveControlChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
@@ -246,7 +246,8 @@ final class WhisperViewModel: ObservableObject {
 	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
 		if chunk.isPresenceMessage() {
 			guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
-				fatalError("Received a presence message with invalid data: \(chunk.toString())")
+				logAnomaly("Ignoring a presence message with invalid data: \(chunk.toString())", kind: remote.kind)
+				return
 			}
 			guard info.conversationId == conversation.id else {
 				logger.info("Ignoring a presence message about the wrong conversation: \(info.conversationId)")
@@ -278,7 +279,7 @@ final class WhisperViewModel: ObservableObject {
 				refreshStatusText()
 				showStatusDetail = true
 			default:
-				fatalError("\(remote.kind) Listener sent an unexpected presence message: \(chunk)")
+				logAnomaly("Listener sent \(remote.id) sent an unexpected presence message: \(chunk)", kind: remote.kind)
 			}
 		} else if chunk.isReplayRequest() {
 			guard let candidate = candidates[remote.id], !candidate.isPending else {

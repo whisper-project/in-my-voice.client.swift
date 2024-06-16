@@ -72,12 +72,14 @@ final class BluetoothListenTransport: SubscribeTransport {
 			logAnomaly("Ignoring duplicate subscribe to same publisher", kind: .local)
 			return
 		} else if publisher != nil {
-			fatalError("Got subscribe request to \(remote.id) but already have publisher \(publisher!.id)")
+			logAnomaly("Ignoring subscribe request to \(remote.id) because already have publisher \(publisher!.id)", kind: remote.kind)
+			return
 		}
 		guard let selected = remotes[remote.peripheral],
 			  let contentOut = selected.contentOutChannel
 		else {
-            fatalError("Received request to subscribe to \(remote.id) which is not a valid remote")
+			logAnomaly("Ignoring request to subscribe to \(remote.id) which is not a valid remote", kind: remote.kind)
+			return
         }
         logger.log("Subscribing to \(remote.kind) remote \(selected.id)")
 		publisher = remote

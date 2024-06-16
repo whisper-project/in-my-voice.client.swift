@@ -51,7 +51,8 @@ final class TcpListenTransport: SubscribeTransport {
 
     func drop(remote: Remote) {
         guard remotes[remote.id] != nil else {
-            fatalError("Ignoring request to drop an unknown remote: \(remote.id)")
+			logAnomaly("Ignoring request to drop unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
 		removeCandidate(remote, sendDrop: true)
     }
@@ -65,10 +66,12 @@ final class TcpListenTransport: SubscribeTransport {
 			logAnomaly("Ignoring duplicate subscribe", kind: .global)
 			return
 		} else if let w = whisperer {
-			fatalError("Got subscribe request to \(remote.id) but already subscribed to \(w.id)")
+			logAnomaly("Ignoring subscribe request to \(remote.id) because already subscribed to \(w.id)", remote.kind)
+			return
 		}
 		guard self.conversation == conversation else {
-			fatalError("Can't subscribe to \(conversation.id): initialized with \(self.conversation.id)")
+			logAnomaly("Ignoring subscribe to conversation \(conversation.id): initialized with \(self.conversation.id)")
+			return
 		}
         whisperer = remote
 		openContentChannel(remote: remote)

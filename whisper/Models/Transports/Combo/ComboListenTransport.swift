@@ -39,7 +39,8 @@ final class ComboListenTransport: SubscribeTransport {
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let remote = remotes[remote.id] else {
-            fatalError("Targeting a remote that's not a whisperer: \(remote.id)")
+			logAnomaly("Sending control to an unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
         switch remote.kind {
         case .local:
@@ -51,7 +52,8 @@ final class ComboListenTransport: SubscribeTransport {
 
 	func drop(remote: Remote) {
 		guard let remote = remotes.removeValue(forKey: remote.id) else {
-			fatalError("Dropping an unknown remote: \(remote.id)")
+			logAnomaly("Dropping an unknown remote: \(remote.id)", kind: remote.kind)
+			return
 		}
 		clients.removeValue(forKey: remote.clientId)
 		switch remote.kind {
@@ -64,7 +66,8 @@ final class ComboListenTransport: SubscribeTransport {
 
 	func subscribe(remote: Remote, conversation: ListenConversation) {
         guard let remote = remotes[remote.id] else {
-            fatalError("Subscribing to an unknown remote: \(remote.id)")
+			logAnomaly("Subscribing to an unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
         switch remote.kind {
         case .local:
@@ -202,7 +205,8 @@ final class ComboListenTransport: SubscribeTransport {
 			logger.info("Starting only Bluetooth because Internet not available")
 			local.start(failureCallback: failureCallback!)
 		} else {
-			fatalError("Cannot listen because neither Bluetooth nor Internet is available")
+			logAnomaly("Cannot listen because neither Bluetooth nor Internet is available")
+			self.failureCallback?("Cannot whisper because neither Bluetooth nor Internet is available")
 		}
 	}
 
@@ -248,7 +252,8 @@ final class ComboListenTransport: SubscribeTransport {
 			return remote
 		}
 		guard chunk.isPresenceMessage(), let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
-			fatalError("Non-presence initial control packet received from \(remote.kind) remote: \(remote.id)")
+			logAnomaly("Non-presence initial control packet received from remote: \(remote.id)", kind: remote.kind)
+			return nil
 		}
 		guard clients[info.clientId] == nil else {
 			logger.info("Refusing second appearance of client via different network: \(remote.kind)")

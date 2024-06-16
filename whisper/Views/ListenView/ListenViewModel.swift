@@ -142,7 +142,8 @@ final class ListenViewModel: ObservableObject {
 
 	func acceptInvite(_ id: String) {
 		guard let inviter = candidates[id] else {
-			fatalError("Can't accept a non-invite: \(id)")
+			logAnomaly("Shouldn't happen: accepting non-invite \(id)")
+			return
 		}
 		logger.info("Accepted invite from \(inviter.remote.kind) remote \(inviter.id) conversation \(inviter.info.conversationName)")
 		inviter.isPending = false
@@ -155,7 +156,8 @@ final class ListenViewModel: ObservableObject {
 
 	func refuseInvite(_ id: String) {
 		guard let inviter = candidates.removeValue(forKey: id) else {
-			fatalError("Can't reject a non-invite: \(id)")
+			logAnomaly("Shouldn't happen: rejecting a non-invite: \(id)")
+			return
 		}
 		logger.info("Rejected invite from \(inviter.remote.kind) remote \(inviter.id) conversation \(inviter.info.conversationName)")
 		clients.removeValue(forKey: inviter.info.clientId)
@@ -166,7 +168,8 @@ final class ListenViewModel: ObservableObject {
     // re-read the whispered text
     func readLiveText() {
         guard let whisperer = whisperer else {
-			fatalError("Can't read live text with no Whisperer")
+			logAnomaly("Shouldn't happen: can't read live text with no Whisperer")
+			return
         }
         guard !resetInProgress else {
             logger.log("Got reset during reset, ignoring it")
@@ -199,7 +202,8 @@ final class ListenViewModel: ObservableObject {
     
     private func receiveContentChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
 		guard pair.remote.id == whisperer?.id else {
-            fatalError("Received content from non-whisperer \(pair.remote.id)")
+            logAnomaly("Shouldn't happen: Received content from non-whisperer \(pair.remote.id)")
+			return
         }
         processContentChunk(pair.chunk)
     }
@@ -263,10 +267,12 @@ final class ListenViewModel: ObservableObject {
 
 	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
 		guard chunk.isPresenceMessage() else {
-			fatalError("Received a non-presence control message: \(chunk)")
+			logAnomaly("Listener received a non-presence control message: \(chunk)", kind: remote.kind)
+			return
 		}
 		guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
-			fatalError("Received a presence message with invalid data: \(chunk)")
+			logAnomaly("Received a presence message with invalid data: \(chunk)", kind: remote.kind)
+			return
 		}
 		guard !chunk.isRestart() else {
 			logger.info("Received restart from \(remote.kind) remote \(remote.id)")
@@ -303,7 +309,7 @@ final class ListenViewModel: ObservableObject {
 		case .listenAuthNo:
 			logger.info("Received refusal from \(remote.kind) remote \(remote.id) for conversation \(info.conversationName) from \(info.username)")
 			guard let candidate = candidates[remote.id] else {
-				logAnomaly("Ignoring refusal from \(remote.kind) non-candidate \(remote.id)", kind: remote.kind)
+				logAnomaly("Ignoring refusal from non-candidate \(remote.id)", kind: remote.kind)
 				return
 			}
 			profile.delete(info.conversationId)
@@ -319,7 +325,7 @@ final class ListenViewModel: ObservableObject {
 			connectionErrorDescription = "The Whisperer has refused to let you listen"
 			connectionError = true
 		default:
-			fatalError("Listener received an unexpected presence message: \(chunk)")
+			logAnomaly("Listener received an unexpected presence message: \(chunk)", kind: remote.kind)
 		}
 	}
 
@@ -399,7 +405,8 @@ final class ListenViewModel: ObservableObject {
     /// Wait for a while so discovery can find multiple listeners
     private func awaitDiscovery() {
         guard !isInBackground else {
-            fatalError("Can't start the listener scan in the background")
+            logAnomaly("Shouldn't happen: Can't start the listener scan in the background")
+			return
         }
         logger.log("Start initial wait for whisperers")
         discoveryInProgress = true

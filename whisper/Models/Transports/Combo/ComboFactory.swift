@@ -77,7 +77,8 @@ final class ComboFactory: TransportFactory {
         case .on:
 			return globalStatus == .on ? .on : .localOnly
 		default:
-			fatalError("Can't happen: localStatus was \(localStatus)")
+			logAnomaly("Can't happen: localStatus was \(localStatus), assuming .off")
+			return globalStatus == .on ? .globalOnly : .off
         }
     }
 }
