@@ -67,8 +67,10 @@ struct ListenView: View {
 			.onAppear {
 				logger.log("ListenView appeared")
 				self.model.start()
+				UIApplication.shared.isIdleTimerDisabled = true
 			}
 			.onDisappear {
+				UIApplication.shared.isIdleTimerDisabled = false
 				logger.log("ListenView disappeared")
 				self.model.stop()
 			}

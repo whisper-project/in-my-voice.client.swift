@@ -67,8 +67,10 @@ struct WhisperView: View {
 				logger.log("WhisperView appeared")
 				model.start()
 				focusField = "liveText"
+				UIApplication.shared.isIdleTimerDisabled = true
 			}
 			.onDisappear {
+				UIApplication.shared.isIdleTimerDisabled = false
 				logger.log("WhisperView disappeared")
 				model.stop()
 			}
