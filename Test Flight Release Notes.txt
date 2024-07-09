@@ -344,3 +344,8 @@ This build has cosmetic changes to transcript views, but no functional changes. 
 
 Build v2.3.1 (2030001):
 This build prevents iOS devices from sleeping when whispering or listening.
+
+Build v2.3.2 (2030002):
+This build ignores spaces before or after ElevenLabs values in the Settings.  This should eliminate a common problem with entering these values.
+
+This build introduces better messaging on connection errors, so the user is prompted about how to fix the problem.
