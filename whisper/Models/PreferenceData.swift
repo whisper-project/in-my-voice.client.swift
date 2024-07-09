@@ -264,37 +264,37 @@ struct PreferenceData {
 
 	static private var elevenLabsApiKeyPreference: String {
 		get {
-			defaults.string(forKey: "elevenlabs_api_key_preference") ?? ""
+			defaults.string(forKey: "elevenlabs_api_key_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			defaults.setValue(val, forKey: "elevenlabs_api_key_preference")
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_api_key_preference")
 		}
 	}
 
 	static private var elevenLabsVoiceIdPreference: String {
 		get {
-			defaults.string(forKey: "elevenlabs_voice_id_preference") ?? ""
+			defaults.string(forKey: "elevenlabs_voice_id_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			defaults.setValue(val, forKey: "elevenlabs_voice_id_preference")
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_voice_id_preference")
 		}
 	}
 
 	static private var elevenLabsDictionaryIdPreference: String {
 		get {
-			defaults.string(forKey: "elevenlabs_dictionary_id_preference") ?? ""
+			defaults.string(forKey: "elevenlabs_dictionary_id_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			defaults.setValue(val, forKey: "elevenlabs_dictionary_id_preference")
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_dictionary_id_preference")
 		}
 	}
 
 	static private var elevenLabsDictionaryVersionPreference: String {
 		get {
-			defaults.string(forKey: "elevenlabs_dictionary_version_preference") ?? ""
+			defaults.string(forKey: "elevenlabs_dictionary_version_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			defaults.setValue(val, forKey: "elevenlabs_dictionary_version_preference")
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_dictionary_version_preference")
 		}
 	}
 
