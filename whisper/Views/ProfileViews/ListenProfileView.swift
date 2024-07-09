@@ -58,19 +58,20 @@ struct ListenProfileView: View {
 					whisperConversations()
 				}
 			}
-#if DEBUG
-			ListenLinkView(maybeListen: maybeListen)
-#endif
 		}
+#if DEBUG
+		ListenLinkView(maybeListen: maybeListen)
+#endif
 	}
 
 	@ViewBuilder func listenConversations() -> some View {
 		List(conversations) { c in
-			HStack(spacing: 10) {
+			HStack(spacing: 20) {
 				Button("Listen", systemImage: "ear") {
 					logger.info("Hit listen button on \(c.id) (\(c.name))")
 					maybeListen?(c)
 				}
+				.font(.title)
 				Text("\(c.name) with \(c.ownerName)").lineLimit(nil)
 				Spacer(minLength: 25)
 				Button("Delete", systemImage: "delete.left") {
@@ -78,6 +79,7 @@ struct ListenProfileView: View {
 					profile.listenProfile.delete(c.id)
 					updateFromProfile()
 				}
+				.font(.title)
 			}
 			.labelStyle(.iconOnly)
 			.buttonStyle(.borderless)
@@ -86,11 +88,12 @@ struct ListenProfileView: View {
 
 	@ViewBuilder func whisperConversations() -> some View {
 		List(myConversations) { c in
-			HStack(spacing: 10) {
+			HStack(spacing: 20) {
 				Button("Listen", systemImage: "ear") {
 					logger.info("Hit listen button on \(c.id) (\(c.name))")
 					maybeListen?(profile.listenProfile.fromMyWhisperConversation(c))
 				}
+				.font(.title)
 				Text("\(c.name)").lineLimit(nil)
 			}
 			.labelStyle(.iconOnly)
