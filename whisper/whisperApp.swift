@@ -5,6 +5,7 @@
 
 import AVFAudio
 import SwiftUI
+import UserNotifications
 
 /// build information
 #if targetEnvironment(simulator)
@@ -211,4 +212,24 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             completionHandler(.failed)
         }
     }
+}
+
+// following code from https://stackoverflow.com/a/66394826/558006
+func restartApplication(){
+	let localUserInfo: [AnyHashable : Any] = ["pushType": "restart"]
+
+	let content = UNMutableNotificationContent()
+	content.title = "Whisper app is ready to launch"
+	content.body = "Tap to open the application"
+	content.sound = UNNotificationSound.default
+	content.userInfo = localUserInfo
+	let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
+
+	let identifier = "io.clickonetwo.restart"
+	let request = UNNotificationRequest.init(identifier: identifier, content: content, trigger: trigger)
+
+	let center = UNUserNotificationCenter.current()
+	center.add(request)
+	
+	exit(0)
 }

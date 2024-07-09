@@ -47,7 +47,8 @@ final class ListenViewModel: ObservableObject {
 	@Published var conversationEnded: Bool = false
 	@Published var conversationRestarted: Bool = false
     @Published var connectionError: Bool = false
-    @Published var connectionErrorDescription: String = "The connection to the whisperer was lost"
+	@Published var connectionErrorSeverity: TransportErrorSeverity = .ignore
+    @Published var connectionErrorDescription: String = ""
     @Published var showStatusDetail: Bool = false
 	@Published var candidates: [String: Candidate] = [:]	// remoteId -> Candidate
 	@Published var invites: [Candidate] = []
@@ -220,9 +221,10 @@ final class ListenViewModel: ObservableObject {
         }
     }
     
-    private func signalConnectionError(_ reason: String) {
+	private func signalConnectionError(_ severity: TransportErrorSeverity, _ reason: String) {
         Task { @MainActor in
             connectionError = true
+			connectionErrorSeverity = severity
             connectionErrorDescription = reason
         }
     }
@@ -322,10 +324,14 @@ final class ListenViewModel: ObservableObject {
 				logger.warning("Candidate has refused our listen request")
 				dropCandidate(remote)
 			}
+			connectionErrorSeverity = .endSession
 			connectionErrorDescription = "The Whisperer has refused to let you listen"
 			connectionError = true
 		default:
 			logAnomaly("Listener received an unexpected presence message: \(chunk)", kind: remote.kind)
+			connectionErrorSeverity = .upgrade
+			connectionErrorDescription = "Unexpected presence message"
+			connectionError = true
 		}
 	}
 

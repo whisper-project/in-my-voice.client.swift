@@ -15,7 +15,7 @@ final class TcpListenTransport: SubscribeTransport {
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (String) -> Void) {
+    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
         logger.log("Starting TCP listen transport")
         self.failureCallback = failureCallback
 		self.authenticator = TcpAuthenticator(mode: .listen,
@@ -66,7 +66,7 @@ final class TcpListenTransport: SubscribeTransport {
 			logAnomaly("Ignoring duplicate subscribe", kind: .global)
 			return
 		} else if let w = whisperer {
-			logAnomaly("Ignoring subscribe request to \(remote.id) because already subscribed to \(w.id)", remote.kind)
+			logAnomaly("Ignoring subscribe request to \(remote.id) because already subscribed to \(w.id)", kind: remote.kind)
 			return
 		}
 		guard self.conversation == conversation else {
@@ -94,7 +94,7 @@ final class TcpListenTransport: SubscribeTransport {
         }
     }
     
-    private var failureCallback: ((String) -> Void)?
+    private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
     private var clientId: String
     private var conversation: ListenConversation
     private var authenticator: TcpAuthenticator!
@@ -120,8 +120,8 @@ final class TcpListenTransport: SubscribeTransport {
         }
     }
     
-    private func receiveAuthError(_ reason: String) {
-        failureCallback?(reason)
+	private func receiveAuthError(_ severity: TransportErrorSeverity, _ reason: String) {
+        failureCallback?(severity, reason)
         closeChannels()
     }
     
@@ -298,7 +298,9 @@ final class TcpListenTransport: SubscribeTransport {
 					logger.info("Capturing content id from \(remote.kind) remote \(remote.id)")
 					let contentId = info.contentId
 					guard !contentId.isEmpty else {
-						fatalError("Received an empty content id in a TCP \(value) message")
+						logAnomaly("Received an empty content id in a TCP \(value) message", kind: .global)
+						failureCallback?(.endSession, "The Whisperer did not send a needed value")
+						break
 					}
 					remote.contentId = contentId
                 default:
@@ -307,7 +309,6 @@ final class TcpListenTransport: SubscribeTransport {
             }
         }
 		logger.notice("Received control packet from \(remote.kind, privacy: .public) remote \(remote.id, privacy: .public): \(chunk, privacy: .public)")
-		logger.info("Received control packet: \(chunk)")
         controlSubject.send((remote: remote, chunk: chunk))
     }
 

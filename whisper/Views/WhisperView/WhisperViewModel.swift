@@ -53,6 +53,7 @@ final class WhisperViewModel: ObservableObject {
 
     @Published var statusText: String = ""
     @Published var connectionError = false
+	@Published var connectionErrorSeverity: TransportErrorSeverity = .ignore
     @Published var connectionErrorDescription: String = ""
 	@Published var candidates: [String: Candidate] = [:]		// id -> Candidate
 	@Published var listeners: [Candidate] = []
@@ -219,9 +220,10 @@ final class WhisperViewModel: ObservableObject {
         self.liveText = ""
     }
     
-    private func signalConnectionError(_ reason: String) {
+	private func signalConnectionError(_ severity: TransportErrorSeverity, _ reason: String) {
 		Task { @MainActor in
 			connectionError = true
+			connectionErrorSeverity = severity
 			connectionErrorDescription = reason
 		}
     }
@@ -280,6 +282,9 @@ final class WhisperViewModel: ObservableObject {
 				showStatusDetail = true
 			default:
 				logAnomaly("Listener sent \(remote.id) sent an unexpected presence message: \(chunk)", kind: remote.kind)
+				connectionErrorSeverity = .upgrade
+				connectionErrorDescription = ""
+				connectionError = true
 			}
 		} else if chunk.isReplayRequest() {
 			guard let candidate = candidates[remote.id], !candidate.isPending else {

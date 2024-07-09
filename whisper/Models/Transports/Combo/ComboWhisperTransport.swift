@@ -14,7 +14,7 @@ final class ComboWhisperTransport: PublishTransport {
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (String) -> Void) {
+    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
         logger.log("Starting combo whisper transport")
         self.failureCallback = failureCallback
         initializeTransports()
@@ -139,7 +139,7 @@ final class ComboWhisperTransport: PublishTransport {
 	private var clients: [String: Remote] = [:]	// maps from client id to remote
     private var cancellables: Set<AnyCancellable> = []
     private var conversation: WhisperConversation
-    private var failureCallback: ((String) -> Void)?
+    private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
 	private var staggerTimer: Timer?
 
     init(_ c: WhisperConversation) {
@@ -198,7 +198,7 @@ final class ComboWhisperTransport: PublishTransport {
         }
         if localTransport == nil && globalTransport == nil {
             logger.error("No transports available for whispering")
-            failureCallback?("Cannot whisper unless one of Bluetooth or WiFi is available")
+			failureCallback?(.endSession, "Cannot whisper unless one of Bluetooth or WiFi is available")
         }
     }
     
@@ -219,7 +219,7 @@ final class ComboWhisperTransport: PublishTransport {
 			local.start(failureCallback: failureCallback!)
 		} else {
 			logAnomaly("Cannot whisper because neither Bluetooth nor Internet is available")
-			self.failureCallback?("Cannot whisper because neither Bluetooth nor Internet is available")
+			self.failureCallback?(.endSession, "Cannot whisper because neither Bluetooth nor Internet is available")
 		}
 	}
 

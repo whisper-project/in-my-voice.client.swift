@@ -14,7 +14,7 @@ final class BluetoothWhisperTransport: PublishTransport {
     var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (String) -> Void) {
+    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
         logger.log("Starting Bluetooth whisper transport...")
 		running = true
 		registerCallbacks()

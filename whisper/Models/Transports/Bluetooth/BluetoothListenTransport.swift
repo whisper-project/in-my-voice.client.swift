@@ -15,7 +15,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (String) -> Void) {
+    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
 		logger.info("Starting Bluetooth listen transport")
 		registerCallbacks()
 		running = true
@@ -246,7 +246,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 		}
 		if let error = triple.2 {
 			logAnomaly("Send of control packet failed to remote \(remote.id): \(error)", kind: .local)
-			failureCallback?("Bluetooth failure while connecting to Whisperer")
+			failureCallback?(.endSession, "Bluetooth failure while connecting to Whisperer")
 		} else {
             // logger.log("Successfully sent control packet to \(remote.kind) remote \(remote.id)")
         }
@@ -272,7 +272,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 		} else if let error = triple.2 {
 			// if we failed to subscribe, we have to warn the client
 			logAnomaly("Failed to subscribe to peripheral: \(remote.id), channel: \(triple.1.uuid), error: \(error)", kind: .local)
-			failureCallback?("Bluetooth subscription error while connecting to Whisperer")
+			failureCallback?(.endSession, "Bluetooth subscription error while connecting to Whisperer")
         }
     }
     
@@ -297,7 +297,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 			if let error = triple.2 {
 				// got a control read failure
 				logAnomaly("Got error on control update from \(triple.0): \(error)", kind: .local)
-				failureCallback?("Bluetooth read failure while connecting")
+				failureCallback?(.endSession, "Bluetooth read failure while connecting to Whisperer")
 			} else if let textData = triple.1.value,
 					  let chunk = WhisperProtocol.ProtocolChunk.fromData(textData) {
 				logControlChunk(sentOrReceived: "received", chunk: chunk, kind: .local)
@@ -312,7 +312,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 				controlSubject.send((remote: remote, chunk: chunk))
 			} else {
 				logAnomaly("Received invalid control data from remote \(remote.id): \(String(describing: triple.1.value))", kind: .local)
-				failureCallback?("Bluetooth read data consistency failure while connecting")
+				failureCallback?(.endSession, "Bluetooth read data consistency failure while connecting to Whisperer")
 			}
 		} else {
 			fatalError("Got update of an unknown characteristic: \(String(describing: triple))")
@@ -346,7 +346,7 @@ final class BluetoothListenTransport: SubscribeTransport {
     private var isInBackground = false
     private var scanRefreshCount = 0
 	private var conversation: ListenConversation
-	private var failureCallback: ((String) -> Void)?
+	private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
 
 	init(_ c: ListenConversation) {
         logger.log("Initializing Bluetooth listen transport")
