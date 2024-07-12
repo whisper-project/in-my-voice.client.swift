@@ -53,7 +53,7 @@ final class WhisperViewModel: ObservableObject {
 
     @Published var statusText: String = ""
     @Published var connectionError = false
-	@Published var connectionErrorSeverity: TransportErrorSeverity = .ignore
+	@Published var connectionErrorSeverity: TransportErrorSeverity = .report
     @Published var connectionErrorDescription: String = ""
 	@Published var candidates: [String: Candidate] = [:]		// id -> Candidate
 	@Published var listeners: [Candidate] = []
@@ -65,6 +65,7 @@ final class WhisperViewModel: ObservableObject {
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
     private var liveText: String = ""
+	private var lastSpeech: String = ""
     private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
@@ -126,6 +127,7 @@ final class WhisperViewModel: ObservableObject {
         for chunk in chunks {
             if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
+				lastSpeech = liveText
                 if PreferenceData.speakWhenWhispering {
                     speak(liveText)
                 }
@@ -137,7 +139,12 @@ final class WhisperViewModel: ObservableObject {
         transport.publish(chunks: chunks)
         return liveText
     }
-    
+
+	/// Repeat the last thing the whisperer typed, whether it was said or not
+	func repeatLastSpeech() {
+		speak(lastSpeech)
+	}
+
     /// User has submitted the live text
     func submitLiveText() -> String {
         return self.updateLiveText(old: liveText, new: liveText + "\n")
@@ -163,6 +170,15 @@ final class WhisperViewModel: ObservableObject {
         let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
 		transport.sendContent(remote: candidate.remote, chunks: [chunk])
     }
+
+	func playInterjectionSound() {
+		let soundName = PreferenceData.interjectionAlertSound()
+		if soundName != "" {
+			playSoundLocally(soundName)
+			let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
+			transport.publish(chunks: [chunk])
+		}
+	}
 
 	func acceptRequest(_ id: String) {
 		guard let invitee = candidates[id] else {
@@ -325,10 +341,15 @@ final class WhisperViewModel: ObservableObject {
 			let utterance = AVSpeechUtterance(string: text)
 			Self.synthesizer.speak(utterance)
 		} else {
-			ElevenLabs.shared.speakText(text: text)
+			let onError: (TransportErrorSeverity, String) -> () = { severity, message in
+				self.connectionErrorSeverity = severity
+				self.connectionErrorDescription = message
+				self.connectionError = true
+			}
+			ElevenLabs.shared.speakText(text: text, errorCallback: onError)
 		}
 	}
-    
+
     // play the alert sound locally
     private func playSoundLocally(_ name: String) {
         var name = name

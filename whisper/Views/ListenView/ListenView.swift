@@ -20,6 +20,7 @@ struct ListenView: View {
     @StateObject private var model: ListenViewModel
 	@State private var size = PreferenceData.sizeWhenListening
 	@State private var magnify: Bool = PreferenceData.magnifyWhenListening
+	@State private var interjecting: Bool = false
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
@@ -53,10 +54,10 @@ struct ListenView: View {
 				} message: {
 					Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
 				}
-				.alert("Connection Failure", isPresented: $model.connectionError) {
-					Button("OK") { mode = .ask }
+				.alert("Unexpected Error", isPresented: $model.connectionError) {
+					ConnectionErrorButtons(mode: $mode, severity: model.connectionErrorSeverity)
 				} message: {
-					Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
+					ConnectionErrorContent(severity: model.connectionErrorSeverity, message: model.connectionErrorDescription)
 				}
 				.alert("Conversation Ended", isPresented: $model.conversationEnded) {
 					Button("OK") { mode = .ask }
@@ -111,7 +112,7 @@ struct ListenView: View {
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
-		ControlView(size: $size, magnify: $magnify, mode: mode, maybeStop: maybeStop)
+		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: mode, maybeStop: maybeStop)
 			.padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
 		if (liveWindowPosition ?? "bottom" != "bottom") {
 			liveView(geometry)
@@ -179,57 +180,6 @@ struct ListenView: View {
 		}
 		.background(Color.accentColor)
 		.ignoresSafeArea()
-	}
-
-	@ViewBuilder private func errorButtons(_ severity: TransportErrorSeverity, _ message: String) -> some View {
-		switch severity {
-		case .temporary:
-			Button("Yes") { mode = .ask }
-			Button("No") { }
-		case .ignore:
-			Button("Report") {
-				UIApplication.shared.open(supportSite)
-			}
-			Button("Ignore") {}
-		case .upgrade:
-			Button("Yes") {
-				mode = .ask
-				let url = URL(string: "itms-apps://apps.apple.com/us/app/whisper-talk-without-voice/id6446479064")!
-				UIApplication.shared.open(url)
-			}
-			Button("No") { }
-		case .endSession:
-			Button("OK") { mode = .ask }
-		case .relaunch:
-			Button("Relaunch") {
-				mode = .ask
-				restartApplication()
-			}
-		case .reinstall:
-			Button("Reinstall") {
-				mode = .ask
-				let url = URL(string: "itms-apps://apps.apple.com/us/app/whisper-talk-without-voice/id6446479064")!
-				UIApplication.shared.open(url)
-				exit(0)
-			}
-		}
-	}
-
-	@ViewBuilder private func errorContent(_ severity: TransportErrorSeverity, _ message: String) -> some View {
-		switch model.connectionErrorSeverity {
-		case .temporary:
-			Text("You are no longer connected to your Whisperer. This may be temporary.\n\nWould you like to restart this session?")
-		case .ignore:
-			Text("A non-serious error occurred: \(message)\n\nWould you like to report this to the developer?")
-		case .upgrade:
-			Text("You are using an out-of-date version of Whisper. Your Whisperer is not. This may break your connection.\n\nDo you want to upgrade your app?")
-		case .endSession:
-			Text("A communication error has ended your session: \(message)\n\nPlease start a new session")
-		case .relaunch:
-			Text("This app encountered an error and must be relaunched: \(message)\n\nRelaunch when ready")
-		case .reinstall:
-			Text("This app encountered an error and must be deleted and reinstalled: \(message)\n\nPlease delete the app and reinstall it from the App Store")
-		}
 	}
 }
 

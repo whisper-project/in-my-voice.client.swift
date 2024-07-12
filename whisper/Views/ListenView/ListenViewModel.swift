@@ -47,7 +47,7 @@ final class ListenViewModel: ObservableObject {
 	@Published var conversationEnded: Bool = false
 	@Published var conversationRestarted: Bool = false
     @Published var connectionError: Bool = false
-	@Published var connectionErrorSeverity: TransportErrorSeverity = .ignore
+	@Published var connectionErrorSeverity: TransportErrorSeverity = .report
     @Published var connectionErrorDescription: String = ""
     @Published var showStatusDetail: Bool = false
 	@Published var candidates: [String: Candidate] = [:]	// remoteId -> Candidate
@@ -404,7 +404,12 @@ final class ListenViewModel: ObservableObject {
 			let utterance = AVSpeechUtterance(string: text)
 			Self.synthesizer.speak(utterance)
 		} else {
-			ElevenLabs.shared.speakText(text: text)
+			let onError: (TransportErrorSeverity, String) -> () = { severity, message in
+				self.connectionErrorSeverity = severity
+				self.connectionErrorDescription = message
+				self.connectionError = true
+			}
+			ElevenLabs.shared.speakText(text: text, errorCallback: onError)
 		}
 	}
 

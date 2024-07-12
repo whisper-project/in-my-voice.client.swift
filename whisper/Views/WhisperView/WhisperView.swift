@@ -15,10 +15,12 @@ struct WhisperView: View {
     var conversation: WhisperConversation
 
     @State private var liveText: String = ""
+	@State private var pendingLiveText: String = ""
     @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel
 	@State private var size = PreferenceData.sizeWhenWhispering
 	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
+	@State private var interjecting: Bool = false
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
@@ -58,9 +60,21 @@ struct WhisperView: View {
 					Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
 				}
 				.alert("Unexpected Error", isPresented: $model.connectionError) {
-					errorButtons(model.connectionErrorSeverity, model.connectionErrorDescription)
+					ConnectionErrorButtons(mode: $mode, severity: model.connectionErrorSeverity)
 				} message: {
-					errorContent(model.connectionErrorSeverity, model.connectionErrorDescription)
+					ConnectionErrorContent(severity: model.connectionErrorSeverity, message: model.connectionErrorDescription)
+				}
+			}
+			.onChange(of: interjecting) {
+				if interjecting {
+					pendingLiveText = liveText
+					liveText = PreferenceData.interjectionPrefix()
+					model.playInterjectionSound()
+				} else {
+					if liveText != "" {
+						liveText = model.submitLiveText()
+					}
+					liveText = pendingLiveText
 				}
 			}
 			.onAppear {
@@ -108,7 +122,7 @@ struct WhisperView: View {
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
-		ControlView(size: $size, magnify: $magnify, mode: .whisper, maybeStop: maybeStop, playSound: model.playSound)
+		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: .whisper, maybeStop: maybeStop, playSound: model.playSound, repeatSpeech: model.repeatLastSpeech)
 			.padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
 		PastTextView(mode: .whisper, model: model.pastText)
 			.font(FontSizes.fontFor(size))
@@ -147,7 +161,7 @@ struct WhisperView: View {
 			.frame(maxWidth: geometry.size.width,
 				   maxHeight: geometry.size.height * liveTextProportion,
 				   alignment: .topLeading)
-			.border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
+			.border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: interjecting ? 8 : 2)
 			.padding(EdgeInsets(top: 0, leading: sidePad, bottom: whisperViewBottomPad, trailing: sidePad))
 			.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 	}
@@ -168,57 +182,6 @@ struct WhisperView: View {
 		}
 		.background(Color.accentColor)
 		.ignoresSafeArea()
-	}
-
-	@ViewBuilder private func errorButtons(_ severity: TransportErrorSeverity, _ message: String) -> some View {
-		switch severity {
-		case .temporary:
-			Button("Yes") { mode = .ask }
-			Button("No") { }
-		case .ignore:
-			Button("Report") {
-				UIApplication.shared.open(supportSite)
-			}
-			Button("Ignore") {}
-		case .upgrade:
-			Button("Yes") {
-				mode = .ask
-				let url = URL(string: "itms-apps://apps.apple.com/us/app/whisper-talk-without-voice/id6446479064")!
-				UIApplication.shared.open(url)
-			}
-			Button("No") { }
-		case .endSession:
-			Button("OK") { mode = .ask }
-		case .relaunch:
-			Button("Relaunch") {
-				mode = .ask
-				restartApplication()
-			}
-		case .reinstall:
-			Button("Reinstall") {
-				mode = .ask
-				let url = URL(string: "itms-apps://apps.apple.com/us/app/whisper-talk-without-voice/id6446479064")!
-				UIApplication.shared.open(url)
-				exit(0)
-			}
-		}
-	}
-
-	@ViewBuilder private func errorContent(_ severity: TransportErrorSeverity, _ message: String) -> some View {
-		switch model.connectionErrorSeverity {
-		case .temporary:
-			Text("You are no longer connected to your Listeners. This may be temporary.\n\nWould you like to restart this session?")
-		case .ignore:
-			Text("A non-serious error occurred: \(message)\n\nWould you like to report this to the developer?")
-		case .upgrade:
-			Text("You are using an out-of-date version of Whisper. Your Listeners are not. This may break your connection.\n\nDo you want to upgrade your app?")
-		case .endSession:
-			Text("A communication error has ended your session: \(message)\n\nPlease start a new session")
-		case .relaunch:
-			Text("This app encountered an error and must be relaunched: \(message)\n\nRelaunch when ready")
-		case .reinstall:
-			Text("This app encountered an error and must be deleted and reinstalled: \(message)\n\nPlease delete the app and reinstall it from the App Store")
-		}
 	}
 }
 

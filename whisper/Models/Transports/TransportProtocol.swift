@@ -17,7 +17,8 @@ enum TransportStatus: String {
 
 enum TransportErrorSeverity {
 	case temporary
-	case ignore
+	case settings
+	case report
 	case upgrade
 	case endSession
 	case relaunch
