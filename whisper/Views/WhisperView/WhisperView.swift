@@ -71,7 +71,7 @@ struct WhisperView: View {
 					liveText = PreferenceData.interjectionPrefix()
 					model.playInterjectionSound()
 				} else {
-					if liveText != "" {
+					if liveText != PreferenceData.interjectionPrefix() {
 						liveText = model.submitLiveText()
 					}
 					liveText = pendingLiveText
