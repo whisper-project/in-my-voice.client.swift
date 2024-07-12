@@ -49,7 +49,7 @@ struct ControlView: View {
 				PreferenceData.speakWhenWhispering = speaking
 			}
 		} label: {
-			Image(speaking ? "speaking" : "not-speaking")
+			Image(speaking ? "voice-over-on" : "voice-over-off")
 				.renderingMode(.template)
 				.resizable()
 				.padding(5)

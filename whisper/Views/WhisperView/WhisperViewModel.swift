@@ -65,7 +65,7 @@ final class WhisperViewModel: ObservableObject {
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
     private var liveText: String = ""
-	private var lastSpeech: String = ""
+	private var lastLiveText: String = ""
     private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
@@ -127,7 +127,7 @@ final class WhisperViewModel: ObservableObject {
         for chunk in chunks {
             if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
-				lastSpeech = liveText
+				lastLiveText = liveText
                 if PreferenceData.speakWhenWhispering {
                     speak(liveText)
                 }
@@ -141,8 +141,15 @@ final class WhisperViewModel: ObservableObject {
     }
 
 	/// Repeat the last thing the whisperer typed, whether it was said or not
-	func repeatLastSpeech() {
-		speak(lastSpeech)
+	func repeatLastLiveLine() {
+		pastText.addLine(lastLiveText)
+		if PreferenceData.speakWhenWhispering {
+			speak(lastLiveText)
+		}
+		let pastChunks = WhisperProtocol.diffLines(old: "", new: lastLiveText + "\n")
+		transport.publish(chunks: pastChunks)
+		let currentChunks = WhisperProtocol.diffLines(old: "", new: liveText)
+		transport.publish(chunks: currentChunks)
 	}
 
     /// User has submitted the live text
