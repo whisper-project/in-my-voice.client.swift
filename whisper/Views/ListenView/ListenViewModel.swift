@@ -60,6 +60,7 @@ final class ListenViewModel: ObservableObject {
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
 	private var clients: [String: Candidate] = [:]	// clientId -> Candidate, for avoiding dups
+	private var pendingWhisperer: Candidate? = nil
     private var discoveryInProgress = false
     private var discoveryCountDown = 0
     private var discoveryTimer: Timer?
@@ -148,6 +149,7 @@ final class ListenViewModel: ObservableObject {
 		}
 		logger.info("Accepted invite from \(inviter.remote.kind) remote \(inviter.id) conversation \(inviter.info.conversationName)")
 		inviter.isPending = false
+		pendingWhisperer = inviter
 		let conversation = profile.forInvite(info: inviter.info)
 		conversationName = conversation.name
 		let chunk = WhisperProtocol.ProtocolChunk.listenRequest(conversation)
@@ -456,6 +458,7 @@ final class ListenViewModel: ObservableObject {
 		}
 		logger.info("Selecting \(candidate.remote.kind) whisperer \(candidate.id) for conversation \(conversation.id)")
 		whisperer = candidate
+		pendingWhisperer = nil
 		self.conversation = conversation
 		// stop looking for whisperers
 		cancelDiscovery()
@@ -489,10 +492,12 @@ final class ListenViewModel: ObservableObject {
 		invites = candidates.values.filter{$0.isPending}.sorted()
         if let whisperer = whisperer {
 			statusText = "\(conversation.name): Listening to \(whisperer.info.username)"
+		} else if let pendingWhisperer = pendingWhisperer {
+			statusText = "Waiting for \(pendingWhisperer.info.username) to approve your entry"
 		} else {
 			let prefix = conversationName.isEmpty ? "" : "\(conversationName): "
 			if !invites.isEmpty {
-				statusText = "\(prefix)Waiting for the Whisperer to approve..."
+				statusText = "\(prefix)Waiting for you to approve an invite..."
 			} else if discoveryInProgress {
 				let suffix = discoveryCountDown > 0 ? " \(discoveryCountDown)" : ""
 				statusText = "\(prefix)Looking for the Whisperer…\(suffix)"
