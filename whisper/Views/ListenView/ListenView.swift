@@ -68,10 +68,10 @@ struct ListenView: View {
 			.onAppear {
 				logger.log("ListenView appeared")
 				self.model.start()
-				UIApplication.shared.isIdleTimerDisabled = true
+				SleepControl.shared.disable(reason: "In Listen Session")
 			}
 			.onDisappear {
-				UIApplication.shared.isIdleTimerDisabled = false
+				SleepControl.shared.enable()
 				logger.log("ListenView disappeared")
 				self.model.stop()
 			}

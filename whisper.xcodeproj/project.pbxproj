@@ -33,6 +33,7 @@
 		377646C629BACB4B002C411C /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C529BACB4B002C411C /* MainViewModel.swift */; };
 		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
 		377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothFactory.swift */; };
+		377B3D232C4716F70041D26C /* SleepControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377B3D222C4716F70041D26C /* SleepControl.swift */; };
 		377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01052B7A65CC00489C05 /* WhisperProfile.swift */; };
 		377C01082B7A65DB00489C05 /* ListenProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01072B7A65DB00489C05 /* ListenProfile.swift */; };
 		377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01092B7AD47800489C05 /* Data+JSON.swift */; };
@@ -96,6 +97,7 @@
 		377646C529BACB4B002C411C /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
 		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		377646C929BACC16002C411C /* BluetoothFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothFactory.swift; sourceTree = "<group>"; };
+		377B3D222C4716F70041D26C /* SleepControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepControl.swift; sourceTree = "<group>"; };
 		377C01052B7A65CC00489C05 /* WhisperProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperProfile.swift; sourceTree = "<group>"; };
 		377C01072B7A65DB00489C05 /* ListenProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenProfile.swift; sourceTree = "<group>"; };
 		377C01092B7AD47800489C05 /* Data+JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+JSON.swift"; sourceTree = "<group>"; };
@@ -282,6 +284,7 @@
 				37D78A152B2FB50D002494CD /* MakeBinding.swift */,
 				377C01092B7AD47800489C05 /* Data+JSON.swift */,
 				374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */,
+				377B3D222C4716F70041D26C /* SleepControl.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -470,6 +473,7 @@
 				377646C829BACB73002C411C /* MainView.swift in Sources */,
 				373151112BA7624D005E989D /* SettingsProfile.swift in Sources */,
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
+				377B3D232C4716F70041D26C /* SleepControl.swift in Sources */,
 				377C010C2B7C1EEF00489C05 /* ShareProfileView.swift in Sources */,
 				377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */,
 				377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */,

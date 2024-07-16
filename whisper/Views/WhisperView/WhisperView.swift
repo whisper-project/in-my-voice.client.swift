@@ -81,10 +81,10 @@ struct WhisperView: View {
 				logger.log("WhisperView appeared")
 				model.start()
 				focusField = "liveText"
-				UIApplication.shared.isIdleTimerDisabled = true
+				SleepControl.shared.disable(reason: "In Whisper Session")
 			}
 			.onDisappear {
-				UIApplication.shared.isIdleTimerDisabled = false
+				SleepControl.shared.enable()
 				logger.log("WhisperView disappeared")
 				model.stop()
 			}
