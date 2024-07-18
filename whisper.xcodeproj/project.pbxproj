@@ -34,6 +34,7 @@
 		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
 		377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothFactory.swift */; };
 		377B3D232C4716F70041D26C /* SleepControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377B3D222C4716F70041D26C /* SleepControl.swift */; };
+		377B3D252C4867060041D26C /* WhisperPastTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377B3D242C4867060041D26C /* WhisperPastTextView.swift */; };
 		377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01052B7A65CC00489C05 /* WhisperProfile.swift */; };
 		377C01082B7A65DB00489C05 /* ListenProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01072B7A65DB00489C05 /* ListenProfile.swift */; };
 		377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01092B7AD47800489C05 /* Data+JSON.swift */; };
@@ -98,6 +99,7 @@
 		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		377646C929BACC16002C411C /* BluetoothFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothFactory.swift; sourceTree = "<group>"; };
 		377B3D222C4716F70041D26C /* SleepControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepControl.swift; sourceTree = "<group>"; };
+		377B3D242C4867060041D26C /* WhisperPastTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperPastTextView.swift; sourceTree = "<group>"; };
 		377C01052B7A65CC00489C05 /* WhisperProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperProfile.swift; sourceTree = "<group>"; };
 		377C01072B7A65DB00489C05 /* ListenProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenProfile.swift; sourceTree = "<group>"; };
 		377C01092B7AD47800489C05 /* Data+JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+JSON.swift"; sourceTree = "<group>"; };
@@ -356,6 +358,7 @@
 			isa = PBXGroup;
 			children = (
 				37C5142129CA2B35001A121B /* PastTextView.swift */,
+				377B3D242C4867060041D26C /* WhisperPastTextView.swift */,
 			);
 			path = PastTextView;
 			sourceTree = "<group>";
@@ -481,6 +484,7 @@
 				37076DE52B12DB97003AC2FD /* ListenProfileView.swift in Sources */,
 				377D711B2A956C23009B416F /* TcpAuthenticator.swift in Sources */,
 				37B6236F29EF166800213790 /* ListenersView.swift in Sources */,
+				377B3D252C4867060041D26C /* WhisperPastTextView.swift in Sources */,
 				377D71112A913C5C009B416F /* TcpFactory.swift in Sources */,
 				3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */,
 				37763D1D29AC33230051CFE5 /* BluetoothData.swift in Sources */,
