@@ -350,7 +350,7 @@ This build ignores spaces before or after ElevenLabs values in the Settings.  Th
 
 This build introduces better messaging on connection errors, so the user is prompted about how to fix the problem.
 
-Build v2.3.3 (2030003):
+Build v2.3.3 (2030003) and v2.3.4 (2030004):
 This build incorporates several new features and changes requested by users:
 
 - There is now a "repeat" button just to the right of the "speak/don't speak" button. Pressing this button will repeat the last full line entered by the Whisperer (speaking it if speech was on). Repeat leaves any current live text undisturbed, so the last line can be repeated even after the Whisperer has started to type something else.
