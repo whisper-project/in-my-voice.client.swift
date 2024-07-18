@@ -22,13 +22,14 @@ struct WhisperProfileView: View {
 			List {
 				ForEach(rows) { r in
 					NavigationLink(destination: WhisperProfileDetailView(conversation: r.conversation)) {
-						HStack(spacing: 10) {
+						HStack(spacing: 20) {
 							Button("Whisper", systemImage: "mouth") {
 								logger.info("Hit whisper button on \(r.conversation.id) (\(r.id))")
 								maybeWhisper?(r.conversation)
 							}
 							.labelStyle(.iconOnly)
 							.buttonStyle(.bordered)
+							.font(.title)
 							Text(r.id)
 								.lineLimit(nil)
 								.bold(r.conversation == defaultConversation)

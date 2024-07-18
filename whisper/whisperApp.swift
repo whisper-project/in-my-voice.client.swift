@@ -5,6 +5,7 @@
 
 import AVFAudio
 import SwiftUI
+import UserNotifications
 
 /// build information
 #if targetEnvironment(simulator)
@@ -32,6 +33,7 @@ let website = "https://clickonetwo.github.io/whisper"
 let aboutSite = URL(string: website)!
 let supportSite = URL(string: "\(website)/support.html")!
 let instructionSite = URL(string: "\(website)instructions.html")!
+let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
 /// global constants for light/dark mode
 let lightLiveTextColor = Color(.black)
@@ -187,10 +189,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             request.httpBody = body
             let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                 guard error == nil else {
-                    fatalError("Failed to post notification confirmation: \(String(describing: error))")
+                    logAnomaly("Failed to post notification confirmation: \(String(describing: error))")
+					completionHandler(.failed)
+					return
                 }
                 guard let response = response as? HTTPURLResponse else {
-                    fatalError("Received non-HTTP response on notification confirmation: \(String(describing: response))")
+                    logAnomaly("Received non-HTTP response on notification confirmation: \(String(describing: response))")
+					completionHandler(.failed)
+					return
                 }
                 if response.statusCode == 204 {
                     logger.info("Successful post of notification confirmation")
@@ -207,4 +213,24 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             completionHandler(.failed)
         }
     }
+}
+
+// following code from https://stackoverflow.com/a/66394826/558006
+func restartApplication(){
+	let localUserInfo: [AnyHashable : Any] = ["pushType": "restart"]
+
+	let content = UNMutableNotificationContent()
+	content.title = "Whisper app is ready to launch"
+	content.body = "Tap to open the application"
+	content.sound = UNNotificationSound.default
+	content.userInfo = localUserInfo
+	let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
+
+	let identifier = "io.clickonetwo.restart"
+	let request = UNNotificationRequest.init(identifier: identifier, content: content, trigger: trigger)
+
+	let center = UNUserNotificationCenter.current()
+	center.add(request)
+	
+	exit(0)
 }

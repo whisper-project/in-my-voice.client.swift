@@ -127,10 +127,13 @@ struct PreferenceData {
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
         let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        guard result == errSecSuccess else {
-            fatalError("Couldn't generate random bytes")
-        }
-        return Data(bytes).base64EncodedString()
+        if result == errSecSuccess {
+			return Data(bytes).base64EncodedString()
+		} else {
+			logAnomaly("Couldn't generate random bytes for secret, falling back to UUID")
+			let fakeBytes = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+			return Data(fakeBytes.utf8).base64EncodedString()
+		}
     }
 
 	// content channel ID
@@ -261,37 +264,37 @@ struct PreferenceData {
 
 	static private var elevenLabsApiKeyPreference: String {
 		get {
-			defaults.string(forKey: "elevenlabs_api_key_preference") ?? ""
+			defaults.string(forKey: "elevenlabs_api_key_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			defaults.setValue(val, forKey: "elevenlabs_api_key_preference")
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_api_key_preference")
 		}
 	}
 
 	static private var elevenLabsVoiceIdPreference: String {
 		get {
-			defaults.string(forKey: "elevenlabs_voice_id_preference") ?? ""
+			defaults.string(forKey: "elevenlabs_voice_id_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			defaults.setValue(val, forKey: "elevenlabs_voice_id_preference")
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_voice_id_preference")
 		}
 	}
 
 	static private var elevenLabsDictionaryIdPreference: String {
 		get {
-			defaults.string(forKey: "elevenlabs_dictionary_id_preference") ?? ""
+			defaults.string(forKey: "elevenlabs_dictionary_id_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			defaults.setValue(val, forKey: "elevenlabs_dictionary_id_preference")
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_dictionary_id_preference")
 		}
 	}
 
 	static private var elevenLabsDictionaryVersionPreference: String {
 		get {
-			defaults.string(forKey: "elevenlabs_dictionary_version_preference") ?? ""
+			defaults.string(forKey: "elevenlabs_dictionary_version_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			defaults.setValue(val, forKey: "elevenlabs_dictionary_version_preference")
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_dictionary_version_preference")
 		}
 	}
 
@@ -301,6 +304,24 @@ struct PreferenceData {
 		}
 		set(val) {
 			defaults.setValue(val - 1, forKey: "elevenlabs_latency_reduction_preference")
+		}
+	}
+
+	static private var interjectionPrefixPreference: String {
+		get {
+			defaults.string(forKey: "interjection_prefix_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
+		}
+		set(val) {
+			defaults.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "interjection_prefix_preference")
+		}
+	}
+
+	static private var interjectionAlertPreference: String {
+		get {
+			defaults.string(forKey: "interjection_alert_preference") ?? ""
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "interjection_alert_preference")
 		}
 	}
 
@@ -341,6 +362,19 @@ struct PreferenceData {
 		return elevenLabsLatencyReductionPreference
 	}
 
+	// interjection behavior
+	static func interjectionPrefix() -> String {
+		if interjectionPrefixPreference == "" {
+			return ""
+		} else {
+			return interjectionPrefixPreference + " "
+		}
+	}
+
+	static func interjectionAlertSound() -> String {
+		return interjectionAlertPreference
+	}
+
 	// server-side logging
 	static var doPresenceLogging: Bool {
 		get {
@@ -351,7 +385,7 @@ struct PreferenceData {
 		}
 	}
 
-	static let preferenceVersion = 2
+	static let preferenceVersion = 3
 
 	static func preferencesToJson() -> String {
 		let preferences = [
@@ -365,6 +399,8 @@ struct PreferenceData {
 			"elevenlabs_dictionary_id_preference": elevenLabsDictionaryIdPreference,
 			"elevenlabs_dictionary_version_preference": elevenLabsDictionaryVersionPreference,
 			"elevenlabs_latency_reduction_preference": "\(elevenLabsLatencyReductionPreference)",
+			"interjectionPrefixPreference": interjectionPrefixPreference,
+			"interjectionAlertPreference": interjectionAlertPreference,
 		]
 		guard let json = try? JSONSerialization.data(withJSONObject: preferences, options: .sortedKeys) else {
 			fatalError("Can't encode preferences data: \(preferences)")

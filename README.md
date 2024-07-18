@@ -82,17 +82,21 @@ The sound assets in this repository come from [Pixabay](https://pixabay.com), an
 
 Daniel Brotsky gratefully acknowledges the following content creators whose materials are used in this application:
 
-- [Whisper Speech Bubble Icon](https://thenounproject.com/icon/whisper-speech-bubble-4215124/) by [Lucas Helle](https://thenounproject.com/lucashelle/) via [the Noun Project](https://thenounproject.com).
+- [Air Horn Icon](https://thenounproject.com/icon/air-horn-4437429/) by [SuperNdre](https://thenounproject.com/pccandriaja13/) via [the Noun Project](https://thenounproject.com).
+- [Air Horn Sound](https://pixabay.com/sound-effects/air-horn-close-and-loud-106073/) by goose278 from [Pixabay](https://pixabay.com).
 - [Bicycle Bell Icon](https://thenounproject.com/icon/4355910/) by [DinosoftLab](https://thenounproject.com/dinosoftlab/) via [the Noun Project](https://thenounproject.com).
 - [Bicycle Bell Sound](https://pixabay.com/sound-effects/bike-bell-100665/) by Yin Yang Jake007 from [Pixabay](https://pixabay.com).
 - [Bicycle Horn Icon](https://thenounproject.com/icon/horn-2452403/) by [Berkah Icon](https://thenounproject.com/berkahicon/) via [the Noun Project](https://thenounproject.com).
 - [Bicycle Horn Sound](https://pixabay.com/sound-effects/bicycle-horn-7126/) by AntumDeluge from [Pixabay](https://pixabay.com).
-- [Air Horn Icon](https://thenounproject.com/icon/air-horn-4437429/) by [SuperNdre](https://thenounproject.com/pccandriaja13/) via [the Noun Project](https://thenounproject.com).
-- [Air Horn Sound](https://pixabay.com/sound-effects/air-horn-close-and-loud-106073/) by goose278 from [Pixabay](https://pixabay.com).
-- [Record Voice Over Icon](https://thenounproject.com/icon/record-voice-over-3644000/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
-- [Voice Over Off Icon](https://thenounproject.com/icon/voice-over-off-3644052/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
+- [Checkmark](https://thenounproject.com/icon/checkmark-5978148/) by [Ganesha](https://thenounproject.com/creator/ganesa_r/) via [the Noun Project](https://thenounproject.com).
 - [Decrease Font Size Icon](https://thenounproject.com/icon/4866497/) by [Yeong Rong Kim](https://thenounproject.com/yeongrong.kim.5/) via [the Noun Project](https://thenounproject.com).
 - [Increase Font Size Icon](https://thenounproject.com/icon/4866493/) by [Yeong Rong Kim](https://thenounproject.com/yeongrong.kim.5/) via [the Noun Project](https://thenounproject.com).
+- [Quote Dialog](https://thenounproject.com/icon/quote-dialog-332796/) by [Viktor Vorobyev](https://thenounproject.com/creator/vityavorobyev/) via [the Noun Project](https://thenounproject.com).
+- [Record Voice Over Icon](https://thenounproject.com/icon/record-voice-over-3644000/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
+- [Repeat Icon](https://thenounproject.com/icon/repeat-52066/) by [Julie Collard](https://thenounproject.com/creator/julie.collard.58) via [the Noun Project](https://thenounproject.com).
+- [Voice Over Off Icon](https://thenounproject.com/icon/voice-over-off-3644052/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
+- [Whisper Speech Bubble Icon](https://thenounproject.com/icon/whisper-speech-bubble-4215124/) by [Lucas Helle](https://thenounproject.com/lucashelle/) via [the Noun Project](https://thenounproject.com).
+- [Uncheck](https://thenounproject.com/icon/uncheck-6992025/) by [Annisa](https://thenounproject.com/creator/adeannisa0102/) via [the Noun Project](https://thenounproject.com).
 
 Daniel Brotsky is also grateful for the example application [ColorStripe](https://github.com/artemnovichkov/ColorStripe), designed by [@artemnovichkov](https://github.com/artemnovichkov) as described in his [blog post](https://blog.artemnovichkov.com/bluetooth-and-swiftui). Some of the code in ColorStripe, especially the use of Combine to connect Core Bluetooth managers with ViewModels, has been used in Whisper, as permitted by the [MIT license](https://github.com/artemnovichkov/ColorStripe/blob/main/LICENSE) under which ColorStripe was released.
 

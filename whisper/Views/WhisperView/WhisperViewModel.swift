@@ -53,6 +53,7 @@ final class WhisperViewModel: ObservableObject {
 
     @Published var statusText: String = ""
     @Published var connectionError = false
+	@Published var connectionErrorSeverity: TransportErrorSeverity = .report
     @Published var connectionErrorDescription: String = ""
 	@Published var candidates: [String: Candidate] = [:]		// id -> Candidate
 	@Published var listeners: [Candidate] = []
@@ -64,6 +65,7 @@ final class WhisperViewModel: ObservableObject {
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
     private var liveText: String = ""
+	private var lastLiveText: String = ""
     private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
@@ -125,6 +127,9 @@ final class WhisperViewModel: ObservableObject {
         for chunk in chunks {
             if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
+				if !liveText.trimmingCharacters(in: .whitespaces).isEmpty {
+					lastLiveText = liveText
+				}
                 if PreferenceData.speakWhenWhispering {
                     speak(liveText)
                 }
@@ -136,7 +141,19 @@ final class WhisperViewModel: ObservableObject {
         transport.publish(chunks: chunks)
         return liveText
     }
-    
+
+	/// Repeat the last thing the whisperer typed, whether it was said or not
+	func repeatLastLiveLine() {
+		pastText.addLine(lastLiveText)
+		if PreferenceData.speakWhenWhispering {
+			speak(lastLiveText)
+		}
+		let pastChunks = WhisperProtocol.diffLines(old: "", new: lastLiveText + "\n")
+		transport.publish(chunks: pastChunks)
+		let currentChunks = WhisperProtocol.diffLines(old: "", new: liveText)
+		transport.publish(chunks: currentChunks)
+	}
+
     /// User has submitted the live text
     func submitLiveText() -> String {
         return self.updateLiveText(old: liveText, new: liveText + "\n")
@@ -162,6 +179,15 @@ final class WhisperViewModel: ObservableObject {
         let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
 		transport.sendContent(remote: candidate.remote, chunks: [chunk])
     }
+
+	func playInterjectionSound() {
+		let soundName = PreferenceData.interjectionAlertSound()
+		if soundName != "" {
+			playSoundLocally(soundName)
+			let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
+			transport.publish(chunks: [chunk])
+		}
+	}
 
 	func acceptRequest(_ id: String) {
 		guard let invitee = candidates[id] else {
@@ -219,9 +245,10 @@ final class WhisperViewModel: ObservableObject {
         self.liveText = ""
     }
     
-    private func signalConnectionError(_ reason: String) {
+	private func signalConnectionError(_ severity: TransportErrorSeverity, _ reason: String) {
 		Task { @MainActor in
 			connectionError = true
+			connectionErrorSeverity = severity
 			connectionErrorDescription = reason
 		}
     }
@@ -236,7 +263,7 @@ final class WhisperViewModel: ObservableObject {
     }
 
 	private func receiveContentChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
-		fatalError("Whisperer received content (\(pair.chunk.toString())) from \(pair.remote.id)")
+		logAnomaly("Shouldn't happen: Whisperer received content (\(pair.chunk.toString())) from \(pair.remote.id)", kind: pair.remote.kind)
 	}
 
 	private func receiveControlChunk(_ pair: (remote: Remote, chunk: WhisperProtocol.ProtocolChunk)) {
@@ -246,7 +273,8 @@ final class WhisperViewModel: ObservableObject {
 	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
 		if chunk.isPresenceMessage() {
 			guard let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
-				fatalError("Received a presence message with invalid data: \(chunk.toString())")
+				logAnomaly("Ignoring a presence message with invalid data: \(chunk.toString())", kind: remote.kind)
+				return
 			}
 			guard info.conversationId == conversation.id else {
 				logger.info("Ignoring a presence message about the wrong conversation: \(info.conversationId)")
@@ -278,7 +306,10 @@ final class WhisperViewModel: ObservableObject {
 				refreshStatusText()
 				showStatusDetail = true
 			default:
-				fatalError("\(remote.kind) Listener sent an unexpected presence message: \(chunk)")
+				logAnomaly("Listener sent \(remote.id) sent an unexpected presence message: \(chunk)", kind: remote.kind)
+				connectionErrorSeverity = .upgrade
+				connectionErrorDescription = ""
+				connectionError = true
 			}
 		} else if chunk.isReplayRequest() {
 			guard let candidate = candidates[remote.id], !candidate.isPending else {
@@ -319,10 +350,15 @@ final class WhisperViewModel: ObservableObject {
 			let utterance = AVSpeechUtterance(string: text)
 			Self.synthesizer.speak(utterance)
 		} else {
-			ElevenLabs.shared.speakText(text: text)
+			let onError: (TransportErrorSeverity, String) -> () = { severity, message in
+				self.connectionErrorSeverity = severity
+				self.connectionErrorDescription = message
+				self.connectionError = true
+			}
+			ElevenLabs.shared.speakText(text: text, errorCallback: onError)
 		}
 	}
-    
+
     // play the alert sound locally
     private func playSoundLocally(_ name: String) {
         var name = name

@@ -341,3 +341,45 @@ This build provides cosmetic consistency to the Whisper and Listen profile views
 
 Build v2.2.5 (202005):
 This build has cosmetic changes to transcript views, but no functional changes. It is being submitted to the app store for release.
+
+Build v2.3.1 (2030001):
+This build prevents iOS devices from sleeping when whispering or listening.
+
+Build v2.3.2 (2030002):
+This build ignores spaces before or after ElevenLabs values in the Settings.  This should eliminate a common problem with entering these values.
+
+This build introduces better messaging on connection errors, so the user is prompted about how to fix the problem.
+
+Build v2.3.3 (2030003) and v2.3.4 (2030004):
+This build incorporates several new features and changes requested by users:
+
+- There is now a "repeat" button just to the right of the "speak/don't speak" button. Pressing this button will repeat the last full line entered by the Whisperer (speaking it if speech was on). Repeat leaves any current live text undisturbed, so the last line can be repeated even after the Whisperer has started to type something else.
+
+- There is now an "interject" button just to the right of the "repeat" button. Pressing this button will save and clear the in-progress live text, allowing the Whisperer to quickly type an interjection and then, when they press the button again (or hit return), restoring the text they were typing before. While an interjection is in progress, the live text type-in area is very heavily outlined, and the "interject" button shows a different icon indicating that the interjection is in progress.
+
+- There are two new Settings that control the behavior of the "interject" button. The first allows the Whisperer to provide an automatic prefix for each interjection (e.g., "Please wait"), and the second allows playing one of the alert sounds automatically when the interject button is pressed.
+
+- The buttons for "Whisper" and "Listen" that are next to the conversation names in the profile windows are now larger and easier to press.
+
+- When a Whisper or Listen session is in progress, the screen of your device will not go to black.
+
+- The status line in the Listen session makes it clear when you are waiting for the Whisperer to accept you into a conversation.
+
+- Errors generating speech with ElevenLabs are now reported to the user, so they can see if they have issues in their settings. And if there is an ElevenLabs problem, the app falls back to generating the speech with Apple's technology.
+
+Build v2.3.5 (2030005):
+This build incorporates several new features and changes requested by users:
+
+- There is now a "repeat" button just to the right of the "speak/don't speak" button. Pressing this button will repeat the last, non-blank, full line entered by the Whisperer (speaking it if speech was on). Repeat leaves any current live text undisturbed, so the last line can be repeated even after the Whisperer has started to type something else.
+
+- There is now an "interject" button just to the right of the "repeat" button. Pressing this button will save and clear the in-progress live text, allowing the Whisperer to quickly type an interjection and then, when they press the button again (or hit return), restoring the text they were typing before. While an interjection is in progress, the live text type-in area is very heavily outlined, and the "interject" button shows a different icon indicating that the interjection is in progress.
+
+- There are two new Settings that control the behavior of the "interject" button. The first allows the Whisperer to provide an automatic prefix for each interjection (e.g., "Please wait"), and the second allows playing one of the alert sounds automatically when the interject button is pressed.
+
+- The buttons for "Whisper" and "Listen" that are next to the conversation names in the profile windows are now larger and easier to press.
+
+- When a Whisper or Listen session is in progress, the screen of your device will not go to black.
+
+- The status line in the Listen session makes it clear when you are waiting for the Whisperer to accept you into a conversation.
+
+- Errors generating speech with ElevenLabs are now reported to the user, so they can see if they have issues in their settings. And if there is an ElevenLabs problem, the app falls back to generating the speech with Apple's technology.

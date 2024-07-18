@@ -15,10 +15,12 @@ struct WhisperView: View {
     var conversation: WhisperConversation
 
     @State private var liveText: String = ""
+	@State private var pendingLiveText: String = ""
     @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel
 	@State private var size = PreferenceData.sizeWhenWhispering
 	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
+	@State private var interjecting: Bool = false
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
@@ -57,18 +59,32 @@ struct WhisperView: View {
 				} message: {
 					Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
 				}
-				.alert("Connection Failure", isPresented: $model.connectionError) {
-					Button("OK") { mode = .ask }
+				.alert("Unexpected Error", isPresented: $model.connectionError) {
+					ConnectionErrorButtons(mode: $mode, severity: model.connectionErrorSeverity)
 				} message: {
-					Text("Unable to establish a connection.\n(Detailed error: \(self.model.connectionErrorDescription))")
+					ConnectionErrorContent(severity: model.connectionErrorSeverity, message: model.connectionErrorDescription)
+				}
+			}
+			.onChange(of: interjecting) {
+				if interjecting {
+					pendingLiveText = liveText
+					liveText = PreferenceData.interjectionPrefix()
+					model.playInterjectionSound()
+				} else {
+					if liveText != PreferenceData.interjectionPrefix() && liveText != "" {
+						liveText = model.submitLiveText()
+					}
+					liveText = pendingLiveText
 				}
 			}
 			.onAppear {
 				logger.log("WhisperView appeared")
 				model.start()
 				focusField = "liveText"
+				SleepControl.shared.disable(reason: "In Whisper Session")
 			}
 			.onDisappear {
+				SleepControl.shared.enable()
 				logger.log("WhisperView disappeared")
 				model.stop()
 			}
@@ -106,7 +122,7 @@ struct WhisperView: View {
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
-		ControlView(size: $size, magnify: $magnify, mode: .whisper, maybeStop: maybeStop, playSound: model.playSound)
+		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: .whisper, maybeStop: maybeStop, playSound: model.playSound, repeatSpeech: model.repeatLastLiveLine)
 			.padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
 		PastTextView(mode: .whisper, model: model.pastText)
 			.font(FontSizes.fontFor(size))
@@ -130,7 +146,10 @@ struct WhisperView: View {
 			.font(FontSizes.fontFor(size))
 			.truncationMode(.head)
 			.onChange(of: liveText) { old, new in
-				self.liveText = model.updateLiveText(old: old, new: new)
+				liveText = model.updateLiveText(old: old, new: new)
+				if interjecting && new.hasSuffix("\n") {
+					DispatchQueue.main.async { interjecting = false }
+				}
 			}
 			.onSubmit {
 				// shouldn't ever be used with a TextEditor,
@@ -145,7 +164,7 @@ struct WhisperView: View {
 			.frame(maxWidth: geometry.size.width,
 				   maxHeight: geometry.size.height * liveTextProportion,
 				   alignment: .topLeading)
-			.border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: 2)
+			.border(colorScheme == .light ? lightLiveBorderColor : darkLiveBorderColor, width: interjecting ? 8 : 2)
 			.padding(EdgeInsets(top: 0, leading: sidePad, bottom: whisperViewBottomPad, trailing: sidePad))
 			.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 	}

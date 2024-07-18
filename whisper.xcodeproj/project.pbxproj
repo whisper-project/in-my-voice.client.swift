@@ -15,6 +15,7 @@
 		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
 		373D3D092BED98F300FCD1F5 /* SwiftUIWindowBinder in Frameworks */ = {isa = PBXBuildFile; productRef = 373D3D082BED98F300FCD1F5 /* SwiftUIWindowBinder */; };
 		373D3D0A2BEDA60A00FCD1F5 /* FirstKeyWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */; };
+		3743EF5C2C409B0100B5021F /* ConnectionErrorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3743EF5B2C409B0100B5021F /* ConnectionErrorViews.swift */; };
 		37472EBB2BF43381005713E1 /* WhisperTranscriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37472EBA2BF43381005713E1 /* WhisperTranscriptView.swift */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
 		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
@@ -32,6 +33,7 @@
 		377646C629BACB4B002C411C /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C529BACB4B002C411C /* MainViewModel.swift */; };
 		377646C829BACB73002C411C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C729BACB73002C411C /* MainView.swift */; };
 		377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377646C929BACC16002C411C /* BluetoothFactory.swift */; };
+		377B3D232C4716F70041D26C /* SleepControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377B3D222C4716F70041D26C /* SleepControl.swift */; };
 		377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01052B7A65CC00489C05 /* WhisperProfile.swift */; };
 		377C01082B7A65DB00489C05 /* ListenProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01072B7A65DB00489C05 /* ListenProfile.swift */; };
 		377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01092B7AD47800489C05 /* Data+JSON.swift */; };
@@ -73,6 +75,7 @@
 		3724D7C32BB4A3EA00BC6741 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		373151102BA7624D005E989D /* SettingsProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsProfile.swift; sourceTree = "<group>"; };
 		373748782AD66D150053858B /* TcpMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpMonitor.swift; sourceTree = "<group>"; };
+		3743EF5B2C409B0100B5021F /* ConnectionErrorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionErrorViews.swift; sourceTree = "<group>"; };
 		37472EBA2BF43381005713E1 /* WhisperTranscriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperTranscriptView.swift; sourceTree = "<group>"; };
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
 		374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstKeyWindow.swift; sourceTree = "<group>"; };
@@ -94,6 +97,7 @@
 		377646C529BACB4B002C411C /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
 		377646C729BACB73002C411C /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		377646C929BACC16002C411C /* BluetoothFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothFactory.swift; sourceTree = "<group>"; };
+		377B3D222C4716F70041D26C /* SleepControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepControl.swift; sourceTree = "<group>"; };
 		377C01052B7A65CC00489C05 /* WhisperProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperProfile.swift; sourceTree = "<group>"; };
 		377C01072B7A65DB00489C05 /* ListenProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenProfile.swift; sourceTree = "<group>"; };
 		377C01092B7AD47800489C05 /* Data+JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+JSON.swift"; sourceTree = "<group>"; };
@@ -149,6 +153,14 @@
 				3712340D29E20BD700CBF49C /* ControlView.swift */,
 			);
 			path = ControlView;
+			sourceTree = "<group>";
+		};
+		3743EF5A2C409AD300B5021F /* ErrorViews */ = {
+			isa = PBXGroup;
+			children = (
+				3743EF5B2C409B0100B5021F /* ConnectionErrorViews.swift */,
+			);
+			path = ErrorViews;
 			sourceTree = "<group>";
 		};
 		3758F3EC29E8C2E00072F7A8 /* Sounds */ = {
@@ -224,6 +236,7 @@
 				3712340C29E20BAF00CBF49C /* ControlView */,
 				37C5142029CA2B0F001A121B /* PastTextView */,
 				376388CB29DDFB3F006E5686 /* StatusTextView */,
+				3743EF5A2C409AD300B5021F /* ErrorViews */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -271,6 +284,7 @@
 				37D78A152B2FB50D002494CD /* MakeBinding.swift */,
 				377C01092B7AD47800489C05 /* Data+JSON.swift */,
 				374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */,
+				377B3D222C4716F70041D26C /* SleepControl.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -459,6 +473,7 @@
 				377646C829BACB73002C411C /* MainView.swift in Sources */,
 				373151112BA7624D005E989D /* SettingsProfile.swift in Sources */,
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
+				377B3D232C4716F70041D26C /* SleepControl.swift in Sources */,
 				377C010C2B7C1EEF00489C05 /* ShareProfileView.swift in Sources */,
 				377646CA29BACC16002C411C /* BluetoothFactory.swift in Sources */,
 				377C01062B7A65CC00489C05 /* WhisperProfile.swift in Sources */,
@@ -497,6 +512,7 @@
 				377D71162A913E8B009B416F /* PreferenceData.swift in Sources */,
 				377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */,
 				37C5142229CA2B35001A121B /* PastTextView.swift in Sources */,
+				3743EF5C2C409B0100B5021F /* ConnectionErrorViews.swift in Sources */,
 				37D6B35E29BCF66400F952FE /* ListenViewModel.swift in Sources */,
 				374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */,
 				377237252BB8F5BE0062A833 /* LinkView.swift in Sources */,
@@ -635,7 +651,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2020005;
+				CURRENT_PROJECT_VERSION = 2030005;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -655,7 +671,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.2;
+				MARKETING_VERSION = 2.3;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -677,7 +693,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2020005;
+				CURRENT_PROJECT_VERSION = 2030005;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -697,7 +713,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.2;
+				MARKETING_VERSION = 2.3;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

@@ -4,9 +4,6 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import SwiftUI
-import UIKit
-
-let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
 struct MainView: View {
     @Environment(\.colorScheme) private var colorScheme

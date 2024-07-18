@@ -14,7 +14,7 @@ final class ComboListenTransport: SubscribeTransport {
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (String) -> Void) {
+    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
         logger.info("Starting combo listen transport")
 		self.failureCallback = failureCallback
 		initializeTransports()
@@ -39,7 +39,8 @@ final class ComboListenTransport: SubscribeTransport {
     
     func sendControl(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
         guard let remote = remotes[remote.id] else {
-            fatalError("Targeting a remote that's not a whisperer: \(remote.id)")
+			logAnomaly("Sending control to an unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
         switch remote.kind {
         case .local:
@@ -51,7 +52,8 @@ final class ComboListenTransport: SubscribeTransport {
 
 	func drop(remote: Remote) {
 		guard let remote = remotes.removeValue(forKey: remote.id) else {
-			fatalError("Dropping an unknown remote: \(remote.id)")
+			logAnomaly("Dropping an unknown remote: \(remote.id)", kind: remote.kind)
+			return
 		}
 		clients.removeValue(forKey: remote.clientId)
 		switch remote.kind {
@@ -64,7 +66,8 @@ final class ComboListenTransport: SubscribeTransport {
 
 	func subscribe(remote: Remote, conversation: ListenConversation) {
         guard let remote = remotes[remote.id] else {
-            fatalError("Subscribing to an unknown remote: \(remote.id)")
+			logAnomaly("Subscribing to an unknown remote: \(remote.id)", kind: remote.kind)
+			return
         }
         switch remote.kind {
         case .local:
@@ -110,7 +113,7 @@ final class ComboListenTransport: SubscribeTransport {
 	private var remotes: [String: Remote] = [:]	// maps from remote id to remote
 	private var clients: [String: Remote] = [:]	// maps from client id to remote
     private var cancellables: Set<AnyCancellable> = []
-	private var failureCallback: ((String) -> Void)?
+	private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
 
     init(_ conversation: ListenConversation) {
         logger.log("Initializing combo listen transport")
@@ -182,7 +185,7 @@ final class ComboListenTransport: SubscribeTransport {
 		}
 		if localTransport == nil && globalTransport == nil {
 			logger.error("No transports available for whispering")
-			failureCallback?("Cannot whisper unless one of Bluetooth or WiFi is available")
+			failureCallback?(.endSession, "Cannot whisper unless one of Bluetooth or WiFi is available")
 		}
 	}
 
@@ -202,7 +205,8 @@ final class ComboListenTransport: SubscribeTransport {
 			logger.info("Starting only Bluetooth because Internet not available")
 			local.start(failureCallback: failureCallback!)
 		} else {
-			fatalError("Cannot listen because neither Bluetooth nor Internet is available")
+			logAnomaly("Cannot listen because neither Bluetooth nor Internet is available")
+			self.failureCallback?(.endSession, "Cannot whisper because neither Bluetooth nor Internet is available")
 		}
 	}
 
@@ -248,7 +252,8 @@ final class ComboListenTransport: SubscribeTransport {
 			return remote
 		}
 		guard chunk.isPresenceMessage(), let info = WhisperProtocol.ClientInfo.fromString(chunk.text) else {
-			fatalError("Non-presence initial control packet received from \(remote.kind) remote: \(remote.id)")
+			logAnomaly("Non-presence initial control packet received from remote: \(remote.id)", kind: remote.kind)
+			return nil
 		}
 		guard clients[info.clientId] == nil else {
 			logger.info("Refusing second appearance of client via different network: \(remote.kind)")

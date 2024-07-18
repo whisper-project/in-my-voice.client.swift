@@ -20,6 +20,7 @@ struct ListenView: View {
     @StateObject private var model: ListenViewModel
 	@State private var size = PreferenceData.sizeWhenListening
 	@State private var magnify: Bool = PreferenceData.magnifyWhenListening
+	@State private var interjecting: Bool = false
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
@@ -53,10 +54,10 @@ struct ListenView: View {
 				} message: {
 					Text("Do you really want to stop \(mode == .whisper ? "whispering" : "listening")?")
 				}
-				.alert("Connection Failure", isPresented: $model.connectionError) {
-					Button("OK") { mode = .ask }
+				.alert("Unexpected Error", isPresented: $model.connectionError) {
+					ConnectionErrorButtons(mode: $mode, severity: model.connectionErrorSeverity)
 				} message: {
-					Text("Lost connection to Whisperer: \(self.model.connectionErrorDescription)")
+					ConnectionErrorContent(severity: model.connectionErrorSeverity, message: model.connectionErrorDescription)
 				}
 				.alert("Conversation Ended", isPresented: $model.conversationEnded) {
 					Button("OK") { mode = .ask }
@@ -67,8 +68,10 @@ struct ListenView: View {
 			.onAppear {
 				logger.log("ListenView appeared")
 				self.model.start()
+				SleepControl.shared.disable(reason: "In Listen Session")
 			}
 			.onDisappear {
+				SleepControl.shared.enable()
 				logger.log("ListenView disappeared")
 				self.model.stop()
 			}
@@ -109,7 +112,7 @@ struct ListenView: View {
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
-		ControlView(size: $size, magnify: $magnify, mode: mode, maybeStop: maybeStop)
+		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: mode, maybeStop: maybeStop)
 			.padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
 		if (liveWindowPosition ?? "bottom" != "bottom") {
 			liveView(geometry)

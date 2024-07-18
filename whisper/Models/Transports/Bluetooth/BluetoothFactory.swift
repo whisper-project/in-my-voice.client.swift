@@ -178,7 +178,6 @@ extension BluetoothFactory: CBPeripheralManagerDelegate {
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
         if let err = error {
 			logAnomaly("Add \(service) failed with \(err)", kind: .local)
-            fatalError("Couldn't add the service \(service) - please report a bug!")
         }
     }
     

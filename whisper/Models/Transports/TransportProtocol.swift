@@ -15,6 +15,16 @@ enum TransportStatus: String {
     case on = "on"
 }
 
+enum TransportErrorSeverity {
+	case temporary
+	case settings
+	case report
+	case upgrade
+	case endSession
+	case relaunch
+	case reinstall
+}
+
 enum TransportKind: CustomStringConvertible {
 	case local
 	case global
@@ -52,7 +62,7 @@ protocol Transport {
     var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> { get }
 	var lostRemoteSubject: PassthroughSubject<Remote, Never> { get }
 
-    func start(failureCallback: @escaping (String) -> Void)
+    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void)
     func stop()
     
     func goToBackground()

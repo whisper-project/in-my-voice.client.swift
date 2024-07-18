@@ -19,7 +19,9 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 	private var speaker: AVAudioPlayer?
 	private var emptyTextCount: Int = 0
 
-	func speakText(text: String) {
+	private static let synthesizer = AVSpeechSynthesizer()
+
+	func speakText(text: String, errorCallback: ((TransportErrorSeverity, String) -> Void)? = nil) {
 		guard !text.isEmpty else {
 			emptyTextCount += 1
 			if emptyTextCount == 2 {
@@ -80,6 +82,11 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				self.queueSpeech(data)
 				return
 			}
+			// fallback to Apple speech generation
+			DispatchQueue.main.async {
+				let utterance = AVSpeechUtterance(string: text)
+				Self.synthesizer.speak(utterance)
+			}
 			logAnomaly("Speech generation of \(text) got response status \(response.statusCode)")
 			guard let data = data,
 				  let body = try? JSONSerialization.jsonObject(with: data),
@@ -88,6 +95,22 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				return
 			}
 			logAnomaly("Error details of speech generation: \(obj)")
+			if response.statusCode == 401 {
+				errorCallback?(.settings, "Invalid ElevenLabs API key")
+			} else if let detail = obj["detail"] as? [String: String],
+					  let status = detail["status"],
+					  let message = detail["message"]
+			{
+				if status == "voice_not_found" {
+					errorCallback?(.settings, "Invalid ElevenLabs voice ID")
+				} else if status == "pronunciation_dictionary_not_found" {
+					errorCallback?(.settings, "Invalid ElevenLabs dictionary ID or version")
+				} else {
+					errorCallback?(.report, "ElevenLabs reported a problem: \(message)")
+				}
+			} else {
+				errorCallback?(.report, "ElevenLabs reported a mysterious problem")
+			}
 		}
 		logger.info("Posting generation request to ElevenLabs")
 		task.resume()

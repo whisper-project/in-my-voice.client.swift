@@ -10,9 +10,11 @@ struct ControlView: View {
 
     @Binding var size: FontSizes.FontSize
     @Binding var magnify: Bool
+	@Binding var interjecting: Bool
 	let mode: OperatingMode
 	var maybeStop: (() -> Void)? = nil
     var playSound: (() -> Void)? = nil
+	var repeatSpeech: (() -> Void)? = nil
 
     @State var alertSound = PreferenceData.alertSound
     @State var speaking: Bool = false
@@ -21,6 +23,8 @@ struct ControlView: View {
         HStack(alignment: .center) {
             maybeAlarmButton()
             speechButton()
+			maybeRepeatButton()
+			maybeInterjectingButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
 			Button(action: { maybeStop?() }) {
@@ -36,25 +40,61 @@ struct ControlView: View {
         }
     }
     
-    @ViewBuilder private func speechButton() -> some View {
-        Button {
-            speaking.toggle()
-            if mode == .listen {
-                PreferenceData.speakWhenListening = speaking
-            } else {
-                PreferenceData.speakWhenWhispering = speaking
-            }
-        } label: {
-            Image(speaking ? "voice-over-on" : "voice-over-off")
-                .renderingMode(.template)
-                .resizable()
-                .padding(5)
-                .frame(width: 50, height: 50)
-                .border(colorScheme == .light ? .black : .white, width: 1)
-        }
-        Spacer()
-    }
-    
+	@ViewBuilder private func speechButton() -> some View {
+		Button {
+			speaking.toggle()
+			if mode == .listen {
+				PreferenceData.speakWhenListening = speaking
+			} else {
+				PreferenceData.speakWhenWhispering = speaking
+			}
+		} label: {
+			Image(speaking ? "voice-over-on" : "voice-over-off")
+				.renderingMode(.template)
+				.resizable()
+				.padding(5)
+				.frame(width: 50, height: 50)
+				.border(colorScheme == .light ? .black : .white, width: 1)
+		}
+		Spacer()
+	}
+
+	@ViewBuilder private func maybeRepeatButton() -> some View {
+		if mode == .listen {
+			EmptyView()
+		} else {
+			Button {
+				repeatSpeech?()
+			} label: {
+				Image("repeat-speech")
+					.renderingMode(.template)
+					.resizable()
+					.padding(5)
+					.frame(width: 50, height: 50)
+					.border(colorScheme == .light ? .black : .white, width: 1)
+			}
+			Spacer()
+		}
+	}
+
+	@ViewBuilder private func maybeInterjectingButton() -> some View {
+		if mode == .listen {
+			EmptyView()
+		} else {
+			Button {
+				interjecting.toggle()
+			} label: {
+				Image(interjecting ? "interjecting" : "not-interjecting")
+					.renderingMode(.template)
+					.resizable()
+					.padding(5)
+					.frame(width: 50, height: 50)
+					.border(colorScheme == .light ? .black : .white, width: 1)
+			}
+			Spacer()
+		}
+	}
+
     @ViewBuilder private func maybeAlarmButton() -> some View {
         if mode == .listen {
             EmptyView()
@@ -176,11 +216,15 @@ struct ControlView_Previews: PreviewProvider {
     static func modeB(_ i: Int) -> OperatingMode {
         return options[i].2
     }
-    
+
+	static func interjectingB(_ i: Int) -> Binding<Bool> {
+		return Binding(get: { i % 2 == 0 }, set: { _ = $0 })
+	}
+
     static var previews: some View {
         VStack {
             ForEach(0 ..< 10) {
-                ControlView(size: sizeB($0), magnify: magnifyB($0), mode: modeB($0))
+				ControlView(size: sizeB($0), magnify: magnifyB($0), interjecting: interjectingB($0), mode: modeB($0))
             }
         }
     }
