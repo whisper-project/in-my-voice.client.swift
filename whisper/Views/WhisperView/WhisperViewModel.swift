@@ -127,7 +127,9 @@ final class WhisperViewModel: ObservableObject {
         for chunk in chunks {
             if chunk.isCompleteLine() {
                 pastText.addLine(liveText)
-				lastLiveText = liveText
+				if !liveText.trimmingCharacters(in: .whitespaces).isEmpty {
+					lastLiveText = liveText
+				}
                 if PreferenceData.speakWhenWhispering {
                     speak(liveText)
                 }
