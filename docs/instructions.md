@@ -110,7 +110,15 @@ The next section of settings on both iOS and MacOS control what happens when the
 
 #### ElevenLabs Speech Generation Settings
 
-The final section of settings on both iOS and MacOS control how Whisper generates speech when users choose to read whispered text out loud (see [here](#whisperer-controls) and [here](#listener-controls) for details). By default, Whisper uses Apple’s built-in speech generation technology when users choose to read whispered text out loud (see [here](#whisperer-controls) and [here](#listener-controls) for details). Users with an [ElevenLabs](https://elevenlabs.io) account can opt instead to use use that technology by filling in values for the options in this section. Documentation on the required settings (API key, voice ID, and latency reduction) can be found [here](https://elevenlabs.io/docs/api-reference/text-to-speech). 
+The final section of settings on both iOS and MacOS control how Whisper generates speech when users choose to read whispered text out loud (see [here](#whisperer-controls) and [here](#listener-controls) for details). By default, Whisper uses Apple’s built-in speech generation technology. Users with an [ElevenLabs](https://elevenlabs.io) account can opt instead to use that technology by filling in values for the options in this section:
+
+* **API Key** — This is a very long string of lower-case letters and numbers (typically starting with `sk_`) that is issued by ElevenLabs on your request. This value is required in order to use ElevenLabs speech generation.
+* **Voice ID** — This is a string of upper- and lower-case numbers and letters that identify the ElevenLabs voice you would like to use to read whispered text.  This is *not* the name of the voice as displayed in the ElevenLabs UI. (For example, the ElevenLabs free voice named “Daniel” has the voice ID `CYw3kZ02Hs0563khs1Fj`.) This value is required in order to use ElevenLabs speech generation.
+* **Pronunciation Dictionary ID** — This value is optional and only used if you have created a custom dictionary for word pronunciation via the ElevenLabs API.
+* **Pronunciation Dictionary Version** — This value is optional and only used if you have created a custom dictionary for word pronunciation via the ElevenLabs API.
+* **Latency Reduction** — Users who have generated a custom voice using the ElevenLabs tools may want to adjust this setting.  It has no effect if used with any of the free ElevenLabs voices.
+
+Full documentation on these settings, including how to apply for and receive your API key, and how to find the Voice ID for a given voice, can be found on the [ElevenLabs site](https://elevenlabs.io/docs/api-reference/text-to-speech). 
 
 ## Controls
 
