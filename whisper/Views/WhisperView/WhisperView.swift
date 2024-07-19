@@ -14,6 +14,9 @@ struct WhisperView: View {
     @Binding var mode: OperatingMode
     var conversation: WhisperConversation
 
+	@AppStorage("interjection_prefix_preference") private var interjectionPrefix: String?
+	@AppStorage("interjection_alert_preference") private var interjectionAlert: String?
+
     @State private var liveText: String = ""
 	@State private var pendingLiveText: String = ""
     @FocusState private var focusField: String?
@@ -77,6 +80,8 @@ struct WhisperView: View {
 					liveText = pendingLiveText
 				}
 			}
+			.onChange(of: interjectionPrefix) { UserProfile.shared.settingsProfile.update() }
+			.onChange(of: interjectionAlert) { UserProfile.shared.settingsProfile.update() }
 			.onAppear {
 				logger.log("WhisperView appeared")
 				model.start()
