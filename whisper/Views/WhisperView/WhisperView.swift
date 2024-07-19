@@ -71,7 +71,7 @@ struct WhisperView: View {
 					liveText = PreferenceData.interjectionPrefix()
 					model.playInterjectionSound()
 				} else {
-					if liveText != PreferenceData.interjectionPrefix() && liveText != "" {
+					if !liveText.isEmpty && liveText != PreferenceData.interjectionPrefix() {
 						liveText = model.submitLiveText()
 					}
 					liveText = pendingLiveText
@@ -146,9 +146,11 @@ struct WhisperView: View {
 			.font(FontSizes.fontFor(size))
 			.truncationMode(.head)
 			.onChange(of: liveText) { old, new in
-				liveText = model.updateLiveText(old: old, new: new)
-				if interjecting && new.hasSuffix("\n") {
+				if interjecting && new == old + "\n" {
+					liveText = old
 					DispatchQueue.main.async { interjecting = false }
+				} else {
+					liveText = model.updateLiveText(old: old, new: new)
 				}
 			}
 			.onSubmit {

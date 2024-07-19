@@ -182,7 +182,7 @@ final class WhisperViewModel: ObservableObject {
 
 	func playInterjectionSound() {
 		let soundName = PreferenceData.interjectionAlertSound()
-		if soundName != "" {
+		if !soundName.isEmpty {
 			playSoundLocally(soundName)
 			let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
 			transport.publish(chunks: [chunk])
