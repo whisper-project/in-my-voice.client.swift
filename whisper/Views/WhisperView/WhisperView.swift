@@ -14,6 +14,9 @@ struct WhisperView: View {
     @Binding var mode: OperatingMode
     var conversation: WhisperConversation
 
+	@AppStorage("interjection_prefix_preference") private var interjectionPrefix: String?
+	@AppStorage("interjection_alert_preference") private var interjectionAlert: String?
+
     @State private var liveText: String = ""
 	@State private var pendingLiveText: String = ""
     @FocusState private var focusField: String?
@@ -71,12 +74,14 @@ struct WhisperView: View {
 					liveText = PreferenceData.interjectionPrefix()
 					model.playInterjectionSound()
 				} else {
-					if liveText != PreferenceData.interjectionPrefix() && liveText != "" {
+					if !liveText.isEmpty && liveText != PreferenceData.interjectionPrefix() {
 						liveText = model.submitLiveText()
 					}
 					liveText = pendingLiveText
 				}
 			}
+			.onChange(of: interjectionPrefix) { UserProfile.shared.settingsProfile.update() }
+			.onChange(of: interjectionAlert) { UserProfile.shared.settingsProfile.update() }
 			.onAppear {
 				logger.log("WhisperView appeared")
 				model.start()
@@ -146,9 +151,11 @@ struct WhisperView: View {
 			.font(FontSizes.fontFor(size))
 			.truncationMode(.head)
 			.onChange(of: liveText) { old, new in
-				liveText = model.updateLiveText(old: old, new: new)
-				if interjecting && new.hasSuffix("\n") {
+				if interjecting && new == old + "\n" {
+					liveText = old
 					DispatchQueue.main.async { interjecting = false }
+				} else {
+					liveText = model.updateLiveText(old: old, new: new)
 				}
 			}
 			.onSubmit {

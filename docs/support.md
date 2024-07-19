@@ -47,6 +47,14 @@ Nope! The contents of conversations held through Whisper are not stored *anywher
 
 The Whisperer can copy and paste what they have typed in the app, but Listeners cannot copy any text from the app or the browser.
 
+### If I turn on *Read Aloud* while whispering, will it be on when I listen?
+
+No. The state of all controls (Read Aloud, Font Size, and so on) is remembered separately for whisper and listen sessions.
+
+### If I turn on *Read Aloud* while whispering in one conversation, will it be on when I whisper in another conversation?
+
+Yes. The state of Whisperer controls is used for all conversations, and similarly for the state of the Listener controls.
+
 ## Need More Support?
 
 If the answers above have not solved your problem, please contact us through [this form](https://forms.gle/GE9BjX6MPMi8kTkFA) and we will get back to you as soon as we can. Please note that this is a single-developer app, so response times will not be immediate (or maybe not even quick).

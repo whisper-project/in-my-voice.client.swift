@@ -82,7 +82,7 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
-			<string>Whisper Interjection Preferences</string>
+			<string>Whisperer Interjection</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -103,9 +103,9 @@
 			<string></string>
 			<key>Values</key>
 			<array>
-				<string>&quot;&quot;</string>
-				<string>bicycle-bell</string>
-				<string>bicycle-horn</string>
+				<string></string>
+				<string>bike-bell</string>
+				<string>bike-horn</string>
 				<string>air-horn</string>
 			</array>
 			<key>Titles</key>

@@ -364,7 +364,7 @@ struct PreferenceData {
 
 	// interjection behavior
 	static func interjectionPrefix() -> String {
-		if interjectionPrefixPreference == "" {
+		if interjectionPrefixPreference.isEmpty {
 			return ""
 		} else {
 			return interjectionPrefixPreference + " "

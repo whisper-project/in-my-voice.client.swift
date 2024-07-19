@@ -34,8 +34,8 @@ Each conversation keeps track of which Listeners you have previously approved to
 ### Tips for whispering:
 
 * Listeners will only be able to read whispers sent *after* they join. Listeners who join later will not see any of the prior conversation.
-* You can change your [Whisperer settings](#whisperer-settings) at any point during the conversation. Any settings you change will be remembered and used the next time you start a conversation.
-* When whispering to people very near you, you don't necessarily need them to connect via their devices. You can simply turn on the *Read Aloud* [Whisperer setting](#whisperer-settings) and the Listener(s) will hear your whispers whenever you type the return key.
+* While whispering, you have access to a set of [Whisperer controls](#whisperer-controls) that you can use to customize the app’s behavior while whispering. Any changes you make using these controls are remembered from one session to the next.
+* When whispering to people very near you, you don't necessarily need them to connect via their devices. You can simply turn on the *Read Aloud* [Whisperer setting](#whisperer-controls) and the Listener(s) will hear your whispers whenever you type the return key.
 
 ## How to Listen ##
 
@@ -63,7 +63,7 @@ After following the steps in [Quick Start](#quick-start) above, there are three 
 2. Be a good listener! Make sure to read everything the Whisperer sends so you're sure of what they're saying.
 3. Don't speak *over* the Whisperer. Even though they're typing and you're using your voice, you're still interrupting if you talk while they're talking. Remember: hearing people are wired to pay attention to spoken words. That means that, even with the best intentions on all sides, you will naturally drown out the Whisperer by interrupting aloud.
 4. The average person can speak aloud a lot faster than they can type (especially if the typist has physical restrictions). Remind yourself that this affects the pace of the conversation. It may feel a little awkward (at least at first), but that's okay—awkwardness happens! And it's a very minor price to pay for being able to have full conversations with the Whisperer(s) in your life.
-5. It might make the most sense in some situations (e.g., if you have to be looking elsewhere) for your device to read what the Whisperer says. You can change your *Read Aloud* [Listener setting](#listener-settings) at any time, and it will be remembered for the next time you listen.
+5. It might make the most sense in some situations (e.g., if you have to be looking elsewhere) for your device to read what the Whisperer says. You can use your *Read Aloud* [Listener control](#listener-controls) to turn this feature on (or off), and it will be remembered for the next time you listen.
 
 ## User Profiles
 
@@ -75,11 +75,9 @@ The combination of your name, your list of created conversations for whispering,
 
 ## Settings ##
 
-### App Settings ###
-
 On both the macOS app and the iOS app, you'll find a Settings button on the start screen. When you click that, you'll be presented with a list of options that let you control how the app behaves; the options are displayed in a window on macOS and as a page in the Settings app on iOS.
 
-#### iOS-Only Settings
+### iOS-Only Settings
 
 On iOS, but not MacOS, the first group of settings, "Allow Whisper to Access," is an Apple-generated list of options for how the app interacts with other features on your device:
 
@@ -89,7 +87,7 @@ On iOS, but not MacOS, the first group of settings, "Allow Whisper to Access," i
 * **Background App Refresh** — Whisper doesn’t do background app refresh, so this setting has no effect.
 * **Cellular Data** — This option, which only appears if your device supports cellular data connections, controls whether Whisper can use the internet when not connected to wifi. Whisper conversations use very little data, so leaving this setting on is very unlikely to affect your cellular cost.
 
-#### iOS and MacOS Settings
+### iOS and MacOS Settings
 
 On iOS, the next group of settings is called “Whisper Settings.” On MacOS, the window that contains all the settings is called “Whisper Settings.” In both cases, these options are offered:
 
@@ -103,22 +101,62 @@ On iOS, the next group of settings is called “Whisper Settings.” On MacOS, t
   * **listen to last-used conversation** — a single tap will rejoin the conversation you most recently listened to.
 * **Listener sees newest whisper in** — By default, when listening, the Whisperer’s live typing appears in the bottom part of the screen and the Whisperer’s past typing appears in the top part of the screen, with the most recently typed item on the bottom (much like a messaging app). This setting allows you to reverse this layout, so that the live typing is on the top and past typing is on the bottom, with the most recently typed item on the top.
 
-The final section of settings on both iOS and MacOS is called “ElevenLabs Speech Generation.” By default, Whisper uses Apple’s built-in speech generation technology when users choose to read whispered text out loud (see [here](#whisperer-settings) and [here](#listener-settings) for details). Users with an [ElevenLabs](https://elevenlabs.io) account can opt instead to use use that technology by filling in values for the options in this section. Documentation on the required settings (API key, voice ID, and latency reduction) can be found [here](https://elevenlabs.io/docs/api-reference/text-to-speech). 
+#### Whisperer Interjection Settings
 
-### Whisperer Settings ###
+The next section of settings on both iOS and MacOS control what happens when the Whisperer makes an *interjection* (see [here](#whisperer-controls) for details).  The are two options in this section:
 
-Once you are in the Whisper screen, you will see a number of controls along the top of the window. These control behavior of the Whisper interface, and are remembered between sessions. Each control is marked with an icon. From left to right on the screen, they are:
+* **Prefix** — This specifies live text that is automatically entered when the Whisperer starts to interject.  By default, no text is automatically entered.
+* **Alert** — This specifies the sound played to get the attention of Listeners when the Whisperer interjects. By default, no sound is played.
+
+#### ElevenLabs Speech Generation Settings
+
+The final section of settings on both iOS and MacOS control how Whisper generates speech when users choose to read whispered text out loud (see [here](#whisperer-controls) and [here](#listener-controls) for details). By default, Whisper uses Apple’s built-in speech generation technology. Users with an [ElevenLabs](https://elevenlabs.io) account can opt instead to use that technology by filling in values for the options in this section:
+
+* **API Key** — This is a very long string of lower-case letters and numbers (typically starting with `sk_`) that is issued by ElevenLabs on your request. This value is required in order to use ElevenLabs speech generation.
+* **Voice ID** — This is a string of upper- and lower-case numbers and letters that identify the ElevenLabs voice you would like to use to read whispered text.  This is *not* the name of the voice as displayed in the ElevenLabs UI. (For example, the ElevenLabs free voice named “Daniel” has the voice ID `CYw3kZ02Hs0563khs1Fj`.) This value is required in order to use ElevenLabs speech generation.
+* **Pronunciation Dictionary ID** — This value is optional and only used if you have created a custom dictionary for word pronunciation via the ElevenLabs API.
+* **Pronunciation Dictionary Version** — This value is optional and only used if you have created a custom dictionary for word pronunciation via the ElevenLabs API.
+* **Latency Reduction** — Users who have generated a custom voice using the ElevenLabs tools may want to adjust this setting.  It has no effect if used with any of the free ElevenLabs voices.
+
+Full documentation on these settings, including how to apply for and receive your API key, and how to find the Voice ID for a given voice, can be found on the [ElevenLabs site](https://elevenlabs.io/docs/api-reference/text-to-speech). 
+
+## Controls
+
+While you are whispering or listening, you will see a number of controls along the top of the window.  Some of these take action during the session, while others determine the behavior of the application during the session.  Whenever you finish a session, the app remembers the state of these controls for your next session.
+
+### Whisperer Controls ###
+
+From left to right on the screen, the Whisperer controls are:
 
 * *Alert Listeners*: This button, when clicked by the Whisperer, makes a noise on every Listener’s device. By default, the button looks like <img src="img/bicycle-horn.png" alt="bicycle-horn" style="zoom: 33%;vertical-align:middle;" /> and the default alert sound is a bicycle horn. But if the Whisperer long presses the button, it will pop up a menu offering two other choices: an air horn <img src="img/air-horn.png" alt="air-horn" style="zoom:33%;vertical-align:middle;" /> and a bicycle bell <img src="img/bicycle-bell.png" alt="bicycle-bell" style="zoom:33%;vertical-align:middle;" />. The Whisperer’s choice is then remembered and used until the next long-press.
+
 * *Read Aloud*: This button (shown as <img src="img/read-aloud-on.png" alt="read-aloud-on" style="zoom: 33%;vertical-align:middle;" /> when on and <img src="img/read-aloud-off.png" alt="read-aloud-off" style="zoom:33%;vertical-align:middle;" /> when off) controls an on/off option. When on, each line of whispered text will be read out loud when the Whisperer hits the return key.
+
+* *Repeat*: This button looks like <img src="img/repeat-speech-square.png" alt="repeat" style="zoom: 33%;vertical-align:middle;" />. When the Whisperer clicks it, the app repeats to Listeners the most recently whispered non-blank line of text.  The current live text is not affected. If any Whisperer or Listener has *Read Aloud* is turned on, the repeated text will be read to them.
+
+* *Interject*: This button starts off looking like <img src="img/interjection-off.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" />. The Whisperer clicks it to “start an interjection,” at which point the following things happen:
+
+  * The button changes to look like <img src="img/interjection-on.png" alt="Finish Interjection" style="zoom: 33%;vertical-align:middle;" />.
+  * The current live text is cleared (but remembered by the application).
+  * The Whisperer’s live text area gets a very thick outline.
+  * The live text is set to the text (if any) of the [“Interjection Prefix” setting](#whisperer-interjection-settings).
+  * Listeners hear the sound (if any) specified in the [“Interjection Alert” setting](#interjection-prefix-settings). 
+
+  At this point, the Whisperer types their interjection, which they complete it by clicking the <img src="img/interjection-on.png" alt="Finish Interjection" style="zoom: 33%;vertical-align:middle;" /> button or hitting the return key. When they complete their interjection, the following things happen:
+
+  * The interjected text moves from the live text area to the past text area (and is read for any users that have turned on *Read Aloud*).
+  * The app restores the usual thin outline to the Whisperer’s live text area.
+  * The app restores the live text that was saved when the Whisperer started the interjection.
+
 * *Font Size*: Whisper offers 10 font sizes for use in the Whisper screen: a group of 5 “small” sizes and a group of 5 “large” sizes. To move down or up in a given range, the Whisperer clicks the <img src="img/font-down.png" alt="font-down" style="zoom:33%;vertical-align:middle;" /> or <img src="img/font-up.png" alt="font-up" style="zoom:33%;vertical-align:middle;" /> button. To shift between ranges, the Whisperer toggles this switch <img src="img/large-sizes.png" alt="large-sizes" style="zoom:33%;vertical-align:middle;" /> on or off.
-* *Stop Whispering*: This button is clicked by the Whisperer to end the whisper session. To prevent accidental stops, clicking the button brings up an alert with three choices: *Stop*, *Don’t Stop*, and *Change Device*. Choosing *Stop* will end the Whisper session both and tell all the Listeners that the session has ended. Choosing *Don’t Stop* leaves the session in place. Choosing *Change Device* stops the session but allows users with shared profiles to resume the session on a new device. It tells Listeners that, although the session has stopped, they should start listening again immediately in order to connect to the Whisperer on the next device.
+
+* *Stop Whispering*: This button is clicked by the Whisperer to end the whisper session. To prevent accidental stops, clicking the button brings up an alert with three choices: *Stop*, *Don’t Stop*, and *Change Device*. Choosing *Stop* will end the Whisper session and tell all the Listeners that the session has ended. Choosing *Don’t Stop* leaves the session in place. Choosing *Change Device* stops the session but allows Whisperers with shared profiles to resume the session on a new device. It tells Listeners that, although the session has stopped, they should start listening again immediately in order to connect to the Whisperer on the next device.
 
 Because iPhones have less available screen space than other devices, there are fewer Whisperer settings available (all the font size controls are removed) and the *Stop Whispering* button has its name shortened to *Stop*. 
 
-### Listener Settings ###
+### Listener Controls ###
 
-Once you are in the Listen screen, you will see a number of controls along the top of the window. These control the behavior of the Listen interface, and are remembered between sessions. Each control is marked with an icon. From left to right on the screen, they are:
+From left to right on the screen, the Listener controls are:
 
 * *Read Aloud*: This button (shown as <img src="img/read-aloud-on.png" alt="read-aloud-on" style="zoom: 33%;vertical-align:middle;" /> when on and <img src="img/read-aloud-off.png" alt="read-aloud-off" style="zoom:33%;vertical-align:middle;" /> when off) controls an on/off option. When on, each line of whispered text will be read out loud when the Whisperer hits the return key.
 * *Font Size*: Whisper offers 10 font sizes for use in the Listen screen: a group of 5 “small” sizes and a group of 5 “large” sizes. To move down or up in a given range, the Whisperer clicks the <img src="img/font-down.png" alt="font-down" style="zoom:33%;vertical-align:middle;" /> or <img src="img/font-up.png" alt="font-up" style="zoom:33%;vertical-align:middle;" /> button. To shift between ranges, the Listener toggles this switch <img src="img/large-sizes.png" alt="large-sizes" style="zoom:33%;vertical-align:middle;" /> on or off.

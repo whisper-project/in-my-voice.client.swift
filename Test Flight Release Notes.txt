@@ -383,3 +383,6 @@ This build incorporates several new features and changes requested by users:
 - The status line in the Listen session makes it clear when you are waiting for the Whisperer to accept you into a conversation.
 
 - Errors generating speech with ElevenLabs are now reported to the user, so they can see if they have issues in their settings. And if there is an ElevenLabs problem, the app falls back to generating the speech with Apple's technology.
+
+Build v2.3.6 (2030006):
+This build fixes bugs in the interjection settings and makes interjection settings changes propagate properly among devices that use a shared profile.  It also fixes a bug wherein ending an interjection by hitting return versus hitting the interjection button had slightly different behaviors.
