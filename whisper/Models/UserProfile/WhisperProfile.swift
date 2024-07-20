@@ -288,7 +288,7 @@ final class WhisperProfile: Codable {
 
 	func loadShared(id: String, serverPassword: String, completionHandler: @escaping (Int) -> Void) {
 		func handler(_ code: Int, _ data: Data) {
-			if code < 200 || code > 300 {
+			if code < 200 || code >= 300 {
 				completionHandler(code)
 			} else if let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
 			{

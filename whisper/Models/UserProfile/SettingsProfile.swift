@@ -161,12 +161,17 @@ final class SettingsProfile: Codable {
 				logAnomaly("No shared settings profile found on server, uploading ours")
 				startSharing(serverPassword: self.serverPassword)
 				completionHandler(200)
-			} else if code < 200 || code > 300 {
+			} else if code < 200 || code >= 300 {
 				completionHandler(code)
-			} else if maybeInstallReceivedProfile(data) >= 0 {
-				completionHandler(200)
 			} else {
-				completionHandler(-1)
+				// we have received a profile, so we know the id and password are good
+				self.id = id
+				self.serverPassword = serverPassword
+				if maybeInstallReceivedProfile(data) >= 0 {
+					completionHandler(200)
+				} else {
+					completionHandler(-1)
+				}
 			}
 		}
 		let path = "/api/v2/settingsProfile/\(id)"
@@ -190,7 +195,8 @@ final class SettingsProfile: Codable {
 			logger.info("Received shared settings profile (v\(profile.version)), eTag is \(profile.eTag)")
 			let expected = PreferenceData.preferenceVersion
 			guard profile.version == expected else {
-				logAnomaly("Expected v\(expected) but received v\(profile.version) settings profile; ignoring it")
+				logAnomaly("Expected v\(expected) but received v\(profile.version) settings profile, uploading new")
+				saveToServer()
 				return 0
 			}
 			self.version = profile.version
