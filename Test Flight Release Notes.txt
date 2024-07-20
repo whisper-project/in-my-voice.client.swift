@@ -386,3 +386,8 @@ This build incorporates several new features and changes requested by users:
 
 Build v2.3.6 (2030006):
 This build fixes bugs in the interjection settings and makes interjection settings changes propagate properly among devices that use a shared profile.  It also fixes a bug wherein ending an interjection by hitting return versus hitting the interjection button had slightly different behaviors.
+
+Build v2.3.7 (2030007):
+There was still a bug in the way shared profiles worked: the new settings profile including the new interjection settings were not being shared.  Now they are.
+
+If you are a shared profile user, be sure to install this build *first* on a machine that has your desired interjection settings.  Those settings will then correctly get shared to other machines that you install the new build on.
