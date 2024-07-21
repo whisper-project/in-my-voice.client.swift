@@ -399,8 +399,8 @@ struct PreferenceData {
 			"elevenlabs_dictionary_id_preference": elevenLabsDictionaryIdPreference,
 			"elevenlabs_dictionary_version_preference": elevenLabsDictionaryVersionPreference,
 			"elevenlabs_latency_reduction_preference": "\(elevenLabsLatencyReductionPreference)",
-			"interjectionPrefixPreference": interjectionPrefixPreference,
-			"interjectionAlertPreference": interjectionAlertPreference,
+			"interjection_prefix_preference": interjectionPrefixPreference,
+			"interjection_alert_preference": interjectionAlertPreference,
 		]
 		guard let json = try? JSONSerialization.data(withJSONObject: preferences, options: .sortedKeys) else {
 			fatalError("Can't encode preferences data: \(preferences)")
@@ -427,5 +427,7 @@ struct PreferenceData {
 		elevenLabsDictionaryIdPreference = preferences["elevenlabs_dictionary_id_preference"] ?? ""
 		elevenLabsDictionaryVersionPreference = preferences["elevenlabs_dictionary_version_preference"] ?? ""
 		elevenLabsLatencyReductionPreference = Int(preferences["elevenlabs_latency_reduction_preference"] ?? "") ?? 1
+		interjectionPrefixPreference = preferences["interjection_prefix_preference"] ?? ""
+		interjectionAlertPreference = preferences["interjection_alert_preference"] ?? ""
 	}
 }
