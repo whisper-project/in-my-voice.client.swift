@@ -325,6 +325,15 @@ struct PreferenceData {
 		}
 	}
 
+	static private var historyButtonsPreference: String {
+		get {
+			defaults.string(forKey: "history_buttons_preference") ?? "r-i-f"
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "history_buttons_preference")
+		}
+	}
+
 	// behavior for Whisper tap
 	static func whisperTapAction() -> String {
 		return whisperTapPreference
@@ -385,7 +394,7 @@ struct PreferenceData {
 		}
 	}
 
-	static let preferenceVersion = 3
+	static let preferenceVersion = 4
 
 	static func preferencesToJson() -> String {
 		let preferences = [
@@ -401,6 +410,7 @@ struct PreferenceData {
 			"elevenlabs_latency_reduction_preference": "\(elevenLabsLatencyReductionPreference)",
 			"interjection_prefix_preference": interjectionPrefixPreference,
 			"interjection_alert_preference": interjectionAlertPreference,
+			"history_buttons_preference": historyButtonsPreference,
 		]
 		guard let json = try? JSONSerialization.data(withJSONObject: preferences, options: .sortedKeys) else {
 			fatalError("Can't encode preferences data: \(preferences)")
@@ -429,5 +439,6 @@ struct PreferenceData {
 		elevenLabsLatencyReductionPreference = Int(preferences["elevenlabs_latency_reduction_preference"] ?? "") ?? 1
 		interjectionPrefixPreference = preferences["interjection_prefix_preference"] ?? ""
 		interjectionAlertPreference = preferences["interjection_alert_preference"] ?? ""
+		historyButtonsPreference = preferences["history_buttons_preference"] ?? "r-i-f"
 	}
 }

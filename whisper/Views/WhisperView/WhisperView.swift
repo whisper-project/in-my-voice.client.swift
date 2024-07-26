@@ -24,6 +24,7 @@ struct WhisperView: View {
 	@State private var size = PreferenceData.sizeWhenWhispering
 	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
 	@State private var interjecting: Bool = false
+	@State private var interjectionPrefixOverride: String?
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
@@ -71,7 +72,8 @@ struct WhisperView: View {
 			.onChange(of: interjecting) {
 				if interjecting {
 					pendingLiveText = liveText
-					liveText = PreferenceData.interjectionPrefix()
+					liveText = interjectionPrefixOverride ?? PreferenceData.interjectionPrefix()
+					interjectionPrefixOverride = nil
 					model.playInterjectionSound()
 				} else {
 					if !liveText.isEmpty && liveText != PreferenceData.interjectionPrefix() {
@@ -127,9 +129,9 @@ struct WhisperView: View {
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
-		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: .whisper, maybeStop: maybeStop, playSound: model.playSound, repeatSpeech: model.repeatLastLiveLine)
+		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: .whisper, maybeStop: maybeStop, playSound: model.playSound, repeatSpeech: model.repeatLine)
 			.padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
-		PastTextView(mode: .whisper, model: model.pastText)
+		WhisperPastTextView(interjecting: $interjecting, model: model.pastText, again: model.repeatLine, edit: startInterjection)
 			.font(FontSizes.fontFor(size))
 			.textSelection(.enabled)
 			.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
@@ -158,13 +160,6 @@ struct WhisperView: View {
 					liveText = model.updateLiveText(old: old, new: new)
 				}
 			}
-			.onSubmit {
-				// shouldn't ever be used with a TextEditor,
-				// but it was needed with a TextField with a vertical axis
-				// when using a Magic Keyboard
-				self.liveText = model.submitLiveText()
-				focusField = "liveText"
-			}
 			.focused($focusField, equals: "liveText")
 			.foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
 			.padding(innerPad)
@@ -192,6 +187,15 @@ struct WhisperView: View {
 		}
 		.background(Color.accentColor)
 		.ignoresSafeArea()
+	}
+
+	private func startInterjection(_ text: String) {
+		guard !interjecting else {
+			// Can't interject in the middle of an interjection
+			return
+		}
+		interjectionPrefixOverride = text
+		interjecting = true
 	}
 }
 

@@ -56,7 +56,7 @@ struct ConnectionErrorContent: View {
 	var body: some View {
 		switch severity {
 		case .temporary:
-			Text("You are no longer connected to your Listeners. This may be temporary.\n\nWould you like to restart this session?")
+			Text("A temporary error occured: \(message)\n\nWould you like to restart this session?")
 		case .settings:
 			Text("An error occurred: \(message)\n\nWould you like to fix this in Settings?")
 		case .report:

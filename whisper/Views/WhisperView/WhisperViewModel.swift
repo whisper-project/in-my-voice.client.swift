@@ -142,11 +142,17 @@ final class WhisperViewModel: ObservableObject {
         return liveText
     }
 
-	/// Repeat the last thing the whisperer typed, whether it was said or not
-	func repeatLastLiveLine() {
-		pastText.addLine(lastLiveText)
+    /// User has submitted the live text
+    func submitLiveText() -> String {
+        return self.updateLiveText(old: liveText, new: liveText + "\n")
+    }
+    
+	/// Repeat a line typed by the Whisperer
+	func repeatLine(_ text: String? = nil) {
+		let line = text ?? lastLiveText
+		pastText.addLine(line)
 		if PreferenceData.speakWhenWhispering {
-			speak(lastLiveText)
+			speak(line)
 		}
 		let pastChunks = WhisperProtocol.diffLines(old: "", new: lastLiveText + "\n")
 		transport.publish(chunks: pastChunks)
@@ -154,11 +160,6 @@ final class WhisperViewModel: ObservableObject {
 		transport.publish(chunks: currentChunks)
 	}
 
-    /// User has submitted the live text
-    func submitLiveText() -> String {
-        return self.updateLiveText(old: liveText, new: liveText + "\n")
-    }
-    
     /// Play the alert sound to all the listeners
     func playSound() {
         let soundName = PreferenceData.alertSound

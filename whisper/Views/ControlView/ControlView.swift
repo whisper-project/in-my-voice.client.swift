@@ -14,13 +14,13 @@ struct ControlView: View {
 	let mode: OperatingMode
 	var maybeStop: (() -> Void)? = nil
     var playSound: (() -> Void)? = nil
-	var repeatSpeech: (() -> Void)? = nil
+	var repeatSpeech: ((String?) -> Void)? = nil
 
     @State var alertSound = PreferenceData.alertSound
     @State var speaking: Bool = false
 
     var body: some View {
-        HStack(alignment: .center) {
+		HStack(alignment: .center) {
             maybeAlarmButton()
             speechButton()
 			maybeRepeatButton()
@@ -64,7 +64,7 @@ struct ControlView: View {
 			EmptyView()
 		} else {
 			Button {
-				repeatSpeech?()
+				repeatSpeech?(nil)
 			} label: {
 				Image("repeat-speech")
 					.renderingMode(.template)
