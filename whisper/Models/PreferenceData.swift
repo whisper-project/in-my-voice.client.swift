@@ -35,7 +35,7 @@ struct PreferenceData {
 		}
         return nil
     }
-    static func publisherUrl(_ conversation: WhisperConversation) -> String {
+    static func publisherUrl(_ conversation: any Conversation) -> String {
 		let urlName = conversation.name.compactMap {char in
 			if char.isLetter || char.isNumber {
 				return String(char)

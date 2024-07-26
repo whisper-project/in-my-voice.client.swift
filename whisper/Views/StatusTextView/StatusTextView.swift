@@ -13,7 +13,7 @@ struct StatusTextView: View {
 	var conversation: (any Conversation)?
 
 	private var shareLinkUrl: URL {
-		if let c = conversation as? WhisperConversation {
+		if let c = conversation {
 			return URL(string: PreferenceData.publisherUrl(c))!
 		} else {
 			return URL(string: "https://localhost")!
@@ -23,20 +23,15 @@ struct StatusTextView: View {
     private let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
     
     var body: some View {
-        if mode == .listen {
-            HStack { Text(text) }
-                .font(FontSizes.fontFor(name: .xsmall))
-                .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
-        } else {
-            HStack (spacing: 20) {
-                ShareLink(linkText, item: shareLinkUrl)
-                    .disabled(conversation == nil)
-                    .font(FontSizes.fontFor(name: .xsmall))
-                Text(text)
-                    .font(FontSizes.fontFor(name: .xsmall))
-                    .foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
-            }
-        }
+		HStack (spacing: 20) {
+			if let c = conversation {
+				ShareLink(linkText, item: shareLinkUrl)
+					.font(FontSizes.fontFor(name: .xsmall))
+			}
+			Text(text)
+				.font(FontSizes.fontFor(name: .xsmall))
+				.foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
+		}
     }
 }
 
@@ -50,4 +45,8 @@ struct StatusTextView: View {
 
 #Preview {
 	StatusTextView(text: makeBinding("Generic status text"), mode: .whisper, conversation: UserProfile.shared.whisperProfile.fallback)
+}
+
+#Preview {
+	StatusTextView(text: makeBinding("Generic status text"), mode: .listen, conversation: UserProfile.shared.whisperProfile.fallback)
 }
