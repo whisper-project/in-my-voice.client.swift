@@ -12,11 +12,11 @@ struct StatusTextView: View {
     var mode: OperatingMode
 	var conversation: (any Conversation)?
 
-	private var shareLinkUrl: URL {
+	private var shareLinkUrl: URL? {
 		if let c = conversation {
-			return URL(string: PreferenceData.publisherUrl(c))!
+			return URL(string: PreferenceData.publisherUrl(c))
 		} else {
-			return URL(string: "https://localhost")!
+			return nil
 		}
 	}
 
@@ -24,8 +24,8 @@ struct StatusTextView: View {
     
     var body: some View {
 		HStack (spacing: 20) {
-			if let c = conversation {
-				ShareLink(linkText, item: shareLinkUrl)
+			if let url = shareLinkUrl {
+				ShareLink(linkText, item: url)
 					.font(FontSizes.fontFor(name: .xsmall))
 			}
 			Text(text)
