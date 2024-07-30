@@ -191,6 +191,17 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 
 	private static let synthesizer = AVSpeechSynthesizer()
 
+	private func keyText(_ text: String) -> String {
+		let trim = text.trimmingCharacters(in: .whitespacesAndNewlines)
+		let lower = trim.lowercased()
+		let key = lower.split(separator: " ", omittingEmptySubsequences: true).joined(separator: " ")
+		return key
+	}
+
+	func forgetText(text: String) {
+		pastItems.removeValue(forKey: keyText(text))
+	}
+
 	func speakText(text: String, errorCallback: ((TransportErrorSeverity, String) -> Void)? = nil) {
 		self.errorCallback = errorCallback
 		guard !text.isEmpty else {
@@ -202,7 +213,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 			return
 		}
 		emptyTextCount = 0
-		if let existing = pastItems[text] {
+		if let existing = pastItems[keyText(text)] {
 			if existing.audio.beginContentAccess() {
 				self.queueSpeech((existing, Data(existing.audio)))
 				existing.audio.endContentAccess()
@@ -226,7 +237,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 					errorCallback?(severity, message)
 					self.fallback(text)
 				} else {
-					self.pastItems[text] = item
+					self.pastItems[self.keyText(text)] = item
 					self.queueSpeech((item, Data(item.audio)))
 					item.audio.endContentAccess()
 					return
