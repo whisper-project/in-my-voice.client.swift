@@ -237,7 +237,16 @@ final class TcpWhisperTransport: PublishTransport {
 		guard message.action == .leave || message.action == .absent else {
 			return
 		}
-		guard let clientId = message.clientId, let remote = remotes[clientId], !remote.hasDropped else {
+		guard let clientId = message.clientId, clientId != PreferenceData.clientId else {
+			// ignore messages from ourself
+			return
+		}
+		guard let remote = remotes[clientId] else {
+			// ignore messages from clients we're not connected to
+			logAnomaly("Got a presence message from a client that's not a listening remote?")
+			return
+		}
+		guard !remote.hasDropped else {
 			logger.info("Received leave presence message from an already-dropped remote")
 			return
 		}
