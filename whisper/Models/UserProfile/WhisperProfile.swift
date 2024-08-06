@@ -261,6 +261,7 @@ final class WhisperProfile: Codable {
 				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
+				logAnomaly("Found no whisper profile on server when updating, uploading one")
 				save(verb: "POST")
 			}
 		}

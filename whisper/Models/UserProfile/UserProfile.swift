@@ -20,6 +20,7 @@ final class UserProfile: Identifiable, ObservableObject {
 	private(set) var whisperProfile: WhisperProfile
 	private(set) var listenProfile: ListenProfile
 	private(set) var settingsProfile: SettingsProfile
+	private(set) var favoritesProfile: FavoritesProfile
 	@Published private(set) var userPassword: String
 	private var serverPassword: String
 	@Published private(set) var timestamp = Date.now
@@ -34,6 +35,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		whisperProfile = WhisperProfile(profileId, profileName: "")
 		listenProfile = ListenProfile(profileId)
 		settingsProfile = SettingsProfile.load(profileId, serverPassword: "")
+		favoritesProfile = FavoritesProfile(profileId)
 	}
 
 	private init(id: String, name: String, password: String) {
@@ -46,11 +48,13 @@ final class UserProfile: Identifiable, ObservableObject {
 			serverPassword = SHA256.hash(data: Data(password.utf8)).map{ String(format: "%02x", $0) }.joined()
 		}
 		if let wp = WhisperProfile.load(id, serverPassword: serverPassword),
-		   let lp = ListenProfile.load(id, serverPassword: serverPassword)
+		   let lp = ListenProfile.load(id, serverPassword: serverPassword),
+		   let fp = FavoritesProfile.load(id, serverPassword: serverPassword)
 		{
 			whisperProfile = wp
 			listenProfile = lp
 			settingsProfile = SettingsProfile.load(id, serverPassword: serverPassword)
+			favoritesProfile = fp
 		} else {
 			// we failed to load completely, so reset the profile completely except for the name
 			self.id = UUID().uuidString
@@ -59,6 +63,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			whisperProfile = WhisperProfile(id, profileName: name)
 			listenProfile = ListenProfile(id)
 			settingsProfile = SettingsProfile.load(id, serverPassword: "")
+			favoritesProfile = FavoritesProfile(id)
 		}
 	}
 
@@ -158,6 +163,7 @@ final class UserProfile: Identifiable, ObservableObject {
 				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
+				logAnomaly("Found no user profile on server when updating, uploading one")
 				save(verb: "POST")
 			}
 		}
@@ -172,7 +178,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		request.httpMethod = "GET"
 		Data.executeJSONRequest(request, handler: handler)
 		func notifyChange() {
-			// we want our observed object to change when the whisper profile is updated
+			// we want our observed object to change whenever a child profile is updated
 			DispatchQueue.main.async {
 				self.timestamp = Date.now
 			}
@@ -180,6 +186,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		whisperProfile.update(notifyChange)
 		listenProfile.update(notifyChange)
 		settingsProfile.update(notifyChange)
+		favoritesProfile.update(notifyChange)
 	}
 
 	func stopSharing(newName: String? = nil) {
@@ -192,6 +199,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		whisperProfile = WhisperProfile(id, profileName: name)
 		listenProfile = ListenProfile(id)
 		settingsProfile = SettingsProfile.load(id, serverPassword: "")
+		favoritesProfile = FavoritesProfile(id)
 		save()
 	}
 
@@ -208,6 +216,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		whisperProfile.startSharing(serverPassword: serverPassword)
 		listenProfile.startSharing(serverPassword: serverPassword, ownConversations: whisperProfile.conversations())
 		settingsProfile.startSharing(serverPassword: serverPassword)
+		favoritesProfile.startSharing(serverPassword: serverPassword)
 	}
 
 	func receiveSharing(id: String, password: String, completionHandler: @escaping (Bool, String) -> Void) {
@@ -248,6 +257,9 @@ final class UserProfile: Identifiable, ObservableObject {
 				} else if whichUpdate == "listen" {
 					whichUpdate = "settings"
 					settingsProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
+				} else if whichUpdate == "settings" {
+					whichUpdate = "favorites"
+					favoritesProfile.loadShared(id: id, serverPassword: serverPassword, completionHandler: dualHandler)
 				} else {
 					logger.info("Successfully switched to shared profile \(id)")
 					DispatchQueue.main.async {

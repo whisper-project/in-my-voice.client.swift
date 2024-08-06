@@ -5,153 +5,267 @@
 
 import Foundation
 
-final class Favorite: Codable {
-	private(set) var id: String
-	private(set) var text: String
+fileprivate let allTag = "All"
 
-	fileprivate init(_ text: String) {
-		self.id = UUID().uuidString
+fileprivate struct StoredProfile: Codable {
+	var id: String
+	var timestamp: Int
+	var favorites: [Favorite]
+	var tags: [String: [String]]
+}
+
+final class Favorite: Comparable, Codable {
+	fileprivate(set) var name: String
+	fileprivate(set) var text: String
+	fileprivate var speechHash: Int?
+	fileprivate var speechId: String?
+
+	fileprivate init(name: String, text: String) {
+		self.name = name
 		self.text = text
+	}
+
+	// depends on there never being two favorites with the same name
+	static func == (lhs: Favorite, rhs: Favorite) -> Bool {
+		lhs.name == rhs.name
+	}
+
+	// depends on there never being two favorites with the same name
+	static func < (lhs: Favorite, rhs: Favorite) -> Bool {
+		lhs.name < rhs.name
 	}
 }
 
-final class Tag: Codable {
-	fileprivate(set) var name: String
-	private(set) var favorites: [Favorite]
+final class TagSet: Comparable {
+	private var profile: FavoritesProfile
+	fileprivate(set) var tag: String
+	private(set) var favorites: [Favorite] = []
+	private var favoriteNames: Set<String> = Set()
 
-	fileprivate init(_ name: String) {
-		self.name = name
-		self.favorites = []
+	fileprivate init(profile: FavoritesProfile, tag: String) {
+		self.profile = profile
+		self.tag = tag
+	}
+
+	// depends on there never being two tag sets with the same name
+	static func == (lhs: TagSet, rhs: TagSet) -> Bool {
+		lhs.tag == rhs.tag
+	}
+
+
+	// depends on there never being two tag sets with the same name
+	static func < (lhs: TagSet, rhs: TagSet) -> Bool {
+		lhs.tag < rhs.tag
+	}
+
+	func add(_ f: Favorite, at: Int? = nil) {
+		guard !favoriteNames.contains(f.name) else {
+			return
+		}
+		favoriteNames.insert(f.name)
+		if let i = at, i >= 0, i < favorites.count {
+			favorites.insert(f, at: i)
+		} else {
+			self.favorites.append(f)
+		}
 	}
 
 	func move(fromOffsets: IndexSet, toOffset: Int) {
 		favorites.move(fromOffsets: fromOffsets, toOffset: toOffset)
 	}
 
-	func delete(f: Favorite) {
+	func onDelete(deleteOffsets: IndexSet) {
+		let deleted = deleteOffsets.compactMap{ index in favorites[index] }
+		guard tag != allTag else {
+			// removing from the all set is a remove from the profile
+			for d in deleted {
+				profile.deleteFavorite(d)
+			}
+			return
+		}
+		favorites.remove(atOffsets: deleteOffsets)
+		for d in deleted {
+			favoriteNames.remove(d.name)
+		}
+	}
+
+	func remove(_ f: Favorite) {
 		favorites.removeAll(where: { f === $0 })
+		favoriteNames.remove(f.name)
 	}
 }
 
-fileprivate let allTagName = " all "
-
 final class FavoritesProfile: Codable {
 	var id: String
-	private var tags: [Tag]
-	private var tagTable: [String: Tag]
-	private var favoritesTable: [String: Favorite]
+	var timestamp: Int
+	private var favoritesTable: [String: Favorite] = [:]
+	private var allSet: TagSet! = nil
+	private var tagSetTable: [String: TagSet] = [:]
 	private var serverPassword: String = ""
-
-	private enum CodingKeys: String, CodingKey {
-		case id, tags
-	}
 
 	init(_ profileId: String) {
 		id = profileId
+		timestamp = 0
+		allSet = TagSet(profile: self, tag: allTag)
+		tagSetTable = [allTag: allSet]
 		save()
 	}
 
-	func all() {
-		return Array(self.favorites.values)
-	}
-
-	func all(_ tags: [String]? = nil) -> [Favorite] {
-		guard tags != nil else {
-			return Array(self.favorites.values)
+	init(from: any Decoder) throws {
+		let stored = try StoredProfile(from: from)
+		id = stored.id
+		timestamp = stored.timestamp
+		favoritesTable = [:]
+		allSet = TagSet(profile: self, tag: allTag)
+		tagSetTable = [allTag: allSet]
+		var allFound = false
+		for f in stored.favorites {
+			favoritesTable[f.name] = f
 		}
-		for
-		let favorites = tags[c] ?? []
-		favorites.sorted(by: <#T##(Favorite, Favorite) throws -> Bool#>)
-		Array(favorites.values)
-	}
-
-	func lookup(_ text: String) -> Favorite? {
-		return favorites[text]
-	}
-
-	func from(_ text: String, tag: String? = nil) -> Favorite {
-		if let found = lookup(text) {
-			if let c = tag , !found.tags.contains(c) {
-				found.tags.append(c)
-				tags[c] = tags[c]?.append(found) ?? [found]
+		for (t, ns) in stored.tags {
+			var ts: TagSet
+			if t == allTag {
+				ts = allSet
+				allFound = true
+			} else {
+				ts = TagSet(profile: self, tag: t)
+				tagSetTable[t] = ts
 			}
-			return found
+			for n in ns {
+				if let f = favoritesTable[n] {
+					ts.add(f)
+				}
+			}
 		}
-		let found = Favorite(text)
-		favorites[text] = found
-		return found
+		if !allFound {
+			let message = "Stored favorites must contain an \(allTag) tag"
+			logAnomaly(message)
+			throw message
+		}
+		timestamp = Int(Date.now.timeIntervalSince1970)
 	}
 
-	func fromMyWhisperConversation(_ conversation: WhisperConversation) -> ListenConversation {
-		let c = ListenConversation(uuid: conversation.id)
-		c.name = conversation.name
-		c.owner = id
-		c.ownerName = UserProfile.shared.username
-		c.lastListened = Date.now
-		return c
+	func encode(to: any Encoder) throws {
+		let favorites = Array(favoritesTable.values)
+		let tags = tagSetTable.mapValues{ ts in ts.favorites.map{ f in f.name} }
+		let stored = StoredProfile(id: id, timestamp: timestamp, favorites: favorites, tags: tags)
+		try stored.encode(to: to)
 	}
 
-	/// get a listen conversation from a web link
-	func fromLink(_ url: String) -> ListenConversation? {
-		guard let (id, name) = PreferenceData.publisherUrlToConversationId(url: url) else {
-			return nil
+	@discardableResult func newFavorite(text: String, name: String = "", tags: [String] = []) -> Favorite {
+		var name = name.trimmingCharacters(in: .whitespaces)
+		if name.isEmpty {
+			name = "Favorite"
 		}
-		if let existing = favorites[id] {
-			return existing
-		} else {
-			return ListenConversation(uuid: id, name: name)
-		}
-	}
-
-	/// get a listen conversation for a Whisperer's invite
-	func forInvite(info: WhisperProtocol.ClientInfo) -> ListenConversation {
-		if let c = favorites[info.conversationId] {
-			var changed = false
-			if !info.conversationName.isEmpty && info.conversationName != c.name {
-				c.name = info.conversationName
-				changed = true
+		if favoritesTable[name] != nil {
+			let root = name
+			for i in [1...] {
+				name = "\(root) \(i)"
+				if favoritesTable[name] == nil {
+					break
+				}
 			}
-			if !info.profileId.isEmpty && info.profileId != c.owner {
-				c.owner = info.profileId
-				changed = true
-			}
-			if !info.username.isEmpty && info.username != c.ownerName {
-				c.ownerName = info.username
-				changed = true
-			}
-			if changed {
-				save()
-			}
-			return c
 		}
-		let c =  ListenConversation(uuid: info.conversationId)
-		c.name = info.conversationName
-		c.owner = info.profileId
-		c.ownerName = info.username
-		return c
-	}
-
-	/// Add a newly used conversation for a Listener
-	func addForInvite(info: WhisperProtocol.ClientInfo) -> ListenConversation {
-		let c = forInvite(info: info)
-		guard serverPassword.isEmpty || info.profileId != id else {
-			// in a shared profile, we never add one of our own conversations
-			return c
+		let f = Favorite(name: name, text: text.trimmingCharacters(in: .whitespacesAndNewlines))
+		favoritesTable[name] = f
+		allSet.add(f)
+		for tag in tags {
+			if tag == allTag {
+				continue
+			}
+			if let tagSet = tagSetTable[tag] {
+				tagSet.add(f)
+			} else {
+				logAnomaly("Ignoring unknown tag (\(tag)) in newFavorite(\(name))")
+			}
 		}
-		if favorites[c.id] == nil {
-			logger.info("Adding new listen conversation")
-			table[c.id] = c
-		}
-		c.lastListened = Date.now
 		save()
-		return c
+		return f
 	}
 
-	func delete(_ id: String) {
-		logger.info("Removing listen conversation \(id)")
-		if favorites.removeValue(forKey: id) != nil {
-			save()
+	func renameFavorite(_ f: Favorite, to: String) -> Bool {
+		let to = to.trimmingCharacters(in: .whitespaces)
+		guard favoritesTable[to] == nil else {
+			return false
 		}
+		guard favoritesTable[f.name] === f else {
+			logAnomaly("Ignore unknown favorite (\(f.name)) in renameFavorite")
+			return false
+		}
+		favoritesTable.removeValue(forKey: f.name)
+		f.name = to
+		favoritesTable[to] = f
+		save()
+		return true
+	}
+
+	func deleteFavorite(_ f: Favorite) {
+		guard f === favoritesTable[f.name] else {
+			logAnomaly("Ignoring unknown favorite \(f.name) in deleteFavorite")
+			return
+		}
+		favoritesTable.removeValue(forKey: f.name)
+		allSet.remove(f)
+		for ts in tagSetTable.values {
+			if ts === allSet {
+				continue
+			}
+			ts.remove(f)
+		}
+		save()
+	}
+
+	@discardableResult func newTagSet(name: String = "") -> TagSet {
+		var name = name.trimmingCharacters(in: .whitespaces)
+		if name.isEmpty {
+			name = "Tag"
+		}
+		if tagSetTable[name] != nil {
+			let root = name
+			for i in [1...] {
+				name = "\(root) \(i)"
+				if tagSetTable[name] == nil {
+					break
+				}
+			}
+		}
+		let ts = TagSet(profile: self, tag: name)
+		tagSetTable[name] = ts
+		save()
+		return ts
+	}
+
+	func renameTagSet(_ ts: TagSet, to: String) -> Bool {
+		let to = to.trimmingCharacters(in: .whitespaces)
+		guard tagSetTable[to] == nil else {
+			return false
+		}
+		guard tagSetTable[ts.tag] === ts else {
+			logAnomaly("Ignore unknown tag (\(ts.tag)) in renameTagSet")
+			return false
+		}
+		tagSetTable.removeValue(forKey: ts.tag)
+		ts.tag = to
+		tagSetTable[to] = ts
+		save()
+		return true
+	}
+
+	func deleteTagSet(_ ts: TagSet) -> Bool {
+		guard ts.tag != allTag else {
+			return false
+		}
+		guard tagSetTable[ts.tag] === ts else {
+			logAnomaly("Ignore unknown tag (\(ts.tag)) in deleteTagSet")
+			return false
+		}
+		tagSetTable.removeValue(forKey: ts.tag)
+		save()
+		return true
+	}
+
+	func allTags() -> [TagSet] {
+		return Array(tagSetTable.values).sorted()
 	}
 
 	private func save(verb: String = "PUT", localOnly: Bool = false) {
@@ -159,36 +273,36 @@ final class FavoritesProfile: Codable {
 			timestamp = Int(Date.now.timeIntervalSince1970)
 		}
 		guard let data = try? JSONEncoder().encode(self) else {
-			fatalError("Cannot encode listen profile: \(self)")
+			fatalError("Cannot encode favorites profile: \(self)")
 		}
-		guard data.saveJsonToDocumentsDirectory("ListenProfile") else {
-			fatalError("Cannot save listen profile to Documents directory")
+		guard data.saveJsonToDocumentsDirectory("FavoritesProfile") else {
+			fatalError("Cannot save favorites profile to Documents directory")
 		}
 		if !localOnly && !serverPassword.isEmpty {
 			saveToServer(data: data, verb: verb)
 		}
 	}
 
-	static func load(_ profileId: String, serverPassword: String) -> ListenProfile? {
-		if let data = Data.loadJsonFromDocumentsDirectory("ListenProfile"),
-		   let profile = try? JSONDecoder().decode(ListenProfile.self, from: data)
+	static func load(_ profileId: String, serverPassword: String) -> FavoritesProfile? {
+		if let data = Data.loadJsonFromDocumentsDirectory("FavoritesProfile"),
+		   let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data)
 		{
 			if profileId == profile.id {
 				profile.serverPassword = serverPassword
 				return profile
 			}
 			logger.warning("Asked to load profile with id \(profileId), deleting saved profile with id \(profile.id)")
-			Data.removeJsonFromDocumentsDirectory("ListenProfile")
+			Data.removeJsonFromDocumentsDirectory("FavoritesProfile")
 		}
 		return nil
 	}
 
 	private func saveToServer(data: Data, verb: String = "PUT") {
-		let path = "/api/v2/listenProfile" + (verb == "PUT" ? "/\(id)" : "")
+		let path = "/api/v2/favoritesProfile" + (verb == "PUT" ? "/\(id)" : "")
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
-			fatalError("Can't create URL for listen profile upload")
+			fatalError("Can't create URL for favorites profile upload")
 		}
-		logger.info("\(verb) of listen profile to server, current timestamp: \(self.timestamp)")
+		logger.info("\(verb) of favorites profile to server, current timestamp: \(self.timestamp)")
 		var request = URLRequest(url: url)
 		request.httpMethod = verb
 		if verb == "PUT" {
@@ -207,23 +321,26 @@ final class FavoritesProfile: Codable {
 		}
 		func handler(_ code: Int, _ data: Data) {
 			if code == 200 {
-				if let profile = try? JSONDecoder().decode(ListenProfile.self, from: data) {
-					logger.info("Received updated listen profile, timestamp is \(profile.timestamp)")
-					self.table = profile.table
+				if let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data) {
+					logger.info("Received updated favorites profile, timestamp is \(profile.timestamp)")
+					self.favoritesTable = profile.favoritesTable
+					self.allSet = profile.allSet
+					self.tagSetTable = profile.tagSetTable
 					self.timestamp = profile.timestamp
 					save(localOnly: true)
 					notifyChange?()
 				} else {
-					logAnomaly("Received invalid listen profile data: \(String(decoding: data, as: UTF8.self))")
+					logAnomaly("Received invalid favorites profile data: \(String(decoding: data, as: UTF8.self))")
 				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
+				logAnomaly("Found no favorites profile on server when updating, uploading one")
 				save(verb: "POST")
 			}
 		}
-		let path = "/api/v2/listenProfile/\(id)"
+		let path = "/api/v2/favoritesProfile/\(id)"
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
-			fatalError("Can't create URL for listen profile download")
+			fatalError("Can't create URL for favorites profile download")
 		}
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
@@ -235,11 +352,6 @@ final class FavoritesProfile: Codable {
 
 	func startSharing(serverPassword: String, ownConversations: [WhisperConversation] = []) {
 		self.serverPassword = serverPassword
-		// if we own any of our past listened conversations, remove it,
-		// because we will now see all of our whispered conversations automatically
-		for conversation in ownConversations {
-			favorites.removeValue(forKey: conversation.id)
-		}
 		save(verb: "POST")
 	}
 
@@ -247,22 +359,24 @@ final class FavoritesProfile: Codable {
 		func handler(_ code: Int, _ data: Data) {
 			if code < 200 || code >= 300 {
 				completionHandler(code)
-			} else if let profile = try? JSONDecoder().decode(ListenProfile.self, from: data)
+			} else if let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data)
 			{
 				self.id = id
 				self.serverPassword = serverPassword
-				self.table = profile.table
+				self.favoritesTable = profile.favoritesTable
+				self.allSet = profile.allSet
+				self.tagSetTable = profile.tagSetTable
 				self.timestamp = profile.timestamp
 				save(localOnly: true)
 				completionHandler(200)
 			} else {
-				logAnomaly("Received invalid listen profile data: \(String(decoding: data, as: UTF8.self))")
+				logAnomaly("Received invalid favorites profile data: \(String(decoding: data, as: UTF8.self))")
 				completionHandler(-1)
 			}
 		}
-		let path = "/api/v2/listenProfile/\(id)"
+		let path = "/api/v2/favoritesProfile/\(id)"
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
-			fatalError("Can't create URL for listen profile download")
+			fatalError("Can't create URL for favorites profile download")
 		}
 		var request = URLRequest(url: url)
 		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
