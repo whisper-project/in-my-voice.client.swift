@@ -19,9 +19,9 @@ final class TcpAuthenticator {
     private var clientId = PreferenceData.clientId
 	private var contentId: String = PreferenceData.contentId
     private var client: ARTRealtime?
-    private var failureCallback: (TransportErrorSeverity, String) -> Void
+    private var failureCallback: TransportErrorCallback
 
-	init(mode: OperatingMode, conversationId: String, conversationName: String, callback: @escaping (TransportErrorSeverity, String) -> Void) {
+	init(mode: OperatingMode, conversationId: String, conversationName: String, callback: @escaping TransportErrorCallback) {
         self.mode = mode
         self.conversationId = conversationId
 		self.conversationName = conversationName.isEmpty ? "ListenOffer" : conversationName

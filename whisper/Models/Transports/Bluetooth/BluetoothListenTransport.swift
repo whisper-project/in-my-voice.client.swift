@@ -15,7 +15,7 @@ final class BluetoothListenTransport: SubscribeTransport {
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
+    func start(failureCallback: @escaping TransportErrorCallback) {
 		logger.info("Starting Bluetooth listen transport")
 		registerCallbacks()
 		running = true
@@ -346,7 +346,7 @@ final class BluetoothListenTransport: SubscribeTransport {
     private var isInBackground = false
     private var scanRefreshCount = 0
 	private var conversation: ListenConversation
-	private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
+	private var failureCallback: TransportErrorCallback?
 
 	init(_ c: ListenConversation) {
         logger.log("Initializing Bluetooth listen transport")

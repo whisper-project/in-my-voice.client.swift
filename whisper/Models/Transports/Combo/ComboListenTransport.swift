@@ -14,7 +14,7 @@ final class ComboListenTransport: SubscribeTransport {
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
+    func start(failureCallback: @escaping TransportErrorCallback) {
         logger.info("Starting combo listen transport")
 		self.failureCallback = failureCallback
 		initializeTransports()
@@ -113,7 +113,7 @@ final class ComboListenTransport: SubscribeTransport {
 	private var remotes: [String: Remote] = [:]	// maps from remote id to remote
 	private var clients: [String: Remote] = [:]	// maps from client id to remote
     private var cancellables: Set<AnyCancellable> = []
-	private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
+	private var failureCallback: TransportErrorCallback?
 
     init(_ conversation: ListenConversation) {
         logger.log("Initializing combo listen transport")

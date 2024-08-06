@@ -15,7 +15,7 @@ final class TcpWhisperTransport: PublishTransport {
     var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
+    func start(failureCallback: @escaping TransportErrorCallback) {
         logger.log("Starting TCP whisper transport")
         self.failureCallback = failureCallback
 		self.authenticator = TcpAuthenticator(mode: .whisper,
@@ -91,7 +91,7 @@ final class TcpWhisperTransport: PublishTransport {
         }
     }
     
-    private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
+    private var failureCallback: TransportErrorCallback?
     private var clientId: String
     private var conversation: WhisperConversation
     private var authenticator: TcpAuthenticator!
