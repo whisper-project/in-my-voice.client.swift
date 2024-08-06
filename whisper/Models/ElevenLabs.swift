@@ -6,48 +6,64 @@
 import Foundation
 import AVFAudio
 
-fileprivate final class SpeechItem {
-	private let apiRoot: String = "https://api.elevenlabs.io/v1"
-	private let outputFormat: String = "mp3_44100_128"
-	private let modelId: String = "eleven_turbo_v2"
-	private let similarityBoost: Float = 0.5
-	private let stability: Float = 0.5
-	private let useSpeakerBoost: Bool = true
+final class SpeechItem {
+	private struct SpeechSettings: Hashable {
+		let apiRoot: String = "https://api.elevenlabs.io/v1"
+		let outputFormat: String = "mp3_44100_128"
+		let modelId: String = "eleven_turbo_v2"
+		let similarityBoost: Float = 0.5
+		let stability: Float = 0.5
+		let useSpeakerBoost: Bool = true
+		var apiKey, voiceId, dictionaryId, dictionaryVersion: String
+		var optimizeStreamingLatency: Int
 
-	var text: String
-	var historyId: String!
-	var audio: NSPurgeableData!
+		init() {
+			apiKey = PreferenceData.elevenLabsApiKey()
+			voiceId = PreferenceData.elevenLabsVoiceId()
+			dictionaryId = PreferenceData.elevenLabsDictionaryId()
+			dictionaryVersion = PreferenceData.elevenLabsDictionaryVersion()
+			optimizeStreamingLatency = PreferenceData.elevenLabsLatencyReduction()
+		}
+	}
+
+	private(set) var text: String
+	private(set) var settingsHash: Int? = nil
+	private(set) var historyId: String? = nil
+	fileprivate private(set) var audio: NSPurgeableData? = nil
 
 	fileprivate init(_ text: String) {
 		self.text = text
 	}
 
-	func generateSpeech(_ callback: @escaping ((TransportErrorSeverity, String)?) -> Void) {
-		let apiKey = PreferenceData.elevenLabsApiKey()
-		let voiceId = PreferenceData.elevenLabsVoiceId()
-		let dictionaryId = PreferenceData.elevenLabsDictionaryId()
-		let dictionaryVersion = PreferenceData.elevenLabsDictionaryVersion()
-		let optimizeStreamingLatency = PreferenceData.elevenLabsLatencyReduction()
-		guard !apiKey.isEmpty, !voiceId.isEmpty else {
+	fileprivate init(_ text: String, hash: Int, id: String) {
+		self.text = text
+		settingsHash = hash
+		historyId = id
+	}
+
+	func generateSpeech(_ callback: @escaping TransportSuccessCallback) {
+		let settings = SpeechSettings()
+		guard !settings.apiKey.isEmpty, !settings.voiceId.isEmpty else {
 			callback((.settings, "Can't generate ElevenLabs speech due to empty api key or voice id"))
 			return
 		}
-		let endpoint = "\(apiRoot)/text-to-speech/\(voiceId)/stream"
-		let query = "?output_format=\(outputFormat)&optimize_streaming_latency=\(optimizeStreamingLatency)"
+		settingsHash = settings.hashValue
+		let endpoint = "\(settings.apiRoot)/text-to-speech/\(settings.voiceId)/stream"
+		let query = "?output_format=\(settings.outputFormat)&optimize_streaming_latency=\(settings.optimizeStreamingLatency)"
 		var body: [String: Any] = [
-			"model_id": modelId,
+			"model_id": settings.modelId,
 			"text": text,
 			"voice_settings": [
-				"similarity_boost": similarityBoost,
-				"stability": stability,
-				"use_speaker_boost": useSpeakerBoost
+				"similarity_boost": settings.similarityBoost,
+				"stability": settings.stability,
+				"use_speaker_boost": settings.useSpeakerBoost
 			]
 		]
-		if !dictionaryId.isEmpty && !dictionaryVersion.isEmpty {
+		if !settings.dictionaryId.isEmpty && !settings.dictionaryVersion.isEmpty {
 			body["pronunciation_dictionary_locators"] = [
 				[
-					"pronunciation_dictionary_id": dictionaryId,
-					"version_id": dictionaryVersion,
+					"pronunciation_dictionary_id": settings.dictionaryId,
+					"version_id": settings.dictionaryVersion,
 				]
 			]
 		}
@@ -57,7 +73,7 @@ fileprivate final class SpeechItem {
 		var request = URLRequest(url: URL(string: endpoint + query)!)
 		request.httpMethod = "POST"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-		request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
+		request.setValue(settings.apiKey, forHTTPHeaderField: "xi-api-key")
 		request.httpBody = data
 		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
 			guard error == nil else {
@@ -80,7 +96,6 @@ fileprivate final class SpeechItem {
 				if let id = response.value(forHTTPHeaderField: "History-Item-Id") {
 					self.historyId = id
 				} else {
-					self.historyId = "no-history-ID"
 					logAnomaly("Speech generation is missing history item ID: \(response.allHeaderFields)")
 				}
 				callback(nil)
@@ -115,20 +130,21 @@ fileprivate final class SpeechItem {
 		task.resume()
 	}
 
-	func downloadSpeech(_ callback: @escaping ((TransportErrorSeverity, String)?) -> Void) {
-		let apiKey = PreferenceData.elevenLabsApiKey()
-		guard !apiKey.isEmpty else {
-			callback((.settings, "Can't retrieve ElevenLabs speech due to empty api key"))
+	func downloadSpeech(_ callback: @escaping TransportSuccessCallback) {
+		let settings = SpeechSettings()
+		guard !settings.apiKey.isEmpty else {
+			callback((.settings, "Can't download ElevenLabs speech due to empty api key"))
 			return
 		}
-		guard let id = self.historyId else {
-			callback((.report, "Can't retrieve ElevenLabs speech due to missing history ID"))
+		guard let hash = self.settingsHash, hash == settings.hashValue, let id = self.historyId else {
+			// need to regenerate because voice settings have changed or history ID is missing
+			generateSpeech(callback)
 			return
 		}
-		let endpoint = "\(apiRoot)/history/\(id)/audio"
+		let endpoint = "\(settings.apiRoot)/history/\(id)/audio"
 		var request = URLRequest(url: URL(string: endpoint)!)
 		request.httpMethod = "GET"
-		request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
+		request.setValue(settings.apiKey, forHTTPHeaderField: "xi-api-key")
 		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
 			guard error == nil else {
 				let report = "Failed to retrieve speech: \(String(describing: error))"
@@ -185,7 +201,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 
 	private var pastItems: [String: SpeechItem] = [:]
 	private var pendingItems: [GeneratedItem] = []
-	private var errorCallback: ((TransportErrorSeverity, String) -> Void)?
+	private var errorCallback: TransportErrorCallback?
 	private var speaker: AVAudioPlayer?
 	private var emptyTextCount: Int = 0
 
@@ -198,11 +214,19 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		return key
 	}
 
-	func forgetText(text: String) {
+	func lookupText(_ text: String) -> SpeechItem? {
+		return pastItems[keyText(text)]
+	}
+
+	func memoizeText(_ text: String, hash: Int, id: String) {
+		pastItems[keyText(text)] = SpeechItem(text, hash: hash, id: id)
+	}
+
+	func forgetText(_ text: String) {
 		pastItems.removeValue(forKey: keyText(text))
 	}
 
-	func speakText(text: String, errorCallback: ((TransportErrorSeverity, String) -> Void)? = nil) {
+	func speakText(text: String, errorCallback: TransportErrorCallback? = nil) {
 		self.errorCallback = errorCallback
 		guard !text.isEmpty else {
 			emptyTextCount += 1
@@ -214,9 +238,9 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		}
 		emptyTextCount = 0
 		if let existing = pastItems[keyText(text)] {
-			if existing.audio.beginContentAccess() {
-				self.queueSpeech((existing, Data(existing.audio)))
-				existing.audio.endContentAccess()
+			if let audio = existing.audio, audio.beginContentAccess() {
+				self.queueSpeech((existing, Data(audio)))
+				audio.endContentAccess()
 				return
 			}
 			logAnomaly("Audio cache purged for item \(existing.historyId!)")
@@ -224,10 +248,12 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				if let (severity, message) = error {
 					errorCallback?(severity, message)
 					self.fallback(text)
+				} else if let audio = existing.audio, audio.beginContentAccess() {
+					self.queueSpeech((existing, Data(audio)))
+					audio.endContentAccess()
 				} else {
-					self.queueSpeech((existing, Data(existing.audio)))
-					existing.audio.endContentAccess()
-					return
+					logAnomaly("Downloaded audio was purged before it could be played")
+					self.fallback(text)
 				}
 			}
 		} else {
@@ -236,11 +262,13 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				if let (severity, message) = error {
 					errorCallback?(severity, message)
 					self.fallback(text)
-				} else {
+				} else if let audio = item.audio, audio.beginContentAccess() {
 					self.pastItems[self.keyText(text)] = item
-					self.queueSpeech((item, Data(item.audio)))
-					item.audio.endContentAccess()
-					return
+					self.queueSpeech((item, Data(audio)))
+					audio.endContentAccess()
+				} else {
+					logAnomaly("Generated audio was purged before it could be played")
+					self.fallback(text)
 				}
 			}
 		}

@@ -4,3 +4,7 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import Foundation
+
+extension String: LocalizedError {
+	public var errorDescription: String? { return self }
+}
