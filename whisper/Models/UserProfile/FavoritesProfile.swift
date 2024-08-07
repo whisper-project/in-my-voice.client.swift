@@ -105,7 +105,7 @@ final class FavoritesProfile: Codable {
 
 	init(_ profileId: String) {
 		id = profileId
-		timestamp = 0
+		timestamp = Int(Date.now.timeIntervalSince1970)
 		allSet = TagSet(profile: self, tag: allTag)
 		tagSetTable = [allTag: allSet]
 		save()
@@ -142,7 +142,6 @@ final class FavoritesProfile: Codable {
 			logAnomaly(message)
 			throw message
 		}
-		timestamp = Int(Date.now.timeIntervalSince1970)
 	}
 
 	func encode(to: any Encoder) throws {
