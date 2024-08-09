@@ -55,7 +55,15 @@ final class TagSet: Comparable {
 
 	// depends on there never being two tag sets with the same name
 	static func < (lhs: TagSet, rhs: TagSet) -> Bool {
-		lhs.tag < rhs.tag
+		if lhs.tag == rhs.tag {
+			false
+		} else if lhs.tag == allTag {
+			true
+		} else if rhs.tag == allTag {
+			false
+		} else {
+			lhs.tag < rhs.tag
+		}
 	}
 
 	func add(_ f: Favorite, at: Int? = nil) {
