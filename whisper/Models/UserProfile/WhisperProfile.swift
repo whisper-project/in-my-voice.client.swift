@@ -6,7 +6,7 @@
 import Foundation
 import CryptoKit
 
-final class WhisperConversation: Conversation, Encodable, Decodable {
+final class WhisperConversation: Conversation, Codable, Hashable {
 	private(set) var id: String
 	fileprivate(set) var name: String = ""
 	fileprivate(set) var allowed: [String: String] = [:]	// profile ID to username mapping
@@ -18,6 +18,11 @@ final class WhisperConversation: Conversation, Encodable, Decodable {
 	// equality by id
 	static func ==(_ left: WhisperConversation, _ right: WhisperConversation) -> Bool {
 		return left.id == right.id
+	}
+
+	// hash by id
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(id)
 	}
 
 	// lexicographic ordering by name

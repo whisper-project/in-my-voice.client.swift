@@ -15,6 +15,7 @@ struct ListenProfileView: View {
 
     @State private var conversations: [ListenConversation] = []
 	@State private var myConversations: [WhisperConversation] = []
+	@State private var showListenEntry: Bool = false
 	@StateObject private var profile = UserProfile.shared
 
     var body: some View {
@@ -22,17 +23,37 @@ struct ListenProfileView: View {
 			chooseView()
 				.navigationTitle("Listen Conversations")
 				.navigationBarTitleDisplayMode(.inline)
-				#if targetEnvironment(macCatalyst)
 				.toolbar {
-					Button(action: { dismiss() }, label: { Text("Close") } )
+#if targetEnvironment(macCatalyst)
+					ToolbarItem(placement: .topBarLeading) {
+						Button(action: { dismiss() }, label: { Text("Close") } )
+					}
+#endif
+					ToolbarItem(placement: .topBarTrailing) {
+						Button(action: pasteConversation, label: { Image(systemName: "plus") } )
+					}
 				}
-				#endif
 		}
+		.sheet(isPresented: $showListenEntry, content: {
+			ListenLinkView(maybeListen: maybeListen, show: $showListenEntry)
+		})
 		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
 		.onAppear(perform: profile.update)
 		.onDisappear(perform: profile.update)
     }
-    
+
+	func pasteConversation() {
+		if let url = UIPasteboard.general.url,
+		   let conversation = UserProfile.shared.listenProfile.fromLink(url.absoluteString) {
+			maybeListen?(conversation)
+		} else if let str = UIPasteboard.general.string,
+		   let conversation = UserProfile.shared.listenProfile.fromLink(str) {
+			maybeListen?(conversation)
+		} else {
+			showListenEntry = true
+		}
+	}
+
     func updateFromProfile() {
 		conversations = profile.listenProfile.conversations()
 		myConversations = profile.userPassword.isEmpty ? [] : profile.whisperProfile.conversations()
@@ -59,9 +80,6 @@ struct ListenProfileView: View {
 				}
 			}
 		}
-#if DEBUG
-		ListenLinkView(maybeListen: maybeListen)
-#endif
 	}
 
 	@ViewBuilder func listenConversations() -> some View {
@@ -73,7 +91,9 @@ struct ListenProfileView: View {
 				}
 				.font(.title)
 				Text("\(c.name) with \(c.ownerName)").lineLimit(nil)
-				Spacer(minLength: 25)
+				Spacer()
+				ShareLink("", item: PreferenceData.publisherUrl(c))
+					.font(.title)
 				Button("Delete", systemImage: "delete.left") {
 					logger.info("Hit delete button on \(c.id) (\(c.name))")
 					profile.listenProfile.delete(c.id)
@@ -95,6 +115,8 @@ struct ListenProfileView: View {
 				}
 				.font(.title)
 				Text("\(c.name)").lineLimit(nil)
+				Spacer()
+				ShareLink("", item: PreferenceData.publisherUrl(c))
 			}
 			.labelStyle(.iconOnly)
 			.buttonStyle(.borderless)
@@ -102,27 +124,34 @@ struct ListenProfileView: View {
 	}
 }
 
-#if DEBUG
 struct ListenLinkView: View {
 	var maybeListen: ((ListenConversation?) -> Void)?
+	@Binding var show: Bool
 
 	@State var link: String = ""
+	@State var error: String? = nil
 
 	var body: some View {
 		Form {
-			Section("Paste link here to listen") {
+			Section("Enter Listen Link") {
 				TextField("Conversation link", text: $link, axis: .vertical)
-					.lineLimit(2...5)
+					.lineLimit(3...10)
 					.onChange(of: link) { old, new in
 						if new.hasSuffix("\n") {
 							link = old
 							maybeJoin()
+						} else {
+							error = nil
 						}
 					}
 					.submitLabel(.join)
 					.textInputAutocapitalization(.never)
 					.disableAutocorrection(true)
 					.onSubmit(maybeJoin)
+				if error != nil {
+					Text("Sorry, that's not a valid listen link")
+						.font(.subheadline)
+				}
 				Button("Join", action: maybeJoin)
 			}
 		}
@@ -130,13 +159,13 @@ struct ListenLinkView: View {
 
 	func maybeJoin() {
 		if let conversation = UserProfile.shared.listenProfile.fromLink(link) {
+			show = false
 			maybeListen?(conversation)
 		} else {
 			link = "Not valid: \(link)"
 		}
 	}
 }
-#endif
 
 #Preview {
     ListenProfileView()

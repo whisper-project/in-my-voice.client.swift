@@ -84,13 +84,13 @@ struct ShareProfileView: View {
 				HStack { 
 					Text("Profile ID:").bold()
 					Text("\(profile.id)").textSelection(.enabled)
-					ShareLink(item: profile.id, label: { Image(systemName: "square.on.square") })
+					Button(action: { UIPasteboard.general.string = profile.id }, label: { Image(systemName: "square.on.square") })
 				}
 				.buttonStyle(.borderless)
 				HStack {
 					Text("Profile Secret:").bold()
 					Text("\(profile.userPassword)").textSelection(.enabled)
-					ShareLink(item: profile.userPassword, label: { Image(systemName: "square.on.square") })
+					Button(action: { UIPasteboard.general.string = profile.userPassword }, label: { Image(systemName: "square.on.square") })
 				}
 				.buttonStyle(.borderless)
 			}

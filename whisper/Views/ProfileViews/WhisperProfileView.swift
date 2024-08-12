@@ -13,15 +13,16 @@ struct WhisperProfileView: View {
 
 	var maybeWhisper: ((WhisperConversation?) -> Void)?
 
+	@State private var path: NavigationPath = .init()
     @State private var rows: [Row] = []
     @State private var defaultConversation: WhisperConversation?
 	@StateObject private var profile = UserProfile.shared
 
     var body: some View {
-		NavigationStack {
+		NavigationStack(path: $path) {
 			List {
 				ForEach(rows) { r in
-					NavigationLink(destination: WhisperProfileDetailView(conversation: r.conversation)) {
+					NavigationLink(value: r.conversation) {
 						HStack(spacing: 20) {
 							Button("Whisper", systemImage: "mouth") {
 								logger.info("Hit whisper button on \(r.conversation.id) (\(r.id))")
@@ -42,14 +43,20 @@ struct WhisperProfileView: View {
 					updateFromProfile()
 				}
 			}
+			.navigationDestination(for: WhisperConversation.self,
+								   destination: { WhisperProfileDetailView(conversation: $0) })
 			.navigationTitle("Whisper Conversations")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				Button(action: addConversation, label: { Text("Add") } )
-				EditButton()
-				#if targetEnvironment(macCatalyst)
-				Button(action: { dismiss() }, label: { Text("Close") } )
-				#endif
+#if targetEnvironment(macCatalyst)
+				ToolbarItem(placement: .topBarLeading) {
+					Button(action: { dismiss() }, label: { Text("Close") } )
+				}
+#endif
+				ToolbarItem(placement: .topBarTrailing) {
+					Button(action: addConversation, label: { Image(systemName: "plus") } )
+					EditButton()
+				}
 			}
 			.onChange(of: profile.timestamp, initial: true, updateFromProfile)
         }
@@ -59,8 +66,9 @@ struct WhisperProfileView: View {
 
 	private func addConversation() {
 		logger.info("Creating new conversation")
-		profile.whisperProfile.new()
+		let c = profile.whisperProfile.new()
 		updateFromProfile()
+		path.append(c)
 	}
 
 	private struct Row: Identifiable {
