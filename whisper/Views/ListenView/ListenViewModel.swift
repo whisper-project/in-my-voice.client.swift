@@ -69,7 +69,6 @@ final class ListenViewModel: ObservableObject {
     private var isInBackground = false
     private var soundEffect: AVAudioPlayer?
     private var notifySoundInBackground = false
-    private static let synthesizer = AVSpeechSynthesizer()
 
 	let profile = UserProfile.shared.listenProfile
 
@@ -402,17 +401,12 @@ final class ListenViewModel: ObservableObject {
     }
     
 	private func speak(_ text: String) {
-		if PreferenceData.elevenLabsApiKey().isEmpty || PreferenceData.elevenLabsVoiceId().isEmpty {
-			let utterance = AVSpeechUtterance(string: text)
-			Self.synthesizer.speak(utterance)
-		} else {
-			let onError: (TransportErrorSeverity, String) -> () = { severity, message in
-				self.connectionErrorSeverity = severity
-				self.connectionErrorDescription = message
-				self.connectionError = true
-			}
-			ElevenLabs.shared.speakText(text: text, errorCallback: onError)
+		let onError: (TransportErrorSeverity, String) -> () = { severity, message in
+			self.connectionErrorSeverity = severity
+			self.connectionErrorDescription = message
+			self.connectionError = true
 		}
+		ElevenLabs.shared.speakText(text: text, errorCallback: onError)
 	}
 
     /// Wait for a while so discovery can find multiple listeners

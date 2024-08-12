@@ -9,6 +9,8 @@ struct FavoritesDetailView: View {
 #if targetEnvironment(macCatalyst)
 	@Environment(\.dismiss) private var dismiss
 #endif
+	@AppStorage("elevenlabs_api_key_preference") private var apiKey: String?
+	@AppStorage("elevenlabs_voice_id_preference") private var voiceId: String?
 
 	@Binding var path: NavigationPath
 	var f: Favorite
@@ -56,6 +58,18 @@ struct FavoritesDetailView: View {
 				}
 				.buttonStyle(.borderless)
 			}
+			if ElevenLabs.isEnabled() {
+				Section(header: Text("ElevenLabs Voice Generation"),
+						footer: Text("ElevenLabs remembers the last speech generated for each favorite")) {
+					Button("Listen to Existing", action: { f.speakText() })
+					Button("Generate and Listen to New", action: { f.regenerateText() })
+				}
+			} else {
+				Section(header: Text("Apple Voice Generation"),
+						footer: Text("Apple generates the speech new each time a favorite is used")) {
+					Button("Listen to Sample", action: { f.speakText() })
+				}
+			}
 			Section(header: Text("Groups")) {
 				List {
 					ForEach(allGroups) { g in
@@ -71,9 +85,11 @@ struct FavoritesDetailView: View {
 				}
 			}
 		}
-		.navigationTitle("Details")
+		.navigationTitle("Favorite Details")
 		.navigationBarTitleDisplayMode(.inline)
 		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
+		.onChange(of: apiKey, updateFromProfile)
+		.onChange(of: voiceId, updateFromProfile)
 	}
 
 	func updateFromProfile() {

@@ -32,9 +32,8 @@ struct FavoritesGroupView: View {
 			Button(action: addGroup, label: { Image(systemName: "plus") } )
 			EditButton()
 		}
-		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
-		.onAppear(perform: profile.update)
-		.onDisappear(perform: profile.update)
+		.onChange(of: profile.timestamp, updateFromProfile)
+		.onAppear(perform: updateFromProfile)
 	}
 
 	private func addGroup() {

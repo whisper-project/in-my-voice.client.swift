@@ -11,7 +11,7 @@ struct FavoritesProfileView: View {
 #endif
 
 	@State private var path: NavigationPath = .init()
-	@State private var allSet: Group = UserProfile.shared.favoritesProfile.allSet
+	@State private var allSet: Group = UserProfile.shared.favoritesProfile.allGroup
 	@State private var favorites: [Favorite] = []
 	@StateObject private var profile = UserProfile.shared
 
@@ -56,6 +56,7 @@ struct FavoritesProfileView: View {
 				}
 			}
 			.onChange(of: profile.timestamp, initial: true, updateFromProfile)
+			.onAppear(perform: updateFromProfile)
 		}
 		.onAppear(perform: profile.update)
 		.onDisappear(perform: profile.update)
@@ -72,7 +73,7 @@ struct FavoritesProfileView: View {
 	}
 
 	private func updateFromProfile() {
-		allSet = profile.favoritesProfile.allSet
+		allSet = profile.favoritesProfile.allGroup
 		favorites = allSet.favorites
 	}
 }

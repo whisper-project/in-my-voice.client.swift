@@ -5,9 +5,10 @@
 
 import Foundation
 import AVFAudio
+import CryptoKit
 
 final class SpeechItem {
-	private struct SpeechSettings: Hashable {
+	private struct SpeechSettings {
 		let apiRoot: String = "https://api.elevenlabs.io/v1"
 		let outputFormat: String = "mp3_44100_128"
 		let modelId: String = "eleven_turbo_v2"
@@ -16,6 +17,19 @@ final class SpeechItem {
 		let useSpeakerBoost: Bool = true
 		var apiKey, voiceId, dictionaryId, dictionaryVersion: String
 		var optimizeStreamingLatency: Int
+
+		var hashValue: Int {
+			get {
+				var hasher = HasherFNV1a()
+				hasher.combine(apiKey)
+				hasher.combine(voiceId)
+				hasher.combine(dictionaryId)
+				hasher.combine(dictionaryVersion)
+				hasher.combine(optimizeStreamingLatency)
+				let val = hasher.finalize()
+				return val
+			}
+		}
 
 		init() {
 			apiKey = PreferenceData.elevenLabsApiKey()
@@ -41,7 +55,7 @@ final class SpeechItem {
 		historyId = id
 	}
 
-	func generateSpeech(_ callback: @escaping TransportSuccessCallback) {
+	fileprivate func generateSpeech(_ callback: @escaping TransportSuccessCallback) {
 		let settings = SpeechSettings()
 		guard !settings.apiKey.isEmpty, !settings.voiceId.isEmpty else {
 			callback((.settings, "Can't generate ElevenLabs speech due to empty api key or voice id"))
@@ -130,13 +144,20 @@ final class SpeechItem {
 		task.resume()
 	}
 
-	func downloadSpeech(_ callback: @escaping TransportSuccessCallback) {
+	static fileprivate func isEnabled() -> Bool {
+		return !PreferenceData.elevenLabsApiKey().isEmpty && !PreferenceData.elevenLabsVoiceId().isEmpty
+	}
+
+	fileprivate func downloadSpeech(_ callback: @escaping TransportSuccessCallback) {
 		let settings = SpeechSettings()
 		guard !settings.apiKey.isEmpty else {
 			callback((.settings, "Can't download ElevenLabs speech due to empty api key"))
 			return
 		}
-		guard let hash = self.settingsHash, hash == settings.hashValue, let id = self.historyId else {
+		guard let hash = self.settingsHash,
+			  hash == settings.hashValue,
+			  let id = self.historyId
+		else {
 			// need to regenerate because voice settings have changed or history ID is missing
 			generateSpeech(callback)
 			return
@@ -214,6 +235,10 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		return key
 	}
 
+	static func isEnabled() -> Bool {
+		return SpeechItem.isEnabled()
+	}
+
 	func lookupText(_ text: String) -> SpeechItem? {
 		return pastItems[keyText(text)]
 	}
@@ -235,6 +260,11 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 	}
 
 	func speakText(text: String, successCallback: @escaping TransportSuccessCallback) {
+		guard SpeechItem.isEnabled() else {
+			fallback(text)
+			successCallback(nil)
+			return
+		}
 		errorCallback = { severity, message in
 			successCallback((severity, message))
 		}
@@ -254,7 +284,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				audio.endContentAccess()
 			} else {
 				existing.downloadSpeech() { error in
-					if error == nil {
+					if error != nil {
 						self.fallback(text)
 					} else if let audio = existing.audio, audio.beginContentAccess() {
 						self.queueSpeech((existing, Data(audio)))

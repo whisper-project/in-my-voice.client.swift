@@ -9,7 +9,8 @@ fileprivate struct StoredProfile: Codable {
 	var id: String
 	var timestamp: Int
 	var favorites: [Favorite]
-	var tags: [String: [String]]
+	var groupList: [String]
+	var groupTable: [String: [String]]
 }
 
 final class Favorite: Identifiable, Comparable, Hashable, Codable {
@@ -60,23 +61,31 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 	}
 
 	func speakText() {
-		ElevenLabs.shared.speakText(text: text)
+		speakTextInternal(regenerate: false)
 	}
 
 	func regenerateText() {
+		speakTextInternal(regenerate: true)
+	}
+
+	private func speakTextInternal(regenerate: Bool) {
 		let memoize: TransportSuccessCallback = { result in
 			if result == nil, let item = ElevenLabs.shared.lookupText(self.text) {
-				self.speechHash = item.settingsHash
-				self.speechId = item.historyId
-				self.profile?.save()
+				if item.settingsHash != self.speechHash || item.historyId != self.speechId {
+					self.speechHash = item.settingsHash
+					self.speechId = item.historyId
+					self.profile?.save()
+				}
 			}
 		}
-		ElevenLabs.shared.forgetText(text)
+		if regenerate {
+			ElevenLabs.shared.forgetText(text)
+		}
 		ElevenLabs.shared.speakText(text: text, successCallback: memoize)
 	}
 }
 
-final class Group: Identifiable, Comparable, Hashable {
+final class Group: Identifiable, Hashable {
 	private var profile: FavoritesProfile
 	fileprivate(set) var name: String
 	private(set) var favorites: [Favorite] = []
@@ -87,22 +96,8 @@ final class Group: Identifiable, Comparable, Hashable {
 		self.name = name
 	}
 
-	// depends on there never being two groups with the same name
 	static func == (lhs: Group, rhs: Group) -> Bool {
-		lhs.name == rhs.name
-	}
-
-	// depends on there never being two groups with the same name
-	static func < (lhs: Group, rhs: Group) -> Bool {
-		if lhs.name == rhs.name {
-			false
-		} else if lhs.name == FavoritesProfile.allTag {
-			true
-		} else if rhs.name == FavoritesProfile.allTag {
-			false
-		} else {
-			lhs.name < rhs.name
-		}
+		lhs === rhs
 	}
 
 	func hash(into hasher: inout Hasher) {
@@ -138,7 +133,7 @@ final class Group: Identifiable, Comparable, Hashable {
 
 	func onDelete(deleteOffsets: IndexSet) {
 		let deleted = deleteOffsets.compactMap{ index in favorites[index] }
-		guard self !== profile.allSet else {
+		guard self !== profile.allGroup else {
 			// removing from the all set is a remove from the profile
 			profile.deleteFavorites(deleted)
 			return
@@ -160,21 +155,21 @@ final class Group: Identifiable, Comparable, Hashable {
 }
 
 final class FavoritesProfile: Codable {
-	static let allTag = "All"
-	let allTag = FavoritesProfile.allTag
 	var id: String
 	var timestamp: Int
 	private var favoritesTable: [String: Favorite]
-	private(set) var allSet: Group! = nil
-	private var tagSetTable: [String: Group]
+	private(set) var allGroup: Group! = nil
+	private var groupTable: [String: Group]
+	private var groupList: [Group] = []
 	private var serverPassword: String = ""
 
 	init(_ profileId: String) {
 		id = profileId
 		timestamp = Int(Date.now.timeIntervalSince1970)
 		favoritesTable = [:]
-		tagSetTable = [:]
-		allSet = Group(profile: self, name: allTag)
+		groupList = []
+		groupTable = [:]
+		allGroup = Group(profile: self, name: "")
 		newFavorite(text: "This is a sample favorite.")
 		save()
 	}
@@ -184,32 +179,38 @@ final class FavoritesProfile: Codable {
 		id = stored.id
 		timestamp = stored.timestamp
 		favoritesTable = [:]
-		tagSetTable = [:]
-		allSet = Group(profile: self, name: allTag)
+		groupList = []
+		groupTable = [:]
+		allGroup = Group(profile: self, name: "")
 		for f in stored.favorites {
 			f.profile = self
 			favoritesTable[f.name] = f
-			allSet.addInternal(f)
-		}
-		for (t, ns) in stored.tags {
-			guard t != allTag else {
-				// ignore any stored set named with the all name
-				continue
+			if let hash = f.speechHash, let id = f.speechId {
+				ElevenLabs.shared.memoizeText(f.text, hash: hash, id: id)
 			}
-			let g = Group(profile: self, name: t)
-			tagSetTable[t] = g
-			for n in ns {
-				if let f = favoritesTable[n] {
-					g.addInternal(f)
+			allGroup.addInternal(f)
+		}
+		for name in stored.groupList {
+			let g = Group(profile: self, name: name)
+			groupList.append(g)
+			groupTable[name] = g
+			if let members = stored.groupTable[name] {
+				for name in members {
+					if let f = favoritesTable[name] {
+						g.addInternal(f)
+					}
 				}
 			}
 		}
 	}
 
 	func encode(to: any Encoder) throws {
-		let favorites = Array(allSet.favorites)
-		let tags = tagSetTable.mapValues{ g in g.favorites.map{ f in f.name } }
-		let stored = StoredProfile(id: id, timestamp: timestamp, favorites: favorites, tags: tags)
+		let favorites = Array(allGroup.favorites)
+		let groupList = groupList.map{ $0.name }
+		let groupTable = groupTable.mapValues{ g in g.favorites.map{ $0.name } }
+		let stored = StoredProfile(
+			id: id, timestamp: timestamp, favorites: favorites, groupList: groupList, groupTable: groupTable
+		)
 		try stored.encode(to: to)
 	}
 
@@ -229,12 +230,9 @@ final class FavoritesProfile: Codable {
 		}
 		let f = Favorite(profile: self, name: name, text: text.trimmingCharacters(in: .whitespacesAndNewlines))
 		favoritesTable[name] = f
-		allSet.add(f)
+		allGroup.add(f)
 		for name in tags {
-			if name == allTag {
-				continue
-			}
-			if let tagSet = tagSetTable[name] {
+			if let tagSet = groupTable[name] {
 				tagSet.addInternal(f)
 			} else {
 				logAnomaly("Ignoring unknown name (\(name)) in newFavorite(\(name))")
@@ -267,7 +265,7 @@ final class FavoritesProfile: Codable {
 				continue
 			}
 			favoritesTable.removeValue(forKey: f.name)
-			allSet.remove(f)
+			allGroup.remove(f)
 			for g in Array(f.tagSets) {
 				g.remove(f)
 			}
@@ -277,61 +275,63 @@ final class FavoritesProfile: Codable {
 
 	@discardableResult func newGroup(name: String = "") -> Group {
 		var name = name.trimmingCharacters(in: .whitespaces)
-		if name.isEmpty || name == allTag {
+		if name.isEmpty {
 			name = "Group"
 		}
-		if tagSetTable[name] != nil {
+		if groupTable[name] != nil {
 			let root = name
 			for i in 1... {
 				name = "\(root) \(i)"
-				if tagSetTable[name] == nil {
+				if groupTable[name] == nil {
 					break
 				}
 			}
 		}
 		let g = Group(profile: self, name: name)
-		tagSetTable[name] = g
+		groupList.append(g)
+		groupTable[name] = g
 		save()
 		return g
 	}
 
 	@discardableResult func renameGroup(_ g: Group, to: String) -> Bool {
 		let to = to.trimmingCharacters(in: .whitespaces)
-		guard to != allTag else {
+		guard !to.isEmpty else {
 			return false
 		}
-		guard tagSetTable[to] == nil else {
+		guard groupTable[to] == nil else {
 			return false
 		}
-		guard tagSetTable[g.name] === g else {
+		guard groupTable[g.name] === g else {
 			logAnomaly("Ignore unknown name (\(g.name)) in renameGroup")
 			return false
 		}
-		tagSetTable.removeValue(forKey: g.name)
+		groupTable.removeValue(forKey: g.name)
 		g.name = to
-		tagSetTable[to] = g
+		groupTable[to] = g
 		save()
 		return true
 	}
 
 	func deleteGroup(_ g: Group) {
-		guard g.name != allTag else {
+		guard !g.name.isEmpty else {
+			logAnomaly("Trying to delete a group with no name?")
 			return
 		}
-		guard tagSetTable[g.name] === g else {
+		guard groupTable[g.name] === g else {
 			logAnomaly("Ignore unknown name (\(g.name)) in deleteGroup")
 			return
 		}
-		tagSetTable.removeValue(forKey: g.name)
+		groupTable.removeValue(forKey: g.name)
 		save()
 	}
 
 	func allGroups() -> [Group] {
-		return Array(tagSetTable.values).sorted()
+		return Array(groupList)
 	}
 
 	func getGroup(_ name: String) -> Group? {
-		tagSetTable[name]
+		groupTable[name]
 	}
 
 	fileprivate func save(verb: String = "PUT", localOnly: Bool = false) {
@@ -390,8 +390,8 @@ final class FavoritesProfile: Codable {
 				if let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data) {
 					logger.info("Received updated favorites profile, timestamp is \(profile.timestamp)")
 					self.favoritesTable = profile.favoritesTable
-					self.allSet = profile.allSet
-					self.tagSetTable = profile.tagSetTable
+					self.allGroup = profile.allGroup
+					self.groupTable = profile.groupTable
 					self.timestamp = profile.timestamp
 					save(localOnly: true)
 					notifyChange?()
@@ -430,8 +430,8 @@ final class FavoritesProfile: Codable {
 				self.id = id
 				self.serverPassword = serverPassword
 				self.favoritesTable = profile.favoritesTable
-				self.allSet = profile.allSet
-				self.tagSetTable = profile.tagSetTable
+				self.allGroup = profile.allGroup
+				self.groupTable = profile.groupTable
 				self.timestamp = profile.timestamp
 				save(localOnly: true)
 				completionHandler(200)

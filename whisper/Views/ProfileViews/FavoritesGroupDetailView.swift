@@ -21,7 +21,7 @@ struct FavoritesGroupDetailView: View {
 	var body: some View {
 		Form {
 			Section(header: Text("Group Name")) {
-				if g === profile.favoritesProfile.allSet {
+				if g === profile.favoritesProfile.allGroup {
 					Text(name)
 						.lineLimit(nil)
 				} else {
@@ -82,7 +82,7 @@ struct FavoritesGroupDetailView: View {
 	}
 
 	func addFavorite() {
-		let f = if g === profile.favoritesProfile.allSet {
+		let f = if g === profile.favoritesProfile.allGroup {
 			profile.favoritesProfile.newFavorite(text: "This is a sample favorite.")
 		} else {
 			profile.favoritesProfile.newFavorite(text: "This is a sample favorite.", tags: [g.name])

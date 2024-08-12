@@ -228,7 +228,12 @@ struct PreferenceData {
 	/// the name of the current favorites Group
 	static var currentGroupName: String {
 		get {
-			return defaults.string(forKey: "current_favorite_tag_setting") ?? FavoritesProfile.allTag
+			if let name = defaults.string(forKey: "current_favorite_tag_setting"),
+			   UserProfile.shared.favoritesProfile.getGroup(name) != nil {
+				name
+			} else {
+				""
+			}
 		}
 		set(new) {
 			guard UserProfile.shared.favoritesProfile.getGroup(new) != nil else {

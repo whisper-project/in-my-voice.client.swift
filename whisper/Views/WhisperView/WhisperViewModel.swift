@@ -66,7 +66,6 @@ final class WhisperViewModel: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
     private var liveText: String = ""
 	private var lastLiveText: String = ""
-    private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
 	let profile = UserProfile.shared.whisperProfile
@@ -347,17 +346,12 @@ final class WhisperViewModel: ObservableObject {
 	}
 
 	private func speak(_ text: String) {
-		if PreferenceData.elevenLabsApiKey().isEmpty || PreferenceData.elevenLabsVoiceId().isEmpty {
-			let utterance = AVSpeechUtterance(string: text)
-			Self.synthesizer.speak(utterance)
-		} else {
-			let onError: (TransportErrorSeverity, String) -> () = { severity, message in
-				self.connectionErrorSeverity = severity
-				self.connectionErrorDescription = message
-				self.connectionError = true
-			}
-			ElevenLabs.shared.speakText(text: text, errorCallback: onError)
+		let onError: (TransportErrorSeverity, String) -> () = { severity, message in
+			self.connectionErrorSeverity = severity
+			self.connectionErrorDescription = message
+			self.connectionError = true
 		}
+		ElevenLabs.shared.speakText(text: text, errorCallback: onError)
 	}
 
     // play the alert sound locally
