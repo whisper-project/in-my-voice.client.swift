@@ -5,8 +5,6 @@
 
 import Foundation
 
-fileprivate let allTag = "All"
-
 fileprivate struct StoredProfile: Codable {
 	var id: String
 	var timestamp: Int
@@ -14,15 +12,30 @@ fileprivate struct StoredProfile: Codable {
 	var tags: [String: [String]]
 }
 
-final class Favorite: Comparable, Codable {
+final class Favorite: Identifiable, Comparable, Hashable, Codable {
+	fileprivate(set) var profile: FavoritesProfile?
 	fileprivate(set) var name: String
 	fileprivate(set) var text: String
+	fileprivate(set) var tagSets: Set<Group> = Set()
 	fileprivate var speechHash: Int?
 	fileprivate var speechId: String?
 
-	fileprivate init(name: String, text: String) {
+	private enum CodingKeys: String, CodingKey {
+		case name, text, speechHash, speechId
+	}
+
+	fileprivate init(profile: FavoritesProfile, name: String, text: String) {
+		self.profile = profile
 		self.name = name
 		self.text = text
+	}
+
+	var id: String {
+		get { name }
+	}
+
+	func hash(into hasher: inout Hasher) {
+		name.hash(into: &hasher)
 	}
 
 	// depends on there never being two favorites with the same name
@@ -34,39 +47,78 @@ final class Favorite: Comparable, Codable {
 	static func < (lhs: Favorite, rhs: Favorite) -> Bool {
 		lhs.name < rhs.name
 	}
+
+	func updateText(_ text: String) {
+		let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+		guard !text.isEmpty else {
+			return
+		}
+		self.text = text
+		self.speechId = nil
+		self.speechHash = nil
+		profile?.save()
+	}
+
+	func speakText() {
+		ElevenLabs.shared.speakText(text: text)
+	}
+
+	func regenerateText() {
+		let memoize: TransportSuccessCallback = { result in
+			if result == nil, let item = ElevenLabs.shared.lookupText(self.text) {
+				self.speechHash = item.settingsHash
+				self.speechId = item.historyId
+				self.profile?.save()
+			}
+		}
+		ElevenLabs.shared.forgetText(text)
+		ElevenLabs.shared.speakText(text: text, successCallback: memoize)
+	}
 }
 
-final class TagSet: Comparable {
+final class Group: Identifiable, Comparable, Hashable {
 	private var profile: FavoritesProfile
-	fileprivate(set) var tag: String
+	fileprivate(set) var name: String
 	private(set) var favorites: [Favorite] = []
 	private var favoriteNames: Set<String> = Set()
 
-	fileprivate init(profile: FavoritesProfile, tag: String) {
+	fileprivate init(profile: FavoritesProfile, name: String) {
 		self.profile = profile
-		self.tag = tag
+		self.name = name
 	}
 
-	// depends on there never being two tag sets with the same name
-	static func == (lhs: TagSet, rhs: TagSet) -> Bool {
-		lhs.tag == rhs.tag
+	// depends on there never being two groups with the same name
+	static func == (lhs: Group, rhs: Group) -> Bool {
+		lhs.name == rhs.name
 	}
 
-
-	// depends on there never being two tag sets with the same name
-	static func < (lhs: TagSet, rhs: TagSet) -> Bool {
-		if lhs.tag == rhs.tag {
+	// depends on there never being two groups with the same name
+	static func < (lhs: Group, rhs: Group) -> Bool {
+		if lhs.name == rhs.name {
 			false
-		} else if lhs.tag == allTag {
+		} else if lhs.name == FavoritesProfile.allTag {
 			true
-		} else if rhs.tag == allTag {
+		} else if rhs.name == FavoritesProfile.allTag {
 			false
 		} else {
-			lhs.tag < rhs.tag
+			lhs.name < rhs.name
 		}
 	}
 
-	func add(_ f: Favorite, at: Int? = nil) {
+	func hash(into hasher: inout Hasher) {
+		name.hash(into: &hasher)
+	}
+
+	var id: String {
+		get { self.name }
+	}
+
+	func add(_ f: Favorite) {
+		addInternal(f)
+		profile.save()
+	}
+
+	fileprivate func addInternal(_ f: Favorite, at: Int? = nil) {
 		guard !favoriteNames.contains(f.name) else {
 			return
 		}
@@ -76,46 +128,54 @@ final class TagSet: Comparable {
 		} else {
 			self.favorites.append(f)
 		}
+		f.tagSets.insert(self)
 	}
 
 	func move(fromOffsets: IndexSet, toOffset: Int) {
 		favorites.move(fromOffsets: fromOffsets, toOffset: toOffset)
+		profile.save()
 	}
 
 	func onDelete(deleteOffsets: IndexSet) {
 		let deleted = deleteOffsets.compactMap{ index in favorites[index] }
-		guard tag != allTag else {
+		guard self !== profile.allSet else {
 			// removing from the all set is a remove from the profile
-			for d in deleted {
-				profile.deleteFavorite(d)
-			}
+			profile.deleteFavorites(deleted)
 			return
 		}
 		favorites.remove(atOffsets: deleteOffsets)
 		for d in deleted {
 			favoriteNames.remove(d.name)
+			d.tagSets.remove(self)
 		}
+		profile.save()
 	}
 
 	func remove(_ f: Favorite) {
 		favorites.removeAll(where: { f === $0 })
 		favoriteNames.remove(f.name)
+		f.tagSets.remove(self)
+		profile.save()
 	}
 }
 
 final class FavoritesProfile: Codable {
+	static let allTag = "All"
+	let allTag = FavoritesProfile.allTag
 	var id: String
 	var timestamp: Int
-	private var favoritesTable: [String: Favorite] = [:]
-	private var allSet: TagSet! = nil
-	private var tagSetTable: [String: TagSet] = [:]
+	private var favoritesTable: [String: Favorite]
+	private(set) var allSet: Group! = nil
+	private var tagSetTable: [String: Group]
 	private var serverPassword: String = ""
 
 	init(_ profileId: String) {
 		id = profileId
 		timestamp = Int(Date.now.timeIntervalSince1970)
-		allSet = TagSet(profile: self, tag: allTag)
-		tagSetTable = [allTag: allSet]
+		favoritesTable = [:]
+		tagSetTable = [:]
+		allSet = Group(profile: self, name: allTag)
+		newFavorite(text: "This is a sample favorite.")
 		save()
 	}
 
@@ -124,37 +184,31 @@ final class FavoritesProfile: Codable {
 		id = stored.id
 		timestamp = stored.timestamp
 		favoritesTable = [:]
-		allSet = TagSet(profile: self, tag: allTag)
-		tagSetTable = [allTag: allSet]
-		var allFound = false
+		tagSetTable = [:]
+		allSet = Group(profile: self, name: allTag)
 		for f in stored.favorites {
+			f.profile = self
 			favoritesTable[f.name] = f
+			allSet.addInternal(f)
 		}
 		for (t, ns) in stored.tags {
-			var ts: TagSet
-			if t == allTag {
-				ts = allSet
-				allFound = true
-			} else {
-				ts = TagSet(profile: self, tag: t)
-				tagSetTable[t] = ts
+			guard t != allTag else {
+				// ignore any stored set named with the all name
+				continue
 			}
+			let g = Group(profile: self, name: t)
+			tagSetTable[t] = g
 			for n in ns {
 				if let f = favoritesTable[n] {
-					ts.add(f)
+					g.addInternal(f)
 				}
 			}
-		}
-		if !allFound {
-			let message = "Stored favorites must contain an \(allTag) tag"
-			logAnomaly(message)
-			throw message
 		}
 	}
 
 	func encode(to: any Encoder) throws {
-		let favorites = Array(favoritesTable.values)
-		let tags = tagSetTable.mapValues{ ts in ts.favorites.map{ f in f.name} }
+		let favorites = Array(allSet.favorites)
+		let tags = tagSetTable.mapValues{ g in g.favorites.map{ f in f.name } }
 		let stored = StoredProfile(id: id, timestamp: timestamp, favorites: favorites, tags: tags)
 		try stored.encode(to: to)
 	}
@@ -166,31 +220,31 @@ final class FavoritesProfile: Codable {
 		}
 		if favoritesTable[name] != nil {
 			let root = name
-			for i in [1...] {
+			for i in 1... {
 				name = "\(root) \(i)"
 				if favoritesTable[name] == nil {
 					break
 				}
 			}
 		}
-		let f = Favorite(name: name, text: text.trimmingCharacters(in: .whitespacesAndNewlines))
+		let f = Favorite(profile: self, name: name, text: text.trimmingCharacters(in: .whitespacesAndNewlines))
 		favoritesTable[name] = f
 		allSet.add(f)
-		for tag in tags {
-			if tag == allTag {
+		for name in tags {
+			if name == allTag {
 				continue
 			}
-			if let tagSet = tagSetTable[tag] {
-				tagSet.add(f)
+			if let tagSet = tagSetTable[name] {
+				tagSet.addInternal(f)
 			} else {
-				logAnomaly("Ignoring unknown tag (\(tag)) in newFavorite(\(name))")
+				logAnomaly("Ignoring unknown name (\(name)) in newFavorite(\(name))")
 			}
 		}
 		save()
 		return f
 	}
 
-	func renameFavorite(_ f: Favorite, to: String) -> Bool {
+	@discardableResult func renameFavorite(_ f: Favorite, to: String) -> Bool {
 		let to = to.trimmingCharacters(in: .whitespaces)
 		guard favoritesTable[to] == nil else {
 			return false
@@ -206,76 +260,81 @@ final class FavoritesProfile: Codable {
 		return true
 	}
 
-	func deleteFavorite(_ f: Favorite) {
-		guard f === favoritesTable[f.name] else {
-			logAnomaly("Ignoring unknown favorite \(f.name) in deleteFavorite")
-			return
-		}
-		favoritesTable.removeValue(forKey: f.name)
-		allSet.remove(f)
-		for ts in tagSetTable.values {
-			if ts === allSet {
+	fileprivate func deleteFavorites(_ fs: [Favorite]) {
+		for f in fs {
+			guard f === favoritesTable[f.name] else {
+				logAnomaly("Ignoring unknown favorite \(f.name) in deleteFavorite")
 				continue
 			}
-			ts.remove(f)
+			favoritesTable.removeValue(forKey: f.name)
+			allSet.remove(f)
+			for g in Array(f.tagSets) {
+				g.remove(f)
+			}
 		}
 		save()
 	}
 
-	@discardableResult func newTagSet(name: String = "") -> TagSet {
+	@discardableResult func newGroup(name: String = "") -> Group {
 		var name = name.trimmingCharacters(in: .whitespaces)
-		if name.isEmpty {
-			name = "Tag"
+		if name.isEmpty || name == allTag {
+			name = "Group"
 		}
 		if tagSetTable[name] != nil {
 			let root = name
-			for i in [1...] {
+			for i in 1... {
 				name = "\(root) \(i)"
 				if tagSetTable[name] == nil {
 					break
 				}
 			}
 		}
-		let ts = TagSet(profile: self, tag: name)
-		tagSetTable[name] = ts
+		let g = Group(profile: self, name: name)
+		tagSetTable[name] = g
 		save()
-		return ts
+		return g
 	}
 
-	func renameTagSet(_ ts: TagSet, to: String) -> Bool {
+	@discardableResult func renameGroup(_ g: Group, to: String) -> Bool {
 		let to = to.trimmingCharacters(in: .whitespaces)
+		guard to != allTag else {
+			return false
+		}
 		guard tagSetTable[to] == nil else {
 			return false
 		}
-		guard tagSetTable[ts.tag] === ts else {
-			logAnomaly("Ignore unknown tag (\(ts.tag)) in renameTagSet")
+		guard tagSetTable[g.name] === g else {
+			logAnomaly("Ignore unknown name (\(g.name)) in renameGroup")
 			return false
 		}
-		tagSetTable.removeValue(forKey: ts.tag)
-		ts.tag = to
-		tagSetTable[to] = ts
+		tagSetTable.removeValue(forKey: g.name)
+		g.name = to
+		tagSetTable[to] = g
 		save()
 		return true
 	}
 
-	func deleteTagSet(_ ts: TagSet) -> Bool {
-		guard ts.tag != allTag else {
-			return false
+	func deleteGroup(_ g: Group) {
+		guard g.name != allTag else {
+			return
 		}
-		guard tagSetTable[ts.tag] === ts else {
-			logAnomaly("Ignore unknown tag (\(ts.tag)) in deleteTagSet")
-			return false
+		guard tagSetTable[g.name] === g else {
+			logAnomaly("Ignore unknown name (\(g.name)) in deleteGroup")
+			return
 		}
-		tagSetTable.removeValue(forKey: ts.tag)
+		tagSetTable.removeValue(forKey: g.name)
 		save()
-		return true
 	}
 
-	func allTags() -> [TagSet] {
+	func allGroups() -> [Group] {
 		return Array(tagSetTable.values).sorted()
 	}
 
-	private func save(verb: String = "PUT", localOnly: Bool = false) {
+	func getGroup(_ name: String) -> Group? {
+		tagSetTable[name]
+	}
+
+	fileprivate func save(verb: String = "PUT", localOnly: Bool = false) {
 		if !localOnly {
 			timestamp = Int(Date.now.timeIntervalSince1970)
 		}

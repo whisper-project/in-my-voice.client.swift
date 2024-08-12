@@ -224,7 +224,21 @@ struct PreferenceData {
             defaults.setValue(new, forKey: "alert_sound_setting")
         }
     }
-    
+
+	/// the name of the current favorites Group
+	static var currentGroupName: String {
+		get {
+			return defaults.string(forKey: "current_favorite_tag_setting") ?? FavoritesProfile.allTag
+		}
+		set(new) {
+			guard UserProfile.shared.favoritesProfile.getGroup(new) != nil else {
+				logAnomaly("Can't set unknown group '\(new)' as current")
+				return
+			}
+			defaults.set(new, forKey: "current_favorite_tag_setting")
+		}
+	}
+
 	/// Preferences
 	static private var whisperTapPreference: String {
 		get {

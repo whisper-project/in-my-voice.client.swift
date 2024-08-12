@@ -227,7 +227,17 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 	}
 
 	func speakText(text: String, errorCallback: TransportErrorCallback? = nil) {
-		self.errorCallback = errorCallback
+		speakText(text: text, successCallback: { result in
+			if let (severity, message) = result {
+				errorCallback?(severity, message)
+			}
+		})
+	}
+
+	func speakText(text: String, successCallback: @escaping TransportSuccessCallback) {
+		errorCallback = { severity, message in
+			successCallback((severity, message))
+		}
 		guard !text.isEmpty else {
 			emptyTextCount += 1
 			if emptyTextCount == 2 {
@@ -239,28 +249,27 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		emptyTextCount = 0
 		if let existing = pastItems[keyText(text)] {
 			if let audio = existing.audio, audio.beginContentAccess() {
+				successCallback(nil)
 				self.queueSpeech((existing, Data(audio)))
 				audio.endContentAccess()
-				return
-			}
-			logAnomaly("Audio cache purged for item \(existing.historyId!)")
-			existing.downloadSpeech() { error in
-				if let (severity, message) = error {
-					errorCallback?(severity, message)
-					self.fallback(text)
-				} else if let audio = existing.audio, audio.beginContentAccess() {
-					self.queueSpeech((existing, Data(audio)))
-					audio.endContentAccess()
-				} else {
-					logAnomaly("Downloaded audio was purged before it could be played")
-					self.fallback(text)
+			} else {
+				existing.downloadSpeech() { error in
+					if error == nil {
+						self.fallback(text)
+					} else if let audio = existing.audio, audio.beginContentAccess() {
+						self.queueSpeech((existing, Data(audio)))
+						audio.endContentAccess()
+					} else {
+						logAnomaly("Downloaded audio was purged before it could be played")
+						self.fallback(text)
+					}
+					successCallback(error)
 				}
 			}
 		} else {
 			let item = SpeechItem(text)
 			item.generateSpeech() { error in
-				if let (severity, message) = error {
-					errorCallback?(severity, message)
+				if error != nil {
 					self.fallback(text)
 				} else if let audio = item.audio, audio.beginContentAccess() {
 					self.pastItems[self.keyText(text)] = item
@@ -270,6 +279,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 					logAnomaly("Generated audio was purged before it could be played")
 					self.fallback(text)
 				}
+				successCallback(error)
 			}
 		}
 	}

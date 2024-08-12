@@ -40,10 +40,10 @@ final class SettingsProfile: Codable {
 	static func load(_ profileId: String, serverPassword: String) -> SettingsProfile {
 		if let data = Data.loadJsonFromDocumentsDirectory("SettingsProfile"),
 		   let value = try? JSONSerialization.jsonObject(with: data) as? [String: String],
-		   let tag = value["eTag"]
+		   let name = value["eTag"]
 		{
 			let version = Int(value["version"] ?? "none")
-			return reloadLocal(profileId, serverPassword: serverPassword, lastVersion: version, lastTag: tag).0
+			return reloadLocal(profileId, serverPassword: serverPassword, lastVersion: version, lastTag: name).0
 		} else {
 			return reloadLocal(profileId, serverPassword: serverPassword, lastVersion: nil, lastTag: nil).0
 		}

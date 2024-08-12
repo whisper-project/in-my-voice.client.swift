@@ -23,6 +23,7 @@ struct ChoiceView: View {
     @State private var credentialsMissing = false
     @State private var showWhisperConversations = false
     @State private var showListenConversations = false
+	@State private var showFavorites = false
 	@State private var showNoConnection = false
 	@State private var showSharingSheet = false
     @FocusState private var nameEdit: Bool
@@ -168,16 +169,31 @@ struct ChoiceView: View {
 					}
 					.transition(.scale)
 				}
-				Button(action: {
-					UIApplication.shared.open(settingsUrl)
-				}) {
-					Text("Settings")
-						.foregroundColor(.white)
-						.fontWeight(.bold)
-						.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+				HStack(spacing: 30) {
+					Button(action: {
+						showFavorites = true
+					}) {
+						Text("Favorites")
+							.foregroundColor(.white)
+							.fontWeight(.bold)
+							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+					}
+					.background(Color.accentColor)
+					.cornerRadius(15)
+					.sheet(isPresented: $showFavorites) {
+						FavoritesProfileView()
+					}
+					Button(action: {
+						UIApplication.shared.open(settingsUrl)
+					}) {
+						Text("Settings")
+							.foregroundColor(.white)
+							.fontWeight(.bold)
+							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+					}
+					.background(Color.accentColor)
+					.cornerRadius(15)
 				}
-				.background(Color.accentColor)
-				.cornerRadius(15)
 				VStack (spacing: 40) {
 					Button(action: {
 						let vc = SFSafariViewController(url: instructionSite)
