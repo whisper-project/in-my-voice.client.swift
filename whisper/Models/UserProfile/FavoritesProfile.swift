@@ -17,8 +17,8 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 	fileprivate(set) var profile: FavoritesProfile?
 	fileprivate(set) var name: String
 	fileprivate(set) var text: String
-	fileprivate(set) var tagSets: Set<Group> = Set()
-	fileprivate var speechHash: Int?
+	fileprivate(set) var groups: Set<Group> = Set()
+	fileprivate var speechHash: String?
 	fileprivate var speechId: String?
 
 	private enum CodingKeys: String, CodingKey {
@@ -71,8 +71,8 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 	private func speakTextInternal(regenerate: Bool) {
 		let memoize: TransportSuccessCallback = { result in
 			if result == nil, let item = ElevenLabs.shared.lookupText(self.text) {
-				if item.settingsHash != self.speechHash || item.historyId != self.speechId {
-					self.speechHash = item.settingsHash
+				if item.hash != self.speechHash || item.historyId != self.speechId {
+					self.speechHash = item.hash
 					self.speechId = item.historyId
 					self.profile?.save()
 				}
@@ -86,7 +86,7 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 }
 
 final class Group: Identifiable, Hashable {
-	private var profile: FavoritesProfile
+	fileprivate var profile: FavoritesProfile
 	fileprivate(set) var name: String
 	private(set) var favorites: [Favorite] = []
 	private var favoriteNames: Set<String> = Set()
@@ -123,7 +123,7 @@ final class Group: Identifiable, Hashable {
 		} else {
 			self.favorites.append(f)
 		}
-		f.tagSets.insert(self)
+		f.groups.insert(self)
 	}
 
 	func move(fromOffsets: IndexSet, toOffset: Int) {
@@ -141,7 +141,7 @@ final class Group: Identifiable, Hashable {
 		favorites.remove(atOffsets: deleteOffsets)
 		for d in deleted {
 			favoriteNames.remove(d.name)
-			d.tagSets.remove(self)
+			d.groups.remove(self)
 		}
 		profile.save()
 	}
@@ -149,7 +149,7 @@ final class Group: Identifiable, Hashable {
 	func remove(_ f: Favorite) {
 		favorites.removeAll(where: { f === $0 })
 		favoriteNames.remove(f.name)
-		f.tagSets.remove(self)
+		f.groups.remove(self)
 		profile.save()
 	}
 }
@@ -186,6 +186,7 @@ final class FavoritesProfile: Codable {
 			f.profile = self
 			favoritesTable[f.name] = f
 			if let hash = f.speechHash, let id = f.speechId {
+				logger.info("Favorite '\(f.name, privacy: .public)' has speech ID \(id, privacy: .public)")
 				ElevenLabs.shared.memoizeText(f.text, hash: hash, id: id)
 			}
 			allGroup.addInternal(f)
@@ -202,6 +203,17 @@ final class FavoritesProfile: Codable {
 				}
 			}
 		}
+	}
+
+	/// update the existing profile from a loaded server-side profile
+	private func updateFromProfile(_ profile: FavoritesProfile) {
+		self.favoritesTable = profile.favoritesTable
+		self.allGroup = profile.allGroup
+		for f in allGroup.favorites { f.profile = self }
+		self.groupList = profile.groupList
+		for g in self.groupList { g.profile = self }
+		self.groupTable = profile.groupTable
+		self.timestamp = profile.timestamp
 	}
 
 	func encode(to: any Encoder) throws {
@@ -266,7 +278,7 @@ final class FavoritesProfile: Codable {
 			}
 			favoritesTable.removeValue(forKey: f.name)
 			allGroup.remove(f)
-			for g in Array(f.tagSets) {
+			for g in Array(f.groups) {
 				g.remove(f)
 			}
 		}
@@ -389,10 +401,7 @@ final class FavoritesProfile: Codable {
 			if code == 200 {
 				if let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data) {
 					logger.info("Received updated favorites profile, timestamp is \(profile.timestamp)")
-					self.favoritesTable = profile.favoritesTable
-					self.allGroup = profile.allGroup
-					self.groupTable = profile.groupTable
-					self.timestamp = profile.timestamp
+					self.updateFromProfile(profile)
 					save(localOnly: true)
 					notifyChange?()
 				} else {
@@ -429,10 +438,7 @@ final class FavoritesProfile: Codable {
 			{
 				self.id = id
 				self.serverPassword = serverPassword
-				self.favoritesTable = profile.favoritesTable
-				self.allGroup = profile.allGroup
-				self.groupTable = profile.groupTable
-				self.timestamp = profile.timestamp
+				self.updateFromProfile(profile)
 				save(localOnly: true)
 				completionHandler(200)
 			} else {

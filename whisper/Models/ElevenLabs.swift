@@ -18,17 +18,15 @@ final class SpeechItem {
 		var apiKey, voiceId, dictionaryId, dictionaryVersion: String
 		var optimizeStreamingLatency: Int
 
-		var hashValue: Int {
-			get {
-				var hasher = HasherFNV1a()
-				hasher.combine(apiKey)
-				hasher.combine(voiceId)
-				hasher.combine(dictionaryId)
-				hasher.combine(dictionaryVersion)
-				hasher.combine(optimizeStreamingLatency)
-				let val = hasher.finalize()
-				return val
-			}
+		func stableHash() -> String {
+			var hasher = HasherFNV1a()
+			hasher.combine(apiKey)
+			hasher.combine(voiceId)
+			hasher.combine(dictionaryId)
+			hasher.combine(dictionaryVersion)
+			hasher.combine(optimizeStreamingLatency)
+			let val = hasher.finalize()
+			return String(val, radix: 32, uppercase: false)
 		}
 
 		init() {
@@ -41,7 +39,7 @@ final class SpeechItem {
 	}
 
 	private(set) var text: String
-	private(set) var settingsHash: Int? = nil
+	private(set) var hash: String? = nil
 	private(set) var historyId: String? = nil
 	fileprivate private(set) var audio: NSPurgeableData? = nil
 
@@ -49,9 +47,9 @@ final class SpeechItem {
 		self.text = text
 	}
 
-	fileprivate init(_ text: String, hash: Int, id: String) {
+	fileprivate init(_ text: String, hash: String, id: String) {
 		self.text = text
-		settingsHash = hash
+		self.hash = hash
 		historyId = id
 	}
 
@@ -61,7 +59,6 @@ final class SpeechItem {
 			callback((.settings, "Can't generate ElevenLabs speech due to empty api key or voice id"))
 			return
 		}
-		settingsHash = settings.hashValue
 		let endpoint = "\(settings.apiRoot)/text-to-speech/\(settings.voiceId)/stream"
 		let query = "?output_format=\(settings.outputFormat)&optimize_streaming_latency=\(settings.optimizeStreamingLatency)"
 		var body: [String: Any] = [
@@ -108,7 +105,10 @@ final class SpeechItem {
 				logger.info("Successful speech generation for '\(self.text, privacy: .public)'")
 				self.audio = NSPurgeableData(data: data)
 				if let id = response.value(forHTTPHeaderField: "History-Item-Id") {
+					let hash = settings.stableHash()
+					logger.info("Generated speech has hash \(hash, privacy: .public), ID \(id, privacy: .public)")
 					self.historyId = id
+					self.hash = hash
 				} else {
 					logAnomaly("Speech generation is missing history item ID: \(response.allHeaderFields)")
 				}
@@ -154,14 +154,18 @@ final class SpeechItem {
 			callback((.settings, "Can't download ElevenLabs speech due to empty api key"))
 			return
 		}
-		guard let hash = self.settingsHash,
-			  hash == settings.hashValue,
-			  let id = self.historyId
-		else {
-			// need to regenerate because voice settings have changed or history ID is missing
+		guard let id = historyId, let hash = hash else {
+			logAnomaly("Can't download with missing history settings, regenerating...")
 			generateSpeech(callback)
 			return
 		}
+		guard hash == settings.stableHash() else {
+			// need to regenerate because voice settings have changed
+			logger.info("Settings hash has changed on item \(self.historyId, privacy: .public) (was \(hash)), regenerating...")
+			generateSpeech(callback)
+			return
+		}
+		logger.info("Downloading generated speech for item \(id, privacy: .public)")
 		let endpoint = "\(settings.apiRoot)/history/\(id)/audio"
 		var request = URLRequest(url: URL(string: endpoint)!)
 		request.httpMethod = "GET"
@@ -243,7 +247,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		return pastItems[keyText(text)]
 	}
 
-	func memoizeText(_ text: String, hash: Int, id: String) {
+	func memoizeText(_ text: String, hash: String, id: String) {
 		pastItems[keyText(text)] = SpeechItem(text, hash: hash, id: id)
 	}
 
@@ -279,6 +283,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		emptyTextCount = 0
 		if let existing = pastItems[keyText(text)] {
 			if let audio = existing.audio, audio.beginContentAccess() {
+				logger.info("Successful reuse of generated speech for item \(existing.historyId, privacy: .public)")
 				successCallback(nil)
 				self.queueSpeech((existing, Data(audio)))
 				audio.endContentAccess()

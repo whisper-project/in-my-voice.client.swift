@@ -57,6 +57,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			favoritesProfile = fp
 		} else {
 			// we failed to load completely, so reset the profile completely except for the name
+			logAnomaly("Failed to load existing profile, resetting...")
 			self.id = UUID().uuidString
 			userPassword = ""
 			serverPassword = ""

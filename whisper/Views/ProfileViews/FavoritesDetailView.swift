@@ -19,7 +19,7 @@ struct FavoritesDetailView: View {
 	@State var newName: String = ""
 	@State var text: String = ""
 	@State var newText: String = ""
-	@State var tags: Set<Group> = Set()
+	@State var groups: Set<Group> = Set()
 	@State var allGroups: [Group] = []
 	@StateObject private var profile = UserProfile.shared
 
@@ -74,7 +74,7 @@ struct FavoritesDetailView: View {
 				List {
 					ForEach(allGroups) { g in
 						HStack(spacing: 15) {
-							Button("Add/Remove", systemImage: tags.contains(g) ? "checkmark.square" : "square") {
+							Button("Add/Remove", systemImage: groups.contains(g) ? "checkmark.square" : "square") {
 								toggleTag(g)
 							}
 							.labelStyle(.iconOnly)
@@ -97,7 +97,7 @@ struct FavoritesDetailView: View {
 		newName = name
 		text = f.text
 		newText = text
-		tags = f.tagSets
+		groups = f.groups
 		allGroups = profile.favoritesProfile.allGroups()
 	}
 
@@ -116,7 +116,7 @@ struct FavoritesDetailView: View {
 	}
 
 	func toggleTag(_ g: Group) {
-		if tags.contains(g) {
+		if groups.contains(g) {
 			g.remove(f)
 		} else {
 			g.add(f)
