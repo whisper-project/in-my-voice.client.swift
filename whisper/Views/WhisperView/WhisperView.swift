@@ -24,6 +24,9 @@ struct WhisperView: View {
 	@State private var size = PreferenceData.sizeWhenWhispering
 	@State private var magnify: Bool = PreferenceData.magnifyWhenWhispering
 	@State private var interjecting: Bool = false
+	@State private var showFavorites: Bool = false
+	@State private var showFavoritesFavorite: Favorite? = nil
+	@State private var showFavoritesGroup: FavoritesGroup? = nil
 	@State private var interjectionPrefixOverride: String?
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
@@ -67,6 +70,9 @@ struct WhisperView: View {
 					ConnectionErrorButtons(mode: $mode, severity: model.connectionErrorSeverity)
 				} message: {
 					ConnectionErrorContent(severity: model.connectionErrorSeverity, message: model.connectionErrorDescription)
+				}
+				.sheet(isPresented: $showFavorites, onDismiss: { showFavoritesFavorite = nil; showFavoritesGroup = nil }) {
+					FavoritesProfileView(use: self.maybeFavorite, g: self.showFavoritesGroup, f: self.showFavoritesFavorite)
 				}
 			}
 			.onChange(of: interjecting) {
@@ -128,10 +134,43 @@ struct WhisperView: View {
 		confirmStop = true
 	}
 
+	private func maybeFavorite(_ f: Favorite? = nil) {
+		showFavorites = false
+		if let f = f {
+			model.repeatLine(f.text)
+		}
+	}
+
+	private func createFavorite(_ text: String, _ fs: [Favorite]) {
+		if fs.isEmpty {
+			let f = UserProfile.shared.favoritesProfile.newFavorite(text: text)
+			showFavoritesFavorite = f
+			showFavorites = true
+		} else if fs.count == 1 {
+			showFavoritesFavorite = fs[0]
+			showFavorites = true
+		} else {
+			let g = UserProfile.shared.favoritesProfile.newGroup(name: "Duplicates")
+			for f in fs { g.add(f) }
+			showFavoritesGroup = g
+			showFavorites = true
+		}
+	}
+
+	private func editFavorites() {
+		showFavorites = true
+	}
+
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
-		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: .whisper, maybeStop: maybeStop, playSound: model.playSound, repeatSpeech: model.repeatLine)
+		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: .whisper,
+					maybeStop: maybeStop, playSound: model.playSound, repeatSpeech: model.repeatLine,
+					editFavorites: editFavorites, toggleFavorites: nil)
 			.padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
-		WhisperPastTextView(interjecting: $interjecting, model: model.pastText, again: model.repeatLine, edit: startInterjection)
+		WhisperPastTextView(interjecting: $interjecting,
+							model: model.pastText,
+							again: model.repeatLine,
+							edit: startInterjection,
+							favorite: createFavorite)
 			.font(FontSizes.fontFor(size))
 			.textSelection(.enabled)
 			.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)

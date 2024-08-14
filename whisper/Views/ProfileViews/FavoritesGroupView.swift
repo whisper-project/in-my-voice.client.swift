@@ -8,8 +8,8 @@ import SwiftUI
 struct FavoritesGroupView: View {
 	@Binding var path: NavigationPath
 
-	@State private var groups: [Group] = []
-	@StateObject private var profile = UserProfile.shared
+	@State private var groups: [FavoritesGroup] = []
+	@StateObject private var fp = UserProfile.shared.favoritesProfile
 
 	var body: some View {
 		List {
@@ -21,7 +21,7 @@ struct FavoritesGroupView: View {
 			}
 			.onDelete { indexSet in
 				for index in indexSet {
-					profile.favoritesProfile.deleteGroup(groups[index])
+					fp.deleteGroup(groups[index])
 				}
 				updateFromProfile()
 			}
@@ -32,18 +32,16 @@ struct FavoritesGroupView: View {
 			Button(action: addGroup, label: { Image(systemName: "plus") } )
 			EditButton()
 		}
-		.onChange(of: profile.timestamp, updateFromProfile)
-		.onAppear(perform: updateFromProfile)
+		.onChange(of: fp.timestamp, initial: true, updateFromProfile)
 	}
 
 	private func addGroup() {
 		logger.info("Creating new tag")
-		let group = profile.favoritesProfile.newGroup()
-		updateFromProfile()
+		let group = fp.newGroup()
 		path.append(group)
 	}
 
 	private func updateFromProfile() {
-		groups = profile.favoritesProfile.allGroups()
+		groups = fp.allGroups()
 	}
 }

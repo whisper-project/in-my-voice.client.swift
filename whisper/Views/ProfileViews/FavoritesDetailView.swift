@@ -13,15 +13,16 @@ struct FavoritesDetailView: View {
 	@AppStorage("elevenlabs_voice_id_preference") private var voiceId: String?
 
 	@Binding var path: NavigationPath
+	var use: ((Favorite?) -> Void)?
 	var f: Favorite
 
 	@State var name: String = ""
 	@State var newName: String = ""
 	@State var text: String = ""
 	@State var newText: String = ""
-	@State var groups: Set<Group> = Set()
-	@State var allGroups: [Group] = []
-	@StateObject private var profile = UserProfile.shared
+	@State var groups: Set<FavoritesGroup> = Set()
+	@State var allGroups: [FavoritesGroup] = []
+	@StateObject private var fp = UserProfile.shared.favoritesProfile
 
 	var body: some View {
 		Form {
@@ -32,8 +33,8 @@ struct FavoritesDetailView: View {
 						.submitLabel(.done)
 						.textInputAutocapitalization(.never)
 						.disableAutocorrection(true)
-						.onSubmit { updateName() }
-					Button("Submit", systemImage: "checkmark.square.fill") { updateName() }
+						.onSubmit { updateNameAndText() }
+					Button("Submit", systemImage: "checkmark.square.fill") { updateNameAndText() }
 						.labelStyle(.iconOnly)
 						.disabled(newName.isEmpty || newName == f.name)
 					Button("Reset", systemImage: "x.square.fill") { newName = name }
@@ -48,8 +49,8 @@ struct FavoritesDetailView: View {
 						.lineLimit(nil)
 						.submitLabel(.done)
 						.textInputAutocapitalization(.sentences)
-						.onSubmit { updateText() }
-					Button("Submit", systemImage: "checkmark.square.fill") { updateText() }
+						.onSubmit { updateNameAndText() }
+					Button("Submit", systemImage: "checkmark.square.fill") { updateNameAndText() }
 						.labelStyle(.iconOnly)
 						.disabled(newText.isEmpty || newText == f.text)
 					Button("Reset", systemImage: "x.square.fill") { newText = text }
@@ -57,6 +58,9 @@ struct FavoritesDetailView: View {
 						.disabled(newText == text)
 				}
 				.buttonStyle(.borderless)
+			}
+			if let use = use {
+				Button("Send to Listeners", action: { use(f) })
 			}
 			if ElevenLabs.isEnabled() {
 				Section(header: Text("ElevenLabs Voice Generation"),
@@ -75,7 +79,7 @@ struct FavoritesDetailView: View {
 					ForEach(allGroups) { g in
 						HStack(spacing: 15) {
 							Button("Add/Remove", systemImage: groups.contains(g) ? "checkmark.square" : "square") {
-								toggleTag(g)
+								toggleGroup(g)
 							}
 							.labelStyle(.iconOnly)
 							.font(.title)
@@ -87,7 +91,7 @@ struct FavoritesDetailView: View {
 		}
 		.navigationTitle("Favorite Details")
 		.navigationBarTitleDisplayMode(.inline)
-		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
+		.onChange(of: fp.timestamp, initial: true, updateFromProfile)
 		.onChange(of: apiKey, updateFromProfile)
 		.onChange(of: voiceId, updateFromProfile)
 	}
@@ -98,37 +102,23 @@ struct FavoritesDetailView: View {
 		text = f.text
 		newText = text
 		groups = f.groups
-		allGroups = profile.favoritesProfile.allGroups()
+		allGroups = fp.allGroups()
 	}
 
-	func updateName() {
+	func updateNameAndText() {
 		if (newName != name && !newName.isEmpty) {
-			profile.favoritesProfile.renameFavorite(f, to: newName)
+			fp.renameFavorite(f, to: newName)
 		}
-		updateFromProfile()
-	}
-
-	func updateText() {
 		if (newText != text && !newText.isEmpty) {
-			f.updateText(newText)
+			fp.updateFavoriteText(f, to: newText)
 		}
-		updateFromProfile()
 	}
 
-	func toggleTag(_ g: Group) {
+	func toggleGroup(_ g: FavoritesGroup) {
 		if groups.contains(g) {
 			g.remove(f)
 		} else {
 			g.add(f)
 		}
-		updateFromProfile()
-	}
-
-	private func addTag() {
-		logger.info("Creating new name")
-		let g = profile.favoritesProfile.newGroup()
-		g.add(f)
-		updateFromProfile()
-		path.append(g)
 	}
 }

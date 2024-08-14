@@ -15,6 +15,8 @@ struct ControlView: View {
 	var maybeStop: (() -> Void)? = nil
     var playSound: (() -> Void)? = nil
 	var repeatSpeech: ((String?) -> Void)? = nil
+	var editFavorites: (() -> Void)? = nil
+	var toggleFavorites: (() -> Void)? = nil
 
     @State var alertSound = PreferenceData.alertSound
     @State var speaking: Bool = false
@@ -25,6 +27,7 @@ struct ControlView: View {
             speechButton()
 			maybeRepeatButton()
 			maybeInterjectingButton()
+			maybeFavoritesButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
 			Button(action: { maybeStop?() }) {
@@ -85,6 +88,24 @@ struct ControlView: View {
 				interjecting.toggle()
 			} label: {
 				Image(interjecting ? "interjecting" : "not-interjecting")
+					.renderingMode(.template)
+					.resizable()
+					.padding(5)
+					.frame(width: 50, height: 50)
+					.border(colorScheme == .light ? .black : .white, width: 1)
+			}
+			Spacer()
+		}
+	}
+
+	@ViewBuilder private func maybeFavoritesButton() -> some View {
+		if mode == .listen {
+			EmptyView()
+		} else {
+			Button {
+				editFavorites?()
+			} label: {
+				Image(systemName: "star")
 					.renderingMode(.template)
 					.resizable()
 					.padding(5)

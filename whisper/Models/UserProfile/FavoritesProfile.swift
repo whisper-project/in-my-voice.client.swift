@@ -17,7 +17,7 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 	fileprivate(set) var profile: FavoritesProfile?
 	fileprivate(set) var name: String
 	fileprivate(set) var text: String
-	fileprivate(set) var groups: Set<Group> = Set()
+	fileprivate(set) var groups: Set<FavoritesGroup> = Set()
 	fileprivate var speechHash: String?
 	fileprivate var speechId: String?
 
@@ -48,18 +48,6 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 	static func < (lhs: Favorite, rhs: Favorite) -> Bool {
 		lhs.name < rhs.name
 	}
-
-	func updateText(_ text: String) {
-		let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-		guard !text.isEmpty else {
-			return
-		}
-		self.text = text
-		self.speechId = nil
-		self.speechHash = nil
-		profile?.save()
-	}
-
 	func speakText() {
 		speakTextInternal(regenerate: false)
 	}
@@ -85,7 +73,7 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 	}
 }
 
-final class Group: Identifiable, Hashable {
+final class FavoritesGroup: Identifiable, Hashable {
 	fileprivate var profile: FavoritesProfile
 	fileprivate(set) var name: String
 	private(set) var favorites: [Favorite] = []
@@ -96,7 +84,7 @@ final class Group: Identifiable, Hashable {
 		self.name = name
 	}
 
-	static func == (lhs: Group, rhs: Group) -> Bool {
+	static func == (lhs: FavoritesGroup, rhs: FavoritesGroup) -> Bool {
 		lhs === rhs
 	}
 
@@ -154,23 +142,25 @@ final class Group: Identifiable, Hashable {
 	}
 }
 
-final class FavoritesProfile: Codable {
+final class FavoritesProfile: Codable, ObservableObject {
 	var id: String
-	var timestamp: Int
+	@Published var timestamp: Int
 	private var favoritesTable: [String: Favorite]
-	private(set) var allGroup: Group! = nil
-	private var groupTable: [String: Group]
-	private var groupList: [Group] = []
+	private var lookupTable: [String: [Favorite]]
+	private(set) var allGroup: FavoritesGroup! = nil
+	private var groupTable: [String: FavoritesGroup]
+	private var groupList: [FavoritesGroup] = []
 	private var serverPassword: String = ""
 
 	init(_ profileId: String) {
 		id = profileId
 		timestamp = Int(Date.now.timeIntervalSince1970)
 		favoritesTable = [:]
+		lookupTable = [:]
 		groupList = []
 		groupTable = [:]
-		allGroup = Group(profile: self, name: "")
-		newFavorite(text: "This is a sample favorite.")
+		allGroup = FavoritesGroup(profile: self, name: "")
+		_ = addFavoriteInternal(name: "Sample", text: "This is a sample favorite.", tags: [])
 		save()
 	}
 
@@ -179,20 +169,20 @@ final class FavoritesProfile: Codable {
 		id = stored.id
 		timestamp = stored.timestamp
 		favoritesTable = [:]
+		lookupTable = [:]
 		groupList = []
 		groupTable = [:]
-		allGroup = Group(profile: self, name: "")
+		allGroup = FavoritesGroup(profile: self, name: "")
 		for f in stored.favorites {
 			f.profile = self
-			favoritesTable[f.name] = f
+			_ = addFavoriteInternal(name: f.name, text: f.text)
 			if let hash = f.speechHash, let id = f.speechId {
 				logger.info("Favorite '\(f.name, privacy: .public)' has speech ID \(id, privacy: .public)")
 				ElevenLabs.shared.memoizeText(f.text, hash: hash, id: id)
 			}
-			allGroup.addInternal(f)
 		}
 		for name in stored.groupList {
-			let g = Group(profile: self, name: name)
+			let g = FavoritesGroup(profile: self, name: name)
 			groupList.append(g)
 			groupTable[name] = g
 			if let members = stored.groupTable[name] {
@@ -208,6 +198,7 @@ final class FavoritesProfile: Codable {
 	/// update the existing profile from a loaded server-side profile
 	private func updateFromProfile(_ profile: FavoritesProfile) {
 		self.favoritesTable = profile.favoritesTable
+		self.lookupTable = profile.lookupTable
 		self.allGroup = profile.allGroup
 		for f in allGroup.favorites { f.profile = self }
 		self.groupList = profile.groupList
@@ -226,6 +217,30 @@ final class FavoritesProfile: Codable {
 		try stored.encode(to: to)
 	}
 
+	private func addFavoriteInternal(name: String, text: String, tags: [String] = []) -> Favorite {
+		// caller guarantees that the name isn't in use
+		let f = Favorite(profile: self, name: name, text: text)
+		favoritesTable[name] = f
+		if var existing = lookupTable[text] {
+			existing.append(f)
+		} else {
+			lookupTable[text] = [f]
+		}
+		allGroup.addInternal(f)
+		for name in tags {
+			if let tagSet = groupTable[name] {
+				tagSet.addInternal(f)
+			} else {
+				logAnomaly("Ignoring unknown name (\(name)) in newFavorite(\(name))")
+			}
+		}
+		return f
+	}
+
+	func lookupFavorite(text: String) -> [Favorite] {
+		return lookupTable[text] ?? []
+	}
+
 	@discardableResult func newFavorite(text: String, name: String = "", tags: [String] = []) -> Favorite {
 		var name = name.trimmingCharacters(in: .whitespaces)
 		if name.isEmpty {
@@ -240,16 +255,7 @@ final class FavoritesProfile: Codable {
 				}
 			}
 		}
-		let f = Favorite(profile: self, name: name, text: text.trimmingCharacters(in: .whitespacesAndNewlines))
-		favoritesTable[name] = f
-		allGroup.add(f)
-		for name in tags {
-			if let tagSet = groupTable[name] {
-				tagSet.addInternal(f)
-			} else {
-				logAnomaly("Ignoring unknown name (\(name)) in newFavorite(\(name))")
-			}
-		}
+		let f = addFavoriteInternal(name: name, text: text.trimmingCharacters(in: .whitespacesAndNewlines), tags: tags)
 		save()
 		return f
 	}
@@ -270,6 +276,24 @@ final class FavoritesProfile: Codable {
 		return true
 	}
 
+	func updateFavoriteText(_ f: Favorite, to: String) {
+		let text = to.trimmingCharacters(in: .whitespacesAndNewlines)
+		guard !to.isEmpty else {
+			return
+		}
+		lookupTable.removeValue(forKey: f.text)
+		f.text = text
+		f.speechId = nil
+		f.speechHash = nil
+		if var existing = lookupTable[f.text] {
+			existing.append(f)
+		} else {
+			lookupTable[f.text] = [f]
+		}
+		save()
+	}
+
+
 	fileprivate func deleteFavorites(_ fs: [Favorite]) {
 		for f in fs {
 			guard f === favoritesTable[f.name] else {
@@ -277,6 +301,7 @@ final class FavoritesProfile: Codable {
 				continue
 			}
 			favoritesTable.removeValue(forKey: f.name)
+			lookupTable.removeValue(forKey: f.text)
 			allGroup.remove(f)
 			for g in Array(f.groups) {
 				g.remove(f)
@@ -285,7 +310,7 @@ final class FavoritesProfile: Codable {
 		save()
 	}
 
-	@discardableResult func newGroup(name: String = "") -> Group {
+	@discardableResult func newGroup(name: String = "") -> FavoritesGroup {
 		var name = name.trimmingCharacters(in: .whitespaces)
 		if name.isEmpty {
 			name = "Group"
@@ -299,14 +324,14 @@ final class FavoritesProfile: Codable {
 				}
 			}
 		}
-		let g = Group(profile: self, name: name)
+		let g = FavoritesGroup(profile: self, name: name)
 		groupList.append(g)
 		groupTable[name] = g
 		save()
 		return g
 	}
 
-	@discardableResult func renameGroup(_ g: Group, to: String) -> Bool {
+	@discardableResult func renameGroup(_ g: FavoritesGroup, to: String) -> Bool {
 		let to = to.trimmingCharacters(in: .whitespaces)
 		guard !to.isEmpty else {
 			return false
@@ -325,7 +350,7 @@ final class FavoritesProfile: Codable {
 		return true
 	}
 
-	func deleteGroup(_ g: Group) {
+	func deleteGroup(_ g: FavoritesGroup) {
 		guard !g.name.isEmpty else {
 			logAnomaly("Trying to delete a group with no name?")
 			return
@@ -338,11 +363,11 @@ final class FavoritesProfile: Codable {
 		save()
 	}
 
-	func allGroups() -> [Group] {
+	func allGroups() -> [FavoritesGroup] {
 		return Array(groupList)
 	}
 
-	func getGroup(_ name: String) -> Group? {
+	func getGroup(_ name: String) -> FavoritesGroup? {
 		groupTable[name]
 	}
 

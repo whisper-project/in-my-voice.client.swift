@@ -10,16 +10,15 @@ struct FavoritesProfileView: View {
 	@Environment(\.dismiss) private var dismiss
 #endif
 
-	@State private var path: NavigationPath = .init()
-	@State private var allSet: Group = UserProfile.shared.favoritesProfile.allGroup
-	@State private var favorites: [Favorite] = []
-	@StateObject private var profile = UserProfile.shared
+	var use: ((Favorite?) -> Void)? = nil
+	var g: FavoritesGroup? = nil
+	var f: Favorite? = nil
 
-	init(f: Favorite? = nil) {
-		if let f = f {
-			path.append(f)
-		}
-	}
+	@State private var path: NavigationPath = .init()
+	@State private var allGroup: FavoritesGroup = UserProfile.shared.favoritesProfile.allGroup
+	@State private var favorites: [Favorite] = []
+	@StateObject private var up = UserProfile.shared
+	@StateObject private var fp = UserProfile.shared.favoritesProfile
 
 	var body: some View {
 		NavigationStack(path: $path) {
@@ -29,18 +28,18 @@ struct FavoritesProfileView: View {
 						Text(f.name)
 					}
 				}
-				.onMove{ from, to in
-					allSet.move(fromOffsets: from, toOffset: to)
-					updateFromProfile()
-				}
-				.onDelete{ indexSet in
-					allSet.onDelete(deleteOffsets: indexSet)
-					updateFromProfile()
-				}
+				.onMove{ from, to in allGroup.move(fromOffsets: from, toOffset: to) }
+				.onDelete{ indexSet in allGroup.onDelete(deleteOffsets: indexSet) }
 			}
-			.navigationDestination(for: Group.self, destination: { FavoritesGroupDetailView(path: $path, g: $0) })
-			.navigationDestination(for: Favorite.self, destination: { FavoritesDetailView(path: $path, f: $0) })
-			.navigationDestination(for: String.self, destination: { _ in FavoritesGroupView(path: $path) })
+			.navigationDestination(for: FavoritesGroup.self, destination: {
+				FavoritesGroupDetailView(path: $path, g: $0)
+			})
+			.navigationDestination(for: Favorite.self, destination: {
+				FavoritesDetailView(path: $path, use: use, f: $0)
+			})
+			.navigationDestination(for: String.self, destination: { _ in
+				FavoritesGroupView(path: $path)
+			})
 			.navigationTitle("Favorites")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
@@ -55,16 +54,24 @@ struct FavoritesProfileView: View {
 					Button(action: showGroups, label: { Text("Groups") })
 				}
 			}
-			.onChange(of: profile.timestamp, initial: true, updateFromProfile)
-			.onAppear(perform: updateFromProfile)
+			.onChange(of: fp.timestamp, initial: true, updateFromProfile)
 		}
-		.onAppear(perform: profile.update)
-		.onDisappear(perform: profile.update)
+		.onAppear{
+			up.update()
+			// if we were given views, push them on the stack
+			if let g = g {
+				path.append("Groups")
+				path.append(g)
+			}
+			if let f = f {
+				path.append(f)
+			}
+		}
+		.onDisappear(perform: up.update)
 	}
 
 	func addFavorite() {
-		let f = profile.favoritesProfile.newFavorite(text: "This is a sample favorite.")
-		updateFromProfile()
+		let f = fp.newFavorite(text: "This is a sample favorite.")
 		path.append(f)
 	}
 
@@ -73,8 +80,8 @@ struct FavoritesProfileView: View {
 	}
 
 	private func updateFromProfile() {
-		allSet = profile.favoritesProfile.allGroup
-		favorites = allSet.favorites
+		allGroup = fp.allGroup
+		favorites = allGroup.favorites
 	}
 }
 

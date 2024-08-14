@@ -11,17 +11,18 @@ struct FavoritesGroupDetailView: View {
 #endif
 
 	@Binding var path: NavigationPath
-	var g: Group
+	var g: FavoritesGroup
 
 	@State var name: String = ""
 	@State var newName: String = ""
 	@State var favorites: [Favorite] = []
-	@StateObject private var profile = UserProfile.shared
+	@StateObject private var up = UserProfile.shared
+	@StateObject private var fp = UserProfile.shared.favoritesProfile
 
 	var body: some View {
 		Form {
 			Section(header: Text("Group Name")) {
-				if g === profile.favoritesProfile.allGroup {
+				if g === fp.allGroup {
 					Text(name)
 						.lineLimit(nil)
 				} else {
@@ -49,14 +50,8 @@ struct FavoritesGroupDetailView: View {
 							Text(f.name)
 						}
 					}
-					.onMove{ from, to in
-						g.move(fromOffsets: from, toOffset: to)
-						updateFromProfile()
-					}
-					.onDelete{ indexSet in
-						g.onDelete(deleteOffsets: indexSet)
-						updateFromProfile()
-					}
+					.onMove{ from, to in g.move(fromOffsets: from, toOffset: to) }
+					.onDelete{ indexSet in g.onDelete(deleteOffsets: indexSet) }
 				}
 			}
 		}
@@ -65,7 +60,7 @@ struct FavoritesGroupDetailView: View {
 		.toolbar {
 			EditButton()
 		}
-		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
+		.onChange(of: fp.timestamp, initial: true, updateFromProfile)
 	}
 
 	func updateFromProfile() {
@@ -76,18 +71,16 @@ struct FavoritesGroupDetailView: View {
 
 	func updateTag() {
 		if (newName != name && !newName.isEmpty) {
-			profile.favoritesProfile.renameGroup(g, to: newName)
+			fp.renameGroup(g, to: newName)
 		}
-		updateFromProfile()
 	}
 
 	func addFavorite() {
-		let f = if g === profile.favoritesProfile.allGroup {
-			profile.favoritesProfile.newFavorite(text: "This is a sample favorite.")
+		let f = if g === fp.allGroup {
+			fp.newFavorite(text: "This is a sample favorite.")
 		} else {
-			profile.favoritesProfile.newFavorite(text: "This is a sample favorite.", tags: [g.name])
+			fp.newFavorite(text: "This is a sample favorite.", tags: [g.name])
 		}
-		updateFromProfile()
 		path.append(f)
 	}
 }

@@ -10,13 +10,16 @@ struct WhisperPastTextView: View {
 	@ObservedObject var model: PastTextModel
 	var again: ((String?) -> Void)?
 	var edit: ((String) -> Void)?
+	var favorite: ((String, [Favorite]) -> Void)?
 
+	@State private var rows: [Row] = []
 	@AppStorage("history_buttons_preference") private var buttonsPref: String?
+	@ObservedObject private var fp = UserProfile.shared.favoritesProfile
 
     var body: some View {
 		ScrollViewReader { proxy in
 			List {
-				ForEach(makeRows(model.pastText)) { row in
+				ForEach(rows) { row in
 					HStack(spacing: 5) {
 						makeButtons(row)
 						Text(row.text)
@@ -32,11 +35,18 @@ struct WhisperPastTextView: View {
 				}
 			}
 		}
+		.onChange(of: fp.timestamp, updateFromProfile)
+		.onChange(of: model.pastText, initial: true, updateFromProfile)
     }
+
+	private func updateFromProfile() {
+		rows = makeRows(model.pastText)
+	}
 
 	private struct Row: Identifiable {
 		let id: Int
 		let text: String
+		let favorites: [Favorite]
 	}
 
 	private func makeRows(_ text: String) -> [Row] {
@@ -51,7 +61,8 @@ struct WhisperPastTextView: View {
 			if i == 0 && content.isEmpty {
 				continue;
 			}
-			rows.append(Row(id: i - max, text: content))
+			let favorites = fp.lookupFavorite(text: content)
+			rows.append(Row(id: i - max, text: content, favorites: favorites))
 		}
 		return rows
 	}
@@ -73,7 +84,9 @@ struct WhisperPastTextView: View {
 				.disabled(interjecting || row.text.isEmpty)
 		}
 		if buttons.contains("f") {
-			Button("Favorite", systemImage: "star", action: { edit?(row.text) })
+			Button("Favorite", systemImage: row.favorites.isEmpty ? "star": "star.fill", action: {
+				favorite?(row.text, row.favorites)
+			})
 				.labelStyle(.iconOnly)
 				.buttonStyle(.bordered)
 				.font(.title)
