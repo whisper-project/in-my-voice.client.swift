@@ -213,6 +213,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             completionHandler(.failed)
         }
     }
+
+	func applicationWillTerminate(_ application: UIApplication) {
+		let shared = AppStatus.shared
+		shared.appIsQuitting = true
+	}
 }
 
 // following code from https://stackoverflow.com/a/66394826/558006
@@ -233,4 +238,10 @@ func restartApplication(){
 	center.add(request)
 	
 	exit(0)
+}
+
+final class AppStatus: ObservableObject {
+	static var shared: AppStatus = .init()
+
+	@Published var appIsQuitting: Bool = false
 }

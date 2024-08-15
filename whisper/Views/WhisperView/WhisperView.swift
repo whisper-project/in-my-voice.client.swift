@@ -31,6 +31,8 @@ struct WhisperView: View {
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
+	@StateObject private var appStatus = AppStatus.shared
+	@State private var viewHasRespondedToQuit = false
 
     init(mode: Binding<OperatingMode>, conversation: WhisperConversation) {
         self._mode = mode
@@ -100,6 +102,16 @@ struct WhisperView: View {
 				SleepControl.shared.enable()
 				logger.log("WhisperView disappeared")
 				model.stop()
+			}
+			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
+				logger.log("Received notification that app will terminate")
+				quitWhisperView()
+			})
+			.onChange(of: appStatus.appIsQuitting) {
+				if appStatus.appIsQuitting {
+					logger.log("App has been told to quit")
+					quitWhisperView()
+				}
 			}
 			.onChange(of: window) {
 				window?.windowScene?.title = "Whispering to \(conversation.name)"
@@ -235,6 +247,16 @@ struct WhisperView: View {
 		}
 		interjectionPrefixOverride = text
 		interjecting = true
+	}
+
+	private func quitWhisperView() {
+		guard !viewHasRespondedToQuit else {
+			logger.log("Whisper view is already terminating")
+			return
+		}
+		logger.warning("Whisper view is terminating in response to quit signal")
+		viewHasRespondedToQuit = true
+		model.stop()
 	}
 }
 

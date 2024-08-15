@@ -7,32 +7,34 @@ import SwiftUI
 import SwiftUIWindowBinder
 
 struct ListenView: View {
-    @Environment(\.colorScheme) var colorScheme
-    @Environment(\.dynamicTypeSize) var dynamicTypeSize
-    @Environment(\.scenePhase) var scenePhase
+	@Environment(\.colorScheme) var colorScheme
+	@Environment(\.dynamicTypeSize) var dynamicTypeSize
+	@Environment(\.scenePhase) var scenePhase
 	@AppStorage("newest_whisper_location_preference") var liveWindowPosition: String?
 
-    @Binding var mode: OperatingMode
+	@Binding var mode: OperatingMode
 	@Binding var restart: Bool
-    var conversation: ListenConversation
+	var conversation: ListenConversation
 
-    @FocusState var focusField: Bool
-    @StateObject private var model: ListenViewModel
+	@FocusState var focusField: Bool
+	@StateObject private var model: ListenViewModel
 	@State private var size = PreferenceData.sizeWhenListening
 	@State private var magnify: Bool = PreferenceData.magnifyWhenListening
 	@State private var interjecting: Bool = false
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
+	@StateObject private var appStatus = AppStatus.shared
+	@State private var viewHasRespondedToQuit = false
 
 	init(mode: Binding<OperatingMode>, restart: Binding<Bool>, conversation: ListenConversation) {
-        self._mode = mode
+		self._mode = mode
 		self._restart = restart
 		self.conversation = conversation
 		self._model = StateObject(wrappedValue: ListenViewModel(conversation))
-    }
+	}
 
-    var body: some View {
+	var body: some View {
 		WindowBinder(window: $window) {
 			GeometryReader { geometry in
 				VStack(spacing: 10) {
@@ -75,6 +77,16 @@ struct ListenView: View {
 				logger.log("ListenView disappeared")
 				self.model.stop()
 			}
+			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
+				logger.log("Received notification that app will terminate")
+				quitListenView()
+			})
+			.onChange(of: appStatus.appIsQuitting) {
+				if appStatus.appIsQuitting {
+					logger.log("App has been told to quit")
+					quitListenView()
+				}
+			}
 			.onChange(of: model.conversationRestarted) {
 				restart = true
 				mode = .ask
@@ -105,7 +117,7 @@ struct ListenView: View {
 				}
 			}
 		}
-    }
+	}
 
 	private func maybeStop() {
 		confirmStop = true
@@ -180,6 +192,16 @@ struct ListenView: View {
 		}
 		.background(Color.accentColor)
 		.ignoresSafeArea()
+	}
+
+	private func quitListenView() {
+		guard !viewHasRespondedToQuit else {
+			logger.log("Listen view is already terminating")
+			return
+		}
+		logger.warning("Listen view is terminating in response to quit signal")
+		viewHasRespondedToQuit = true
+		model.stop()
 	}
 }
 
