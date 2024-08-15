@@ -13,14 +13,16 @@ struct ListenProfileView: View {
 
 	var maybeListen: ((ListenConversation?) -> Void)?
 
+	@State private var path: NavigationPath = .init()
     @State private var conversations: [ListenConversation] = []
 	@State private var myConversations: [WhisperConversation] = []
 	@State private var showListenEntry: Bool = false
 	@StateObject private var profile = UserProfile.shared
 
     var body: some View {
-		NavigationStack {
+		NavigationStack(path: $path) {
 			chooseView()
+				.navigationDestination(for: String.self, destination: { _ in ListenLinkView(maybeListen: maybeListen) })
 				.navigationTitle("Listen Conversations")
 				.navigationBarTitleDisplayMode(.inline)
 				.toolbar {
@@ -34,9 +36,6 @@ struct ListenProfileView: View {
 					}
 				}
 		}
-		.sheet(isPresented: $showListenEntry, content: {
-			ListenLinkView(maybeListen: maybeListen, show: $showListenEntry)
-		})
 		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
 		.onAppear(perform: profile.update)
 		.onDisappear(perform: profile.update)
@@ -50,7 +49,7 @@ struct ListenProfileView: View {
 		   let conversation = UserProfile.shared.listenProfile.fromLink(str) {
 			maybeListen?(conversation)
 		} else {
-			showListenEntry = true
+			path.append("paste")
 		}
 	}
 
@@ -126,7 +125,6 @@ struct ListenProfileView: View {
 
 struct ListenLinkView: View {
 	var maybeListen: ((ListenConversation?) -> Void)?
-	@Binding var show: Bool
 
 	@State var link: String = ""
 	@State var error: String? = nil
@@ -155,11 +153,12 @@ struct ListenLinkView: View {
 				Button("Join", action: maybeJoin)
 			}
 		}
+		.navigationTitle("New Conversation")
+		.navigationBarTitleDisplayMode(.inline)
 	}
 
 	func maybeJoin() {
 		if let conversation = UserProfile.shared.listenProfile.fromLink(link) {
-			show = false
 			maybeListen?(conversation)
 		} else {
 			link = "Not valid: \(link)"
