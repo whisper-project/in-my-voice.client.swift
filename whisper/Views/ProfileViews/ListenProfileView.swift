@@ -126,42 +126,51 @@ struct ListenProfileView: View {
 struct ListenLinkView: View {
 	var maybeListen: ((ListenConversation?) -> Void)?
 
-	@State var link: String = ""
-	@State var error: String? = nil
+	@FocusState private var focus: Bool
+	@State private var linkText: String = ""
+	@State private var link: String = ""
+	@State private var error: Bool = false
 
 	var body: some View {
 		Form {
 			Section("Enter Listen Link") {
-				TextField("Conversation link", text: $link, axis: .vertical)
-					.lineLimit(3...10)
+				TextEditor(text: $link)
+					.focused($focus)
 					.onChange(of: link) { old, new in
-						if new.hasSuffix("\n") {
+						if old.count + 1 == new.count && new.contains("\n") {
+							// user typed a newline
 							link = old
-							maybeJoin()
+							DispatchQueue.main.async { maybeJoin() }
+						} else if new.contains("\n") {
+							// user pasted text with a newline
+							error = true
 						} else {
-							error = nil
+							error = false
 						}
 					}
 					.submitLabel(.join)
 					.textInputAutocapitalization(.never)
 					.disableAutocorrection(true)
 					.onSubmit(maybeJoin)
-				if error != nil {
+				if error {
 					Text("Sorry, that's not a valid listen link")
-						.font(.subheadline)
+						.foregroundStyle(.red)
 				}
 				Button("Join", action: maybeJoin)
+					.disabled(error)
 			}
 		}
 		.navigationTitle("New Conversation")
 		.navigationBarTitleDisplayMode(.inline)
+		.onAppear{ focus = true }
 	}
 
 	func maybeJoin() {
 		if let conversation = UserProfile.shared.listenProfile.fromLink(link) {
 			maybeListen?(conversation)
 		} else {
-			link = "Not valid: \(link)"
+			focus = false
+			error = true
 		}
 	}
 }
