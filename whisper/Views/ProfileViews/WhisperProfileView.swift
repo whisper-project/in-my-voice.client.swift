@@ -53,7 +53,7 @@ struct WhisperProfileView: View {
 					Button(action: { dismiss() }, label: { Text("Close") } )
 				}
 #endif
-				ToolbarItem(placement: .topBarTrailing) {
+				ToolbarItemGroup(placement: .topBarTrailing) {
 					Button(action: addConversation, label: { Image(systemName: "plus") } )
 					EditButton()
 				}

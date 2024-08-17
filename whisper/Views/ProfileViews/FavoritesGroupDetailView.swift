@@ -16,6 +16,7 @@ struct FavoritesGroupDetailView: View {
 	@State var name: String = ""
 	@State var newName: String = ""
 	@State var favorites: [Favorite] = []
+	@State var allFavorites: [Favorite] = []
 	@StateObject private var up = UserProfile.shared
 	@StateObject private var fp = UserProfile.shared.favoritesProfile
 
@@ -54,6 +55,20 @@ struct FavoritesGroupDetailView: View {
 					.onDelete{ indexSet in g.onDelete(deleteOffsets: indexSet) }
 				}
 			}
+			Section(header: Text("All Favorites")) {
+				List {
+					ForEach(allFavorites) { f in
+						HStack(spacing: 15) {
+							Button("Add/Remove", systemImage: favorites.contains(f) ? "checkmark.square" : "square") {
+								toggleFavorite(f)
+							}
+							.labelStyle(.iconOnly)
+							.font(.title)
+							Text(f.name)
+						}
+					}
+				}
+			}
 		}
 		.navigationTitle("Group Details")
 		.navigationBarTitleDisplayMode(.inline)
@@ -67,6 +82,7 @@ struct FavoritesGroupDetailView: View {
 		name = g.name
 		newName = name
 		favorites = g.favorites
+		allFavorites = fp.allGroup.favorites
 	}
 
 	func updateTag() {
@@ -75,12 +91,11 @@ struct FavoritesGroupDetailView: View {
 		}
 	}
 
-	func addFavorite() {
-		let f = if g === fp.allGroup {
-			fp.newFavorite(text: "This is a sample favorite.")
+	func toggleFavorite(_ f: Favorite) {
+		if favorites.contains(f) {
+			g.remove(f)
 		} else {
-			fp.newFavorite(text: "This is a sample favorite.", tags: [g.name])
+			g.add(f)
 		}
-		path.append(f)
 	}
 }

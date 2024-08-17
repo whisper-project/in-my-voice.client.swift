@@ -68,7 +68,8 @@ final class WhisperViewModel: ObservableObject {
 	private var lastLiveText: String = ""
     private var soundEffect: AVAudioPlayer?
 
-	let profile = UserProfile.shared.whisperProfile
+	let up = UserProfile.shared.whisperProfile
+	let fp = UserProfile.shared.favoritesProfile
 	let contentId = UUID().uuidString
 
     init(_ conversation: WhisperConversation) {
@@ -130,7 +131,7 @@ final class WhisperViewModel: ObservableObject {
 					lastLiveText = liveText
 				}
                 if PreferenceData.speakWhenWhispering {
-                    speak(liveText)
+					speak(liveText)
                 }
                 liveText = ""
             } else {
@@ -197,7 +198,7 @@ final class WhisperViewModel: ObservableObject {
 		logger.info("Accepted listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
 		invitee.isPending = false
 		refreshStatusText()
-		profile.addListener(conversation, info: invitee.info)
+		up.addListener(conversation, info: invitee.info)
 		transport.authorize(remote: invitee.remote)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation, contentId: contentId)
 		transport.sendControl(remote: invitee.remote, chunk: chunk)
@@ -223,7 +224,7 @@ final class WhisperViewModel: ObservableObject {
             return
         }
 		logger.notice("De-authorizing \(listener.remote.kind) candidate \(listener.id)")
-		profile.removeListener(conversation, profileId: candidate.info.profileId)
+		up.removeListener(conversation, profileId: candidate.info.profileId)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
 		transport.sendControl(remote: candidate.remote, chunk: chunk)
 		transport.deauthorize(remote: candidate.remote)
@@ -325,7 +326,7 @@ final class WhisperViewModel: ObservableObject {
 		remote: Remote,
 		info: WhisperProtocol.ClientInfo
 	) -> Candidate {
-		var authorized = profile.isListener(conversation, info: info)
+		var authorized = up.isListener(conversation, info: info)
 		// if my profile is shared, I am always an authorized listener for my own conversations
 		if (!UserProfile.shared.userPassword.isEmpty && info.profileId == UserProfile.shared.id) {
 			authorized = ListenerInfo(id: UserProfile.shared.id, username: UserProfile.shared.username)
@@ -337,7 +338,7 @@ final class WhisperViewModel: ObservableObject {
 			candidate.info.username = info.username
 			if authorized != nil {
 				// this is a known listener, also update their name in our profile
-				profile.addListener(conversation, info: info)
+				up.addListener(conversation, info: info)
 			}
 		} else if candidate.info.username.isEmpty, let auth = authorized {
 			candidate.info.username = auth.username
@@ -351,7 +352,11 @@ final class WhisperViewModel: ObservableObject {
 			self.connectionErrorDescription = message
 			self.connectionError = true
 		}
-		ElevenLabs.shared.speakText(text: text, errorCallback: onError)
+		if let f = fp.lookupFavorite(text: text).first {
+			f.speakText(errorCallback: onError)
+		} else {
+			ElevenLabs.shared.speakText(text: text, errorCallback: onError)
+		}
 	}
 
     // play the alert sound locally

@@ -19,11 +19,11 @@ struct FavoritesGroupView: View {
 						.lineLimit(nil)
 				}
 			}
-			.onDelete { indexSet in
-				for index in indexSet {
-					fp.deleteGroup(groups[index])
-				}
-				updateFromProfile()
+			.onDelete { indices in
+				fp.deleteGroups(indices: indices)
+			}
+			.onMove { from, to in
+				fp.moveGroups(fromOffsets: from, toOffset: to)
 			}
 		}
 		.navigationTitle("Groups")

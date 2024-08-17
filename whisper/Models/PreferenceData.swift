@@ -225,22 +225,28 @@ struct PreferenceData {
         }
     }
 
-	/// the name of the current favorites Group
-	static var currentGroupName: String {
+	/// whether to show favorites while whispering
+	static var showFavorites: Bool {
+		get {
+			defaults.bool(forKey: "show_favorites_setting")
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "show_favorites_setting")
+		}
+	}
+
+	/// the current favorites group
+	static var currentFavoritesGroup: FavoritesGroup {
 		get {
 			if let name = defaults.string(forKey: "current_favorite_tag_setting"),
-			   UserProfile.shared.favoritesProfile.getGroup(name) != nil {
-				name
+			   let group = UserProfile.shared.favoritesProfile.getGroup(name) {
+				group
 			} else {
-				""
+				UserProfile.shared.favoritesProfile.allGroup
 			}
 		}
 		set(new) {
-			guard UserProfile.shared.favoritesProfile.getGroup(new) != nil else {
-				logAnomaly("Can't set unknown group '\(new)' as current")
-				return
-			}
-			defaults.set(new, forKey: "current_favorite_tag_setting")
+			defaults.set(new.name, forKey: "current_favorite_tag_setting")
 		}
 	}
 

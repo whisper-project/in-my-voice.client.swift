@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		37076DE52B12DB97003AC2FD /* ListenProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37076DE42B12DB97003AC2FD /* ListenProfileView.swift */; };
-		3712340E29E20BD700CBF49C /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712340D29E20BD700CBF49C /* ControlView.swift */; };
+		3712340E29E20BD700CBF49C /* ListenControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712340D29E20BD700CBF49C /* ListenControlView.swift */; };
 		37159A9C2C5AF4D9005CB922 /* FavoritesProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37159A992C4DC9D3005CB922 /* FavoritesProfile.swift */; };
 		37159A9E2C605481005CB922 /* String+LocalizedError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37159A9D2C605481005CB922 /* String+LocalizedError.swift */; };
 		37159AA02C65E4DD005CB922 /* FavoritesProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37159A9F2C65E4DD005CB922 /* FavoritesProfileView.swift */; };
@@ -26,6 +26,8 @@
 		37472EBB2BF43381005713E1 /* WhisperTranscriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37472EBA2BF43381005713E1 /* WhisperTranscriptView.swift */; };
 		374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BBEBA29BD809D0052997A /* WhisperViewModel.swift */; };
 		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
+		37541D5A2C71150F00922C01 /* FavoritesUseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D592C71150F00922C01 /* FavoritesUseView.swift */; };
+		37541D5C2C71172C00922C01 /* WhisperControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D5B2C71172C00922C01 /* WhisperControlView.swift */; };
 		376388CD29DDFB77006E5686 /* StatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* StatusTextView.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
 		377237252BB8F5BE0062A833 /* LinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377237242BB8F5BE0062A833 /* LinkView.swift */; };
@@ -78,7 +80,7 @@
 
 /* Begin PBXFileReference section */
 		37076DE42B12DB97003AC2FD /* ListenProfileView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListenProfileView.swift; sourceTree = "<group>"; };
-		3712340D29E20BD700CBF49C /* ControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlView.swift; sourceTree = "<group>"; };
+		3712340D29E20BD700CBF49C /* ListenControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenControlView.swift; sourceTree = "<group>"; };
 		3712341129E2151100CBF49C /* Binding+Convert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Binding+Convert.swift"; sourceTree = "<group>"; };
 		37159A992C4DC9D3005CB922 /* FavoritesProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FavoritesProfile.swift; sourceTree = "<group>"; };
 		37159A9D2C605481005CB922 /* String+LocalizedError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+LocalizedError.swift"; sourceTree = "<group>"; };
@@ -95,6 +97,8 @@
 		374BBEBA29BD809D0052997A /* WhisperViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperViewModel.swift; sourceTree = "<group>"; };
 		374D3E1E2BEC4D120096B953 /* FirstKeyWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstKeyWindow.swift; sourceTree = "<group>"; };
 		375152A02B61E6990045FEBD /* ElevenLabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabs.swift; sourceTree = "<group>"; };
+		37541D592C71150F00922C01 /* FavoritesUseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesUseView.swift; sourceTree = "<group>"; };
+		37541D5B2C71172C00922C01 /* WhisperControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WhisperControlView.swift; sourceTree = "<group>"; };
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		376388CC29DDFB77006E5686 /* StatusTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusTextView.swift; sourceTree = "<group>"; };
 		3771F83429DD2F900011419E /* FontSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizes.swift; sourceTree = "<group>"; };
@@ -166,7 +170,8 @@
 		3712340C29E20BAF00CBF49C /* ControlView */ = {
 			isa = PBXGroup;
 			children = (
-				3712340D29E20BD700CBF49C /* ControlView.swift */,
+				3712340D29E20BD700CBF49C /* ListenControlView.swift */,
+				37541D5B2C71172C00922C01 /* WhisperControlView.swift */,
 			);
 			path = ControlView;
 			sourceTree = "<group>";
@@ -392,6 +397,7 @@
 				37159AA52C69EA70005CB922 /* FavoritesGroupView.swift */,
 				37159AA12C66F40C005CB922 /* FavoritesGroupDetailView.swift */,
 				37159AA32C66F425005CB922 /* FavoritesDetailView.swift */,
+				37541D592C71150F00922C01 /* FavoritesUseView.swift */,
 			);
 			path = ProfileViews;
 			sourceTree = "<group>";
@@ -512,15 +518,17 @@
 				377D71112A913C5C009B416F /* TcpFactory.swift in Sources */,
 				3797F9FE2A7F2B9B00F76817 /* ChoiceView.swift in Sources */,
 				37763D1D29AC33230051CFE5 /* BluetoothData.swift in Sources */,
+				37541D5C2C71172C00922C01 /* WhisperControlView.swift in Sources */,
 				377D71132A913CA4009B416F /* TcpListenTransport.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */,
 				377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */,
+				37541D5A2C71150F00922C01 /* FavoritesUseView.swift in Sources */,
 				373D3D0A2BEDA60A00FCD1F5 /* FirstKeyWindow.swift in Sources */,
 				37763CE529AAC1E50051CFE5 /* whisperApp.swift in Sources */,
 				37CBBD0F2AFB112B006AE49F /* WhisperProfileView.swift in Sources */,
 				3724D7C42BB4A3EA00BC6741 /* RootView.swift in Sources */,
-				3712340E29E20BD700CBF49C /* ControlView.swift in Sources */,
+				3712340E29E20BD700CBF49C /* ListenControlView.swift in Sources */,
 				377C01082B7A65DB00489C05 /* ListenProfile.swift in Sources */,
 				377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */,
 				37B6237629F78AA500213790 /* WhisperersView.swift in Sources */,

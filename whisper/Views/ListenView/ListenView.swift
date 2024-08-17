@@ -124,7 +124,7 @@ struct ListenView: View {
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
-		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: mode, maybeStop: maybeStop)
+		ListenControlView(size: $size, magnify: $magnify, interjecting: $interjecting, maybeStop: maybeStop)
 			.padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
 		if (liveWindowPosition ?? "bottom" != "bottom") {
 			liveView(geometry)

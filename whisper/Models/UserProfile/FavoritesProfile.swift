@@ -48,17 +48,22 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 	static func < (lhs: Favorite, rhs: Favorite) -> Bool {
 		lhs.name < rhs.name
 	}
-	func speakText() {
-		speakTextInternal(regenerate: false)
+	
+	func speakText(errorCallback: TransportErrorCallback? = nil) {
+		speakTextInternal(regenerate: false, errorCallback: errorCallback)
 	}
 
 	func regenerateText() {
 		speakTextInternal(regenerate: true)
 	}
 
-	private func speakTextInternal(regenerate: Bool) {
+	private func speakTextInternal(regenerate: Bool, errorCallback: TransportErrorCallback? = nil) {
 		let memoize: TransportSuccessCallback = { result in
-			if result == nil, let item = ElevenLabs.shared.lookupText(self.text) {
+			if let result = result {
+				errorCallback?(result.0, result.1)
+				return
+			}
+			if let item = ElevenLabs.shared.lookupText(self.text) {
 				if item.hash != self.speechHash || item.historyId != self.speechId {
 					self.speechHash = item.hash
 					self.speechId = item.historyId
@@ -238,7 +243,10 @@ final class FavoritesProfile: Codable, ObservableObject {
 	}
 
 	func lookupFavorite(text: String) -> [Favorite] {
-		return lookupTable[text] ?? []
+		if let f = lookupTable[text] {
+			return f
+		}
+		return []
 	}
 
 	@discardableResult func newFavorite(text: String, name: String = "", tags: [String] = []) -> Favorite {
@@ -350,16 +358,17 @@ final class FavoritesProfile: Codable, ObservableObject {
 		return true
 	}
 
-	func deleteGroup(_ g: FavoritesGroup) {
-		guard !g.name.isEmpty else {
-			logAnomaly("Trying to delete a group with no name?")
-			return
+	func deleteGroups(indices: IndexSet) {
+		let deleted = indices.map{ index in groupList[index] }
+		for d in deleted {
+			groupTable.removeValue(forKey: d.name)
 		}
-		guard groupTable[g.name] === g else {
-			logAnomaly("Ignore unknown name (\(g.name)) in deleteGroup")
-			return
-		}
-		groupTable.removeValue(forKey: g.name)
+		groupList.remove(atOffsets: indices)
+		save()
+	}
+
+	func moveGroups(fromOffsets: IndexSet, toOffset: Int) {
+		groupList.move(fromOffsets: fromOffsets, toOffset: toOffset)
 		save()
 	}
 
