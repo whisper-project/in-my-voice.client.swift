@@ -60,6 +60,9 @@
 		377D71212A95CEAC009B416F /* ComboWhisperTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */; };
 		377D71222A95CEAC009B416F /* ComboListenTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D711F2A95CEAC009B416F /* ComboListenTransport.swift */; };
 		378A8E1729C554F20097F15A /* WhisperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378A8E1629C554F20097F15A /* WhisperProtocol.swift */; };
+		37922F272C72B66B00D250C6 /* typewriter-carriage-return.caf in Resources */ = {isa = PBXBuildFile; fileRef = 37922F242C72B66B00D250C6 /* typewriter-carriage-return.caf */; };
+		37922F282C72B66B00D250C6 /* typewriter-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 37922F252C72B66B00D250C6 /* typewriter-bell.caf */; };
+		37922F292C72B66B00D250C6 /* typewriter-two-minutes.caf in Resources */ = {isa = PBXBuildFile; fileRef = 37922F262C72B66B00D250C6 /* typewriter-two-minutes.caf */; };
 		379570CD29EA314A0033CF14 /* air-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CC29EA313D0033CF14 /* air-horn.caf */; };
 		379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CA29EA313D0033CF14 /* bike-bell.caf */; };
 		379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */ = {isa = PBXBuildFile; fileRef = 379570CB29EA313D0033CF14 /* bike-horn.caf */; };
@@ -133,6 +136,9 @@
 		377D711F2A95CEAC009B416F /* ComboListenTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboListenTransport.swift; sourceTree = "<group>"; };
 		377D71202A95CEAC009B416F /* ComboWhisperTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboWhisperTransport.swift; sourceTree = "<group>"; };
 		378A8E1629C554F20097F15A /* WhisperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperProtocol.swift; sourceTree = "<group>"; };
+		37922F242C72B66B00D250C6 /* typewriter-carriage-return.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "typewriter-carriage-return.caf"; sourceTree = "<group>"; };
+		37922F252C72B66B00D250C6 /* typewriter-bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "typewriter-bell.caf"; sourceTree = "<group>"; };
+		37922F262C72B66B00D250C6 /* typewriter-two-minutes.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "typewriter-two-minutes.caf"; sourceTree = "<group>"; };
 		379570CA29EA313D0033CF14 /* bike-bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-bell.caf"; sourceTree = "<group>"; };
 		379570CB29EA313D0033CF14 /* bike-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "bike-horn.caf"; sourceTree = "<group>"; };
 		379570CC29EA313D0033CF14 /* air-horn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "air-horn.caf"; sourceTree = "<group>"; };
@@ -190,6 +196,9 @@
 				379570CC29EA313D0033CF14 /* air-horn.caf */,
 				379570CA29EA313D0033CF14 /* bike-bell.caf */,
 				379570CB29EA313D0033CF14 /* bike-horn.caf */,
+				37922F252C72B66B00D250C6 /* typewriter-bell.caf */,
+				37922F242C72B66B00D250C6 /* typewriter-carriage-return.caf */,
+				37922F262C72B66B00D250C6 /* typewriter-two-minutes.caf */,
 			);
 			path = Sounds;
 			sourceTree = "<group>";
@@ -484,10 +493,13 @@
 				379570CD29EA314A0033CF14 /* air-horn.caf in Resources */,
 				379570CE29EA314A0033CF14 /* bike-bell.caf in Resources */,
 				379570CF29EA314A0033CF14 /* bike-horn.caf in Resources */,
+				37922F282C72B66B00D250C6 /* typewriter-bell.caf in Resources */,
+				37922F292C72B66B00D250C6 /* typewriter-two-minutes.caf in Resources */,
 				3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */,
 				37763D1729AC2F710051CFE5 /* LICENSE in Resources */,
 				37763CEC29AAC1E60051CFE5 /* Preview Assets.xcassets in Resources */,
 				3731510F2BA760EC005E989D /* PrivacyInfo.xcprivacy in Resources */,
+				37922F272C72B66B00D250C6 /* typewriter-carriage-return.caf in Resources */,
 				37763CE929AAC1E60051CFE5 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

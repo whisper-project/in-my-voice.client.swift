@@ -59,7 +59,7 @@ struct WhisperControlView: View {
 				}
 			}
 		} label: {
-			buttonImage(alertSound + "-icon", pad: 5)
+			buttonImage(name: alertSound + "-icon", pad: 5)
 		} primaryAction: {
 			playSound()
 		}
@@ -71,12 +71,7 @@ struct WhisperControlView: View {
 			speaking.toggle()
 			PreferenceData.speakWhenWhispering = speaking
 		} label: {
-			Image(speaking ? "voice-over-on" : "voice-over-off")
-				.renderingMode(.template)
-				.resizable()
-				.padding(5)
-				.frame(width: 50, height: 50)
-				.border(colorScheme == .light ? .black : .white, width: 1)
+			buttonImage(name: speaking ? "voice-over-on" : "voice-over-off", pad: 5)
 		}
 		Spacer()
 	}
@@ -85,12 +80,7 @@ struct WhisperControlView: View {
 		Button {
 			repeatSpeech(nil)
 		} label: {
-			Image("repeat-speech")
-				.renderingMode(.template)
-				.resizable()
-				.padding(5)
-				.frame(width: 50, height: 50)
-				.border(colorScheme == .light ? .black : .white, width: 1)
+			buttonImage(name: "repeat-speech", pad: 5)
 		}
 		Spacer()
 	}
@@ -99,12 +89,7 @@ struct WhisperControlView: View {
 		Button {
 			interjecting.toggle()
 		} label: {
-			Image(interjecting ? "interjecting" : "not-interjecting")
-				.renderingMode(.template)
-				.resizable()
-				.padding(5)
-				.frame(width: 50, height: 50)
-				.border(colorScheme == .light ? .black : .white, width: 1)
+			buttonImage(name: interjecting ? "interjecting" : "not-interjecting", pad: 5)
 		}
 		Spacer()
 	}
@@ -117,27 +102,13 @@ struct WhisperControlView: View {
 			}
 			Button("Edit Favorites", action: { editFavorites() })
 		} label: {
-			Image(systemName: showFavorites ? "star.fill" : "star")
-				.renderingMode(.template)
-				.resizable()
-				.padding(5)
-				.frame(width: 50, height: 50)
-				.border(colorScheme == .light ? .black : .white, width: 1)
+			buttonImage(systemName: showFavorites ? "star.fill" : "star", pad: 5)
 		} primaryAction: {
 			toggleShowFavorites()
 		}
 		Spacer()
 	}
 
-    private func buttonImage(_ name: String, pad: CGFloat = 0) -> some View {
-        Image(name)
-            .renderingMode(.template)
-            .resizable()
-            .padding(pad)
-            .frame(width: 50, height: 50)
-            .border(colorScheme == .light ? .black : .white, width: 1)
-    }
-    
     @ViewBuilder private func maybeFontSizeButtons() -> some View {
         if isOnPhone() {
             EmptyView()
@@ -146,14 +117,14 @@ struct WhisperControlView: View {
                 self.size = FontSizes.nextTextSmaller(self.size)
 				PreferenceData.sizeWhenWhispering = self.size
             } label: {
-                buttonImage("font-down-button")
+				buttonImage(name: "font-down-button", pad: 0)
             }
             .disabled(size == FontSizes.minTextSize)
             Button {
                 self.size = FontSizes.nextTextLarger(self.size)
 				PreferenceData.sizeWhenWhispering = self.size
             } label: {
-                buttonImage("font-up-button")
+				buttonImage(name: "font-up-button", pad: 0)
             }
             .disabled(size == FontSizes.maxTextSize)
             Spacer()
@@ -175,14 +146,6 @@ struct WhisperControlView: View {
         }
     }
 
-    private func stopButtonLabel() -> some View {
-        Text(isOnPhone() ? "Stop" : "Stop Whispering")
-            .foregroundColor(.white)
-            .font(.body)
-            .fontWeight(.bold)
-            .padding(10)
-    }
-
 	private func toggleShowFavorites(_ group: FavoritesGroup? = nil) {
 		if let group = group {
 			self.group = group
@@ -195,6 +158,32 @@ struct WhisperControlView: View {
 			showFavorites.toggle()
 			PreferenceData.showFavorites = showFavorites
 		}
+	}
+
+    private func stopButtonLabel() -> some View {
+        Text(isOnPhone() ? "Stop" : "Stop Whispering")
+            .foregroundColor(.white)
+            .font(.body)
+            .fontWeight(.bold)
+            .padding(10)
+    }
+
+	private func buttonImage(name: String, pad: CGFloat) -> some View {
+		Image(name)
+			.renderingMode(.template)
+			.resizable()
+			.padding(pad)
+			.frame(width: 50, height: 50)
+			.border(colorScheme == .light ? .black : .white, width: 1)
+	}
+
+	private func buttonImage(systemName: String, pad: CGFloat) -> some View {
+		Image(systemName: systemName)
+			.renderingMode(.template)
+			.resizable()
+			.padding(pad)
+			.frame(width: 50, height: 50)
+			.border(colorScheme == .light ? .black : .white, width: 1)
 	}
 
     private func isOnPhone() -> Bool {

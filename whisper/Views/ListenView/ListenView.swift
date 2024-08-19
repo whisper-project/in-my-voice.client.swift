@@ -11,6 +11,7 @@ struct ListenView: View {
 	@Environment(\.dynamicTypeSize) var dynamicTypeSize
 	@Environment(\.scenePhase) var scenePhase
 	@AppStorage("newest_whisper_location_preference") var liveWindowPosition: String?
+	@AppStorage("hear_typing_setting") var hearTyping: Bool?
 
 	@Binding var mode: OperatingMode
 	@Binding var restart: Bool
@@ -81,6 +82,11 @@ struct ListenView: View {
 				logger.log("Received notification that app will terminate")
 				quitListenView()
 			})
+			.onChange(of: hearTyping) {
+				if hearTyping == nil || hearTyping == false {
+					model.stopTypingSound()
+				}
+			}
 			.onChange(of: appStatus.appIsQuitting) {
 				if appStatus.appIsQuitting {
 					logger.log("App has been told to quit")

@@ -68,6 +68,7 @@ final class ListenViewModel: ObservableObject {
     private var isFirstConnect = true
     private var isInBackground = false
     private var soundEffect: AVAudioPlayer?
+	private var typingPlayer: AVAudioPlayer?
     private var notifySoundInBackground = false
 
 	let profile = UserProfile.shared.listenProfile
@@ -111,6 +112,7 @@ final class ListenViewModel: ObservableObject {
     
     func stop() {
 		logger.info("Stopping listen session")
+		stopTypingSound()
 		transport.stop()
 		whisperer = nil
 		invites.removeAll()
@@ -125,6 +127,7 @@ final class ListenViewModel: ObservableObject {
             return
         }
         isInBackground = true
+		stopTypingSound()
         transport.goToBackground()
     }
     
@@ -239,10 +242,14 @@ final class ListenViewModel: ObservableObject {
 			resetInProgress = false
 			if chunk.offset == 0 {
 				liveText = chunk.text
+				if !isInBackground && !chunk.text.isEmpty {
+					maybeStartTypingSound()
+				}
 			} else if chunk.isCompleteLine() {
 				if !isInBackground && PreferenceData.speakWhenListening {
 					speak(liveText)
 				}
+				maybeEndTypingSound()
 				pastText.addLine(liveText)
 				liveText = ""
 			} else if chunk.offset > liveText.count {
@@ -364,24 +371,65 @@ final class ListenViewModel: ObservableObject {
             path = Bundle.main.path(forResource: name, ofType: "caf")
         }
         guard path != nil else {
-            logger.error("Couldn't find sound file for '\(name, privacy: .public)'")
+            logAnomaly("Couldn't find sound file for '\(name)'")
             return
         }
         guard !isInBackground else {
             notifySound(name)
             return
         }
-        let url = URL(fileURLWithPath: path!)
+        let url = URL(filePath: path!)
         soundEffect = try? AVAudioPlayer(contentsOf: url)
         if let player = soundEffect {
             if !player.play() {
-                logger.error("Couldn't play sound '\(name, privacy: .public)'")
+				logAnomaly("Couldn't play sound '\(name)'")
             }
         } else {
-            logger.error("Couldn't create player for sound '\(name, privacy: .public)'")
+			logAnomaly("Couldn't create player for sound '\(name)'")
         }
     }
     
+	func maybeStartTypingSound() {
+		guard PreferenceData.hearTyping else {
+			return
+		}
+		playTypingSound("typewriter-two-minutes")
+	}
+
+	func maybeEndTypingSound() {
+		stopTypingSound()
+		guard PreferenceData.hearTyping else {
+			return
+		}
+		playTypingSound("typewriter-carriage-return")
+	}
+
+	func stopTypingSound() {
+		if let player = typingPlayer {
+			player.stop()
+			typingPlayer = nil
+		}
+	}
+
+	private func playTypingSound(_ name: String) {
+		if let path = Bundle.main.path(forResource: name, ofType: "caf") {
+			let url = URL(filePath: path)
+			typingPlayer = try? AVAudioPlayer(contentsOf: url)
+			if let player = typingPlayer {
+				if !player.play() {
+					logAnomaly("Couldn't play \(name) sound")
+					typingPlayer = nil
+				}
+			} else {
+				logAnomaly("Can't create player for \(name) sound")
+				typingPlayer = nil
+			}
+		} else {
+			logAnomaly("Can't find \(name) sound in main bundle")
+			typingPlayer = nil
+		}
+	}
+
     private func notifySound(_ name: String) {
         guard notifySoundInBackground else {
             logger.error("Received background request to play sound '\(name, privacy: .public)' but don't have permission.")

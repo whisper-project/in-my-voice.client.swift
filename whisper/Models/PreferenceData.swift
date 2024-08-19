@@ -235,6 +235,16 @@ struct PreferenceData {
 		}
 	}
 
+	/// whether to hear typing while listening
+	static var hearTyping: Bool {
+		get {
+			defaults.bool(forKey: "hear_typing_setting")
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "hear_typing_setting")
+		}
+	}
+
 	/// the current favorites group
 	static var currentFavoritesGroup: FavoritesGroup {
 		get {

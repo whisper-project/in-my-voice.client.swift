@@ -14,10 +14,12 @@ struct ListenControlView: View {
 	var maybeStop: () -> Void
 
     @State var alertSound = PreferenceData.alertSound
-    @State var speaking: Bool = false
+	@State var speaking: Bool = PreferenceData.speakWhenListening
+	@State var typing: Bool = PreferenceData.hearTyping
 
     var body: some View {
 		HStack(alignment: .center) {
+			typingButton()
             speechButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
@@ -29,35 +31,28 @@ struct ListenControlView: View {
         }
         .dynamicTypeSize(.large)
         .font(FontSizes.fontFor(FontSizes.minTextSize))
-        .onAppear {
-            speaking = PreferenceData.speakWhenListening
-        }
     }
     
+	@ViewBuilder private func typingButton() -> some View {
+		Button {
+			typing.toggle()
+			PreferenceData.hearTyping = typing
+		} label: {
+			buttonImage(name: typing ? "typing-sound-on" : "typing-sound-off", pad: 5)
+		}
+		Spacer()
+	}
+
 	@ViewBuilder private func speechButton() -> some View {
 		Button {
 			speaking.toggle()
 			PreferenceData.speakWhenListening = speaking
 		} label: {
-			Image(speaking ? "voice-over-on" : "voice-over-off")
-				.renderingMode(.template)
-				.resizable()
-				.padding(5)
-				.frame(width: 50, height: 50)
-				.border(colorScheme == .light ? .black : .white, width: 1)
+			buttonImage(name: speaking ? "voice-over-on" : "voice-over-off", pad: 5)
 		}
 		Spacer()
 	}
 
-    private func buttonImage(_ name: String, pad: CGFloat = 0) -> some View {
-        Image(name)
-            .renderingMode(.template)
-            .resizable()
-            .padding(pad)
-            .frame(width: 50, height: 50)
-            .border(colorScheme == .light ? .black : .white, width: 1)
-    }
-    
     @ViewBuilder private func maybeFontSizeButtons() -> some View {
         if isOnPhone() {
             EmptyView()
@@ -66,14 +61,14 @@ struct ListenControlView: View {
                 self.size = FontSizes.nextTextSmaller(self.size)
 				PreferenceData.sizeWhenListening = self.size
             } label: {
-                buttonImage("font-down-button")
+				buttonImage(name: "font-down-button", pad: 0)
             }
             .disabled(size == FontSizes.minTextSize)
             Button {
                 self.size = FontSizes.nextTextLarger(self.size)
 				PreferenceData.sizeWhenListening = self.size
             } label: {
-                buttonImage("font-up-button")
+				buttonImage(name: "font-up-button", pad: 0)
             }
             .disabled(size == FontSizes.maxTextSize)
             Spacer()
@@ -94,6 +89,15 @@ struct ListenControlView: View {
             Spacer()
         }
     }
+
+	private func buttonImage(name: String, pad: CGFloat) -> some View {
+		Image(name)
+			.renderingMode(.template)
+			.resizable()
+			.padding(pad)
+			.frame(width: 50, height: 50)
+			.border(colorScheme == .light ? .black : .white, width: 1)
+	}
 
     private func stopButtonLabel() -> some View {
         Text(isOnPhone() ? "Stop" : "Stop Listening")
