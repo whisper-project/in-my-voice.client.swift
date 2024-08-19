@@ -68,29 +68,33 @@ struct WhisperPastTextView: View {
 	}
 
 	@ViewBuilder private func makeButtons(_ row: Row) -> some View {
-		let buttons = buttonsPref ?? "r-i-f"
-		if buttons.contains("r") {
-			Button("Repeat", systemImage: "repeat", action: { again?(row.text) })
+		if row.text.isEmpty {
+			EmptyView()
+		} else {
+			let buttons = buttonsPref ?? "r-i-f"
+			if buttons.contains("r") {
+				Button("Repeat", systemImage: "repeat", action: { again?(row.text) })
+					.labelStyle(.iconOnly)
+					.buttonStyle(.bordered)
+					.font(.title)
+					.disabled(interjecting || row.text.isEmpty)
+			}
+			if buttons.contains("i") {
+				Button("Interject", systemImage: "quote.bubble", action: { edit?(row.text) })
+					.labelStyle(.iconOnly)
+					.buttonStyle(.bordered)
+					.font(.title)
+					.disabled(interjecting || row.text.isEmpty)
+			}
+			if buttons.contains("f") {
+				Button("Favorite", systemImage: row.favorites.isEmpty ? "star": "star.fill", action: {
+					favorite?(row.text, row.favorites)
+				})
 				.labelStyle(.iconOnly)
 				.buttonStyle(.bordered)
 				.font(.title)
 				.disabled(interjecting || row.text.isEmpty)
-		}
-		if buttons.contains("i") {
-			Button("Interject", systemImage: "quote.bubble", action: { edit?(row.text) })
-				.labelStyle(.iconOnly)
-				.buttonStyle(.bordered)
-				.font(.title)
-				.disabled(interjecting || row.text.isEmpty)
-		}
-		if buttons.contains("f") {
-			Button("Favorite", systemImage: row.favorites.isEmpty ? "star": "star.fill", action: {
-				favorite?(row.text, row.favorites)
-			})
-				.labelStyle(.iconOnly)
-				.buttonStyle(.bordered)
-				.font(.title)
-				.disabled(interjecting || row.text.isEmpty)
+			}
 		}
 	}
 }
