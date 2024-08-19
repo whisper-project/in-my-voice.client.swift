@@ -187,26 +187,35 @@ struct WhisperView: View {
 						   editFavorites: doEditFavorites)
 			.padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
 		if showFavorites {
-			HStack(spacing: 2) {
-				WhisperPastTextView(interjecting: $interjecting,
-									model: model.pastText,
-									again: model.repeatLine,
-									edit: startInterjection,
-									favorite: createFavorite)
+			if isOnPhone() {
+					FavoritesUseView(use: maybeFavorite, group: $group)
+					.frame(maxWidth: geometry.size.width,
+						   maxHeight: geometry.size.height * pastTextProportion,
+						   alignment: .bottomLeading)
+					.border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
+					.padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
+			} else {
+				HStack(spacing: 2) {
+					WhisperPastTextView(interjecting: $interjecting,
+										model: model.pastText,
+										again: model.repeatLine,
+										edit: startInterjection,
+										favorite: createFavorite)
 					.font(FontSizes.fontFor(size))
 					.textSelection(.enabled)
 					.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 					.padding(innerPad)
 					.border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
 					.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
-				FavoritesUseView(use: maybeFavorite, group: $group)
-					.frame(maxWidth: geometry.size.width * 1/3)
-					.border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
+					FavoritesUseView(use: maybeFavorite, group: $group)
+						.frame(maxWidth: geometry.size.width * 1/3)
+						.border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
+				}
+				.frame(maxWidth: geometry.size.width,
+					   maxHeight: geometry.size.height * pastTextProportion,
+					   alignment: .bottomLeading)
+				.padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
 			}
-			.frame(maxWidth: geometry.size.width,
-				   maxHeight: geometry.size.height * pastTextProportion,
-				   alignment: .bottomLeading)
-			.padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
 		} else {
 			WhisperPastTextView(interjecting: $interjecting,
 								model: model.pastText,
@@ -288,6 +297,10 @@ struct WhisperView: View {
 		logger.warning("Whisper view is terminating in response to quit signal")
 		viewHasRespondedToQuit = true
 		model.stop()
+	}
+
+	private func isOnPhone() -> Bool {
+		return UIDevice.current.userInterfaceIdiom == .phone
 	}
 }
 
