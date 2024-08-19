@@ -70,7 +70,7 @@ struct FavoritesDetailView: View {
 				}
 			} else {
 				Section(header: Text("Apple Voice Generation"),
-						footer: Text("Apple generates the speech new each time a favorite is used")) {
+						footer: Text("Apple generates the same speech each time a favorite is used")) {
 					Button("Listen to Sample", action: { f.speakText() })
 				}
 			}
