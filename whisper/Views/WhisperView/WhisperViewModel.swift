@@ -154,7 +154,7 @@ final class WhisperViewModel: ObservableObject {
 		if PreferenceData.speakWhenWhispering {
 			speak(line)
 		}
-		let pastChunks = WhisperProtocol.diffLines(old: "", new: lastLiveText + "\n")
+		let pastChunks = WhisperProtocol.diffLines(old: "", new: line + "\n")
 		transport.publish(chunks: pastChunks)
 		let currentChunks = WhisperProtocol.diffLines(old: "", new: liveText)
 		transport.publish(chunks: currentChunks)
