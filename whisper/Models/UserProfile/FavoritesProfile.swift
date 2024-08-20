@@ -157,8 +157,12 @@ final class FavoritesProfile: Codable, ObservableObject {
 	private var groupList: [FavoritesGroup] = []
 	private var serverPassword: String = ""
 
-	init(_ profileId: String) {
+	// because favorites profiles don't existing in older versions,
+	// we may actually need to create one for a shared profile which
+	// has a password, so we accept the password when creating it.
+	init(_ profileId: String, serverPassword: String = "") {
 		id = profileId
+		self.serverPassword = serverPassword
 		timestamp = Int(Date.now.timeIntervalSince1970)
 		favoritesTable = [:]
 		lookupTable = [:]
@@ -166,7 +170,9 @@ final class FavoritesProfile: Codable, ObservableObject {
 		groupTable = [:]
 		allGroup = FavoritesGroup(profile: self, name: "")
 		_ = addFavoriteInternal(name: "Sample", text: "This is a sample favorite.", tags: [])
-		save()
+		// if we have a server password, this save will try posting the new profile.
+		// The post will fail if some other client has posted one first.
+		save(verb: "POST")
 	}
 
 	init(from: any Decoder) throws {
@@ -466,10 +472,14 @@ final class FavoritesProfile: Codable, ObservableObject {
 
 	func loadShared(id: String, serverPassword: String, completionHandler: @escaping (Int) -> Void) {
 		func handler(_ code: Int, _ data: Data) {
-			if code < 200 || code >= 300 {
+			if code == 404 {
+				// apparently the server doesn't have this profile component yet
+				logAnomaly("Found no favorites profile on server when loading shared, uploading one")
+				save(verb: "POST")
+				completionHandler(200)
+			} else if code < 200 || code >= 300 {
 				completionHandler(code)
-			} else if let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data)
-			{
+			} else if let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data) {
 				self.id = id
 				self.serverPassword = serverPassword
 				self.updateFromProfile(profile)

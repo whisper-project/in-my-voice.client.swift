@@ -48,13 +48,17 @@ final class UserProfile: Identifiable, ObservableObject {
 			serverPassword = SHA256.hash(data: Data(password.utf8)).map{ String(format: "%02x", $0) }.joined()
 		}
 		if let wp = WhisperProfile.load(id, serverPassword: serverPassword),
-		   let lp = ListenProfile.load(id, serverPassword: serverPassword),
-		   let fp = FavoritesProfile.load(id, serverPassword: serverPassword)
+		   let lp = ListenProfile.load(id, serverPassword: serverPassword)
 		{
 			whisperProfile = wp
 			listenProfile = lp
+			// favorites profile might not exist (wasn't in older versions), if so create it
+			if let fp = FavoritesProfile.load(id, serverPassword: serverPassword) {
+				favoritesProfile = fp
+			} else {
+				favoritesProfile = FavoritesProfile.init(id, serverPassword: serverPassword)
+			}
 			settingsProfile = SettingsProfile.load(id, serverPassword: serverPassword)
-			favoritesProfile = fp
 		} else {
 			// we failed to load completely, so reset the profile completely except for the name
 			logAnomaly("Failed to load existing profile, resetting...")
