@@ -417,3 +417,10 @@ This release introduces quite a few long-requested features for both Whisperers 
 - Listeners can now share conversation links with other listeners.  There is a share button both in the list of past conversations and in the status line during a conversation.
 
 - Listeners can now copy/paste conversation links into the Whisper app. In the list of past conversations, there is now a + button to add a new link.  If there is a conversation link on the clipboard when the plus button is pressed, the app will try to join that conversation. Otherwise, it will open a window where the user can type in (or paste in) the desired conversation link.
+
+Build 2.4.2 (2040002):
+This build fixes quite a few bugs around the edges of all the new features that were introduced in the last build.  For example:
+
+1. Loading a 2.4.1 build for the first time would completely reset your profile, so you lost your conversation history.  This was especially troublesome for shared profile users, since it would happen more than once.  That has now been fixed.
+
+2. The past text window for Whisperers would consistently scroll so that the penultimate line was at the bottom of the window and the last line was hidden.
