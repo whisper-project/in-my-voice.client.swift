@@ -424,3 +424,5 @@ This build fixes quite a few bugs around the edges of all the new features that 
 1. Loading a 2.4.1 build for the first time would completely reset your profile, so you lost your conversation history.  This was especially troublesome for shared profile users, since it would happen more than once.  That has now been fixed.
 
 2. The past text window for Whisperers would consistently scroll so that the penultimate line was at the bottom of the window and the last line was hidden.
+
+3. Renaming favorites or groups, and changing the text content of a favorite, could cause the favorites profile to become corrupted. Quitting the app and restarting was necessary to clean things up. These operations now work correctly. 
