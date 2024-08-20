@@ -29,8 +29,8 @@ struct WhisperPastTextView: View {
 				}
 			}
 			.listStyle(.plain)
-			.onChange(of: model.pastText) {
-				if !model.pastText.isEmpty {
+			.onChange(of: rows.count) {
+				if !rows.isEmpty {
 					proxy.scrollTo(0, anchor: .bottom)
 				}
 			}
@@ -54,13 +54,14 @@ struct WhisperPastTextView: View {
 		if text.isEmpty {
 			return rows
 		}
-		let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+		var lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+		// remove empty first line
+		if lines.first == "" {
+			lines.removeFirst()
+		}
 		let max = lines.count - 1
 		for (i, line) in lines.enumerated() {
 			let content = String(line.trimmingCharacters(in: .whitespaces))
-			if i == 0 && content.isEmpty {
-				continue;
-			}
 			let favorites = fp.lookupFavorite(text: content)
 			rows.append(Row(id: i - max, text: content, favorites: favorites))
 		}
@@ -97,24 +98,4 @@ struct WhisperPastTextView: View {
 			}
 		}
 	}
-}
-
-#Preview {
-	WhisperPastTextView(interjecting: makeBinding(false), model: PastTextModel(mode: .whisper, initialText: """
-		line 1 that's short
-		line 2 that's quite a bit longer than line 1
-
-		line 3 that's even longer than line 2 which was itself longer than line 1 which is longer than an empty line
-		line 4
-	"""))
-}
-
-#Preview {
-	WhisperPastTextView(interjecting: makeBinding(true), model: PastTextModel(mode: .whisper, initialText: """
-  line 1 that's short
-  line 2 that's quite a bit longer than line 1
-
-  line 3 that's even longer than line 2 which was itself longer than line 1 which is longer than an empty line
-  line 4
- """))
 }
