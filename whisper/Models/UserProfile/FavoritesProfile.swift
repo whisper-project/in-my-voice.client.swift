@@ -82,7 +82,6 @@ final class FavoritesGroup: Identifiable, Hashable {
 	fileprivate var profile: FavoritesProfile
 	fileprivate(set) var name: String
 	private(set) var favorites: [Favorite] = []
-	private var favoriteNames: Set<String> = Set()
 
 	fileprivate init(profile: FavoritesProfile, name: String) {
 		self.profile = profile
@@ -101,16 +100,24 @@ final class FavoritesGroup: Identifiable, Hashable {
 		get { self.name }
 	}
 
+	private func contains(name: String) -> Bool {
+		favorites.contains(where: { $0.name == name })
+	}
+
+	private func contains(f: Favorite) -> Bool {
+		favorites.contains(where: { $0 === f })
+	}
+
 	func add(_ f: Favorite) {
+		guard !contains(name: f.name) else {
+			return
+		}
 		addInternal(f)
 		profile.save()
 	}
 
 	fileprivate func addInternal(_ f: Favorite, at: Int? = nil) {
-		guard !favoriteNames.contains(f.name) else {
-			return
-		}
-		favoriteNames.insert(f.name)
+		// caller guarantees that name is not in use
 		if let i = at, i >= 0, i < favorites.count {
 			favorites.insert(f, at: i)
 		} else {
@@ -133,7 +140,6 @@ final class FavoritesGroup: Identifiable, Hashable {
 		}
 		favorites.remove(atOffsets: deleteOffsets)
 		for d in deleted {
-			favoriteNames.remove(d.name)
 			d.groups.remove(self)
 		}
 		profile.save()
@@ -141,7 +147,6 @@ final class FavoritesGroup: Identifiable, Hashable {
 
 	func remove(_ f: Favorite) {
 		favorites.removeAll(where: { f === $0 })
-		favoriteNames.remove(f.name)
 		f.groups.remove(self)
 		profile.save()
 	}
@@ -232,11 +237,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 		// caller guarantees that the name isn't in use
 		let f = Favorite(profile: self, name: name, text: text)
 		favoritesTable[name] = f
-		if var existing = lookupTable[text] {
-			existing.append(f)
-		} else {
-			lookupTable[text] = [f]
-		}
+		lookupTable[text] = (lookupTable[text] ?? []) + [f]
 		allGroup.addInternal(f)
 		for name in tags {
 			if let tagSet = groupTable[name] {
@@ -249,10 +250,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 	}
 
 	func lookupFavorite(text: String) -> [Favorite] {
-		if let f = lookupTable[text] {
-			return f
-		}
-		return []
+		return lookupTable[text] ?? []
 	}
 
 	@discardableResult func newFavorite(text: String, name: String = "", tags: [String] = []) -> Favorite {
@@ -295,15 +293,11 @@ final class FavoritesProfile: Codable, ObservableObject {
 		guard !to.isEmpty else {
 			return
 		}
-		lookupTable.removeValue(forKey: f.text)
+		lookupTable[f.text] = (lookupTable[f.text] ?? []).filter{ $0 !== f }
 		f.text = text
 		f.speechId = nil
 		f.speechHash = nil
-		if var existing = lookupTable[f.text] {
-			existing.append(f)
-		} else {
-			lookupTable[f.text] = [f]
-		}
+		lookupTable[f.text] = (lookupTable[f.text] ?? []) + [f]
 		save()
 	}
 
@@ -315,7 +309,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 				continue
 			}
 			favoritesTable.removeValue(forKey: f.name)
-			lookupTable.removeValue(forKey: f.text)
+			lookupTable[f.text] = (lookupTable[f.text] ?? []).filter{ $0 !== f }
 			allGroup.remove(f)
 			for g in Array(f.groups) {
 				g.remove(f)

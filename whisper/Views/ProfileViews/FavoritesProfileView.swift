@@ -22,14 +22,20 @@ struct FavoritesProfileView: View {
 
 	var body: some View {
 		NavigationStack(path: $path) {
-			List {
-				ForEach(favorites) { f in
-					NavigationLink(value: f) {
-						Text(f.name)
+			Form {
+				if favorites.isEmpty {
+					Section("No favorites") {}
+				} else {
+					List {
+						ForEach(favorites) { f in
+							NavigationLink(value: f) {
+								Text(f.name)
+							}
+						}
+						.onMove{ from, to in allGroup.move(fromOffsets: from, toOffset: to) }
+						.onDelete{ indexSet in allGroup.onDelete(deleteOffsets: indexSet) }
 					}
 				}
-				.onMove{ from, to in allGroup.move(fromOffsets: from, toOffset: to) }
-				.onDelete{ indexSet in allGroup.onDelete(deleteOffsets: indexSet) }
 			}
 			.navigationDestination(for: FavoritesGroup.self, destination: {
 				FavoritesGroupDetailView(path: $path, g: $0)

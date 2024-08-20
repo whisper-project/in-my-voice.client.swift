@@ -12,18 +12,24 @@ struct FavoritesGroupView: View {
 	@StateObject private var fp = UserProfile.shared.favoritesProfile
 
 	var body: some View {
-		List {
-			ForEach(groups) { group in
-				NavigationLink(value: group) {
-					Text(group.name)
-						.lineLimit(nil)
+		Form {
+			if groups.isEmpty {
+				Section("No groups") {}
+			} else {
+				List {
+					ForEach(groups) { group in
+						NavigationLink(value: group) {
+							Text(group.name)
+								.lineLimit(nil)
+						}
+					}
+					.onDelete { indices in
+						fp.deleteGroups(indices: indices)
+					}
+					.onMove { from, to in
+						fp.moveGroups(fromOffsets: from, toOffset: to)
+					}
 				}
-			}
-			.onDelete { indices in
-				fp.deleteGroups(indices: indices)
-			}
-			.onMove { from, to in
-				fp.moveGroups(fromOffsets: from, toOffset: to)
 			}
 		}
 		.navigationTitle("Groups")
