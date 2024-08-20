@@ -56,6 +56,7 @@ final class UserProfile: Identifiable, ObservableObject {
 			if let fp = FavoritesProfile.load(id, serverPassword: serverPassword) {
 				favoritesProfile = fp
 			} else {
+				logAnomaly("Stored favorites profile not found on startup, creating one")
 				favoritesProfile = FavoritesProfile.init(id, serverPassword: serverPassword)
 			}
 			settingsProfile = SettingsProfile.load(id, serverPassword: serverPassword)
