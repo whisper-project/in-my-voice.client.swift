@@ -426,3 +426,18 @@ This build fixes quite a few bugs around the edges of all the new features that 
 2. The past text window for Whisperers would consistently scroll so that the penultimate line was at the bottom of the window and the last line was hidden.
 
 3. Renaming favorites or groups, and changing the text content of a favorite, could cause the favorites profile to become corrupted. Quitting the app and restarting was necessary to clean things up. These operations now work correctly. 
+
+Build 2.4.3 (2040003):
+This build the ability for Whisperers to send transcript links to Listeners:
+
+- Once one or more Listeners have joined a conversation, the Whisperer is shown an eyeglass button on the status line as well as an eyeglass button on each listed Listener in the detailed status view.  Pressing the eyeglass button on the status line sends a transcript link to every currently connected listener.  Pressing the eyeglass button on a specific Listener line sends a transcript link just to that specific listener.
+
+- In the app, when a Listener is sent a transcript link by the Whisperer, an eyeglass button appears in the status line.  Pressing that button opens the transcript in a web browser. In addition, when the Whisperer ends the conversation (or the Listener stops Listening), a sheet appears on the Listener side that gives the transcript link again.
+
+- In a web browser, when a Listener is sent a transcript link by the Whisperer, a "Transcript Available" link appears just above the past text window.  In addition, when the conversation ends, the final screen gives the transcript link again.  Either link opens a new window (or tab) on the transcript.
+
+- While a conversation is in session, opening the transcript gives an "in-progress" message. Once the conversation is over, refreshing the page will show the final transcript.  (The link to the transcript never changes, and can be saved at any time.)
+
+- Whisperers can press the eyeglass button as often as they want, for example to send the transcript to Listeners who join the conversation later.
+
+- Final transcripts always show the entire conversation, regardless of when a Listener who was sent the link joined or exited the conversation.
