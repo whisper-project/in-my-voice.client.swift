@@ -27,6 +27,7 @@ struct ListenView: View {
 	@State private var window: Window?
 	@StateObject private var appStatus = AppStatus.shared
 	@State private var viewHasRespondedToQuit = false
+	@State private var userStopped = false
 
 	init(mode: Binding<OperatingMode>, restart: Binding<Bool>, conversation: ListenConversation) {
 		self._mode = mode
@@ -50,7 +51,7 @@ struct ListenView: View {
 				.alert("Confirm Stop", isPresented: $confirmStop) {
 					Button("Stop") {
 						model.stop()
-						mode = .ask
+						userStopped = true
 					}
 					Button("Don't Stop") {
 					}
@@ -62,10 +63,11 @@ struct ListenView: View {
 				} message: {
 					ConnectionErrorContent(severity: model.connectionErrorSeverity, message: model.connectionErrorDescription)
 				}
-				.alert("Conversation Ended", isPresented: $model.conversationEnded) {
-					Button("OK") { mode = .ask }
-				} message: {
-					Text("The Whisperer has ended the conversation")
+				.sheet(isPresented: $model.conversationEnded, onDismiss: { mode = .ask }) {
+					sessionEndMessage()
+				}
+				.sheet(isPresented: $userStopped, onDismiss: { mode = .ask }) {
+					sessionEndMessage()
 				}
 			}
 			.onAppear {
@@ -137,7 +139,7 @@ struct ListenView: View {
 		} else {
 			pastView(geometry)
 		}
-		StatusTextView(text: $model.statusText, mode: .listen, conversation: nil)
+		ListenStatusTextView(model: model, conversation: conversation)
 			.onTapGesture {
 				if (model.whisperer == nil && !model.invites.isEmpty) {
 					model.showStatusDetail = true
@@ -169,7 +171,7 @@ struct ListenView: View {
 	}
 
 	private func pastView(_ geometry: GeometryProxy) -> some View {
-		PastTextView(mode: .listen, model: model.pastText)
+		ListenPastTextView(mode: .listen, model: model.pastText)
 			.font(FontSizes.fontFor(size))
 			.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 			.padding(innerPad)
@@ -209,16 +211,30 @@ struct ListenView: View {
 		viewHasRespondedToQuit = true
 		model.stop()
 	}
-}
 
-struct ListenView_Previews: PreviewProvider {
-	static let mode: Binding<OperatingMode> = makeBinding(.listen)
-	static let restart: Binding<Bool> = makeBinding(false)
-
-    static var previews: some View {
-		ListenView(mode: mode, 
-				   restart: restart,
-				   conversation: UserProfile.shared.listenProfile.fromMyWhisperConversation(UserProfile.shared.whisperProfile.fallback)
-				   )
-    }
+	@ViewBuilder private func sessionEndMessage() -> some View {
+		VStack(spacing: 25) {
+			if (model.conversationEnded) {
+				Text("The Whisperer has ended the conversation.")
+			} else {
+				Text("You have left the conversation.")
+			}
+			if let id = model.transcriptId {
+				Link("Click here for a transcript",
+					 destination: URL(string: "\(PreferenceData.whisperServer)/transcript/\(conversation.id)/\(id)")!)
+			}
+			Spacer().frame(height: 50)
+			Button(action: {
+				self.model.conversationEnded = false
+				self.userStopped = false
+			}) {
+				Text("OK")
+					.foregroundColor(.white)
+					.fontWeight(.bold)
+					.frame(width: 140, height: 45, alignment: .center)
+			}
+			.background(Color.accentColor)
+			.cornerRadius(15)
+		}
+	}
 }

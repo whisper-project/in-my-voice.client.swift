@@ -33,6 +33,9 @@ final class WhisperProtocol {
 		/// flow control messages
 		case requestReread = -40    // Request re-read. Packet data is `ReadType` of request.
 
+		/// general messages
+		case shareTranscript = -50	// Share the transcript ID with the listeners
+
         var description: String {
             switch self {
             case .newline:
@@ -67,6 +70,8 @@ final class WhisperProtocol {
                 return "listen offer"
 			case .restart:
 				return "leaving and rejoining conversation"
+			case .shareTranscript:
+				return "sharing transcript id"
             }
         }
     }
@@ -185,6 +190,10 @@ final class WhisperProtocol {
 			return offset == ControlOffset.restart.rawValue
 		}
 
+		func isTranscriptId() -> Bool {
+			return offset == ControlOffset.shareTranscript.rawValue
+		}
+
         static func fromPastText(text: String) -> ProtocolChunk {
             return ProtocolChunk(offset: ControlOffset.pastText.rawValue, text: text)
         }
@@ -264,6 +273,10 @@ final class WhisperProtocol {
 								  username: "",
 								  contentId: "")
 			return ProtocolChunk(offset: ControlOffset.restart.rawValue, text: info.toString())
+		}
+
+		static func shareTranscript(id: String) -> ProtocolChunk {
+			return ProtocolChunk(offset: ControlOffset.shareTranscript.rawValue, text: id)
 		}
 
         static func fromLiveTyping(text: String, start: Int) -> [ProtocolChunk] {

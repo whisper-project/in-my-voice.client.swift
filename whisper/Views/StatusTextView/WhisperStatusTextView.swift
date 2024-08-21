@@ -5,11 +5,10 @@
 
 import SwiftUI
 
-struct StatusTextView: View {
+struct WhisperStatusTextView: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    @Binding var text: String
-    var mode: OperatingMode
+    @ObservedObject var model: WhisperViewModel
 	var conversation: (any Conversation)?
 
 	private var shareLinkUrl: URL? {
@@ -21,32 +20,22 @@ struct StatusTextView: View {
 	}
 
     private let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
-    
+	private let transcriptText = UIDevice.current.userInterfaceIdiom == .phone ? "Transcript" : "Send Transcript"
+
     var body: some View {
 		HStack (spacing: 20) {
 			if let url = shareLinkUrl {
 				ShareLink(linkText, item: url)
 					.font(FontSizes.fontFor(name: .xsmall))
 			}
-			Text(text)
+			Text(model.statusText)
 				.font(FontSizes.fontFor(name: .xsmall))
 				.foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
+			if model.transcriptId != nil {
+				Button(action: { model.shareTranscript() }, label: {
+					Label(transcriptText, systemImage: "eyeglasses")
+				})
+			}
 		}
     }
-}
-
-#Preview {
-	StatusTextView(text: makeBinding("Generic status text"), mode: .listen, conversation: nil)
-}
-
-#Preview {
-	StatusTextView(text: makeBinding("Generic status text"), mode: .whisper, conversation: nil)
-}
-
-#Preview {
-	StatusTextView(text: makeBinding("Generic status text"), mode: .whisper, conversation: UserProfile.shared.whisperProfile.fallback)
-}
-
-#Preview {
-	StatusTextView(text: makeBinding("Generic status text"), mode: .listen, conversation: UserProfile.shared.whisperProfile.fallback)
 }

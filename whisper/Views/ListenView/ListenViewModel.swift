@@ -56,6 +56,7 @@ final class ListenViewModel: ObservableObject {
 	@Published var conversationName: String
     @Published var whisperer: Candidate?
     @Published var pastText: PastTextModel = .init(mode: .listen)
+	@Published var transcriptId: String? = nil
 
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
@@ -276,6 +277,11 @@ final class ListenViewModel: ObservableObject {
     }
 
 	private func processControlChunk(remote: Remote, chunk: WhisperProtocol.ProtocolChunk) {
+		if chunk.isTranscriptId() {
+			transcriptId = chunk.text
+			logger.info("Received transcript id \(self.transcriptId, privacy: .public)")
+			return
+		}
 		guard chunk.isPresenceMessage() else {
 			logAnomaly("Listener received a non-presence control message: \(chunk)", kind: remote.kind)
 			return

@@ -20,6 +20,7 @@ final class TcpAuthenticator {
 	private var contentId: String = PreferenceData.contentId
     private var client: ARTRealtime?
     private var failureCallback: TransportErrorCallback
+	private var transcriptId: String = "no-transcript"
 
 	init(mode: OperatingMode, conversationId: String, conversationName: String, callback: @escaping TransportErrorCallback) {
         self.mode = mode
@@ -62,6 +63,13 @@ final class TcpAuthenticator {
 			logger.info("TCP Authenticator: Releasing ART Realtime client")
 			self.client = nil
 		}
+	}
+
+	func getTranscriptId() -> String? {
+		if transcriptId != "no-transcript" {
+			return transcriptId
+		}
+		return nil
 	}
 
     private struct ClientClaims: Claims {
@@ -168,7 +176,8 @@ final class TcpAuthenticator {
                 callback(nil, TcpAuthenticatorError.server("Token request is not expected format"))
                 return
             }
-            logger.info("Received \(activity) token from whisper-server")
+			self.transcriptId = obj["transcriptId"] ?? "no-transcript"
+			logger.info("Received \(activity, privacy: .public) token from whisper-server, transcript id \(self.transcriptId, privacy: .public)")
             callback(tokenRequest, nil)
         }
         logger.info("Posting \(activity) token request to whisper-server")

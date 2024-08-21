@@ -107,7 +107,12 @@ final class ComboWhisperTransport: PublishTransport {
         localTransport?.publish(chunks: chunks)
         globalTransport?.publish(chunks: chunks)
     }
-    
+
+	// pass through of global-only method
+	func getTranscriptId() -> String? {
+		return globalTransport?.getTranscriptId()
+	}
+
     // MARK: internal types, properties, and initialization
     typealias LocalTransport = BluetoothWhisperTransport
     typealias LocalRemote = BluetoothWhisperTransport.Remote

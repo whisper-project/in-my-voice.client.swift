@@ -77,7 +77,12 @@ final class TcpWhisperTransport: PublishTransport {
             contentChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         }
     }
-    
+
+	// eternal non-protocol method
+	func getTranscriptId() -> String? {
+		authenticator?.getTranscriptId()
+	}
+
     // MARK: Internal types, properties, and initialization
     final class Listener: TransportRemote {
         let id: String

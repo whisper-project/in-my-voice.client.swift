@@ -60,6 +60,7 @@ final class WhisperViewModel: ObservableObject {
 	@Published var invites: [Candidate] = []
     @Published var pastText: PastTextModel = .init(mode: .whisper)
 	@Published var showStatusDetail: Bool = false
+	@Published var transcriptId: String? = nil
 	private(set) var conversation: WhisperConversation
 
     private var transport: Transport
@@ -239,7 +240,21 @@ final class WhisperViewModel: ObservableObject {
     func wentToForeground() {
         transport.goToForeground()
     }
-    
+
+	func shareTranscript(_ to: Candidate? = nil) {
+		guard let id = transcriptId else {
+			return
+		}
+		let chunk = WhisperProtocol.ProtocolChunk.shareTranscript(id: id)
+		if let c = to {
+			transport.sendControl(remote: c.remote, chunk: chunk)
+		} else {
+			for listener in listeners {
+				transport.sendControl(remote: listener.remote, chunk: chunk)
+			}
+		}
+	}
+
     // MARK: Internal helpers
     private func resetText() {
         self.pastText.clearLines()
@@ -326,6 +341,10 @@ final class WhisperViewModel: ObservableObject {
 		remote: Remote,
 		info: WhisperProtocol.ClientInfo
 	) -> Candidate {
+		if candidates.isEmpty {
+			// this is our first candidate, see if we have a transcript ID to give out
+			transcriptId = transport.getTranscriptId()
+		}
 		var authorized = up.isListener(conversation, info: info)
 		// if my profile is shared, I am always an authorized listener for my own conversations
 		if (!UserProfile.shared.userPassword.isEmpty && info.profileId == UserProfile.shared.id) {

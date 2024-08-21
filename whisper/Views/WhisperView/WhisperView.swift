@@ -233,7 +233,7 @@ struct WhisperView: View {
 			.padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
 			.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 		}
-		StatusTextView(text: $model.statusText, mode: .whisper, conversation: conversation)
+		WhisperStatusTextView(model: model, conversation: conversation)
 			.onTapGesture {
 				self.model.showStatusDetail = true
 			}

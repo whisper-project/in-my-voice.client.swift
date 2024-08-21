@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-struct PastTextView: View {
+struct ListenPastTextView: View {
     var mode: OperatingMode
     @ObservedObject var model: PastTextModel
     
@@ -117,10 +117,10 @@ struct PastTextView_Previews: PreviewProvider {
 
     static var previews: some View {
         VStack {
-            PastTextView(mode: .listen, model: model1)
+            ListenPastTextView(mode: .listen, model: model1)
                 .frame(height: 350)
                 .border(.black, width: 2)
-            PastTextView(mode: .whisper, model: model2)
+            ListenPastTextView(mode: .whisper, model: model2)
                 .frame(height: 350)
                 .border(.black, width: 2)
         }
