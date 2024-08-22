@@ -22,7 +22,7 @@ struct WhisperPastTextView: View {
 				ForEach(rows) { row in
 					HStack(spacing: 5) {
 						makeButtons(row)
-						Text(row.text)
+						Text(.init(row.linked))
 							.lineLimit(nil)
 					}
 					.id(row.id)
@@ -35,66 +35,63 @@ struct WhisperPastTextView: View {
 				}
 			}
 		}
-		.onChange(of: fp.timestamp, updateFromProfile)
-		.onChange(of: model.pastText, initial: true, updateFromProfile)
+		.onChange(of: fp.timestamp, updateRows)
+		.onChange(of: model.pastText, initial: true, updateRows)
     }
 
-	private func updateFromProfile() {
-		rows = makeRows(model.pastText)
+	private func updateRows() {
+		rows = makeRows()
 	}
 
 	private struct Row: Identifiable {
 		let id: Int
-		let text: String
+		let raw: String
+		let linked: String
 		let favorites: [Favorite]
 	}
 
-	private func makeRows(_ text: String) -> [Row] {
+	private func makeRows() -> [Row] {
 		var rows: [Row] = []
-		if text.isEmpty {
-			return rows
-		}
-		var lines = text.split(separator: "\n", omittingEmptySubsequences: false)
-		// remove empty first line
-		if lines.first == "" {
-			lines.removeFirst()
-		}
-		let max = lines.count - 1
-		for (i, line) in lines.enumerated() {
-			let content = String(line.trimmingCharacters(in: .whitespaces))
-			let favorites = fp.lookupFavorite(text: content)
-			rows.append(Row(id: i - max, text: content, favorites: favorites))
+		if !model.pastText.isEmpty {
+			let (raw: rawLines, linked: linkedLines) = model.getLines()
+			let max = rawLines.count - 1
+			for i in 0...max {
+				let hidden = rawLines[i]
+				let shown = String(linkedLines[i].trimmingCharacters(in: .whitespaces))
+				let favorites = fp.lookupFavorite(text: hidden)
+				rows.append(Row(id: i - max, raw: hidden, linked: shown, favorites: favorites))
+			}
 		}
 		return rows
 	}
 
 	@ViewBuilder private func makeButtons(_ row: Row) -> some View {
-		if row.text.isEmpty {
+		if row.linked.isEmpty {
 			EmptyView()
 		} else {
 			let buttons = buttonsPref ?? "r-i-f"
 			if buttons.contains("r") {
-				Button("Repeat", systemImage: "repeat", action: { again?(row.text) })
+				Button("Repeat", systemImage: "repeat", action: { again?(row.raw) })
 					.labelStyle(.iconOnly)
 					.buttonStyle(.bordered)
 					.font(.title)
-					.disabled(interjecting || row.text.isEmpty)
+					.disabled(interjecting || row.linked.isEmpty)
 			}
 			if buttons.contains("i") {
-				Button("Interject", systemImage: "quote.bubble", action: { edit?(row.text) })
+				Button("Interject", systemImage: "quote.bubble", action: { edit?(row.raw) })
 					.labelStyle(.iconOnly)
 					.buttonStyle(.bordered)
 					.font(.title)
-					.disabled(interjecting || row.text.isEmpty)
+					.disabled(interjecting || row.linked.isEmpty)
 			}
 			if buttons.contains("f") {
 				Button("Favorite", systemImage: row.favorites.isEmpty ? "star": "star.fill", action: {
-					favorite?(row.text, row.favorites)
+					favorite?(row.raw, row.favorites)
 				})
 				.labelStyle(.iconOnly)
 				.buttonStyle(.bordered)
 				.font(.title)
-				.disabled(interjecting || row.text.isEmpty)
+				.disabled(interjecting || row.linked.isEmpty)
 			}
 		}
 	}

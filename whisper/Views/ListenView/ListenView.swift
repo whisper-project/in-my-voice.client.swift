@@ -171,7 +171,7 @@ struct ListenView: View {
 	}
 
 	private func pastView(_ geometry: GeometryProxy) -> some View {
-		ListenPastTextView(mode: .listen, model: model.pastText)
+		ListenPastTextView(model: model.pastText)
 			.font(FontSizes.fontFor(size))
 			.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 			.padding(innerPad)
