@@ -242,10 +242,12 @@ final class ListenViewModel: ObservableObject {
 			// Whisperers don't send diffs during replay, so maybe we missed the terminator
 			resetInProgress = false
 			if chunk.offset == 0 {
-				liveText = chunk.text
-				if !isInBackground && !chunk.text.isEmpty {
+				if liveText.isEmpty && !chunk.text.isEmpty {
 					maybeStartTypingSound()
+				} else if !liveText.isEmpty && chunk.text.isEmpty {
+					stopTypingSound()
 				}
+				liveText = chunk.text
 			} else if chunk.isCompleteLine() {
 				if !isInBackground && PreferenceData.speakWhenListening {
 					speak(liveText)
@@ -396,7 +398,7 @@ final class ListenViewModel: ObservableObject {
     }
     
 	func maybeStartTypingSound() {
-		guard PreferenceData.hearTyping else {
+		guard PreferenceData.hearTyping && !isInBackground else {
 			return
 		}
 		playTypingSound("typewriter-two-minutes")
@@ -404,7 +406,7 @@ final class ListenViewModel: ObservableObject {
 
 	func maybeEndTypingSound() {
 		stopTypingSound()
-		guard PreferenceData.hearTyping else {
+		guard PreferenceData.hearTyping && !isInBackground else {
 			return
 		}
 		playTypingSound("typewriter-carriage-return")
