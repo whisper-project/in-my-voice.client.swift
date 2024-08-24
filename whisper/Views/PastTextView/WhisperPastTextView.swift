@@ -74,14 +74,12 @@ struct WhisperPastTextView: View {
 				Button("Repeat", systemImage: "repeat", action: { again?(row.raw) })
 					.labelStyle(.iconOnly)
 					.buttonStyle(.bordered)
-					.font(.title)
 					.disabled(interjecting || row.linked.isEmpty)
 			}
 			if buttons.contains("i") {
 				Button("Interject", systemImage: "quote.bubble", action: { edit?(row.raw) })
 					.labelStyle(.iconOnly)
 					.buttonStyle(.bordered)
-					.font(.title)
 					.disabled(interjecting || row.linked.isEmpty)
 			}
 			if buttons.contains("f") {
@@ -90,7 +88,6 @@ struct WhisperPastTextView: View {
 				})
 				.labelStyle(.iconOnly)
 				.buttonStyle(.bordered)
-				.font(.title)
 				.disabled(interjecting || row.linked.isEmpty)
 			}
 		}

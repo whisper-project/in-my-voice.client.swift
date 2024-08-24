@@ -77,6 +77,8 @@ struct WhisperView: View {
 				}
 				.sheet(isPresented: $editFavorites, onDismiss: { editFavoritesFavorite = nil; editFavoritesGroup = nil }) {
 					FavoritesProfileView(use: self.maybeFavorite, g: self.editFavoritesGroup, f: self.editFavoritesFavorite)
+						.font(FontSizes.fontFor(size))
+						.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 				}
 			}
 			.onChange(of: interjecting) {
@@ -189,6 +191,8 @@ struct WhisperView: View {
 		if showFavorites {
 			if isOnPhone() {
 					FavoritesUseView(use: maybeFavorite, group: $group)
+					.font(FontSizes.fontFor(size))
+					.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 					.frame(maxWidth: geometry.size.width,
 						   maxHeight: geometry.size.height * pastTextProportion,
 						   alignment: .bottomLeading)
@@ -208,6 +212,8 @@ struct WhisperView: View {
 					.border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
 					.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 					FavoritesUseView(use: maybeFavorite, group: $group)
+						.font(FontSizes.fontFor(size))
+						.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 						.frame(maxWidth: geometry.size.width * 1/3)
 						.border(colorScheme == .light ? lightPastBorderColor : darkPastBorderColor, width: 2)
 				}
