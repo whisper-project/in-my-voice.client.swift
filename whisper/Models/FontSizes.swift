@@ -12,7 +12,6 @@ struct FontSizes {
         Font.subheadline,
         Font.callout,
         Font.body,
-        Font.headline,
         Font.title3,
         Font.title2,
         Font.title,
@@ -31,7 +30,6 @@ struct FontSizes {
         case xlarge = 6
         case xxlarge = 7
         case xxxlarge = 8
-        case xxxxlarge = 9
     }
     
     static func fontFor(name: FontName) -> Font {
@@ -47,8 +45,8 @@ struct FontSizes {
     }
     
     static let minTextSize = 4
-    static let maxTextSize = 9
-    
+    static let maxTextSize = 8
+
     static func nextTextLarger(_ size: Int) -> Int {
         guard size < maxTextSize else {
             return maxTextSize
