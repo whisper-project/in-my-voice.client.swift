@@ -45,11 +45,17 @@ struct FavoritesDetailView: View {
 			}
 			Section(header: Text("Favorite Text")) {
 				HStack (spacing: 15) {
-					TextField("Favorite Text", text: $newText)
+					TextField("Favorite Text", text: $newText, axis: .vertical)
 						.lineLimit(nil)
 						.submitLabel(.done)
 						.textInputAutocapitalization(.sentences)
 						.onSubmit { updateNameAndText() }
+						.onChange(of: newText) {
+							if let index = newText.lastIndex(of: "\n") {
+								newText.remove(at: index)
+								updateNameAndText()
+							}
+						}
 					Button("Submit", systemImage: "checkmark.square.fill") { updateNameAndText() }
 						.labelStyle(.iconOnly)
 						.disabled(newText.isEmpty || newText == f.text)
@@ -106,6 +112,8 @@ struct FavoritesDetailView: View {
 	}
 
 	func updateNameAndText() {
+		newName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+		newText = newText.trimmingCharacters(in: .whitespacesAndNewlines)
 		if (newName != name && !newName.isEmpty) {
 			fp.renameFavorite(f, to: newName)
 		}

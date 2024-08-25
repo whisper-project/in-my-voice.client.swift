@@ -30,6 +30,7 @@ struct FavoritesProfileView: View {
 						ForEach(favorites) { f in
 							NavigationLink(value: f) {
 								Text(f.name)
+									.lineLimit(nil)
 							}
 						}
 						.onMove{ from, to in allGroup.move(fromOffsets: from, toOffset: to) }
