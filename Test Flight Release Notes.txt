@@ -428,7 +428,7 @@ This build fixes quite a few bugs around the edges of all the new features that 
 3. Renaming favorites or groups, and changing the text content of a favorite, could cause the favorites profile to become corrupted. Quitting the app and restarting was necessary to clean things up. These operations now work correctly. 
 
 Build 2.4.3 (2040003):
-This build the ability for Whisperers to send transcript links to Listeners:
+This build adds the ability for Whisperers to send transcript links to Listeners:
 
 - Once one or more Listeners have joined a conversation, the Whisperer is shown an eyeglass button on the status line as well as an eyeglass button on each listed Listener in the detailed status view.  Pressing the eyeglass button on the status line sends a transcript link to every currently connected listener.  Pressing the eyeglass button on a specific Listener line sends a transcript link just to that specific listener.
 
@@ -441,3 +441,16 @@ This build the ability for Whisperers to send transcript links to Listeners:
 - Whisperers can press the eyeglass button as often as they want, for example to send the transcript to Listeners who join the conversation later.
 
 - Final transcripts always show the entire conversation, regardless of when a Listener who was sent the link joined or exited the conversation.
+
+Build 2.4.4 (2040004):
+This build fixes bugs and adds a few features:
+
+- When the Whisperer types a link and it goes to past text, it becomes "hot" so clicking on it opens the link in a new browser window (or tab). In the app, the link appears in the past text. In the browser, it appears in a list of links at the bottom of the page.
+
+- Typing sounds are now available to browser listeners.
+
+- The Whisperer's buttons to send and edit favorites now are the same size as all the other text, so the font size controls work on them.
+
+- Transcript windows for a conversation that's in progress auto-refresh every one minute, so they will automatically show the transcript once the conversation is over.
+
+- The times at the top of transcripts are now shown in the Whisperer's timezone.
