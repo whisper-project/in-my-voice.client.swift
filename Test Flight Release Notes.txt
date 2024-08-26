@@ -454,3 +454,14 @@ This build fixes bugs and adds a few features:
 - Transcript windows for a conversation that's in progress auto-refresh every one minute, so they will automatically show the transcript once the conversation is over.
 
 - The times at the top of transcripts are now shown in the Whisperer's timezone.
+
+Build 2.4.5 (2040005):
+This build fixes bugs and adds a few features:
+
+- There is now a volume control for the typing sound: long-press on the typing sound button to get a menu of volume levels.
+
+- There is now a "Large Type" control that affects the home screen and the various profile views. This setting is independent of the font size choice when Whispering or Listening.
+
+- There are now only 8 type sizes available for Whispering and Listening, as the "normal but bolded" size has been removed (in both regular and large sizes).  So now each type size is different from the other sizes.  The range from smallest to largest is the same.
+
+- The typing sound on/off icons have been clarified and made more readable.
