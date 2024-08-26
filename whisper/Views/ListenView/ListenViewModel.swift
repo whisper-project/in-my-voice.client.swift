@@ -424,6 +424,7 @@ final class ListenViewModel: ObservableObject {
 			let url = URL(filePath: path)
 			typingPlayer = try? AVAudioPlayer(contentsOf: url)
 			if let player = typingPlayer {
+				player.volume = Float(PreferenceData.typingVolume)
 				if !player.play() {
 					logAnomaly("Couldn't play \(name) sound")
 					typingPlayer = nil

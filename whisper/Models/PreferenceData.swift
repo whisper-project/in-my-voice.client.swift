@@ -245,6 +245,27 @@ struct PreferenceData {
 		}
 	}
 
+	/// the volume to play typing at
+	static var typingVolume: Double {
+		get {
+			let diff = defaults.float(forKey: "typing_volume_setting")
+			switch diff {
+			case 0.25: return 0.25
+			case 0.5: return 0.5
+			default: return 1.0
+			}
+		}
+		set(val) {
+			var next: Double
+			switch val {
+			case 0.25: next = val
+			case 0.5: next = val
+			default: next = 1.0
+			}
+			defaults.setValue(next, forKey: "typing_volume_setting")
+		}
+	}
+
 	/// the current favorites group
 	static var currentFavoritesGroup: FavoritesGroup {
 		get {

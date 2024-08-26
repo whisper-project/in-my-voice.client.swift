@@ -7,6 +7,7 @@ import SwiftUI
 
 struct ListenControlView: View {
     @Environment(\.colorScheme) private var colorScheme
+	@AppStorage("typing_volume_setting") private var typingVolume: Double = PreferenceData.typingVolume
 
     @Binding var size: FontSizes.FontSize
     @Binding var magnify: Bool
@@ -34,11 +35,42 @@ struct ListenControlView: View {
     }
     
 	@ViewBuilder private func typingButton() -> some View {
-		Button {
-			typing.toggle()
-			PreferenceData.hearTyping = typing
+		Menu {
+			Button {
+				typingVolume = 1
+				PreferenceData.typingVolume = 1
+			} label: {
+				if typingVolume == 1 {
+					Label("Loud Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Loud Typing", systemImage: "speaker.wave.3")
+				}
+			}
+			Button {
+				typingVolume = 0.5
+				PreferenceData.typingVolume = 0.5
+			} label: {
+				if typingVolume == 0.5 {
+					Label("Medium Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Medium Typing", systemImage: "speaker.wave.2")
+				}
+			}
+			Button {
+				typingVolume = 0.25
+				PreferenceData.typingVolume = 0.25
+			} label: {
+				if typingVolume == 0.25 {
+					Label("Quiet Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Quiet Typing", systemImage: "speaker.wave.1")
+				}
+			}
 		} label: {
 			buttonImage(name: typing ? "typing-sound-on" : "typing-sound-off", pad: 5)
+		} primaryAction: {
+			typing.toggle()
+			PreferenceData.hearTyping = typing
 		}
 		Spacer()
 	}
