@@ -67,7 +67,7 @@ struct ListenControlView: View {
 				}
 			}
 		} label: {
-			buttonImage(name: typing ? "typing-sound-on" : "typing-sound-off", pad: 5)
+			buttonImage(name: typing ? "typing-bubble" : "typing-no-bubble", pad: 5)
 		} primaryAction: {
 			typing.toggle()
 			PreferenceData.hearTyping = typing
