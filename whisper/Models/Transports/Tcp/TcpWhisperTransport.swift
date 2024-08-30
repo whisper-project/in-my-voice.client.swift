@@ -15,7 +15,7 @@ final class TcpWhisperTransport: PublishTransport {
     var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
     var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
+    func start(failureCallback: @escaping TransportErrorCallback) {
         logger.log("Starting TCP whisper transport")
         self.failureCallback = failureCallback
 		self.authenticator = TcpAuthenticator(mode: .whisper,
@@ -77,7 +77,12 @@ final class TcpWhisperTransport: PublishTransport {
             contentChannel?.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
         }
     }
-    
+
+	// eternal non-protocol method
+	func getTranscriptId() -> String? {
+		authenticator?.getTranscriptId()
+	}
+
     // MARK: Internal types, properties, and initialization
     final class Listener: TransportRemote {
         let id: String
@@ -91,7 +96,7 @@ final class TcpWhisperTransport: PublishTransport {
         }
     }
     
-    private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
+    private var failureCallback: TransportErrorCallback?
     private var clientId: String
     private var conversation: WhisperConversation
     private var authenticator: TcpAuthenticator!
@@ -237,7 +242,16 @@ final class TcpWhisperTransport: PublishTransport {
 		guard message.action == .leave || message.action == .absent else {
 			return
 		}
-		guard let clientId = message.clientId, let remote = remotes[clientId], !remote.hasDropped else {
+		guard let clientId = message.clientId, clientId != PreferenceData.clientId else {
+			// ignore messages from ourself
+			return
+		}
+		guard let remote = remotes[clientId] else {
+			// ignore messages from clients we're not connected to
+			logAnomaly("Got a presence message from a client that's not a listening remote?")
+			return
+		}
+		guard !remote.hasDropped else {
 			logger.info("Received leave presence message from an already-dropped remote")
 			return
 		}

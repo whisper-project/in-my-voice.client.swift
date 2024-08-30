@@ -60,16 +60,17 @@ final class WhisperViewModel: ObservableObject {
 	@Published var invites: [Candidate] = []
     @Published var pastText: PastTextModel = .init(mode: .whisper)
 	@Published var showStatusDetail: Bool = false
+	@Published var transcriptId: String? = nil
 	private(set) var conversation: WhisperConversation
 
     private var transport: Transport
     private var cancellables: Set<AnyCancellable> = []
     private var liveText: String = ""
 	private var lastLiveText: String = ""
-    private static let synthesizer = AVSpeechSynthesizer()
     private var soundEffect: AVAudioPlayer?
 
-	let profile = UserProfile.shared.whisperProfile
+	let up = UserProfile.shared.whisperProfile
+	let fp = UserProfile.shared.favoritesProfile
 	let contentId = UUID().uuidString
 
     init(_ conversation: WhisperConversation) {
@@ -131,7 +132,7 @@ final class WhisperViewModel: ObservableObject {
 					lastLiveText = liveText
 				}
                 if PreferenceData.speakWhenWhispering {
-                    speak(liveText)
+					speak(liveText)
                 }
                 liveText = ""
             } else {
@@ -142,23 +143,24 @@ final class WhisperViewModel: ObservableObject {
         return liveText
     }
 
-	/// Repeat the last thing the whisperer typed, whether it was said or not
-	func repeatLastLiveLine() {
-		pastText.addLine(lastLiveText)
-		if PreferenceData.speakWhenWhispering {
-			speak(lastLiveText)
-		}
-		let pastChunks = WhisperProtocol.diffLines(old: "", new: lastLiveText + "\n")
-		transport.publish(chunks: pastChunks)
-		let currentChunks = WhisperProtocol.diffLines(old: "", new: liveText)
-		transport.publish(chunks: currentChunks)
-	}
-
     /// User has submitted the live text
     func submitLiveText() -> String {
         return self.updateLiveText(old: liveText, new: liveText + "\n")
     }
     
+	/// Repeat a line typed by the Whisperer
+	func repeatLine(_ text: String? = nil) {
+		let line = text ?? lastLiveText
+		pastText.addLine(line)
+		if PreferenceData.speakWhenWhispering {
+			speak(line)
+		}
+		let pastChunks = WhisperProtocol.diffLines(old: "", new: line + "\n")
+		transport.publish(chunks: pastChunks)
+		let currentChunks = WhisperProtocol.diffLines(old: "", new: liveText)
+		transport.publish(chunks: currentChunks)
+	}
+
     /// Play the alert sound to all the listeners
     func playSound() {
         let soundName = PreferenceData.alertSound
@@ -197,7 +199,7 @@ final class WhisperViewModel: ObservableObject {
 		logger.info("Accepted listen request from \(invitee.remote.kind) remote \(invitee.remote.id) user \(invitee.info.username)")
 		invitee.isPending = false
 		refreshStatusText()
-		profile.addListener(conversation, info: invitee.info)
+		up.addListener(conversation, info: invitee.info)
 		transport.authorize(remote: invitee.remote)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthYes(conversation, contentId: contentId)
 		transport.sendControl(remote: invitee.remote, chunk: chunk)
@@ -223,7 +225,7 @@ final class WhisperViewModel: ObservableObject {
             return
         }
 		logger.notice("De-authorizing \(listener.remote.kind) candidate \(listener.id)")
-		profile.removeListener(conversation, profileId: candidate.info.profileId)
+		up.removeListener(conversation, profileId: candidate.info.profileId)
 		let chunk = WhisperProtocol.ProtocolChunk.listenAuthNo(conversation)
 		transport.sendControl(remote: candidate.remote, chunk: chunk)
 		transport.deauthorize(remote: candidate.remote)
@@ -238,7 +240,21 @@ final class WhisperViewModel: ObservableObject {
     func wentToForeground() {
         transport.goToForeground()
     }
-    
+
+	func shareTranscript(_ to: Candidate? = nil) {
+		guard let id = transcriptId else {
+			return
+		}
+		let chunk = WhisperProtocol.ProtocolChunk.shareTranscript(id: id)
+		if let c = to {
+			transport.sendControl(remote: c.remote, chunk: chunk)
+		} else {
+			for listener in listeners {
+				transport.sendControl(remote: listener.remote, chunk: chunk)
+			}
+		}
+	}
+
     // MARK: Internal helpers
     private func resetText() {
         self.pastText.clearLines()
@@ -325,7 +341,11 @@ final class WhisperViewModel: ObservableObject {
 		remote: Remote,
 		info: WhisperProtocol.ClientInfo
 	) -> Candidate {
-		var authorized = profile.isListener(conversation, info: info)
+		if candidates.isEmpty {
+			// this is our first candidate, see if we have a transcript ID to give out
+			transcriptId = transport.getTranscriptId()
+		}
+		var authorized = up.isListener(conversation, info: info)
 		// if my profile is shared, I am always an authorized listener for my own conversations
 		if (!UserProfile.shared.userPassword.isEmpty && info.profileId == UserProfile.shared.id) {
 			authorized = ListenerInfo(id: UserProfile.shared.id, username: UserProfile.shared.username)
@@ -337,7 +357,7 @@ final class WhisperViewModel: ObservableObject {
 			candidate.info.username = info.username
 			if authorized != nil {
 				// this is a known listener, also update their name in our profile
-				profile.addListener(conversation, info: info)
+				up.addListener(conversation, info: info)
 			}
 		} else if candidate.info.username.isEmpty, let auth = authorized {
 			candidate.info.username = auth.username
@@ -346,15 +366,14 @@ final class WhisperViewModel: ObservableObject {
 	}
 
 	private func speak(_ text: String) {
-		if PreferenceData.elevenLabsApiKey().isEmpty || PreferenceData.elevenLabsVoiceId().isEmpty {
-			let utterance = AVSpeechUtterance(string: text)
-			Self.synthesizer.speak(utterance)
+		let onError: (TransportErrorSeverity, String) -> () = { severity, message in
+			self.connectionErrorSeverity = severity
+			self.connectionErrorDescription = message
+			self.connectionError = true
+		}
+		if let f = fp.lookupFavorite(text: text).first {
+			f.speakText(errorCallback: onError)
 		} else {
-			let onError: (TransportErrorSeverity, String) -> () = { severity, message in
-				self.connectionErrorSeverity = severity
-				self.connectionErrorDescription = message
-				self.connectionError = true
-			}
 			ElevenLabs.shared.speakText(text: text, errorCallback: onError)
 		}
 	}

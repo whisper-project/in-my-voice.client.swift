@@ -396,3 +396,99 @@ Build v2.3.8 (2030008):
 Amazingly, there was yet another bug in the way shared profiles worked: the new settings profile including the new interjection settings were not being uploaded and downloaded correctly.  Now they are.
 
 If you are a shared profile user, be sure to install this build *first* on a machine that has your desired interjection settings.  Those settings will then correctly get shared to other machines that you install the new build on.
+
+Build v2.4.1 (2040001):
+This release introduces quite a few long-requested features for both Whisperers and Listeners. Please use the feedback mechanisms in TestFlight to send feedback about how these work for you, and how they could be improved:
+
+- Favorites! Whisperers can now create named favorites with pre-saved text that can be inserted into a conversation just by tapping on the name of the favorite.
+
+- There is a Favorites button on the home screen which brings up an Edit Favorites window that allows creating and editing favorites and groups and putting favorites into groups.
+
+- Press the new "star" button in the Whisperer's controls to bring up a Use Favorites window with buttons for each named favorite. Pressing one of the buttons inserts the favorite into the conversation just as if you had typed it, without disturbing any text you are already typing. On an iPad, the Use Favorites window appears to the right of the past text.  On an iPhone, it replaces the past text. Pressing the "star" button again hides the Use Favorites window. Whether the Use Favorites window should show is remembered from session to session.
+
+- Long press the new "star" button to see a menu that allows choosing which group of favorites you want shown in the Use Favorites list. There is also an Edit Favorites item on that menu which brings up the Edit Favorites window. Which list of favorites to use is remembered from session to session.
+
+- Whisperers now see buttons next to each of their (non-empty) past lines that allow them to quickly repeat, interject, or make a favorite out of that line's content. If the past line contains a favorite, the "make favorite" button (an empty star) changes to be "edit favorite" (a filled star). If you don't want all three buttons, you can choose the ones you want in your Settings.
+
+- If you use ElevenLabs to generate your speech, each favorite now remembers the generated speech so inserting the favorite starts speaking immediately. The Edit Favorites view also allows generating the speech again so you can generate different speech several times and remember the best of them.
+
+- Listeners can now hear an old-fashioned typing-on-a-typewriter sound whenever the Whisperer starts to type, notifying them to look at what's being typed (and filling the silence so they're not tempted to talk over the Whisperer). When the Whisperer finishes typing (hitting the return key) there is an old-fashioned "hitting the carriage return" sound and the typing sound stops. The button to turn these sounds on and off is at the left end of the Listener controls, and the setting is remembered from session to session.
+
+- Listeners can now share conversation links with other listeners.  There is a share button both in the list of past conversations and in the status line during a conversation.
+
+- Listeners can now copy/paste conversation links into the Whisper app. In the list of past conversations, there is now a + button to add a new link.  If there is a conversation link on the clipboard when the plus button is pressed, the app will try to join that conversation. Otherwise, it will open a window where the user can type in (or paste in) the desired conversation link.
+
+Build 2.4.2 (2040002):
+This build fixes quite a few bugs around the edges of all the new features that were introduced in the last build.  For example:
+
+1. Loading a 2.4.1 build for the first time would completely reset your profile, so you lost your conversation history.  This was especially troublesome for shared profile users, since it would happen more than once.  That has now been fixed.
+
+2. The past text window for Whisperers would consistently scroll so that the penultimate line was at the bottom of the window and the last line was hidden.
+
+3. Renaming favorites or groups, and changing the text content of a favorite, could cause the favorites profile to become corrupted. Quitting the app and restarting was necessary to clean things up. These operations now work correctly. 
+
+Build 2.4.3 (2040003):
+This build adds the ability for Whisperers to send transcript links to Listeners:
+
+- Once one or more Listeners have joined a conversation, the Whisperer is shown an eyeglass button on the status line as well as an eyeglass button on each listed Listener in the detailed status view.  Pressing the eyeglass button on the status line sends a transcript link to every currently connected listener.  Pressing the eyeglass button on a specific Listener line sends a transcript link just to that specific listener.
+
+- In the app, when a Listener is sent a transcript link by the Whisperer, an eyeglass button appears in the status line.  Pressing that button opens the transcript in a web browser. In addition, when the Whisperer ends the conversation (or the Listener stops Listening), a sheet appears on the Listener side that gives the transcript link again.
+
+- In a web browser, when a Listener is sent a transcript link by the Whisperer, a "Transcript Available" link appears just above the past text window.  In addition, when the conversation ends, the final screen gives the transcript link again.  Either link opens a new window (or tab) on the transcript.
+
+- While a conversation is in session, opening the transcript gives an "in-progress" message. Once the conversation is over, refreshing the page will show the final transcript.  (The link to the transcript never changes, and can be saved at any time.)
+
+- Whisperers can press the eyeglass button as often as they want, for example to send the transcript to Listeners who join the conversation later.
+
+- Final transcripts always show the entire conversation, regardless of when a Listener who was sent the link joined or exited the conversation.
+
+Build 2.4.4 (2040004):
+This build fixes bugs and adds a few features:
+
+- When the Whisperer types a link and it goes to past text, it becomes "hot" so clicking on it opens the link in a new browser window (or tab). In the app, the link appears in the past text. In the browser, it appears in a list of links at the bottom of the page.
+
+- Typing sounds are now available to browser listeners.
+
+- The Whisperer's buttons to send and edit favorites now are the same size as all the other text, so the font size controls work on them.
+
+- Transcript windows for a conversation that's in progress auto-refresh every one minute, so they will automatically show the transcript once the conversation is over.
+
+- The times at the top of transcripts are now shown in the Whisperer's timezone.
+
+Build 2.4.5 (2040005):
+This release adds many, many features:
+
+- There is now a volume control for the typing sound: long-press on the typing sound button to get a menu of volume levels.
+
+- There is now a "Large Type" control that affects the home screen and the various profile views. This setting is independent of the font size choice when Whispering or Listening.
+
+- There are now only 8 type sizes available for Whispering and Listening, as the "normal but bolded" size has been removed (in both regular and large sizes).  So now each type size is different from the other sizes.  The range from smallest to largest is the same.
+
+- The typing sound on/off icons have been clarified and made more readable.
+
+Release 2.4 (build 2.4.5 on AppStore):
+This release introduces quite a few long-requested features for both Whisperers and Listeners.
+
+- Whisperers can now create named favorites with pre-saved text that can be inserted into a conversation just by tapping on the name of the favorite. If you use a shared profile, all your devices will have the same favorites.
+
+- There is a Favorites button on the home screen which brings up an Edit Favorites window that allows creating and editing favorites and groups and putting favorites into groups.
+
+- Press the Favorites (star) button in the Whisperer's controls to bring up a Use Favorites window with buttons for each named favorite. Pressing one of the buttons inserts the favorite into the conversation just as if you had typed it, without disturbing any text you are already typing.
+
+- Long press the Favorites button to see a menu that allows choosing which group of favorites you want shown in the Favorites list. There is also an Edit Favorites item on that menu which brings up the Edit Favorites window.
+
+- Whisperers now see buttons next to each of their (non-empty) past lines that allow them to quickly repeat, interject, or make a favorite out of that line's content. If you don't want all three buttons, you can choose the ones you want in your Settings.
+
+- If you use ElevenLabs to generate your speech, each favorite now remembers the generated speech so inserting the favorite starts speaking immediately.
+
+- Listeners can now hear an old-fashioned typing-on-a-typewriter sound whenever the Whisperer starts to type, notifying them to look at what's being typed (and filling the silence so they're not tempted to talk over the Whisperer). The button to turn these sounds on and off is at the left end of the Listener controls. Long pressing on that button allows you to adjust the volume of the typing sound.
+
+- Listeners can now share conversation links with other listeners.
+
+- Listeners can now copy/paste conversation links into the Whisper app. In the list of past conversations, there is now a + button to add a new link.  If there is a conversation link on the clipboard when the plus button is pressed, the app will try to join that conversation. Otherwise, it will open a window where the user can type in (or paste in) the desired conversation link.
+
+- Whisperers who use transcripts can now share those transcripts with Listeners directly from within a conversation session. Once one or more Listeners have joined a conversation, the Whisperer is shown an eyeglass button on the status line as well as an eyeglass button on each listed Listener in the detailed status view.  Pressing the eyeglass button on the status line sends a transcript link to every currently connected listener.  Pressing the eyeglass button on a specific Listener line sends a transcript link just to that specific listener.
+
+- When a Listener is sent a transcript link by the Whisperer, a show-transcript button appears in the status line (and again at the end of the conversation).  Pressing that button opens the transcript in a web browser.
+
+- There is now a "Large Type" control that affects the home screen and the various profile views. This setting is independent of the font size choice when Whispering or Listening.

@@ -14,7 +14,7 @@ final class ComboWhisperTransport: PublishTransport {
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
+    func start(failureCallback: @escaping TransportErrorCallback) {
         logger.log("Starting combo whisper transport")
         self.failureCallback = failureCallback
         initializeTransports()
@@ -107,7 +107,12 @@ final class ComboWhisperTransport: PublishTransport {
         localTransport?.publish(chunks: chunks)
         globalTransport?.publish(chunks: chunks)
     }
-    
+
+	// pass through of global-only method
+	func getTranscriptId() -> String? {
+		return globalTransport?.getTranscriptId()
+	}
+
     // MARK: internal types, properties, and initialization
     typealias LocalTransport = BluetoothWhisperTransport
     typealias LocalRemote = BluetoothWhisperTransport.Remote
@@ -139,7 +144,7 @@ final class ComboWhisperTransport: PublishTransport {
 	private var clients: [String: Remote] = [:]	// maps from client id to remote
     private var cancellables: Set<AnyCancellable> = []
     private var conversation: WhisperConversation
-    private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
+    private var failureCallback: TransportErrorCallback?
 	private var staggerTimer: Timer?
 
     init(_ c: WhisperConversation) {

@@ -15,7 +15,7 @@ final class TcpListenTransport: SubscribeTransport {
 	var contentSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 	var controlSubject: PassthroughSubject<(remote: Remote, chunk: WhisperProtocol.ProtocolChunk), Never> = .init()
 
-    func start(failureCallback: @escaping (TransportErrorSeverity, String) -> Void) {
+    func start(failureCallback: @escaping TransportErrorCallback) {
         logger.log("Starting TCP listen transport")
         self.failureCallback = failureCallback
 		self.authenticator = TcpAuthenticator(mode: .listen,
@@ -94,7 +94,7 @@ final class TcpListenTransport: SubscribeTransport {
         }
     }
     
-    private var failureCallback: ((TransportErrorSeverity, String) -> Void)?
+    private var failureCallback: TransportErrorCallback?
     private var clientId: String
     private var conversation: ListenConversation
     private var authenticator: TcpAuthenticator!

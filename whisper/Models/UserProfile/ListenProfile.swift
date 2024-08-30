@@ -202,6 +202,7 @@ final class ListenProfile: Codable {
 				}
 			} else if code == 404 {
 				// this is supposed to be a shared profile, but the server doesn't have it?!
+				logAnomaly("Found no listen profile on server when updating, uploading one")
 				save(verb: "POST")
 			}
 		}

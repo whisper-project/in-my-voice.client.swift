@@ -61,11 +61,6 @@ struct WhisperTranscriptView: View {
 		}
 		.navigationTitle("Transcripts of \(conversation.name)")
 		.navigationBarTitleDisplayMode(.inline)
-		#if targetEnvironment(macCatalyst)
-		.toolbar {
-			Button(action: { dismiss() }, label: { Text("Close") } )
-		}
-		#endif
     }
 
 	struct Row: Identifiable {

@@ -7,32 +7,36 @@ import SwiftUI
 import SwiftUIWindowBinder
 
 struct ListenView: View {
-    @Environment(\.colorScheme) var colorScheme
-    @Environment(\.dynamicTypeSize) var dynamicTypeSize
-    @Environment(\.scenePhase) var scenePhase
+	@Environment(\.colorScheme) var colorScheme
+	@Environment(\.dynamicTypeSize) var dynamicTypeSize
+	@Environment(\.scenePhase) var scenePhase
 	@AppStorage("newest_whisper_location_preference") var liveWindowPosition: String?
+	@AppStorage("hear_typing_setting") var hearTyping: Bool?
 
-    @Binding var mode: OperatingMode
+	@Binding var mode: OperatingMode
 	@Binding var restart: Bool
-    var conversation: ListenConversation
+	var conversation: ListenConversation
 
-    @FocusState var focusField: Bool
-    @StateObject private var model: ListenViewModel
+	@FocusState var focusField: Bool
+	@StateObject private var model: ListenViewModel
 	@State private var size = PreferenceData.sizeWhenListening
 	@State private var magnify: Bool = PreferenceData.magnifyWhenListening
 	@State private var interjecting: Bool = false
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
+	@StateObject private var appStatus = AppStatus.shared
+	@State private var viewHasRespondedToQuit = false
+	@State private var userStopped = false
 
 	init(mode: Binding<OperatingMode>, restart: Binding<Bool>, conversation: ListenConversation) {
-        self._mode = mode
+		self._mode = mode
 		self._restart = restart
 		self.conversation = conversation
 		self._model = StateObject(wrappedValue: ListenViewModel(conversation))
-    }
+	}
 
-    var body: some View {
+	var body: some View {
 		WindowBinder(window: $window) {
 			GeometryReader { geometry in
 				VStack(spacing: 10) {
@@ -47,7 +51,7 @@ struct ListenView: View {
 				.alert("Confirm Stop", isPresented: $confirmStop) {
 					Button("Stop") {
 						model.stop()
-						mode = .ask
+						userStopped = true
 					}
 					Button("Don't Stop") {
 					}
@@ -59,10 +63,11 @@ struct ListenView: View {
 				} message: {
 					ConnectionErrorContent(severity: model.connectionErrorSeverity, message: model.connectionErrorDescription)
 				}
-				.alert("Conversation Ended", isPresented: $model.conversationEnded) {
-					Button("OK") { mode = .ask }
-				} message: {
-					Text("The Whisperer has ended the conversation")
+				.sheet(isPresented: $model.conversationEnded, onDismiss: { mode = .ask }) {
+					sessionEndMessage()
+				}
+				.sheet(isPresented: $userStopped, onDismiss: { mode = .ask }) {
+					sessionEndMessage()
 				}
 			}
 			.onAppear {
@@ -74,6 +79,21 @@ struct ListenView: View {
 				SleepControl.shared.enable()
 				logger.log("ListenView disappeared")
 				self.model.stop()
+			}
+			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
+				logger.log("Received notification that app will terminate")
+				quitListenView()
+			})
+			.onChange(of: hearTyping) {
+				if hearTyping == nil || hearTyping == false {
+					model.stopTypingSound()
+				}
+			}
+			.onChange(of: appStatus.appIsQuitting) {
+				if appStatus.appIsQuitting {
+					logger.log("App has been told to quit")
+					quitListenView()
+				}
 			}
 			.onChange(of: model.conversationRestarted) {
 				restart = true
@@ -105,21 +125,21 @@ struct ListenView: View {
 				}
 			}
 		}
-    }
+	}
 
 	private func maybeStop() {
 		confirmStop = true
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
-		ControlView(size: $size, magnify: $magnify, interjecting: $interjecting, mode: mode, maybeStop: maybeStop)
+		ListenControlView(size: $size, magnify: $magnify, interjecting: $interjecting, maybeStop: maybeStop)
 			.padding(EdgeInsets(top: listenViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
 		if (liveWindowPosition ?? "bottom" != "bottom") {
 			liveView(geometry)
 		} else {
 			pastView(geometry)
 		}
-		StatusTextView(text: $model.statusText, mode: .listen, conversation: nil)
+		ListenStatusTextView(model: model, conversation: conversation)
 			.onTapGesture {
 				if (model.whisperer == nil && !model.invites.isEmpty) {
 					model.showStatusDetail = true
@@ -151,7 +171,7 @@ struct ListenView: View {
 	}
 
 	private func pastView(_ geometry: GeometryProxy) -> some View {
-		PastTextView(mode: .listen, model: model.pastText)
+		ListenPastTextView(model: model.pastText)
 			.font(FontSizes.fontFor(size))
 			.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 			.padding(innerPad)
@@ -181,16 +201,40 @@ struct ListenView: View {
 		.background(Color.accentColor)
 		.ignoresSafeArea()
 	}
-}
 
-struct ListenView_Previews: PreviewProvider {
-	static let mode: Binding<OperatingMode> = makeBinding(.listen)
-	static let restart: Binding<Bool> = makeBinding(false)
+	private func quitListenView() {
+		guard !viewHasRespondedToQuit else {
+			logger.log("Listen view is already terminating")
+			return
+		}
+		logger.warning("Listen view is terminating in response to quit signal")
+		viewHasRespondedToQuit = true
+		model.stop()
+	}
 
-    static var previews: some View {
-		ListenView(mode: mode, 
-				   restart: restart,
-				   conversation: UserProfile.shared.listenProfile.fromMyWhisperConversation(UserProfile.shared.whisperProfile.fallback)
-				   )
-    }
+	@ViewBuilder private func sessionEndMessage() -> some View {
+		VStack(spacing: 25) {
+			if (model.conversationEnded) {
+				Text("The Whisperer has ended the conversation.")
+			} else {
+				Text("You have left the conversation.")
+			}
+			if let id = model.transcriptId {
+				Link("Click here for a transcript",
+					 destination: URL(string: "\(PreferenceData.whisperServer)/transcript/\(conversation.id)/\(id)")!)
+			}
+			Spacer().frame(height: 50)
+			Button(action: {
+				self.model.conversationEnded = false
+				self.userStopped = false
+			}) {
+				Text("OK")
+					.foregroundColor(.white)
+					.fontWeight(.bold)
+					.frame(width: 140, height: 45, alignment: .center)
+			}
+			.background(Color.accentColor)
+			.cornerRadius(15)
+		}
+	}
 }

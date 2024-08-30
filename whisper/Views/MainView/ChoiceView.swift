@@ -11,8 +11,10 @@ import SafariServices
 struct ChoiceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@AppStorage("whisper_tap_preference") private var whisperTapAction: String?
 	@AppStorage("listen_tap_preference") private var listenTapAction: String?
+	@AppStorage("main_view_large_sizes_setting") private var useLargeSizes: Bool = false
 
     @Binding var mode: OperatingMode
 	@Binding var conversation: (any Conversation)?
@@ -23,6 +25,7 @@ struct ChoiceView: View {
     @State private var credentialsMissing = false
     @State private var showWhisperConversations = false
     @State private var showListenConversations = false
+	@State private var showFavorites = false
 	@State private var showNoConnection = false
 	@State private var showSharingSheet = false
     @FocusState private var nameEdit: Bool
@@ -123,6 +126,7 @@ struct ChoiceView: View {
 						)
 						.sheet(isPresented: $showWhisperConversations) {
 							WhisperProfileView(maybeWhisper: maybeWhisper)
+								.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
 						}
 						Button(action: {}) {
 							Text("Listen")
@@ -164,21 +168,38 @@ struct ChoiceView: View {
 						)
 						.sheet(isPresented: $showListenConversations) {
 							ListenProfileView(maybeListen: maybeListen)
+								.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
 						}
 					}
 					.transition(.scale)
 				}
-				Button(action: {
-					UIApplication.shared.open(settingsUrl)
-				}) {
-					Text("Settings")
-						.foregroundColor(.white)
-						.fontWeight(.bold)
-						.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+				HStack(spacing: 30) {
+					Button(action: {
+						showFavorites = true
+					}) {
+						Text("Favorites")
+							.foregroundColor(.white)
+							.fontWeight(.bold)
+							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+					}
+					.background(Color.accentColor)
+					.cornerRadius(15)
+					.sheet(isPresented: $showFavorites) {
+						FavoritesProfileView()
+							.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
+					}
+					Button(action: {
+						UIApplication.shared.open(settingsUrl)
+					}) {
+						Text("Settings")
+							.foregroundColor(.white)
+							.fontWeight(.bold)
+							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+					}
+					.background(Color.accentColor)
+					.cornerRadius(15)
 				}
-				.background(Color.accentColor)
-				.cornerRadius(15)
-				VStack (spacing: 40) {
+				VStack (spacing: 25) {
 					Button(action: {
 						let vc = SFSafariViewController(url: instructionSite)
 						UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
@@ -186,24 +207,30 @@ struct ChoiceView: View {
 						Text("How To Use")
 							.foregroundColor(.white)
 							.fontWeight(.bold)
-							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+							.frame(width: choiceButtonWidth + 50, height: choiceButtonHeight, alignment: .center)
 					}
 					.background(Color.accentColor)
 					.cornerRadius(15)
 					HStack {
-						Button("Profile Sharing", action: { showSharingSheet = true })
-							.sheet(isPresented: $showSharingSheet, content: { ShareProfileView() })
-						Spacer()
 						Button("About", action: {
 							let vc = SFSafariViewController(url: aboutSite)
 							UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
 						})
+						.frame(width: choiceButtonWidth, alignment: .center)
 						Spacer()
 						Button("Support", action: {
 							let vc = SFSafariViewController(url: supportSite)
 							UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
 						})
-					}.frame(width: nameWidth)
+						.frame(width: choiceButtonWidth, alignment: .center)
+					}
+					.frame(width: nameWidth)
+					Button("Profile Sharing", action: { showSharingSheet = true })
+						.frame(width: choiceButtonWidth + 50, alignment: .center)
+						.sheet(isPresented: $showSharingSheet, content: {
+							ShareProfileView()
+								.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
+						})
 				}
 			}
 			.alert("First Launch", isPresented: $credentialsMissing) {

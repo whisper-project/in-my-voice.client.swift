@@ -45,8 +45,10 @@ struct ListenersView: View {
 							Image(systemName: candidate.remote.kind == .global ? "network" : "personalhotspot")
 								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 							Spacer(minLength: 40)
+							Button(action: { model.shareTranscript(candidate) }, label: { Image(systemName: "eyeglasses") })
+									.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
 							Button(action: { model.playSound(candidate) }, label: { Image(systemName: "speaker.wave.2") })
-								.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 30))
+								.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
 							Button(action: { dropListener(candidate) }, label: { Image(systemName: "delete.left") })
 						}
 						.buttonStyle(.borderless)

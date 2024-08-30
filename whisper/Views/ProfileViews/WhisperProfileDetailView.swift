@@ -78,13 +78,8 @@ struct WhisperProfileDetailView: View {
 				}
 			}
 		}
-		.navigationTitle("Details of \(conversation.name)")
+		.navigationTitle("Conversation Details")
 		.navigationBarTitleDisplayMode(.inline)
-		#if targetEnvironment(macCatalyst)
-		.toolbar {
-			Button(action: { dismiss() }, label: { Text("Close") } )
-		}
-		#endif
 		.onChange(of: profile.timestamp, initial: true, updateFromProfile)
 	}
 

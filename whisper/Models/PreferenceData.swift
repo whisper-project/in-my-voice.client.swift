@@ -35,7 +35,7 @@ struct PreferenceData {
 		}
         return nil
     }
-    static func publisherUrl(_ conversation: WhisperConversation) -> String {
+    static func publisherUrl(_ conversation: any Conversation) -> String {
 		let urlName = conversation.name.compactMap {char in
 			if char.isLetter || char.isNumber {
 				return String(char)
@@ -224,7 +224,63 @@ struct PreferenceData {
             defaults.setValue(new, forKey: "alert_sound_setting")
         }
     }
-    
+
+	/// whether to show favorites while whispering
+	static var showFavorites: Bool {
+		get {
+			defaults.bool(forKey: "show_favorites_setting")
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "show_favorites_setting")
+		}
+	}
+
+	/// whether to hear typing while listening
+	static var hearTyping: Bool {
+		get {
+			defaults.bool(forKey: "hear_typing_setting")
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "hear_typing_setting")
+		}
+	}
+
+	/// the volume to play typing at
+	static var typingVolume: Double {
+		get {
+			let diff = defaults.float(forKey: "typing_volume_setting")
+			switch diff {
+			case 0.25: return 0.25
+			case 0.5: return 0.5
+			default: return 1.0
+			}
+		}
+		set(val) {
+			var next: Double
+			switch val {
+			case 0.25: next = val
+			case 0.5: next = val
+			default: next = 1.0
+			}
+			defaults.setValue(next, forKey: "typing_volume_setting")
+		}
+	}
+
+	/// the current favorites group
+	static var currentFavoritesGroup: FavoritesGroup {
+		get {
+			if let name = defaults.string(forKey: "current_favorite_tag_setting"),
+			   let group = UserProfile.shared.favoritesProfile.getGroup(name) {
+				group
+			} else {
+				UserProfile.shared.favoritesProfile.allGroup
+			}
+		}
+		set(new) {
+			defaults.set(new.name, forKey: "current_favorite_tag_setting")
+		}
+	}
+
 	/// Preferences
 	static private var whisperTapPreference: String {
 		get {
@@ -325,6 +381,15 @@ struct PreferenceData {
 		}
 	}
 
+	static private var historyButtonsPreference: String {
+		get {
+			defaults.string(forKey: "history_buttons_preference") ?? "r-i-f"
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "history_buttons_preference")
+		}
+	}
+
 	// behavior for Whisper tap
 	static func whisperTapAction() -> String {
 		return whisperTapPreference
@@ -385,7 +450,7 @@ struct PreferenceData {
 		}
 	}
 
-	static let preferenceVersion = 3
+	static let preferenceVersion = 4
 
 	static func preferencesToJson() -> String {
 		let preferences = [
@@ -401,6 +466,7 @@ struct PreferenceData {
 			"elevenlabs_latency_reduction_preference": "\(elevenLabsLatencyReductionPreference)",
 			"interjection_prefix_preference": interjectionPrefixPreference,
 			"interjection_alert_preference": interjectionAlertPreference,
+			"history_buttons_preference": historyButtonsPreference,
 		]
 		guard let json = try? JSONSerialization.data(withJSONObject: preferences, options: .sortedKeys) else {
 			fatalError("Can't encode preferences data: \(preferences)")
@@ -429,5 +495,6 @@ struct PreferenceData {
 		elevenLabsLatencyReductionPreference = Int(preferences["elevenlabs_latency_reduction_preference"] ?? "") ?? 1
 		interjectionPrefixPreference = preferences["interjection_prefix_preference"] ?? ""
 		interjectionAlertPreference = preferences["interjection_alert_preference"] ?? ""
+		historyButtonsPreference = preferences["history_buttons_preference"] ?? "r-i-f"
 	}
 }
