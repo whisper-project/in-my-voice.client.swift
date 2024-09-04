@@ -33,17 +33,20 @@ Apple, AirDrop, App Store, macOS, iPhone, and iPad are trademarks of Apple Inc.,
 
 The Whisper authors gratefully acknowledge the following content creators whose materials are used by permission in the Whisper application:
 
-- [Whisper Speech Bubble Icon](https://thenounproject.com/icon/whisper-speech-bubble-4215124/) by [Lucas Helle](https://thenounproject.com/lucashelle/) via [the Noun Project](https://thenounproject.com).
+- [Air Horn Icon](https://thenounproject.com/icon/air-horn-4437429/) by [SuperNdre](https://thenounproject.com/pccandriaja13/) via [the Noun Project](https://thenounproject.com).
+- [Air Horn Sound](https://pixabay.com/sound-effects/air-horn-close-and-loud-106073/) by goose278 from [Pixabay](https://pixabay.com).
 - [Bicycle Bell Icon](https://thenounproject.com/icon/4355910/) by [DinosoftLab](https://thenounproject.com/dinosoftlab/) via [the Noun Project](https://thenounproject.com).
 - [Bicycle Bell Sound](https://pixabay.com/sound-effects/bike-bell-100665/) by Yin Yang Jake007 from [Pixabay](https://pixabay.com).
 - [Bicycle Horn Icon](https://thenounproject.com/icon/horn-2452403/) by [Berkah Icon](https://thenounproject.com/berkahicon/) via [the Noun Project](https://thenounproject.com).
 - [Bicycle Horn Sound](https://pixabay.com/sound-effects/bicycle-horn-7126/) by AntumDeluge from [Pixabay](https://pixabay.com).
-- [Air Horn Icon](https://thenounproject.com/icon/air-horn-4437429/) by [SuperNdre](https://thenounproject.com/pccandriaja13/) via [the Noun Project](https://thenounproject.com).
-- [Air Horn Sound](https://pixabay.com/sound-effects/air-horn-close-and-loud-106073/) by goose278 from [Pixabay](https://pixabay.com).
-- [Record Voice Over Icon](https://thenounproject.com/icon/record-voice-over-3644000/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
-- [Voice Over Off Icon](https://thenounproject.com/icon/voice-over-off-3644052/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
-- [Decrease Font Size Icon](https://thenounproject.com/icon/4866497/) by [Yeong Rong Kim](https://thenounproject.com/yeongrong.kim.5/) via [the Noun Project](https://thenounproject.com).
-- [Increase Font Size Icon](https://thenounproject.com/icon/4866493/) by [Yeong Rong Kim](https://thenounproject.com/yeongrong.kim.5/) via [the Noun Project](https://thenounproject.com).
+- [Decrease Font Size Icon](https://thenounproject.com/icon/4866497/) and [Increase Font Size Icon](https://thenounproject.com/icon/4866493/) by [Yeong Rong Kim](https://thenounproject.com/yeongrong.kim.5/) via [the Noun Project](https://thenounproject.com).
+- [Old Typewriter](https://pixabay.com/sound-effects/old-typewriter-30090/) by monotraum from [Pixabay](https://pixabay.com).
+- [Record Voice Over Icon](https://thenounproject.com/icon/record-voice-over-3644000/) and [Voice Over Off Icon](https://thenounproject.com/icon/voice-over-off-3644052/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
+- [Type Writing](https://pixabay.com/sound-effects/type-writing-6834/) by mlekoman from [Pixabay](https://pixabay.com).
+- [Typewriter Bell](https://pixabay.com/sound-effects/typewriter-bell-100087/) by MasterNavigator from [Pixabay](https://pixabay.com).
+- [Typewriter Machine](https://pixabay.com/sound-effects/typewriter-machine-64191/) by KVProds from [Pixabay](https://pixabay.com).
+- [Typing Icon](https://thenounproject.com/icon/typing-6321562/) by [suhartono](https://thenounproject.com/creator/suhartonophd/) via [the Noun Project](https://thenounproject.com).
+- [Whisper Speech Bubble Icon](https://thenounproject.com/icon/whisper-speech-bubble-4215124/) by [Lucas Helle](https://thenounproject.com/lucashelle/) via [the Noun Project](https://thenounproject.com).
 
 ## Copyright
 
