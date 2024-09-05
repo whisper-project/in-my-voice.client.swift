@@ -61,9 +61,8 @@ After following the steps in [Quick Start](#quick-start) above, there are three 
 
 1. Whisper is designed for conversations where everyone can hear, so you can speak aloud as normal. 
 2. Be a good listener! Make sure to read everything the Whisperer sends so you're sure of what they're saying.
-3. Don't speak *over* the Whisperer. Even though they're typing and you're using your voice, you're still interrupting if you talk while they're talking. Remember: hearing people are wired to pay attention to spoken words. That means that, even with the best intentions on all sides, you will naturally drown out the Whisperer by interrupting aloud.
+3. Don't speak *over* the Whisperer. Even though they're typing and you're using your voice, you're still interrupting if you talk while they're talking/typing. Remember: hearing people are wired to pay attention to spoken words. That means that, even with the best intentions on all sides, you will naturally drown out the Whisperer by interrupting aloud. When listening, be sure to pay attention to the typing sound that indicates the Whisperer is typing, and don’t talk while you hear it.
 4. The average person can speak aloud a lot faster than they can type (especially if the typist has physical restrictions). Remind yourself that this affects the pace of the conversation. It may feel a little awkward (at least at first), but that's okay—awkwardness happens! And it's a very minor price to pay for being able to have full conversations with the Whisperer(s) in your life.
-5. It might make the most sense in some situations (e.g., if you have to be looking elsewhere) for your device to read what the Whisperer says. You can use your *Read Aloud* [Listener control](#listener-controls) to turn this feature on (or off), and it will be remembered for the next time you listen.
 
 ## User Profiles
 
@@ -71,7 +70,28 @@ The app allows Whisperers to create as many different conversations as they woul
 
 The app keeps track of every conversation a Listener has ever been admitted to. To see this history, long-press the Listen button: this will bring up a screen that lists all of your admitted conversations (with the most recently used on top). From this screen, you can rejoin any of the conversations simply by clicking the ear icon next to the conversation name.
 
-The combination of your name, your list of created conversations for whispering, your list of admitted conversations for listening, and your settings ([see below](#settings)) is called your *user profile*. If you use multiple devices and would like to have the same profile on all of them, just hit the “Profile Sharing” button on the Whisper start screen. This will allow you to share the profile currently on your device with other devices, or to receive an already-shared profile on your current device. Once you have shared a profile among multiple devices, changes you make on any one of the devices will show up on all the others, so that the shared profile stays “in sync” on all of them.
+The combination of your name, your list of created conversations for whispering, your list of admitted conversations for listening,  your favorite phrases ([see below](#favorites)), and your app settings ([see below](#settings)) is called your *user profile*. If you use multiple devices and would like to have the same profile on all of them, just hit the “Profile Sharing” button on the Whisper start screen. This will allow you to share the profile currently on your device with other devices, or to receive an already-shared profile on your current device. Once you have shared a profile among multiple devices, changes you make on any one of the devices will show up on all the others, so that the shared profile stays “in sync” on all of them.
+
+## Favorites
+
+The Whisper app allows you to save “favorite phrases” so that, when Whispering, you can “say” those phrases simply by pressing a button. This is a very handy feature, especially when you are using Whisper in a context where not everyone can see (or wait for) your typing.  The Favorites feature shows up in a number of different places in the application, but all of them are described in this section.
+
+### Edit Favorites Window
+
+There is an Edit Favorites window in which you can create, delete, and edit all your favorites, and collect them into groups.  You can get to the Edit Favorites window from two places:
+
+- In the home screen of the application, there is a “Favorites” button that will bring up the window.
+- In the whisper screen, there is a Favorites (aka “star”) button which, when long-pressed, brings up a menu.  If you choose “Edit Favorites” from this menu, then the Edit Favorites window appears.
+
+When you first bring up the Edit Favorites window, you will see a list of all of your favorites. (When the app starts up, it creates a sample favorite to get you started.) Clicking on one of the favorites in this list will switch you to an editing window where you can change the name and text of the favorite, and where you can put it into one or more of your groups (by checking the box next to the group name).
+
+In the upper right of the Edit Favorites window, you will see button to add a new favorite, edit the existing list of favorites, and to create/edit Groups of favorites.  If you hit the “Groups” button, you will be taken to a window that shows you all your groups of favorites (none to begin with), and in the upper right of that window are buttons to create a new group or edit the list of groups.  Once you create a group, it will appear in that list, and you can click on it to edit the group name and/or to add favorites to the group (by clicking the checkbox next to the favorite). You can place favorites into any number of groups you create.
+
+### Use Favorites Window
+
+When you are whispering, there is a Favorites (aka “star”) button in the [Whisperer controls](#whisperer-controls) at the top of the window. When you tap this button, it makes a “Use Favorites” window appear: on an iPhone, it replaces the past text window; on an iPad or a Mac, it appears to the right of the past text window. The Favorites button shows an empty star when the Use Favorites window is hidden; it shows a filled star when the Use Favorites window is showing.
+
+The Use Favorites window shows the list of favorites in one group.  (To begin with, it shows all your favorites, but if you press and hold on the Favorites button a menu will pop up from which you can pick the group you want shown.) Tapping the name of a favorite will insert that favorite’s text into the past text window (and speak it, if speaking is turned on), exactly as if you had typed that favorite’s text and hit return. You can tap a favorite’s name at any time, even in the middle of typing something else: what you have typed in the live text window will not be disturbed.
 
 ## Settings ##
 
@@ -86,27 +106,38 @@ On iOS, but not MacOS, the first group of settings, "Allow Whisper to Access," i
 * **Notifications** — Whisper uses notifications to alert Listeners when the app is in the background and the Whisperer is trying to get their attention.
 * **Background App Refresh** — Whisper doesn’t do background app refresh, so this setting has no effect.
 * **Cellular Data** — This option, which only appears if your device supports cellular data connections, controls whether Whisper can use the internet when not connected to wifi. Whisper conversations use very little data, so leaving this setting on is very unlikely to affect your cellular cost.
+* **Paste from Other Apps** — Because Whisper allows you to paste text into the whisper window, and also allows you to paste Listen links, this setting controls whether Whisper is allowed to paste text from other apps. It is recommended that you set it to “Allow” rather than “Ask” or “Deny”.
 
 ### iOS and MacOS Settings
 
-On iOS, the next group of settings is called “Whisper Settings.” On MacOS, the window that contains all the settings is called “Whisper Settings.” In both cases, these options are offered:
+On iOS, the rest of the settings have a heading of “Whisper Settings.” On MacOS, the window that contains all the settings is called “Whisper Settings.” In both cases, the following groups of settings are offered:
+
+#### Whisperer Settings
+
+This group offers the following options:
 
 * **Tap on Whisper to** — This controls what a single tap on the Whisper button does if you have created multiple conversations. (If you just have one, a single tap will always start that conversation.) It has three possible settings:
   * **show conversations** — a single tap will bring up the list of all your created conversations so you can choose one to listen to. This is the default setting.
   * **start default conversation** — a single tap will start your default conversation.
   * **start last-used conversation** — a single tap will start the your most recently used Whisper conversation.
 
+* **Auto-transcribe Whisper text?** — this switch controls whether Whisperers can share transcripts of what they said with their Listeners. If you turn this on, all your Whispered conversations are saved on the Whisper server for one month, so you can decide whether you want to share a transcript with someone. (If you share a transcript, the recipient will be able to view it for up to one year.) This feature can be very useful if, for example, you explain an idea to one of your Listeners, and later decide you want to share that description with them or someone else. If you leave transcripts off, then everything you whisper can never be seen again once the conversation ends.
+* **Interjection Prefix** — As described under [Whisperer Controls](#whisperer-controls) below, the interjection button allows you to “interrupt yourself” in the middle of typing something. This setting controls whether such an interjection is prefixed by special text to make clear what’s going on. For example, one user starts their interjections with “Please wait while I type” to stop users who are interrupting them.
+* **Interjection Alert** — This controls whether a sound is played to get the attention of Listeners when you start an interjection.
+* **History Buttons** — In the “past text” window, this setting controls which of the following buttons (described under [Whisperer Controls](#whisperer-controls)) appears on each line:
+  * **Repeat** — retypes the contents of the line as the most recent line of past text.
+  * **Interject** — starts an interjection with the contents of the line.
+  * **Favorite** — Creates a favorite from the content of the line or, if the line already contained a favorite, brings up an edit window on that favorite.
+
+
+#### Listener Settings
+
+This group offers the following options:
+
 * **Tap on Listen to** — This controls what a single tap on the Listen button does if you have previously participated in more than one conversation. (If you have only ever participated in one, a single tap will always rejoin that conversation.) It has three possible settings:
   * **show conversations** — a single tap will bring up the list of all the conversations you have previously joined so you can choose one to listen to. This is the default setting.
   * **listen to last-used conversation** — a single tap will rejoin the conversation you most recently listened to.
 * **Listener sees newest whisper in** — By default, when listening, the Whisperer’s live typing appears in the bottom part of the screen and the Whisperer’s past typing appears in the top part of the screen, with the most recently typed item on the bottom (much like a messaging app). This setting allows you to reverse this layout, so that the live typing is on the top and past typing is on the bottom, with the most recently typed item on the top.
-
-#### Whisperer Interjection Settings
-
-The next section of settings on both iOS and MacOS control what happens when the Whisperer makes an *interjection* (see [here](#whisperer-controls) for details).  The are two options in this section:
-
-* **Prefix** — This specifies live text that is automatically entered when the Whisperer starts to interject.  By default, no text is automatically entered.
-* **Alert** — This specifies the sound played to get the attention of Listeners when the Whisperer interjects. By default, no sound is played.
 
 #### ElevenLabs Speech Generation Settings
 
@@ -139,8 +170,8 @@ From left to right on the screen, the Whisperer controls are:
   * The button changes to look like <img src="img/interjection-on.png" alt="Finish Interjection" style="zoom: 33%;vertical-align:middle;" />.
   * The current live text is cleared (but remembered by the application).
   * The Whisperer’s live text area gets a very thick outline.
-  * The live text is set to the text (if any) of the [“Interjection Prefix” setting](#whisperer-interjection-settings).
-  * Listeners hear the sound (if any) specified in the [“Interjection Alert” setting](#interjection-prefix-settings). 
+  * The live text is set to the text (if any) of the [“Interjection Prefix” setting](#whisperer-settings).
+  * Listeners hear the sound (if any) specified in the [“Interjection Alert” setting](#whisperer-settings).
 
   At this point, the Whisperer types their interjection, which they complete it by clicking the <img src="img/interjection-on.png" alt="Finish Interjection" style="zoom: 33%;vertical-align:middle;" /> button or hitting the return key. When they complete their interjection, the following things happen:
 
@@ -148,7 +179,9 @@ From left to right on the screen, the Whisperer controls are:
   * The app restores the usual thin outline to the Whisperer’s live text area.
   * The app restores the live text that was saved when the Whisperer started the interjection.
 
-* *Font Size*: Whisper offers 10 font sizes for use in the Whisper screen: a group of 5 “small” sizes and a group of 5 “large” sizes. To move down or up in a given range, the Whisperer clicks the <img src="img/font-down.png" alt="font-down" style="zoom:33%;vertical-align:middle;" /> or <img src="img/font-up.png" alt="font-up" style="zoom:33%;vertical-align:middle;" /> button. To shift between ranges, the Whisperer toggles this switch <img src="img/large-sizes.png" alt="large-sizes" style="zoom:33%;vertical-align:middle;" /> on or off.
+* *Favorites*: This button starts off looking like <img src="img/favorite-off.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" />. When tapped, it opens the Use Favorites window ([see above](#favorites)), and changes to look like <img src="img/favorite-on.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" />. Tapping it again closes the Use Favorites window. Long-pressing this button brings up a menu of favorites groups and a button which opens the Edit Favorites widow.  See the section on [Favorites](#favorites) for full details.
+
+* *Font Size*: Whisper offers 8 font sizes for use in the Whisper screen: a group of 4 “small” sizes and a group of 4 “large” sizes. To move down or up in a given range, the Whisperer clicks the <img src="img/font-down.png" alt="font-down" style="zoom:33%;vertical-align:middle;" /> or <img src="img/font-up.png" alt="font-up" style="zoom:33%;vertical-align:middle;" /> button. To shift between ranges, the Whisperer toggles this switch <img src="img/large-sizes.png" alt="large-sizes" style="zoom:33%;vertical-align:middle;" /> on or off.
 
 * *Stop Whispering*: This button is clicked by the Whisperer to end the whisper session. To prevent accidental stops, clicking the button brings up an alert with three choices: *Stop*, *Don’t Stop*, and *Change Device*. Choosing *Stop* will end the Whisper session and tell all the Listeners that the session has ended. Choosing *Don’t Stop* leaves the session in place. Choosing *Change Device* stops the session but allows Whisperers with shared profiles to resume the session on a new device. It tells Listeners that, although the session has stopped, they should start listening again immediately in order to connect to the Whisperer on the next device.
 
@@ -158,8 +191,9 @@ Because iPhones have less available screen space than other devices, there are f
 
 From left to right on the screen, the Listener controls are:
 
+* *Typing Sounds*. This button (shown as <img src="img/typing-on.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" /> when on and <img src="img/typing-off.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" /> when off) controls whether an old-fashioned typewriter sound is played while the Whisperer is typing. (This sound makes it much easier for Listeners to know when they should look at the screen, and when they should avoid interrupting the Whisperer by talking.) Long-pressing this button brings up a volume control for the typing sound, this volume control is relative to the overall volume set on your device.
 * *Read Aloud*: This button (shown as <img src="img/read-aloud-on.png" alt="read-aloud-on" style="zoom: 33%;vertical-align:middle;" /> when on and <img src="img/read-aloud-off.png" alt="read-aloud-off" style="zoom:33%;vertical-align:middle;" /> when off) controls an on/off option. When on, each line of whispered text will be read out loud when the Whisperer hits the return key.
-* *Font Size*: Whisper offers 10 font sizes for use in the Listen screen: a group of 5 “small” sizes and a group of 5 “large” sizes. To move down or up in a given range, the Whisperer clicks the <img src="img/font-down.png" alt="font-down" style="zoom:33%;vertical-align:middle;" /> or <img src="img/font-up.png" alt="font-up" style="zoom:33%;vertical-align:middle;" /> button. To shift between ranges, the Listener toggles this switch <img src="img/large-sizes.png" alt="large-sizes" style="zoom:33%;vertical-align:middle;" /> on or off.
+* *Font Size*: Whisper offers 8 font sizes for use in the Listen screen: a group of 4 “small” sizes and a group of 4 “large” sizes. To move down or up in a given range, the Whisperer clicks the <img src="img/font-down.png" alt="font-down" style="zoom:33%;vertical-align:middle;" /> or <img src="img/font-up.png" alt="font-up" style="zoom:33%;vertical-align:middle;" /> button. To shift between ranges, the Listener toggles this switch <img src="img/large-sizes.png" alt="large-sizes" style="zoom:33%;vertical-align:middle;" /> on or off.
 * *Stop Listening*: This button is clicked by the Listener to stop listening to the conversation. (It does not end the conversation for the Whisperer or other Listeners.) To prevent accidental stops, clicking the button brings up an alert with two choices: *Stop* or *Don’t Stop*.
 
 Because iPhones have less available screen space than other devices, there are fewer Listener settings available (the Large Sizes toggle switch is removed) and the Stop Listening button has its name shortened to Stop.
@@ -170,6 +204,6 @@ Because iPhones have less available screen space than other devices, there are f
 
 From the home screen or your App Library, press and hold the Whisper app icon. A pop up reading *Remove "Whisper"*? will appear with three options. Choose the first option, "Delete App." At that point, an alert will appear warning you that deleting the app will also delete its data. Choose "Delete" to fully uninstall the app and remove your preferences, including your name.
 
-### Uninstall the app from an Apple computer
+### Uninstall the app from a Mac
 
 Open Finder and go to your Applications folder. Find Whisper in your list of Applications and drag it to the Trash. This will uninstall the app but not remove your preferences. To delete your preferences, you will need to go into the (hidden) `Library` folder in your home folder, look for a folder named `Containers`, go into that folder, and delete the sub-folder named `Whisper`.
