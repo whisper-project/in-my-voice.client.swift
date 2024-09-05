@@ -39,7 +39,7 @@ Each conversation keeps track of which Listeners you have previously approved to
 
 ## How to Listen ##
 
-After following the steps in [Quick Start](#quick-start) above, there are three ways to join a conversation:
+After following the steps in [Quick Start](#quick-start) above, there are two ways to join a conversation:
 
 ### via Received Link
 
@@ -64,13 +64,39 @@ After following the steps in [Quick Start](#quick-start) above, there are three 
 3. Don't speak *over* the Whisperer. Even though they're typing and you're using your voice, you're still interrupting if you talk while they're talking/typing. Remember: hearing people are wired to pay attention to spoken words. That means that, even with the best intentions on all sides, you will naturally drown out the Whisperer by interrupting aloud. When listening, be sure to pay attention to the typing sound that indicates the Whisperer is typing, and don’t talk while you hear it.
 4. The average person can speak aloud a lot faster than they can type (especially if the typist has physical restrictions). Remind yourself that this affects the pace of the conversation. It may feel a little awkward (at least at first), but that's okay—awkwardness happens! And it's a very minor price to pay for being able to have full conversations with the Whisperer(s) in your life.
 
+## Home Screen
+
+The home screen of the Whisper app, shown whenever you launch, is what gives you access to all of the app’s functionality.  On the Home Screen, you will find the following controls:
+
+- **Your Name** — This must be filled in in order to participate in conversations. The name you enter here will be shown to the other participants.
+- **Whisper** — Tap this button to start whispering, as explained above in [How to Whisper](#how-to-whisper). If you long press on this button, a “Whisper Conversations” window will open that allows you to create, edit, and delete conversations.
+- **Listen** — Tap this button to rejoin the last conversation you were listening to. If you have never listened before, or if you long press this button, a “Listen Conversations” window will open that allows you to see and edit your past conversations, and also (via the ‘+’ button) to join a conversation for which you have received a link.
+- **Favorites** — This opens a “Favorites” window that allows you to create and edit favorite snippets of text. Full instructions for using favorites can be [found below](#favorites).
+- **Settings** — On an iPhone or iPad, this takes you the Whisper settings in your Settings app.  On a Mac, this opens a Whisper Settings window.  All the possible settings are [described below](#settings).
+- **How To Use** — Tap this button to open a web browser on the [instructions page](./instructions.html) you are reading right now.
+- **About** — Tap this button to open a web browser on an information page about the Whisper app.
+- **Support** — Tap this button to open a web browser on a support page for the Whisper app. In addition to a FAQ, this page provides a way to contact the Whisper development team.
+- **Profile Sharing** — This button allows you to synchronize your Whisper app behavior on multiple devices, as described in the [next section](#user-profiles).
+- **Larger Type** — This switch allows you to switch the home screen to using a larger type size. Turning it on will also make the [Whisper Conversations window](#whisper-conversations), the [Listen Conversations window](#listen-conversations), and the [Edit Favorites window](#edit-favorites-window) use larger type size.  This switch does *not* affect the type sizes used in the whisper or listen windows, because those windows have their own font size controls.
+- **Version Number** — At the very bottom of the home screen there is a small “version number,” such as *v2.4.5*.  This is not a control, it’s information that you should include if you ever have occasion to fill out a [support request form](https://forms.gle/GE9BjX6MPMi8kTkFA).
+
 ## User Profiles
 
-The app allows Whisperers to create as many different conversations as they would like, and to pick any of them as the default conversation. To manage your conversations, long-press the Whisper button: this will bring up a screen that lists all of your created conversations, and provides controls for creating, deleting, renaming, and choosing one as the default. (It also allows removing previously admitted listeners from a conversation.) Once you are in this screen, you can easily start a Whisper session for any conversation: click the mouth icon next to it.
+The combination of your name, your list of created conversations for whispering ([see below](#whisper-conversations)), your list of conversations you have listened to previously ([see below](#listen-conversations)),  your favorite phrases ([see below](#favorites)), and your app settings ([see below](#settings)) is called your *user profile*. If you use multiple devices and would like to have the same profile on all of them, just hit the “Profile Sharing” button on the Whisper start screen. This will allow you to share the profile currently on your device with other devices, or to receive an already-shared profile on your current device. Once you have shared a profile among multiple devices, changes you make on any one of the devices will show up on all the others, so that the shared profile stays “in sync” on all of them.
 
-The app keeps track of every conversation a Listener has ever been admitted to. To see this history, long-press the Listen button: this will bring up a screen that lists all of your admitted conversations (with the most recently used on top). From this screen, you can rejoin any of the conversations simply by clicking the ear icon next to the conversation name.
+### Whisper Conversations
 
-The combination of your name, your list of created conversations for whispering, your list of admitted conversations for listening,  your favorite phrases ([see below](#favorites)), and your app settings ([see below](#settings)) is called your *user profile*. If you use multiple devices and would like to have the same profile on all of them, just hit the “Profile Sharing” button on the Whisper start screen. This will allow you to share the profile currently on your device with other devices, or to receive an already-shared profile on your current device. Once you have shared a profile among multiple devices, changes you make on any one of the devices will show up on all the others, so that the shared profile stays “in sync” on all of them.
+The Whisper app allows Whisperers to create as many different conversations as they would like, and to pick any of them as the default conversation. To manage your conversations, long-press the Whisper button on the Home Screen: this will bring up the Whisper Conversations window that lists all of your created conversations (in alphabetical order).  In the upper right of this window, there is a + button for creating a new conversation, and an edit button for deleting conversations. Next to each conversation is a “mouth” icon: clicking that icon will start a whisper session for that conversation.
+
+Clicking on a conversation in the Whisper Conversations window brings up a Conversation Details view. In this view, you can edit the name of the conversation, choose it as your *default* conversation (which will start if you tap on the Whisper button in the Home Screen), and get a “Listen link” for the converesation which you can send to your listeners (e.g., in a calendar invite).
+
+Next, if you have turned on automatic transcription of your conversations (see [Whisperer Settings](#whisperer-settings)), this view offers you a list of your conversation’s transcripts from the last month. If you have not turned on automatic transcription, this view offers a button to turn it on.
+
+Finally, at the bottom of the Conversation Details view there is a list of all the listeners that you have already admitted into this conversation. Next to each of them there is a “Delete” button that allows you to remove them from the list.  If you do so, and they try to join the conversation in future, you will be asked if you want to accept them.
+
+### Listen Conversations
+
+The Whisper app keeps track of every conversation a Listener has ever been admitted to. To see this history, long-press the Listen button: this will bring up a screen that lists all of your admitted conversations (with the most recently used on top). From this screen, you can rejoin any of the conversations simply by clicking the ear icon next to the conversation name. You can also share the link to this conversation with other potential listeners (by clicking the share icon next to the name). Finally, you can tell the app to forget about this conversation by clicking the delete icon next to the name. Once you have deleted a conversation, if you ever want to rejoin it, you will need someone to send you a listen link for it, and you will be asked if you want to accept entry into the conversation.
 
 ## Favorites
 
@@ -191,9 +217,9 @@ Because iPhones have less available screen space than other devices, there are f
 
 From left to right on the screen, the Listener controls are:
 
-* *Typing Sounds*. This button (shown as <img src="img/typing-on.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" /> when on and <img src="img/typing-off.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" /> when off) controls whether an old-fashioned typewriter sound is played while the Whisperer is typing. (This sound makes it much easier for Listeners to know when they should look at the screen, and when they should avoid interrupting the Whisperer by talking.) Long-pressing this button brings up a volume control for the typing sound, this volume control is relative to the overall volume set on your device.
+* *Typing Sounds*. This button (shown as <img src="img/typing-on.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" /> when on and <img src="img/typing-off.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" /> when off) controls whether an old-fashioned typewriter sound is played while the Whisperer is typing. (This sound makes it much easier for Listeners to know when they should look at the screen, and when they should avoid interrupting the Whisperer by talking.) Long-pressing this button brings up a menu that allows you to choose one of three volume levels for the typing sound. These levels are relative to the overall volume of your device.
 * *Read Aloud*: This button (shown as <img src="img/read-aloud-on.png" alt="read-aloud-on" style="zoom: 33%;vertical-align:middle;" /> when on and <img src="img/read-aloud-off.png" alt="read-aloud-off" style="zoom:33%;vertical-align:middle;" /> when off) controls an on/off option. When on, each line of whispered text will be read out loud when the Whisperer hits the return key.
-* *Font Size*: Whisper offers 8 font sizes for use in the Listen screen: a group of 4 “small” sizes and a group of 4 “large” sizes. To move down or up in a given range, the Whisperer clicks the <img src="img/font-down.png" alt="font-down" style="zoom:33%;vertical-align:middle;" /> or <img src="img/font-up.png" alt="font-up" style="zoom:33%;vertical-align:middle;" /> button. To shift between ranges, the Listener toggles this switch <img src="img/large-sizes.png" alt="large-sizes" style="zoom:33%;vertical-align:middle;" /> on or off.
+* *Font Size*: Whisper offers 8 font sizes for use in the Listen screen: a group of 4 “small” sizes and a group of 4 “large” sizes. To move down or up in a given range, click the <img src="img/font-down.png" alt="font-down" style="zoom:33%;vertical-align:middle;" /> or <img src="img/font-up.png" alt="font-up" style="zoom:33%;vertical-align:middle;" /> button. To shift between ranges, toggle this switch <img src="img/large-sizes.png" alt="large-sizes" style="zoom:33%;vertical-align:middle;" /> on or off.
 * *Stop Listening*: This button is clicked by the Listener to stop listening to the conversation. (It does not end the conversation for the Whisperer or other Listeners.) To prevent accidental stops, clicking the button brings up an alert with two choices: *Stop* or *Don’t Stop*.
 
 Because iPhones have less available screen space than other devices, there are fewer Listener settings available (the Large Sizes toggle switch is removed) and the Stop Listening button has its name shortened to Stop.
