@@ -10,7 +10,7 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
-			<string>Whisperer Controls</string>
+			<string>Whisperer Settings</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -110,7 +110,7 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
-			<string>Listener Controls</string>
+			<string>Listener Settings</string>
 		</dict>
 		<dict>
 			<key>Type</key>
