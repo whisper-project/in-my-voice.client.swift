@@ -49,7 +49,7 @@ struct WhisperTranscriptView: View {
 						}
 					}
 				} else {
-					Section("No transcripts from the past week") {
+					Section("No transcripts from the past month") {
 						EmptyView()
 					}
 				}
