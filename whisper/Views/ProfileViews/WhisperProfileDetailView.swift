@@ -68,11 +68,13 @@ struct WhisperProfileDetailView: View {
 						HStack {
 							Text(info.username)
 							Spacer(minLength: 25)
-							Button("Delete") {
+							Button("Delete", systemImage: "delete.left") {
 								profile.whisperProfile.removeListener(conversation, profileId: info.id)
 								updateFromProfile()
 							}
+							.font(.title)
 						}
+						.labelStyle(.iconOnly)
 						.buttonStyle(.borderless)
 					}
 				}
