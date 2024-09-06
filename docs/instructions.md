@@ -69,16 +69,16 @@ After following the steps in [Quick Start](#quick-start) above, there are two wa
 The home screen of the Whisper app, shown whenever you launch, is what gives you access to all of the app’s functionality.  On the Home Screen, you will find the following controls:
 
 - **Your Name** — This must be filled in in order to participate in conversations. The name you enter here will be shown to the other participants.
-- **Whisper** — Tap this button to start whispering, as explained above in [How to Whisper](#how-to-whisper). If you long press on this button, a “Whisper Conversations” window will open that allows you to create, edit, and delete conversations.
-- **Listen** — Tap this button to rejoin the last conversation you were listening to. If you have never listened before, or if you long press this button, a “Listen Conversations” window will open that allows you to see and edit your past conversations, and also (via the ‘+’ button) to join a conversation for which you have received a link.
-- **Favorites** — This opens a “Favorites” window that allows you to create and edit favorite snippets of text. Full instructions for using favorites can be [found below](#favorites).
+- **Whisper** — Tap this button to start whispering, as explained above in [How to Whisper](#how-to-whisper). If you long press on this button, a [Whisper Conversations](#whisper-conversations) window will open that allows you to create, edit, and delete conversations.
+- **Listen** — Tap this button to rejoin the last conversation you were listening to. If you have never listened before, or if you long press this button, a [Listen Conversations](#listen-conversations) window will open that allows you to see and edit your past conversations, and to join a conversation for which you have received a link.
+- **Favorites** — This opens an [Edit Favorites window](#edit-favorites-window) that allows you to create and edit favorite snippets of text. Full instructions for using favorites can be [found below](#favorites).
 - **Settings** — On an iPhone or iPad, this takes you the Whisper settings in your Settings app.  On a Mac, this opens a Whisper Settings window.  All the possible settings are [described below](#settings).
 - **How To Use** — Tap this button to open a web browser on the [instructions page](./instructions.html) you are reading right now.
-- **About** — Tap this button to open a web browser on an information page about the Whisper app.
-- **Support** — Tap this button to open a web browser on a support page for the Whisper app. In addition to a FAQ, this page provides a way to contact the Whisper development team.
+- **About** — Tap this button to open a web browser on an [information page](./index.html) about the Whisper app.
+- **Support** — Tap this button to open a web browser on a [support page](./support.html) for the Whisper app. In addition to a FAQ, this page provides a way to contact the Whisper development team.
 - **Profile Sharing** — This button allows you to synchronize your Whisper app behavior on multiple devices, as described in the [next section](#user-profiles).
 - **Larger Type** — This switch allows you to switch the home screen to using a larger type size. Turning it on will also make the [Whisper Conversations window](#whisper-conversations), the [Listen Conversations window](#listen-conversations), and the [Edit Favorites window](#edit-favorites-window) use larger type size.  This switch does *not* affect the type sizes used in the whisper or listen windows, because those windows have their own font size controls.
-- **Version Number** — At the very bottom of the home screen there is a small “version number,” such as *v2.4.5*.  This is not a control, it’s information that you should include if you ever have occasion to fill out a [support request form](https://forms.gle/GE9BjX6MPMi8kTkFA).
+- **Version Number** — At the very bottom of the home screen there is a small version number, such as “v2.4.5”.  This is not a control, it’s information that you should include if you ever have occasion to fill out a [support request form](https://forms.gle/GE9BjX6MPMi8kTkFA).
 
 ## User Profiles
 
@@ -88,7 +88,7 @@ The combination of your name, your list of created conversations for whispering 
 
 The Whisper app allows Whisperers to create as many different conversations as they would like, and to pick any of them as the default conversation. To manage your conversations, long-press the Whisper button on the Home Screen: this will bring up the Whisper Conversations window that lists all of your created conversations (in alphabetical order).  In the upper right of this window, there is a + button for creating a new conversation, and an edit button for deleting conversations. Next to each conversation is a “mouth” icon: clicking that icon will start a whisper session for that conversation.
 
-Clicking on a conversation in the Whisper Conversations window brings up a Conversation Details view. In this view, you can edit the name of the conversation, choose it as your *default* conversation (which will start if you tap on the Whisper button in the Home Screen), and get a “Listen link” for the converesation which you can send to your listeners (e.g., in a calendar invite).
+Clicking on a conversation in the Whisper Conversations window brings up a Conversation Details view. In this view, you can edit the name of the conversation, choose it as your *default* conversation (which will start if you tap on the Whisper button in the Home Screen), and get a “Listen link” for the conversation which you can send to your listeners (e.g., in a calendar invite).
 
 Next, if you have turned on automatic transcription of your conversations (see [Whisperer Settings](#whisperer-settings)), this view offers you a list of your conversation’s transcripts from the last month. If you have not turned on automatic transcription, this view offers a button to turn it on.
 
@@ -96,7 +96,9 @@ Finally, at the bottom of the Conversation Details view there is a list of all t
 
 ### Listen Conversations
 
-The Whisper app keeps track of every conversation a Listener has ever been admitted to. To see this history, long-press the Listen button: this will bring up a screen that lists all of your admitted conversations (with the most recently used on top). From this screen, you can rejoin any of the conversations simply by clicking the ear icon next to the conversation name. You can also share the link to this conversation with other potential listeners (by clicking the share icon next to the name). Finally, you can tell the app to forget about this conversation by clicking the delete icon next to the name. Once you have deleted a conversation, if you ever want to rejoin it, you will need someone to send you a listen link for it, and you will be asked if you want to accept entry into the conversation.
+The Whisper app keeps track of every conversation a Listener has ever been admitted to. To see this history, long-press the Listen button: this will bring up a screen that lists all of your admitted conversations (with the most recently used on top). From this screen, you can rejoin any of the conversations simply by clicking the ear icon next to the conversation name. You can also share the link to this conversation with other potential listeners by clicking the share icon next to the name. Finally, you can tell the app to forget about this conversation by clicking the delete icon next to the name. Once you have deleted a conversation, if you ever want to rejoin it, you will need someone to send you a listen link for it, and you will be asked if you want to accept entry into the conversation.
+
+If you receive a listen link from someone but clicking on that link doesn’t automatically open the conversation in the Whisper app (e.g., nothing might happen, or the conversation might open in your browser), you can use the ‘+’ button in the upper right of the Listen Conversations window to open that link.  First copy the link, and then hit the ‘+’ button: that should start listening.  If it doesn’t, try pasting the link into the text area that appears and hit the “Join” button at the bottom. It will either join the conversation or tell you that something is wrong with the link.
 
 ## Favorites
 
