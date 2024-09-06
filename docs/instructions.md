@@ -92,7 +92,7 @@ Clicking on a conversation in the Whisper Conversations window brings up a Conve
 
 Next, if you have turned on automatic transcription of your conversations (see [Whisperer Settings](#whisperer-settings)), this view offers you a list of your conversation’s transcripts from the last month. If you have not turned on automatic transcription, this view offers a button to turn it on.
 
-Finally, at the bottom of the Conversation Details view there is a list of all the listeners that you have already admitted into this conversation. Next to each of them there is a “Delete” button that allows you to remove them from the list.  If you do so, and they try to join the conversation in future, you will be asked if you want to accept them.
+Finally, at the bottom of the Conversation Details view there is a list of all the listeners that you have already admitted into this conversation. Clicking the delete icon next to a listener will delete that listener from the list.  If you delete a listener, and they later try to rejoin the conversation, you will be asked if you want to accept them.
 
 ### Listen Conversations
 
