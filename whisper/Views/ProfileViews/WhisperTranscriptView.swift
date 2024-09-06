@@ -21,8 +21,6 @@ struct WhisperTranscriptView: View {
 	@Binding var transcripts: [TranscriptData]?
 	@Binding var fetchStatus: Int
 
-	let supportSite = URL(string: "https://clickonetwo.github.io/whisper/support.html")!
-
     var body: some View {
 		Form {
 			switch fetchStatus {
@@ -51,7 +49,7 @@ struct WhisperTranscriptView: View {
 						}
 					}
 				} else {
-					Section("No transcripts from the past week") {
+					Section("No transcripts from the past month") {
 						EmptyView()
 					}
 				}

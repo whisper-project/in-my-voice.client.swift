@@ -32,7 +32,7 @@ let connectingPastText = """
 let website = "https://clickonetwo.github.io/whisper"
 let aboutSite = URL(string: website)!
 let supportSite = URL(string: "\(website)/support.html")!
-let instructionSite = URL(string: "\(website)instructions.html")!
+let instructionSite = URL(string: "\(website)/instructions.html")!
 let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
 /// global constants for light/dark mode
