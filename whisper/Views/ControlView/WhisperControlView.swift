@@ -7,6 +7,7 @@ import SwiftUI
 
 struct WhisperControlView: View {
     @Environment(\.colorScheme) private var colorScheme
+	@AppStorage("typing_volume_setting") private var typingVolume: Double = PreferenceData.typingVolume
 
     @Binding var size: FontSizes.FontSize
     @Binding var magnify: Bool
@@ -19,6 +20,7 @@ struct WhisperControlView: View {
 	var editFavorites: () -> Void
 
     @State private var alertSound = PreferenceData.alertSound
+	@State private var typing = PreferenceData.hearTyping
     @State private var speaking: Bool = false
 	@State private var allGroups: [FavoritesGroup] = []
 	@StateObject private var fp = UserProfile.shared.favoritesProfile
@@ -26,7 +28,8 @@ struct WhisperControlView: View {
     var body: some View {
 		HStack(alignment: .center) {
             alarmButton()
-            speechButton()
+			typingButton()
+			speechButton()
 			repeatButton()
 			interjectingButton()
 			favoritesButton()
@@ -72,6 +75,47 @@ struct WhisperControlView: View {
 			PreferenceData.speakWhenWhispering = speaking
 		} label: {
 			buttonImage(name: speaking ? "voice-over-on" : "voice-over-off", pad: 5)
+		}
+		Spacer()
+	}
+
+	@ViewBuilder private func typingButton() -> some View {
+		Menu {
+			Button {
+				typingVolume = 1
+				PreferenceData.typingVolume = 1
+			} label: {
+				if typingVolume == 1 {
+					Label("Loud Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Loud Typing", systemImage: "speaker.wave.3")
+				}
+			}
+			Button {
+				typingVolume = 0.5
+				PreferenceData.typingVolume = 0.5
+			} label: {
+				if typingVolume == 0.5 {
+					Label("Medium Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Medium Typing", systemImage: "speaker.wave.2")
+				}
+			}
+			Button {
+				typingVolume = 0.25
+				PreferenceData.typingVolume = 0.25
+			} label: {
+				if typingVolume == 0.25 {
+					Label("Quiet Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Quiet Typing", systemImage: "speaker.wave.1")
+				}
+			}
+		} label: {
+			buttonImage(name: typing ? "typing-bubble" : "typing-no-bubble", pad: 5)
+		} primaryAction: {
+			typing.toggle()
+			PreferenceData.hearTyping = typing
 		}
 		Spacer()
 	}
@@ -161,7 +205,7 @@ struct WhisperControlView: View {
 	}
 
     private func stopButtonLabel() -> some View {
-        Text(isOnPhone() ? "Stop" : "Stop Whispering")
+        Text("Stop")
             .foregroundColor(.white)
             .font(.body)
             .fontWeight(.bold)
