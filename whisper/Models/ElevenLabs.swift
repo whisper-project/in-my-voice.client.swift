@@ -219,7 +219,7 @@ final class SpeechItem {
 	}
 }
 
-final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
+final class ElevenLabs: NSObject, @preconcurrency AVAudioPlayerDelegate {
 	static let shared = ElevenLabs()
 
 	private typealias GeneratedItem = (item: SpeechItem, audio: Data)
