@@ -495,3 +495,6 @@ This release introduces quite a few long-requested features for both Whisperers 
 
 BUILD 2.5.1 (2050001):
 This is purely a bug fix release: the "How To Use" button led to a broken link. In addition, inconsistencies in the Whisper Conversations screen have been fixed, and the online instructions have been overhauled to document the app's behavior more completely.
+
+BUILD 2.6.1 (2060001):
+This build makes the "typing sound" button (and typing sounds) available when whispering.
