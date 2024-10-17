@@ -24,11 +24,7 @@ struct ListenControlView: View {
             speechButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
-			Button(action: { maybeStop() }) {
-                stopButtonLabel()
-            }
-            .background(Color.accentColor)
-            .cornerRadius(15)
+			stopButton()
         }
         .dynamicTypeSize(.large)
         .font(FontSizes.fontFor(FontSizes.minTextSize))
@@ -122,24 +118,42 @@ struct ListenControlView: View {
         }
     }
 
+	@ViewBuilder private func stopButton() -> some View {
+		Spacer()
+		Button {
+			maybeStop()
+		} label: {
+			buttonImage(systemName: "exclamationmark.octagon.fill", pad: 5)
+		}
+	}
+
 	private func buttonImage(name: String, pad: CGFloat) -> some View {
 		Image(name)
 			.renderingMode(.template)
 			.resizable()
 			.padding(pad)
-			.frame(width: 50, height: 50)
+			.frame(width: buttonSize(), height: buttonSize())
 			.border(colorScheme == .light ? .black : .white, width: 1)
 	}
 
-    private func stopButtonLabel() -> some View {
-        Text(isOnPhone() ? "Stop" : "Stop Listening")
-            .foregroundColor(.white)
-            .font(.body)
-            .fontWeight(.bold)
-            .padding(10)
-    }
+	private func buttonImage(systemName: String, pad: CGFloat) -> some View {
+		Image(systemName: systemName)
+			.renderingMode(.template)
+			.resizable()
+			.padding(pad)
+			.frame(width: buttonSize(), height: buttonSize())
+			.border(colorScheme == .light ? .black : .white, width: 1)
+	}
 
     private func isOnPhone() -> Bool {
         return UIDevice.current.userInterfaceIdiom == .phone
     }
+
+	private func buttonSize() -> CGFloat {
+		if isOnPhone() {
+			40
+		} else {
+			50
+		}
+	}
 }
