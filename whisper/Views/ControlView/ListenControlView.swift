@@ -151,7 +151,11 @@ struct ListenControlView: View {
 
 	private func buttonSize() -> CGFloat {
 		if isOnPhone() {
-			40
+			if UIScreen.main.bounds.width < 390 {
+				35
+			} else {
+				40
+			}
 		} else {
 			50
 		}

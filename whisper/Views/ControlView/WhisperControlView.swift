@@ -243,8 +243,12 @@ struct WhisperControlView: View {
 	}
 
 	private func buttonSize() -> CGFloat {
-		if isOnPhone() && UIDevice.current.orientation != .landscapeLeft && UIDevice.current.orientation != .landscapeRight {
-			40
+		if isOnPhone() {
+			if UIScreen.main.bounds.width < 390 {
+				35
+			} else {
+				40
+			}
 		} else {
 			50
 		}
