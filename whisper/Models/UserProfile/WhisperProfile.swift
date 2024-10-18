@@ -44,6 +44,8 @@ struct ListenerInfo: Identifiable {
 }
 
 final class WhisperProfile: Codable {
+	static private let saveName = PreferenceData.profileRoot + "WhisperProfile"
+
 	private var id: String
 	private var table: [String: WhisperConversation]
 	private var defaultId: String
@@ -208,7 +210,7 @@ final class WhisperProfile: Codable {
 		guard let data = try? JSONEncoder().encode(self) else {
 			fatalError("Cannot encode whisper profile: \(self)")
 		}
-		guard data.saveJsonToDocumentsDirectory("WhisperProfile") else {
+		guard data.saveJsonToDocumentsDirectory(WhisperProfile.saveName) else {
 			fatalError("Cannot save whisper profile to Documents directory")
 		}
 		if !localOnly && !serverPassword.isEmpty {
@@ -217,7 +219,7 @@ final class WhisperProfile: Codable {
 	}
 
 	static func load(_ profileId: String, serverPassword: String) -> WhisperProfile? {
-		if let data = Data.loadJsonFromDocumentsDirectory("WhisperProfile"),
+		if let data = Data.loadJsonFromDocumentsDirectory(WhisperProfile.saveName),
 		   let profile = try? JSONDecoder().decode(WhisperProfile.self, from: data)
 		{
 			if profileId == profile.id {
@@ -225,7 +227,7 @@ final class WhisperProfile: Codable {
 				return profile
 			}
 			logger.warning("Asked to load profile with id \(profileId), deleting saved profile with id \(profile.id)")
-			Data.removeJsonFromDocumentsDirectory("WhisperProfile")
+			Data.removeJsonFromDocumentsDirectory(WhisperProfile.saveName)
 		}
 		return nil
 	}

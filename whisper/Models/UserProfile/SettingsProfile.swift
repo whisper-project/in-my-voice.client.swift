@@ -7,6 +7,8 @@ import Foundation
 import CryptoKit
 
 final class SettingsProfile: Codable {
+	static private let saveName = PreferenceData.profileRoot + "SettingsProfile"
+	
 	var id: String
 	private var settings: String
 	private var eTag: String
@@ -29,7 +31,7 @@ final class SettingsProfile: Codable {
 		guard let data = try? JSONSerialization.data(withJSONObject: ["version": "\(version)", "eTag": eTag]) else {
 			fatalError("Cannot serialize version and eTag of settings profile")
 		}
-		guard data.saveJsonToDocumentsDirectory("SettingsProfile") else {
+		guard data.saveJsonToDocumentsDirectory(SettingsProfile.saveName) else {
 			fatalError("Cannot save settings profile to Documents directory")
 		}
 		if !localOnly && !serverPassword.isEmpty {
@@ -38,7 +40,7 @@ final class SettingsProfile: Codable {
 	}
 
 	static func load(_ profileId: String, serverPassword: String) -> SettingsProfile {
-		if let data = Data.loadJsonFromDocumentsDirectory("SettingsProfile"),
+		if let data = Data.loadJsonFromDocumentsDirectory(SettingsProfile.saveName),
 		   let value = try? JSONSerialization.jsonObject(with: data) as? [String: String],
 		   let name = value["eTag"]
 		{

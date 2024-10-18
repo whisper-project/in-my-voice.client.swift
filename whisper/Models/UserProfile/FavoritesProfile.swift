@@ -153,6 +153,8 @@ final class FavoritesGroup: Identifiable, Hashable {
 }
 
 final class FavoritesProfile: Codable, ObservableObject {
+	static private let saveName = PreferenceData.profileRoot + "FavoritesProfile"
+	
 	var id: String
 	@Published var timestamp: Int
 	private var favoritesTable: [String: Favorite]
@@ -387,7 +389,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 		guard let data = try? JSONEncoder().encode(self) else {
 			fatalError("Cannot encode favorites profile: \(self)")
 		}
-		guard data.saveJsonToDocumentsDirectory("FavoritesProfile") else {
+		guard data.saveJsonToDocumentsDirectory(FavoritesProfile.saveName) else {
 			fatalError("Cannot save favorites profile to Documents directory")
 		}
 		if !localOnly && !serverPassword.isEmpty {
@@ -396,7 +398,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 	}
 
 	static func load(_ profileId: String, serverPassword: String) -> FavoritesProfile? {
-		if let data = Data.loadJsonFromDocumentsDirectory("FavoritesProfile"),
+		if let data = Data.loadJsonFromDocumentsDirectory(FavoritesProfile.saveName),
 		   let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data)
 		{
 			if profileId == profile.id {
@@ -404,7 +406,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 				return profile
 			}
 			logger.warning("Asked to load profile with id \(profileId), deleting saved profile with id \(profile.id)")
-			Data.removeJsonFromDocumentsDirectory("FavoritesProfile")
+			Data.removeJsonFromDocumentsDirectory(FavoritesProfile.saveName)
 		}
 		return nil
 	}
