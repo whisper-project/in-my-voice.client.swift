@@ -17,6 +17,7 @@ struct ListenControlView: View {
     @State var alertSound = PreferenceData.alertSound
 	@State var speaking: Bool = PreferenceData.speakWhenListening
 	@State var typing: Bool = PreferenceData.hearTyping
+	@State var typingSound = PreferenceData.typingSound
 
     var body: some View {
 		HStack(alignment: .center) {
@@ -65,8 +66,13 @@ struct ListenControlView: View {
 			ForEach(PreferenceData.typingSoundChoices, id: \.0) { tuple in
 				Button {
 					PreferenceData.typingSound = tuple.2
+					typingSound = tuple.2
 				} label: {
-					Label(tuple.1, systemImage: "\(tuple.0).square")
+					if typingSound == tuple.2 {
+						Label(tuple.1, systemImage: "checkmark.square")
+					} else {
+						Label(tuple.1, systemImage: "square")
+					}
 				}
 			}
 		} label: {

@@ -22,6 +22,7 @@ struct WhisperControlView: View {
 
 	@State private var alertSound = PreferenceData.alertSound
 	@State private var typing = PreferenceData.hearTyping
+	@State private var typingSound = PreferenceData.typingSound
 	@State private var speaking: Bool = false
 	@State private var allGroups: [FavoritesGroup] = []
 	@StateObject private var fp = UserProfile.shared.favoritesProfile
@@ -121,8 +122,13 @@ struct WhisperControlView: View {
 			ForEach(PreferenceData.typingSoundChoices, id: \.0) { tuple in
 				Button {
 					PreferenceData.typingSound = tuple.2
+					typingSound = tuple.2
 				} label: {
-					Label(tuple.1, systemImage: "\(tuple.0).square")
+					if typingSound == tuple.2 {
+						Label(tuple.1, systemImage: "checkmark.square")
+					} else {
+						Label(tuple.1, systemImage: "square")
+					}
 				}
 			}
 		} label: {
