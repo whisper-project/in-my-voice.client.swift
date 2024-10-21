@@ -88,7 +88,9 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	private func save(verb: String = "PUT", localOnly: Bool = false) {
-		timestamp = Date.now
+		DispatchQueue.main.async {
+			self.timestamp = Date.now
+		}
 		let localValue = ["id": id, "name": name, "password": userPassword]
 		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
 			fatalError("Can't encode user profile data: \(localValue)")
@@ -99,7 +101,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		if localOnly || serverPassword.isEmpty {
 			postUsername()
 		} else {
-			let serverValue = ["id": id, "name": name, "password": serverPassword]
+			let serverValue = ["id": id, "name": name, "password": serverPassword, "clientId": PreferenceData.clientId]
 			guard let serverData = try? JSONSerialization.data(withJSONObject: serverValue) else {
 				fatalError("Can't encode user profile data: \(serverValue)")
 			}
@@ -322,7 +324,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for username upload")
 		}
-		let localValue = [ "id": id, "name": username ]
+		let localValue = [ "id": id, "name": username, "password": serverPassword, "clientId": PreferenceData.clientId ]
 		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
 			fatalError("Can't encode user profile data: \(localValue)")
 		}
