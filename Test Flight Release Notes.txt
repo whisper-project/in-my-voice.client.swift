@@ -513,3 +513,6 @@ Build 2.6.3 (206003):
 This build introduces a second typing sound. Users can choose their desired typing sound in the same menu that they choose the volume for the sound.
 
 The stop button has been colored red to make clear that it's a destructive operation, unlike the other accent color icons.
+
+Build 2.6.4 (206004):
+The typing sound menu now indicates which of the two typing sounds is currently being used.
