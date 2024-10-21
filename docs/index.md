@@ -42,6 +42,7 @@ The Whisper authors gratefully acknowledge the following content creators whose 
 - [Decrease Font Size Icon](https://thenounproject.com/icon/4866497/) and [Increase Font Size Icon](https://thenounproject.com/icon/4866493/) by [Yeong Rong Kim](https://thenounproject.com/yeongrong.kim.5/) via [the Noun Project](https://thenounproject.com).
 - [Old Typewriter](https://pixabay.com/sound-effects/old-typewriter-30090/) by monotraum from [Pixabay](https://pixabay.com).
 - [Record Voice Over Icon](https://thenounproject.com/icon/record-voice-over-3644000/) and [Voice Over Off Icon](https://thenounproject.com/icon/voice-over-off-3644052/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
+- [Slower Mechanical Keyboard Typing](https://pixabay.com/sound-effects/slower-mechanical-keyboard-typing-19960/) by Exacom from [Pixabay](https://pixabay.com).
 - [Type Writing](https://pixabay.com/sound-effects/type-writing-6834/) by mlekoman from [Pixabay](https://pixabay.com).
 - [Typewriter Bell](https://pixabay.com/sound-effects/typewriter-bell-100087/) by MasterNavigator from [Pixabay](https://pixabay.com).
 - [Typewriter Machine](https://pixabay.com/sound-effects/typewriter-machine-64191/) by KVProds from [Pixabay](https://pixabay.com).
