@@ -118,6 +118,13 @@ struct WhisperControlView: View {
 					Label("Quiet Typing", systemImage: "speaker.wave.1")
 				}
 			}
+			ForEach(PreferenceData.typingSoundChoices, id: \.0) { tuple in
+				Button {
+					PreferenceData.typingSound = tuple.2
+				} label: {
+					Label(tuple.1, systemImage: "\(tuple.0).square")
+				}
+			}
 		} label: {
 			buttonImage(name: typing ? "typing-bubble" : "typing-no-bubble", pad: 5)
 		} primaryAction: {
@@ -217,6 +224,7 @@ struct WhisperControlView: View {
 			maybeStop()
 		} label: {
 			buttonImage(systemName: "exclamationmark.octagon.fill", pad: 5)
+				.foregroundStyle(.red)
 		}
 	}
 

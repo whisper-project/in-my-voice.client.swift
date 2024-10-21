@@ -18,6 +18,7 @@
 		37159AA82C6A9488005CB922 /* HasherFNV1a.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37159AA72C6A9488005CB922 /* HasherFNV1a.swift */; };
 		3724D7C42BB4A3EA00BC6741 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3724D7C32BB4A3EA00BC6741 /* RootView.swift */; };
 		372A74022C7543AE00531CC8 /* WhisperStatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372A74012C7543AE00531CC8 /* WhisperStatusTextView.swift */; };
+		372FF6FA2CC35376000F0B65 /* low-frequency-typing.caf in Resources */ = {isa = PBXBuildFile; fileRef = 372FF6F92CC35376000F0B65 /* low-frequency-typing.caf */; };
 		3731510F2BA760EC005E989D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 37DE2B282BA2AFDD00EDA9D0 /* PrivacyInfo.xcprivacy */; };
 		373151112BA7624D005E989D /* SettingsProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373151102BA7624D005E989D /* SettingsProfile.swift */; };
 		373748792AD66D150053858B /* TcpMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373748782AD66D150053858B /* TcpMonitor.swift */; };
@@ -95,6 +96,7 @@
 		37159AA72C6A9488005CB922 /* HasherFNV1a.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HasherFNV1a.swift; sourceTree = "<group>"; };
 		3724D7C32BB4A3EA00BC6741 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		372A74012C7543AE00531CC8 /* WhisperStatusTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WhisperStatusTextView.swift; sourceTree = "<group>"; };
+		372FF6F92CC35376000F0B65 /* low-frequency-typing.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "low-frequency-typing.caf"; sourceTree = "<group>"; };
 		373151102BA7624D005E989D /* SettingsProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsProfile.swift; sourceTree = "<group>"; };
 		373748782AD66D150053858B /* TcpMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpMonitor.swift; sourceTree = "<group>"; };
 		3743EF5B2C409B0100B5021F /* ConnectionErrorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionErrorViews.swift; sourceTree = "<group>"; };
@@ -201,6 +203,7 @@
 				37922F252C72B66B00D250C6 /* typewriter-bell.caf */,
 				37922F242C72B66B00D250C6 /* typewriter-carriage-return.caf */,
 				37922F262C72B66B00D250C6 /* typewriter-two-minutes.caf */,
+				372FF6F92CC35376000F0B65 /* low-frequency-typing.caf */,
 			);
 			path = Sounds;
 			sourceTree = "<group>";
@@ -502,6 +505,7 @@
 				37763D1729AC2F710051CFE5 /* LICENSE in Resources */,
 				37763CEC29AAC1E60051CFE5 /* Preview Assets.xcassets in Resources */,
 				3731510F2BA760EC005E989D /* PrivacyInfo.xcprivacy in Resources */,
+				372FF6FA2CC35376000F0B65 /* low-frequency-typing.caf in Resources */,
 				37922F272C72B66B00D250C6 /* typewriter-carriage-return.caf in Resources */,
 				37763CE929AAC1E60051CFE5 /* Assets.xcassets in Resources */,
 			);
@@ -707,7 +711,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2060001;
+				CURRENT_PROJECT_VERSION = 2060002;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;
@@ -750,7 +754,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2060001;
+				CURRENT_PROJECT_VERSION = 2060002;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = 9BJ65G9LZ5;
 				ENABLE_PREVIEWS = YES;

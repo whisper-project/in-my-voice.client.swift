@@ -243,7 +243,28 @@ struct PreferenceData {
 		}
 	}
 
-	/// the volume to play typing at
+	/// typing sounds
+	static let typingSoundChoices = [
+		("a", "Old-fashioned Typewriter", "typewriter-two-minutes"),
+		("b", "Modern Keyboard", "low-frequency-typing"),
+	]
+	static let typingSoundDefault = "typewriter-two-minutes"
+	static var typingSound: String {
+		get {
+			let val = defaults.string(forKey: "typing_sound_choice_setting") ?? typingSoundDefault
+			switch val {
+			case "low-frequency-typing": return val
+			default: return typingSoundDefault
+			}
+		}
+		set(val) {
+			for tuple in typingSoundChoices {
+				if val == tuple.1 || val == tuple.2 {
+					defaults.set(tuple.2, forKey: "typing_sound_choice_setting")
+				}
+			}
+		}
+	}
 	static var typingVolume: Double {
 		get {
 			let diff = defaults.float(forKey: "typing_volume_setting")

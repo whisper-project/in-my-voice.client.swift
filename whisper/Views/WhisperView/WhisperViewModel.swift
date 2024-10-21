@@ -199,7 +199,7 @@ final class WhisperViewModel: ObservableObject {
 			return
 		}
 		playingTypingSound = true
-		playTypingSound("typewriter-two-minutes")
+		playTypingSound(PreferenceData.typingSound)
 	}
 
 	func maybeEndTypingSound() {
