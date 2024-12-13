@@ -516,3 +516,8 @@ The stop button has been colored red to make clear that it's a destructive opera
 
 Build 2.6.4 (206004):
 The typing sound menu now indicates which of the two typing sounds is currently being used.
+
+Build 2.6.5 (206005):
+No functional or cosmetic changes; small dev cleanups.
+
+This will be the next release of version 2.
