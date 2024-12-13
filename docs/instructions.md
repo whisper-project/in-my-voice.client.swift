@@ -100,6 +100,8 @@ The Whisperer Controls view is an array of buttons and switches, arranged from l
 
 * **Read Aloud** — This button (shown as <img src="img/read-aloud-on.png" alt="read-aloud-on" style="zoom: 33%;vertical-align:middle;" /> when on and <img src="img/read-aloud-off.png" alt="read-aloud-off" style="zoom:33%;vertical-align:middle;" /> when off) instructs the app to read whispered text aloud on your device when you hit the return key.
 
+* **Clear** — This button looks like <img src="img/eraser.png" alt="Eraser" style="zoom: 33%;vertical-align:middle;" />. Tapping it clears the live text area and stops any typing sound that was playing.
+
 * **Repeat** — This button looks like <img src="img/repeat-speech-square.png" alt="repeat" style="zoom: 33%;vertical-align:middle;" />. Tapping it retypes the most recently whispered, non-blank block of text.  The current live text is not affected. If any participant has *Read Aloud* is turned on, the repeated text will be read aloud on their device.
 
 * **Interject** — This button allows you to “interrupt yourself” in the middle of typing something. It starts off looking like <img src="img/interjection-off.png" alt="Start Interjection" style="zoom: 33%;vertical-align:middle;" />. Tapping it starts an interjection, at which point the following things happen:
