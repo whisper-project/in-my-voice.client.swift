@@ -15,6 +15,8 @@ protocol Conversation: Identifiable, Equatable, Comparable {
 final class UserProfile: Identifiable, ObservableObject {
 	static private(set) var shared = load() ?? create()
 
+	static private let saveName = PreferenceData.profileRoot + "UserProfile"
+
 	private(set) var id: String
 	private(set) var name: String
 	private(set) var whisperProfile: WhisperProfile
@@ -86,12 +88,14 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	private func save(verb: String = "PUT", localOnly: Bool = false) {
-		timestamp = Date.now
+		DispatchQueue.main.async {
+			self.timestamp = Date.now
+		}
 		let localValue = ["id": id, "name": name, "password": userPassword]
 		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
 			fatalError("Can't encode user profile data: \(localValue)")
 		}
-		guard localData.saveJsonToDocumentsDirectory("UserProfile") else {
+		guard localData.saveJsonToDocumentsDirectory(UserProfile.saveName) else {
 			fatalError("Can't save user profile data")
 		}
 		if localOnly || serverPassword.isEmpty {
@@ -106,7 +110,7 @@ final class UserProfile: Identifiable, ObservableObject {
 	}
 
 	static private func load() -> UserProfile? {
-		if let data = Data.loadJsonFromDocumentsDirectory("UserProfile"),
+		if let data = Data.loadJsonFromDocumentsDirectory(UserProfile.saveName),
 		   let obj = try? JSONSerialization.jsonObject(with: data),
 		   let value = obj as? [String:String],
 		   let id = value["id"],
@@ -320,7 +324,7 @@ final class UserProfile: Identifiable, ObservableObject {
 		guard let url = URL(string: PreferenceData.whisperServer + path) else {
 			fatalError("Can't create URL for username upload")
 		}
-		let localValue = [ "id": id, "name": username ]
+		let localValue = [ "id": id, "name": username, "password": serverPassword ]
 		guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {
 			fatalError("Can't encode user profile data: \(localValue)")
 		}

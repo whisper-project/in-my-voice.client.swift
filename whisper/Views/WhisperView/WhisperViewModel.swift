@@ -68,6 +68,8 @@ final class WhisperViewModel: ObservableObject {
     private var liveText: String = ""
 	private var lastLiveText: String = ""
     private var soundEffect: AVAudioPlayer?
+	private var typingPlayer: AVAudioPlayer?
+	private var playingTypingSound = false
 
 	let up = UserProfile.shared.whisperProfile
 	let fp = UserProfile.shared.favoritesProfile
@@ -135,11 +137,21 @@ final class WhisperViewModel: ObservableObject {
 					speak(liveText)
                 }
                 liveText = ""
+				maybeEndTypingSound()
             } else {
                 liveText = WhisperProtocol.applyDiff(old: liveText, chunk: chunk)
             }
         }
         transport.publish(chunks: chunks)
+		if liveText.isEmpty {
+			if !new.isEmpty {
+				maybeEndTypingSound()
+			} else if playingTypingSound {
+				stopTypingSound()
+			}
+		} else if old.isEmpty {
+			maybeStartTypingSound()
+		}
         return liveText
     }
 
@@ -181,6 +193,50 @@ final class WhisperViewModel: ObservableObject {
         let chunk = WhisperProtocol.ProtocolChunk.sound(soundName)
 		transport.sendContent(remote: candidate.remote, chunks: [chunk])
     }
+
+	func maybeStartTypingSound() {
+		guard PreferenceData.hearTyping else {
+			return
+		}
+		playingTypingSound = true
+		playTypingSound(PreferenceData.typingSound)
+	}
+
+	func maybeEndTypingSound() {
+		stopTypingSound()
+		guard PreferenceData.hearTyping else {
+			return
+		}
+		playTypingSound("typewriter-carriage-return")
+	}
+
+	func stopTypingSound() {
+		playingTypingSound = false
+		if let player = typingPlayer {
+			player.stop()
+			typingPlayer = nil
+		}
+	}
+
+	private func playTypingSound(_ name: String) {
+		if let path = Bundle.main.path(forResource: name, ofType: "caf") {
+			let url = URL(filePath: path)
+			typingPlayer = try? AVAudioPlayer(contentsOf: url)
+			if let player = typingPlayer {
+				player.volume = Float(PreferenceData.typingVolume)
+				if !player.play() {
+					logAnomaly("Couldn't play \(name) sound")
+					typingPlayer = nil
+				}
+			} else {
+				logAnomaly("Can't create player for \(name) sound")
+				typingPlayer = nil
+			}
+		} else {
+			logAnomaly("Can't find \(name) sound in main bundle")
+			typingPlayer = nil
+		}
+	}
 
 	func playInterjectionSound() {
 		let soundName = PreferenceData.interjectionAlertSound()

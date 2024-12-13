@@ -6,42 +6,44 @@
 import SwiftUI
 
 struct WhisperControlView: View {
-    @Environment(\.colorScheme) private var colorScheme
+	@Environment(\.colorScheme) private var colorScheme
+	@AppStorage("typing_volume_setting") private var typingVolume: Double = PreferenceData.typingVolume
 
-    @Binding var size: FontSizes.FontSize
-    @Binding var magnify: Bool
+	@Binding var size: FontSizes.FontSize
+	@Binding var magnify: Bool
 	@Binding var interjecting: Bool
 	@Binding var showFavorites: Bool
 	@Binding var group: FavoritesGroup
 	var maybeStop: () -> Void
-    var playSound: () -> Void
+	var playSound: () -> Void
 	var repeatSpeech: (String?) -> Void
 	var editFavorites: () -> Void
+	var clearTyping: () -> Void
 
-    @State private var alertSound = PreferenceData.alertSound
-    @State private var speaking: Bool = false
+	@State private var alertSound = PreferenceData.alertSound
+	@State private var typing = PreferenceData.hearTyping
+	@State private var typingSound = PreferenceData.typingSound
+	@State private var speaking: Bool = false
 	@State private var allGroups: [FavoritesGroup] = []
 	@StateObject private var fp = UserProfile.shared.favoritesProfile
 
-    var body: some View {
+	var body: some View {
 		HStack(alignment: .center) {
-            alarmButton()
-            speechButton()
+			alarmButton()
+			typingButton()
+			speechButton()
+			clearButton()
 			repeatButton()
 			interjectingButton()
 			favoritesButton()
-            maybeFontSizeButtons()
-            maybeFontSizeToggle()
-			Button(action: { maybeStop() }) {
-                stopButtonLabel()
-            }
-            .background(Color.accentColor)
-            .cornerRadius(15)
-        }
-        .dynamicTypeSize(.large)
-        .font(FontSizes.fontFor(FontSizes.minTextSize))
+			maybeFontSizeButtons()
+			maybeFontSizeToggle()
+			stopButton()
+		}
+		.dynamicTypeSize(.large)
+		.font(FontSizes.fontFor(FontSizes.minTextSize))
 		.onChange(of: fp.timestamp, initial: true, updateFromProfile)
-    }
+	}
 
 	private func updateFromProfile() {
 		speaking = PreferenceData.speakWhenWhispering
@@ -72,6 +74,68 @@ struct WhisperControlView: View {
 			PreferenceData.speakWhenWhispering = speaking
 		} label: {
 			buttonImage(name: speaking ? "voice-over-on" : "voice-over-off", pad: 5)
+		}
+		Spacer()
+	}
+
+	@ViewBuilder private func clearButton() -> some View {
+		Button {
+			clearTyping()
+		} label: {
+			buttonImage(systemName: "eraser", pad: 5)
+		}
+		Spacer()
+	}
+
+	@ViewBuilder private func typingButton() -> some View {
+		Menu {
+			Button {
+				typingVolume = 1
+				PreferenceData.typingVolume = 1
+			} label: {
+				if typingVolume == 1 {
+					Label("Loud Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Loud Typing", systemImage: "speaker.wave.3")
+				}
+			}
+			Button {
+				typingVolume = 0.5
+				PreferenceData.typingVolume = 0.5
+			} label: {
+				if typingVolume == 0.5 {
+					Label("Medium Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Medium Typing", systemImage: "speaker.wave.2")
+				}
+			}
+			Button {
+				typingVolume = 0.25
+				PreferenceData.typingVolume = 0.25
+			} label: {
+				if typingVolume == 0.25 {
+					Label("Quiet Typing", systemImage: "checkmark.square")
+				} else {
+					Label("Quiet Typing", systemImage: "speaker.wave.1")
+				}
+			}
+			ForEach(PreferenceData.typingSoundChoices, id: \.0) { tuple in
+				Button {
+					PreferenceData.typingSound = tuple.2
+					typingSound = tuple.2
+				} label: {
+					if typingSound == tuple.2 {
+						Label(tuple.1, systemImage: "checkmark.square")
+					} else {
+						Label(tuple.1, systemImage: "square")
+					}
+				}
+			}
+		} label: {
+			buttonImage(name: typing ? "typing-bubble" : "typing-no-bubble", pad: 5)
+		} primaryAction: {
+			typing.toggle()
+			PreferenceData.hearTyping = typing
 		}
 		Spacer()
 	}
@@ -109,42 +173,42 @@ struct WhisperControlView: View {
 		Spacer()
 	}
 
-    @ViewBuilder private func maybeFontSizeButtons() -> some View {
-        if isOnPhone() {
-            EmptyView()
-        } else {
-            Button {
-                self.size = FontSizes.nextTextSmaller(self.size)
+	@ViewBuilder private func maybeFontSizeButtons() -> some View {
+		if isOnPhone() {
+			EmptyView()
+		} else {
+			Button {
+				self.size = FontSizes.nextTextSmaller(self.size)
 				PreferenceData.sizeWhenWhispering = self.size
-            } label: {
+			} label: {
 				buttonImage(name: "font-down-button", pad: 0)
-            }
-            .disabled(size == FontSizes.minTextSize)
-            Button {
-                self.size = FontSizes.nextTextLarger(self.size)
+			}
+			.disabled(size == FontSizes.minTextSize)
+			Button {
+				self.size = FontSizes.nextTextLarger(self.size)
 				PreferenceData.sizeWhenWhispering = self.size
-            } label: {
+			} label: {
 				buttonImage(name: "font-up-button", pad: 0)
-            }
-            .disabled(size == FontSizes.maxTextSize)
-            Spacer()
-        }
-    }
-    
-    @ViewBuilder private func maybeFontSizeToggle() -> some View {
-        if isOnPhone() {
-            EmptyView()
-        } else {
-            Toggle(isOn: $magnify) {
-                Text("Large Sizes")
-            }
+			}
+			.disabled(size == FontSizes.maxTextSize)
+			Spacer()
+		}
+	}
+
+	@ViewBuilder private func maybeFontSizeToggle() -> some View {
+		if isOnPhone() {
+			EmptyView()
+		} else {
+			Toggle(isOn: $magnify) {
+				Text("Large Sizes")
+			}
 			.onChange(of: magnify) {
 				PreferenceData.magnifyWhenWhispering = magnify
 			}
-            .frame(maxWidth: 105)
-            Spacer()
-        }
-    }
+			.frame(maxWidth: 105)
+			Spacer()
+		}
+	}
 
 	private func toggleShowFavorites(_ group: FavoritesGroup? = nil) {
 		if let group = group {
@@ -160,20 +224,22 @@ struct WhisperControlView: View {
 		}
 	}
 
-    private func stopButtonLabel() -> some View {
-        Text(isOnPhone() ? "Stop" : "Stop Whispering")
-            .foregroundColor(.white)
-            .font(.body)
-            .fontWeight(.bold)
-            .padding(10)
-    }
+	@ViewBuilder private func stopButton() -> some View {
+		Spacer()
+		Button {
+			maybeStop()
+		} label: {
+			buttonImage(systemName: "exclamationmark.octagon.fill", pad: 5)
+				.foregroundStyle(.red)
+		}
+	}
 
 	private func buttonImage(name: String, pad: CGFloat) -> some View {
 		Image(name)
 			.renderingMode(.template)
 			.resizable()
 			.padding(pad)
-			.frame(width: 50, height: 50)
+			.frame(width: buttonSize(), height: buttonSize())
 			.border(colorScheme == .light ? .black : .white, width: 1)
 	}
 
@@ -182,11 +248,23 @@ struct WhisperControlView: View {
 			.renderingMode(.template)
 			.resizable()
 			.padding(pad)
-			.frame(width: 50, height: 50)
+			.frame(width: buttonSize(), height: buttonSize())
 			.border(colorScheme == .light ? .black : .white, width: 1)
 	}
 
-    private func isOnPhone() -> Bool {
-        return UIDevice.current.userInterfaceIdiom == .phone
-    }
+	private func isOnPhone() -> Bool {
+		return UIDevice.current.userInterfaceIdiom == .phone
+	}
+
+	private func buttonSize() -> CGFloat {
+		if isOnPhone() {
+			if UIScreen.main.bounds.width < 390 {
+				35
+			} else {
+				40
+			}
+		} else {
+			50
+		}
+	}
 }

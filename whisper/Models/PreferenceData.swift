@@ -15,9 +15,12 @@ struct PreferenceData {
     
     // publisher URLs
     #if DEBUG
+	static private let altServer = ProcessInfo.processInfo.environment["WHISPER_SERVER"] != nil
 	static let whisperServer = ProcessInfo.processInfo.environment["WHISPER_SERVER"] ?? "https://stage.whisper.clickonetwo.io"
+	static let profileRoot = altServer ? "dev-" : "stage-"
     #else
     static let whisperServer = "https://whisper.clickonetwo.io"
+	static let profileRoot = ""
     #endif
     static func publisherUrlToConversationId(url: String) -> (String, String)? {
 		let expectedPrefix = whisperServer + "/listen/"
@@ -100,10 +103,10 @@ struct PreferenceData {
 		logger.warning("Resetting client secret to match server expectations")
 		defaults.setValue(lastClientSecret(), forKey: "whisper_client_secret")
 	}
-	static func resetSecretsAndSharingIfServerHasChanged() {
+	static func resetSecretsIfServerHasChanged() {
 		// if we are operating against a different server than last run, we need
-		// to reset our secrets as if this were the very first run.
-		// we also have to stop sharing our profile, because the new server doesn't have it
+		// to reset our secrets as if this were the very first run, because our
+		// current secret belongs to a different server.
 		// NOTE: this needs to be run as early as possible in the launch sequence.
 		guard let server = defaults.string(forKey: "whisper_last_used_server") else {
 			// we've never launched before, so nothing to do except save the current server
@@ -114,15 +117,10 @@ struct PreferenceData {
 			// still using the same server, nothing to do
 			return
 		}
-		logger.warning("Server change noticed: resetting client secrets and sharing")
+		logger.warning("Server change noticed: resetting client secrets")
 		defaults.set(whisperServer, forKey: "whisper_last_used_server")
 		defaults.removeObject(forKey: "whisper_last_client_secret")
 		defaults.removeObject(forKey: "whisper_client_secret")
-		#if DEBUG
-		UserProfile.shared.stopSharing(newName: platformInfo)
-		#else
-		UserProfile.shared.stopSharing()
-		#endif
 	}
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
@@ -245,7 +243,28 @@ struct PreferenceData {
 		}
 	}
 
-	/// the volume to play typing at
+	/// typing sounds
+	static let typingSoundChoices = [
+		("a", "Old-fashioned Typewriter", "typewriter-two-minutes"),
+		("b", "Modern Keyboard", "low-frequency-typing"),
+	]
+	static let typingSoundDefault = "typewriter-two-minutes"
+	static var typingSound: String {
+		get {
+			let val = defaults.string(forKey: "typing_sound_choice_setting") ?? typingSoundDefault
+			switch val {
+			case "low-frequency-typing": return val
+			default: return typingSoundDefault
+			}
+		}
+		set(val) {
+			for tuple in typingSoundChoices {
+				if val == tuple.1 || val == tuple.2 {
+					defaults.set(tuple.2, forKey: "typing_sound_choice_setting")
+				}
+			}
+		}
+	}
 	static var typingVolume: Double {
 		get {
 			let diff = defaults.float(forKey: "typing_volume_setting")

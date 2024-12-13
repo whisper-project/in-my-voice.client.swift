@@ -44,6 +44,8 @@ final class ListenConversation: Conversation, Hashable, Encodable, Decodable {
 }
 
 final class ListenProfile: Codable {
+	static private let saveName = PreferenceData.profileRoot + "ListenProfile"
+
 	var id: String
 	private var table: [String: ListenConversation]
 	private var timestamp: Int
@@ -145,7 +147,7 @@ final class ListenProfile: Codable {
 		guard let data = try? JSONEncoder().encode(self) else {
 			fatalError("Cannot encode listen profile: \(self)")
 		}
-		guard data.saveJsonToDocumentsDirectory("ListenProfile") else {
+		guard data.saveJsonToDocumentsDirectory(ListenProfile.saveName) else {
 			fatalError("Cannot save listen profile to Documents directory")
 		}
 		if !localOnly && !serverPassword.isEmpty {
@@ -154,7 +156,7 @@ final class ListenProfile: Codable {
 	}
 
 	static func load(_ profileId: String, serverPassword: String) -> ListenProfile? {
-		if let data = Data.loadJsonFromDocumentsDirectory("ListenProfile"),
+		if let data = Data.loadJsonFromDocumentsDirectory(ListenProfile.saveName),
 		   let profile = try? JSONDecoder().decode(ListenProfile.self, from: data)
 		{
 			if profileId == profile.id {
@@ -162,7 +164,7 @@ final class ListenProfile: Codable {
 				return profile
 			}
 			logger.warning("Asked to load profile with id \(profileId), deleting saved profile with id \(profile.id)")
-			Data.removeJsonFromDocumentsDirectory("ListenProfile")
+			Data.removeJsonFromDocumentsDirectory(ListenProfile.saveName)
 		}
 		return nil
 	}

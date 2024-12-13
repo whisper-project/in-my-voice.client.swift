@@ -17,6 +17,7 @@ struct ListenControlView: View {
     @State var alertSound = PreferenceData.alertSound
 	@State var speaking: Bool = PreferenceData.speakWhenListening
 	@State var typing: Bool = PreferenceData.hearTyping
+	@State var typingSound = PreferenceData.typingSound
 
     var body: some View {
 		HStack(alignment: .center) {
@@ -24,11 +25,7 @@ struct ListenControlView: View {
             speechButton()
             maybeFontSizeButtons()
             maybeFontSizeToggle()
-			Button(action: { maybeStop() }) {
-                stopButtonLabel()
-            }
-            .background(Color.accentColor)
-            .cornerRadius(15)
+			stopButton()
         }
         .dynamicTypeSize(.large)
         .font(FontSizes.fontFor(FontSizes.minTextSize))
@@ -64,6 +61,18 @@ struct ListenControlView: View {
 					Label("Quiet Typing", systemImage: "checkmark.square")
 				} else {
 					Label("Quiet Typing", systemImage: "speaker.wave.1")
+				}
+			}
+			ForEach(PreferenceData.typingSoundChoices, id: \.0) { tuple in
+				Button {
+					PreferenceData.typingSound = tuple.2
+					typingSound = tuple.2
+				} label: {
+					if typingSound == tuple.2 {
+						Label(tuple.1, systemImage: "checkmark.square")
+					} else {
+						Label(tuple.1, systemImage: "square")
+					}
 				}
 			}
 		} label: {
@@ -122,24 +131,39 @@ struct ListenControlView: View {
         }
     }
 
+	@ViewBuilder private func stopButton() -> some View {
+		Spacer()
+		Button {
+			maybeStop()
+		} label: {
+			buttonImage(systemName: "exclamationmark.octagon.fill", pad: 5)
+				.foregroundStyle(.red)
+		}
+	}
+
 	private func buttonImage(name: String, pad: CGFloat) -> some View {
 		Image(name)
 			.renderingMode(.template)
 			.resizable()
 			.padding(pad)
-			.frame(width: 50, height: 50)
+			.frame(width: buttonSize(), height: buttonSize())
 			.border(colorScheme == .light ? .black : .white, width: 1)
 	}
 
-    private func stopButtonLabel() -> some View {
-        Text(isOnPhone() ? "Stop" : "Stop Listening")
-            .foregroundColor(.white)
-            .font(.body)
-            .fontWeight(.bold)
-            .padding(10)
-    }
+	private func buttonImage(systemName: String, pad: CGFloat) -> some View {
+		Image(systemName: systemName)
+			.renderingMode(.template)
+			.resizable()
+			.padding(pad)
+			.frame(width: buttonSize(), height: buttonSize())
+			.border(colorScheme == .light ? .black : .white, width: 1)
+	}
 
     private func isOnPhone() -> Bool {
         return UIDevice.current.userInterfaceIdiom == .phone
     }
+
+	private func buttonSize() -> CGFloat {
+		50
+	}
 }

@@ -495,3 +495,29 @@ This release introduces quite a few long-requested features for both Whisperers 
 
 BUILD 2.5.1 (2050001):
 This is purely a bug fix release: the "How To Use" button led to a broken link. In addition, inconsistencies in the Whisper Conversations screen have been fixed, and the online instructions have been overhauled to document the app's behavior more completely.
+
+BUILD 2.6.1 (2060001):
+This build makes the "typing sound" button (and typing sounds) available when whispering.
+
+BUILD 2.6.2 (2060002):
+This build introduces changes for both Whisperers and Listeners:
+
+- The buttons at the top of the Whisper and Listen screens are now smaller on phones, in order to provide more space for the past text and live text areas (and to allow more buttons in the Whisper screen).
+- The "Stop" button at the top of the Whisper and Listen screens has been changed to the icon of an (octagonal) stop sign with an exclamation mark in it. It's in the same place and works exactly the same way as the "Stop" button, but is now visually consistent with all of the other controls.
+
+In addition, for Whisperers there is another change:
+
+- There is a now a "clear" button (with an eraser icon) at the top of the Whisper screen, to the right of the "speech on/off" button and the left of the "repeat" button. Pressing the clear button erases all the text in the type-in area.
+
+Build 2.6.3 (206003):
+This build introduces a second typing sound. Users can choose their desired typing sound in the same menu that they choose the volume for the sound.
+
+The stop button has been colored red to make clear that it's a destructive operation, unlike the other accent color icons.
+
+Build 2.6.4 (206004):
+The typing sound menu now indicates which of the two typing sounds is currently being used.
+
+Build 2.6.5 (206005):
+No functional or cosmetic changes; small dev cleanups.
+
+This will be the next release of version 2.

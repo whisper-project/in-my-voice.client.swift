@@ -186,7 +186,8 @@ struct WhisperView: View {
 						   maybeStop: maybeStop,
 						   playSound: model.playSound,
 						   repeatSpeech: model.repeatLine,
-						   editFavorites: doEditFavorites)
+						   editFavorites: doEditFavorites,
+						   clearTyping: clearTyping)
 			.padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
 		if showFavorites {
 			if isOnPhone() {
@@ -293,6 +294,10 @@ struct WhisperView: View {
 		}
 		interjectionPrefixOverride = text
 		interjecting = true
+	}
+
+	private func clearTyping() {
+		liveText = ""
 	}
 
 	private func quitWhisperView() {

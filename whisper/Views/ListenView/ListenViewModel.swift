@@ -401,7 +401,7 @@ final class ListenViewModel: ObservableObject {
 		guard PreferenceData.hearTyping && !isInBackground else {
 			return
 		}
-		playTypingSound("typewriter-two-minutes")
+		playTypingSound(PreferenceData.typingSound)
 	}
 
 	func maybeEndTypingSound() {
