@@ -521,3 +521,17 @@ Build 2.6.5 (206005):
 No functional or cosmetic changes; small dev cleanups.
 
 This will be the next release of version 2.
+
+Build 2.6.6 (206006):
+Make sure the status-bar pop-up view is scrollable, in case there are a lot of Listeners.
+
+Build 2.6.7 (206007):
+Fix three annoying bugs:
+
+- Make sure the status-bar pop-up view is scrollable, in case there are a lot of Listeners.
+
+- Open instructions web page in safari, not the app.
+
+- Can't do profile sharing while editing your name.
+
+Why do bugs always appear right when you're getting ready to release?
