@@ -14,18 +14,20 @@ To learn how to use the app, visit [Instructions](instructions.md). For help, vi
 
 [ClickOneTwo](https://clickonetwo.io) (the maker of Whisper) does not collect, store, or process any data about individuals who use its applications.
 
-The contents of conversations held through Whisper are not stored *anywhere*, even on your local device. The Whisperer can copy and paste what they have typed in the app, but Listeners cannot copy any text that the Whisperer has typed.
+The contents of conversations held through Whisper are not stored *anywhere*, even on device-local storage, unless the Whisperer has opted to make transcripts available, in which case the transcripts are stored on the Whisper server for no more than one year and made available only as requested by the Whisperer. These transcripts are not associated with any data about the participants as individuals or any data that can be used to identify the participants as individuals.
 
-The Whisper app and your browser (if used for listening) store your name and other preferences locally. This is so that you do not have to reenter your name and change your preferences every time you enter a conversation. If a single user switches among multiple devices, they can choose to securely share their name and other preferences among those devices.
+The name you enter in the app (or browser, if used for listening) is stored both locally on your device and on the Whisper server. This name is not associated with any data about you as an individual or any data that can be used to identify you as an individual. It is used only to identify you in conversations with other individuals or, after you explicitly give permission, for customer support purposes.
 
-Whisper collects and sends to its server the following diagnostic, device, user, and conversation identifier data.  None of this data is ever associated with any personally identifiable information, and none of it is ever used for any purpose except to resolve issues reported by users and to improve the app's behavior:
+Your favorites and other settings in the Whisper app (called your *user profile*) are stored locally on your device. If you use profile sharing, then your user profile is also stored on the Whisper server. As with the name you enter in the app, your user profile is not associated with any data about you as an individual or any data that can be used to identify you as an individual. It is used on the server only to maintain synchronization between your devices.
 
-* Anonymous information about crashes and other errors that interrupt conversations in the Whisper app.
-* Identifiers created by the app that are specific to the device, the user’s *profile* (name and other preferences), and conversations that the user creates. These identifiers are random strings of characters that are different for each device, user, and conversation.
-* The most recent date/time that the app was launched, that the Whisperer started each conversation, and that each Listener listened to each conversation.
-* The names used by the Whisperer and Listeners for each conversation (whether in the app or browser), and the name of each conversation. 
+Whisper collects and sends to its server a variety of diagnostic data.  This diagnostic data is not associated with any data about you as an individual or any data that can be used to identify you as an individual. This data is never used for any purpose except to resolve issues reported by users and to improve the app's behavior:
 
-All identifiers created by the app, and all names entered by users, and all associated dates/times are purged from the Whisper server if the devices, users, and conversations they are associated with have not been used in over 18 months.
+* Information about crashes and other errors that interrupt conversations in the Whisper app.
+* Identifiers created by the app that are specific to the device, the user’s profile and conversations that the user creates. These identifiers are random strings of characters that are different for each device, user, and conversation.
+* The dates and times that the app was launched, that a Whisperer started a conversation, and that a Listener joined a conversation.
+* The names of all conversations.
+
+All identifiers created by the app, all names entered by users, all user profiles, and all associated dates/times are purged from the Whisper server if the devices, users, and conversations they are associated with have not been used in the past 12 months.
 
 ## Acknowledgements
 
