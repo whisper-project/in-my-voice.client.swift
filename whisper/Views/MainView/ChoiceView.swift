@@ -5,7 +5,6 @@
 
 import SwiftUI
 import SwiftUIWindowBinder
-import SafariServices
 
 
 struct ChoiceView: View {
@@ -201,8 +200,7 @@ struct ChoiceView: View {
 				}
 				VStack (spacing: 25) {
 					Button(action: {
-						let vc = SFSafariViewController(url: instructionSite)
-						UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
+						UIApplication.shared.open(instructionSite)
 					}) {
 						Text("How To Use")
 							.foregroundColor(.white)
@@ -213,19 +211,18 @@ struct ChoiceView: View {
 					.cornerRadius(15)
 					HStack {
 						Button("About", action: {
-							let vc = SFSafariViewController(url: aboutSite)
-							UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
+							UIApplication.shared.open(aboutSite)
 						})
 						.frame(width: choiceButtonWidth, alignment: .center)
 						Spacer()
 						Button("Support", action: {
-							let vc = SFSafariViewController(url: supportSite)
-							UIApplication.shared.firstKeyWindow?.rootViewController?.present(vc, animated: true)
+							UIApplication.shared.open(supportSite)
 						})
 						.frame(width: choiceButtonWidth, alignment: .center)
 					}
 					.frame(width: nameWidth)
 					Button("Profile Sharing", action: { showSharingSheet = true })
+						.disabled(nameEdit)
 						.frame(width: choiceButtonWidth + 50, alignment: .center)
 						.sheet(isPresented: $showSharingSheet, content: {
 							ShareProfileView()
