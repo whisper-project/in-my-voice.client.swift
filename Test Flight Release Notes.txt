@@ -535,3 +535,26 @@ Fix three annoying bugs:
 - Can't do profile sharing while editing your name.
 
 Why do bugs always appear right when you're getting ready to release?
+
+========
+App Store Release of 2.6.7:
+This release has two new features:
+
+- You can now have the app play a typing sound while the whisperer is typing. This sound has proved very helpful in getting Listeners to pay attention to their screen rather than talking while the Whisperer is typing.
+
+- There is now a Clear button in the Whisperer controls, for clearing the live text area.
+
+There are also two cosmetic changes:
+
+- The "Stop" button when whispering and listening is now a stop-sign icon rather than a word.
+
+- When you open the app instructions, they open in a separate browser app so you can go back and forth between the instructions and the app easily.
+
+There are some bug fixes as well: 
+
+- The pop-up status detail view now scrolls if needed.
+
+- Profile Sharing is disabled until you enter your name.
+
+Finally, the instructions have been expanded and updated to cover all app functionality. Many thanks to guest editor Lucy M.
+=========
