@@ -33,7 +33,7 @@ Both Listeners and Whisperers enter their names to make it clear who's in the co
 
 ### My browser used to know my name -- why did it forget?
 
-The browser will forget your name if you clear cookies for the site [whisper.clickonetwo.io](https://whisper.clickonetwo.io), and you will be asked for your name again the next time you join a conversation. 
+The browser will forget your name if you clear cookies for the site [server.whisper-project.org](https://server.whisper-project.org), and you will be asked for your name again the next time you join a conversation.
 
 ### How do I change my name?
 
@@ -41,7 +41,7 @@ You can change your name in the home screen of the Whisper app, and you can chan
 
 ### Does Whisper store the text of my conversations?
 
-Nope! The contents of conversations held through Whisper are not stored *anywhere*, even on your local device. See our [Privacy statement](index.md/#privacy) for more information.
+Not unless you have turned on transcription in your [Settings](instructions.md#settings). The contents of conversations held through Whisper are not stored anywhere, even on your local device. See our [Privacy statement](index.md/#privacy) for more information.
 
 ### Can I copy and paste text from my conversations?
 
@@ -59,5 +59,5 @@ Yes. The state of Whisperer controls is used for all conversations, and similarl
 
 If the answers above have not solved your problem, please contact us through [this form](https://forms.gle/qrzSnB46tFqMBUZq9) and we will get back to you as soon as we can. Please note that this is a single-developer app, so response times will not be immediate (or maybe not even quick).
 
-At the [Whisper Project](https://whisper-project.org), we are firm believers that there are NO stupid questions, especially when it comes to using technology. We want to make Whisper as helpful as possible to everyone, so we truly appreciate your feedback.
+At the [Whisper Project](http://whisper-project.org), we are firm believers that there are NO stupid questions, especially when it comes to using technology. We want to make Whisper as helpful as possible to everyone, so we truly appreciate your feedback.
 

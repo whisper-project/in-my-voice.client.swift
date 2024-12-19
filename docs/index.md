@@ -12,7 +12,7 @@ To learn how to use the app, visit [Instructions](instructions.md). For help, vi
 
 ## Privacy
 
-Neither the [Whisper Project](https://whisper-project.org) (the maker of Whisper) nor [Software in the Public Interest](https://spi-inc.org) (the publisher of Whisper) collects, stores, or processes any data about individuals who use Whisper.
+Neither the [Whisper Project](http://whisper-project.org) (the maker of Whisper) nor [Software in the Public Interest](https://spi-inc.org) (the publisher of Whisper) collects, stores, or processes any data about individuals who use Whisper.
 
 The contents of conversations held through Whisper are not stored *anywhere*, even on device-local storage, unless the Whisperer has opted to make transcripts available, in which case the transcripts are stored on the Whisper server for no more than one year and made available only as requested by the Whisperer. These transcripts are not associated with any data about the participants as individuals or any data that can be used to identify the participants as individuals.
 
