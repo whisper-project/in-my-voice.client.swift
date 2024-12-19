@@ -1,8 +1,8 @@
 title: Whisper
-description: Reference website for the app Whisper from clickonetwo.io
+description: Reference website for the app Whisper
 theme: just-the-docs
 
-url: https://clickonetwo.github.io/whisper
+url: https://whisper-project.github.io/client.swift
 
 plugins:
   - jekyll-relative-links
