@@ -3,7 +3,10 @@ source 'https://rubygems.org'
 gem "jekyll", "~> 4.3" # installed by `gem jekyll`
 # gem "webrick"        # required when using Ruby >= 3 and Jekyll <= 4.2.2
 
-gem "just-the-docs", "~> 0.5.4"
+gem "just-the-docs", "~> 0.10.1"
+
+# just-the-docs 0.10.1 currently broken with sass-embedded above 1.78
+gem "sass-embedded", "~> 1.78.0"
 
 # jekyll-relative-links turns .md links into .html links
 # so the docs can be read directly on github as well as pages
