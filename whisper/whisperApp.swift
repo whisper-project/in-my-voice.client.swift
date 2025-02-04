@@ -29,7 +29,7 @@ let connectingPastText = """
     This is where lines will move after the whisperer hits return.
     The most recent line will be on the bottom.
     """
-let website = "https://clickonetwo.github.io/whisper"
+let website = "https://whisper-project.github.io/client.swift"
 let aboutSite = URL(string: website)!
 let supportSite = URL(string: "\(website)/support.html")!
 let instructionSite = URL(string: "\(website)/instructions.html")!
