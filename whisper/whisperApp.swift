@@ -231,7 +231,7 @@ func restartApplication(){
 	content.userInfo = localUserInfo
 	let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
 
-	let identifier = "io.clickonetwo.restart"
+	let identifier = "org.whisper-project.client.swift.restart"
 	let request = UNNotificationRequest.init(identifier: identifier, content: content, trigger: trigger)
 
 	let center = UNUserNotificationCenter.current()
