@@ -179,6 +179,7 @@ struct WhisperView: View {
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
 		WhisperControlView(size: $size,
+						   status: $model.showStatusDetail,
 						   magnify: $magnify,
 						   interjecting: $interjecting,
 						   showFavorites: $showFavorites,
@@ -240,10 +241,7 @@ struct WhisperView: View {
 			.padding(EdgeInsets(top: 0, leading: sidePad, bottom: 0, trailing: sidePad))
 			.dynamicTypeSize(magnify ? .accessibility3 : dynamicTypeSize)
 		}
-		WhisperStatusTextView(model: model, conversation: conversation)
-			.onTapGesture {
-				self.model.showStatusDetail = true
-			}
+		WhisperStatusTextView(model: model)
 			.popover(isPresented: $model.showStatusDetail) {
 				ListenersView(model: model)
 			}

@@ -7,12 +7,12 @@ import SwiftUI
 
 struct ListenStatusTextView: View {
     @Environment(\.colorScheme) private var colorScheme
+	@AppStorage("status_buttons_top_setting") private var statusButtonsTop: Bool?
 
     @ObservedObject var model: ListenViewModel
-	var conversation: (any Conversation)
 
 	private var shareLinkUrl: URL? {
-		return URL(string: PreferenceData.publisherUrl(conversation))
+		return URL(string: PreferenceData.publisherUrl(model.conversation))
 	}
 
     private let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
@@ -24,9 +24,7 @@ struct ListenStatusTextView: View {
 				ShareLink(linkText, item: url)
 					.font(FontSizes.fontFor(name: .xsmall))
 			}
-			Text(model.statusText)
-				.font(FontSizes.fontFor(name: .xsmall))
-				.foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
+			statusText
 			if let transcriptId = model.transcriptId {
 				Link(destination: transcriptLink(id: transcriptId), label: {
 					Label(transcriptText, systemImage: "eyeglasses")
@@ -35,7 +33,13 @@ struct ListenStatusTextView: View {
 		}
     }
 
+	var statusText: some View {
+		Text(model.statusText)
+			.font(FontSizes.fontFor(name: .xsmall))
+			.foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
+	}
+
 	private func transcriptLink(id: String) -> URL {
-		return URL(string: "\(PreferenceData.whisperServer)/transcript/\(conversation.id)/\(id)")!
+		return URL(string: "\(PreferenceData.whisperServer)/transcript/\(model.conversation.id)/\(id)")!
 	}
 }

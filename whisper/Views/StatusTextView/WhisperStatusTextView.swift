@@ -7,35 +7,44 @@ import SwiftUI
 
 struct WhisperStatusTextView: View {
     @Environment(\.colorScheme) private var colorScheme
+	@AppStorage("status_buttons_top_setting") private var statusButtonsTop: Bool?
 
     @ObservedObject var model: WhisperViewModel
-	var conversation: (any Conversation)?
 
 	private var shareLinkUrl: URL? {
-		if let c = conversation {
-			return URL(string: PreferenceData.publisherUrl(c))
-		} else {
-			return nil
-		}
+		return URL(string: PreferenceData.publisherUrl(model.conversation))
 	}
 
     private let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
 	private let transcriptText = UIDevice.current.userInterfaceIdiom == .phone ? "Transcript" : "Send Transcript"
 
     var body: some View {
-		HStack (spacing: 20) {
-			if let url = shareLinkUrl {
-				ShareLink(linkText, item: url)
-					.font(FontSizes.fontFor(name: .xsmall))
+		if statusButtonsTop ?? false {
+			HStack (spacing: 20) {
+				statusText
 			}
-			Text(model.statusText)
-				.font(FontSizes.fontFor(name: .xsmall))
-				.foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
-			if model.transcriptId != nil {
-				Button(action: { model.shareTranscript() }, label: {
-					Label(transcriptText, systemImage: "eyeglasses")
-				})
+		} else {
+			HStack (spacing: 20) {
+				if let url = shareLinkUrl {
+					ShareLink(linkText, item: url)
+						.font(FontSizes.fontFor(name: .xsmall))
+				}
+				statusText
+				if model.transcriptId != nil {
+					Button(action: { model.shareTranscript() }, label: {
+						Label(transcriptText, systemImage: "eyeglasses")
+					})
+				}
+			}
+			.onTapGesture {
+				self.model.showStatusDetail.toggle()
 			}
 		}
     }
+
+	var statusText: some View {
+		Text(model.statusText)
+			.font(FontSizes.fontFor(name: .xsmall))
+			.foregroundColor(colorScheme == .light ? lightLiveTextColor : darkLiveTextColor)
+	}
 }

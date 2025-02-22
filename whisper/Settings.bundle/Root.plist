@@ -10,6 +10,12 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
+			<string>Layout Settings</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
 			<string>Whisperer Settings</string>
 		</dict>
 		<dict>
@@ -105,6 +111,18 @@
 				<string>i</string>
 				<string>f</string>
 			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>TrueValue</key>
+			<string></string>
+			<key>Title</key>
+			<string>Status Button in top bar</string>
+			<key>Key</key>
+			<string>status_buttons_top_preference</string>
+			<key>DefaultValue</key>
+			<false/>
 		</dict>
 		<dict>
 			<key>Type</key>

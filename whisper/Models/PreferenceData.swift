@@ -243,6 +243,16 @@ struct PreferenceData {
 		}
 	}
 
+	/// whether to show share listen link in status bar
+	static var statusButtonsTop: Bool {
+		get {
+			defaults.bool(forKey: "status_buttons_top_setting")
+		}
+		set (new) {
+			defaults.setValue(new, forKey: "status_buttons_top_setting")
+		}
+	}
+
 	/// typing sounds
 	static let typingSoundChoices = [
 		("a", "Old-fashioned Typewriter", "typewriter-two-minutes"),
@@ -307,6 +317,15 @@ struct PreferenceData {
 		}
 		set(val) {
 			defaults.setValue(val, forKey: "whisper_tap_preference")
+		}
+	}
+
+	static var statusButtonsTopPreference: Bool {
+		get {
+			return defaults.bool(forKey: "status_buttons_top_preference")
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "status_buttons_top_preference")
 		}
 	}
 
@@ -469,12 +488,13 @@ struct PreferenceData {
 		}
 	}
 
-	static let preferenceVersion = 4
+	static let preferenceVersion = 5
 
 	static func preferencesToJson() -> String {
 		let preferences = [
 			"version": "\(preferenceVersion)",
 			"whisper_tap_preference": whisperTapPreference,
+			"status_buttons_top_preference": statusButtonsTopPreference ? "yes" : "no",
 			"do_server_side_transcription_preference": doServerSideTranscriptionPreference ? "yes" : "no",
 			"listen_tap_preference": listenTapPreference,
 			"newest_whisper_location_preference": newestWhisperLocationPreference,
@@ -504,6 +524,7 @@ struct PreferenceData {
 			logAnomaly("Setting preferences from v\(version) preference data, expected v\(preferenceVersion)")
 		}
 		whisperTapPreference = preferences["whisper_tap_preference"] ?? "show"
+		statusButtonsTopPreference = preferences["status_buttons_top_preference"] ?? "no" == "yes"
 		doServerSideTranscriptionPreference = preferences["do_server_side_transcription_preference"] ?? "no" == "yes"
 		listenTapPreference = preferences["listen_tap_preference"] ?? "show"
 		newestWhisperLocationPreference = preferences["newest_whisper_location_preference"] ?? "bottom"

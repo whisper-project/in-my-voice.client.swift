@@ -11,12 +11,26 @@ struct ListenersView: View {
     
     @ObservedObject var model: WhisperViewModel
 
+	private var shareLinkUrl: URL? {
+		return URL(string: PreferenceData.publisherUrl(model.conversation))
+	}
+
     var body: some View {
 		ScrollView {
-			VStack {
+			VStack(spacing: 20) {
 				Text(model.conversation.name)
-					.font(FontSizes.fontFor(FontSizes.minTextSize + 2))
-					.padding()
+					.font(.headline)
+				HStack (spacing: 100) {
+					if let url = shareLinkUrl {
+						ShareLink("Send Listen Link", item: url)
+					}
+					if model.transcriptId != nil {
+						Button(action: { model.shareTranscript() }, label: {
+							Label("Send Transcript", systemImage: "eyeglasses")
+						})
+					}
+				}
+				.font(FontSizes.fontFor(FontSizes.minTextSize))
 				if !model.invites.isEmpty {
 					VStack(alignment: .leading, spacing: 20) {
 						ForEach(model.invites.map(Row.init)) { row in
