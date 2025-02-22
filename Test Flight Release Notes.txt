@@ -558,3 +558,17 @@ There are some bug fixes as well:
 
 Finally, the instructions have been expanded and updated to cover all app functionality. Many thanks to guest editor Lucy M.
 =========
+
+Build 2.7.1 (2070001):
+The beta program is being restarted now that the app is being published by Software in the Public Interest rather than ClickOneTwo LLC.
+
+This first beta has no functional changes whatsoever from the prior released version, but because it's from a new publisher TestFlight may require deleting your existing app (and app data) before you can install this one. IF SO, you can preserve all your settings and conversations by "sharing your profile" in your existing app BEFORE you delete it. Hit the "profile sharing" button on the home page of the app, then hit "Start Profile Sharing" and carefully write down the profile ID and password you are shown. Then, once you delete your old app and install the new beta and fill in your name, you can hit the "profile sharing" button again and reload your profile by filling in the profile ID and password you saved.
+
+Build 2.7.2 (2070002):
+The beta program is being restarted now that the app is being published by Software in the Public Interest rather than ClickOneTwo LLC.
+
+This first beta has one cosmetic and one functional change:
+
+Cosmetic: The documentation and support web pages for the app are now in a different place, and the links to them from the app have been updated accordingly.
+
+Functional: In response to a request received in an app review (yes, we read those ;), we have added a Whisperer setting to remove the "Share Listener Link" (and all touch sensitivity) from the status bar, so that assistive keyboards do not accidentally trigger them. Instead, a "Status" button (showing a person with a question mark) appears at the front of the top "control" bar: clicking the status button will pop up the detailed status view which now contains the Share Listener Link (and other buttons) that would otherwise have appeared on the status bar.

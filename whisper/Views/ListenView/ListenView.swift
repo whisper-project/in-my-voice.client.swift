@@ -139,7 +139,7 @@ struct ListenView: View {
 		} else {
 			pastView(geometry)
 		}
-		ListenStatusTextView(model: model, conversation: conversation)
+		ListenStatusTextView(model: model)
 			.onTapGesture {
 				if (model.whisperer == nil && !model.invites.isEmpty) {
 					model.showStatusDetail = true

@@ -8,8 +8,10 @@ import SwiftUI
 struct WhisperControlView: View {
 	@Environment(\.colorScheme) private var colorScheme
 	@AppStorage("typing_volume_setting") private var typingVolume: Double = PreferenceData.typingVolume
+	@AppStorage("status_buttons_top_setting") private var statusButtonsTop: Bool?
 
 	@Binding var size: FontSizes.FontSize
+	@Binding var status: Bool
 	@Binding var magnify: Bool
 	@Binding var interjecting: Bool
 	@Binding var showFavorites: Bool
@@ -29,6 +31,9 @@ struct WhisperControlView: View {
 
 	var body: some View {
 		HStack(alignment: .center) {
+			if statusButtonsTop ?? false {
+				statusButton()
+			}
 			alarmButton()
 			typingButton()
 			speechButton()
@@ -48,6 +53,15 @@ struct WhisperControlView: View {
 	private func updateFromProfile() {
 		speaking = PreferenceData.speakWhenWhispering
 		allGroups = fp.allGroups()
+	}
+
+	@ViewBuilder private func statusButton() -> some View {
+		Button {
+			status.toggle()
+		} label: {
+			buttonImage(systemName: "person.crop.circle.badge.questionmark.fill", pad: 5)
+		}
+		Spacer()
 	}
 
 	@ViewBuilder private func alarmButton() -> some View {
@@ -201,11 +215,12 @@ struct WhisperControlView: View {
 		} else {
 			Toggle(isOn: $magnify) {
 				Text("Large Sizes")
+					.lineLimit(2)
 			}
 			.onChange(of: magnify) {
 				PreferenceData.magnifyWhenWhispering = magnify
 			}
-			.frame(maxWidth: 105)
+			.frame(minWidth: 2*buttonSize(), maxWidth: 105)
 			Spacer()
 		}
 	}
