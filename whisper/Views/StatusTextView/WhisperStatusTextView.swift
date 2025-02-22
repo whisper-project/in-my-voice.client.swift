@@ -7,7 +7,7 @@ import SwiftUI
 
 struct WhisperStatusTextView: View {
     @Environment(\.colorScheme) private var colorScheme
-	@AppStorage("status_buttons_top_setting") private var statusButtonsTop: Bool?
+	@AppStorage("status_buttons_top_preference") private var statusTop: Bool = PreferenceData.statusButtonsTopPreference
 
     @ObservedObject var model: WhisperViewModel
 
@@ -19,7 +19,7 @@ struct WhisperStatusTextView: View {
 	private let transcriptText = UIDevice.current.userInterfaceIdiom == .phone ? "Transcript" : "Send Transcript"
 
     var body: some View {
-		if statusButtonsTop ?? false {
+		if statusTop {
 			HStack (spacing: 20) {
 				statusText
 			}
