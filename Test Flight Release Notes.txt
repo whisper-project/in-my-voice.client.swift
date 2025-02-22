@@ -564,7 +564,7 @@ The beta program is being restarted now that the app is being published by Softw
 
 This first beta has no functional changes whatsoever from the prior released version, but because it's from a new publisher TestFlight may require deleting your existing app (and app data) before you can install this one. IF SO, you can preserve all your settings and conversations by "sharing your profile" in your existing app BEFORE you delete it. Hit the "profile sharing" button on the home page of the app, then hit "Start Profile Sharing" and carefully write down the profile ID and password you are shown. Then, once you delete your old app and install the new beta and fill in your name, you can hit the "profile sharing" button again and reload your profile by filling in the profile ID and password you saved.
 
-Build 2.7.2 (2070002):
+Builds 2.7.2, 2.7.3 (2070002, 2070003):
 The beta program is being restarted now that the app is being published by Software in the Public Interest rather than ClickOneTwo LLC.
 
 This first beta has one cosmetic and one functional change:
