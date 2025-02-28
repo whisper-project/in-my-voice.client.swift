@@ -115,8 +115,6 @@
 		<dict>
 			<key>Type</key>
 			<string>PSToggleSwitchSpecifier</string>
-			<key>TrueValue</key>
-			<string></string>
 			<key>Title</key>
 			<string>Status Button in top bar</string>
 			<key>Key</key>

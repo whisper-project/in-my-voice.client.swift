@@ -243,16 +243,6 @@ struct PreferenceData {
 		}
 	}
 
-	/// whether to show share listen link in status bar
-	static var statusButtonsTop: Bool {
-		get {
-			defaults.bool(forKey: "status_buttons_top_setting")
-		}
-		set (new) {
-			defaults.setValue(new, forKey: "status_buttons_top_setting")
-		}
-	}
-
 	/// typing sounds
 	static let typingSoundChoices = [
 		("a", "Old-fashioned Typewriter", "typewriter-two-minutes"),

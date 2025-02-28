@@ -7,7 +7,6 @@ import SwiftUI
 
 struct ListenStatusTextView: View {
     @Environment(\.colorScheme) private var colorScheme
-	@AppStorage("status_buttons_top_setting") private var statusButtonsTop: Bool?
 
     @ObservedObject var model: ListenViewModel
 

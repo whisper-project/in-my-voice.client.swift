@@ -8,7 +8,7 @@ import SwiftUI
 struct WhisperControlView: View {
 	@Environment(\.colorScheme) private var colorScheme
 	@AppStorage("typing_volume_setting") private var typingVolume: Double = PreferenceData.typingVolume
-	@AppStorage("status_buttons_top_setting") private var statusButtonsTop: Bool?
+	@AppStorage("status_buttons_top_preference") private var statusTop: Bool = PreferenceData.statusButtonsTopPreference
 
 	@Binding var size: FontSizes.FontSize
 	@Binding var status: Bool
@@ -31,7 +31,7 @@ struct WhisperControlView: View {
 
 	var body: some View {
 		HStack(alignment: .center) {
-			if statusButtonsTop ?? false {
+			if statusTop {
 				statusButton()
 			}
 			alarmButton()
