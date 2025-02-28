@@ -572,3 +572,14 @@ This first beta has one cosmetic and one functional change:
 Cosmetic: The documentation and support web pages for the app are now in a different place, and the links to them from the app have been updated accordingly.
 
 Functional: In response to a request received in an app review (yes, we read those ;), I have added a new Whisperer setting called "Status Bar on top". When you turn this on, it removes the "Share Listener Link" (and all touch sensitivity) from the mid-screen status bar, so that assistive keyboards do not accidentally trigger them. Instead, a "Status" button (showing a person with a question mark) appears at the left of the top "control" bar: clicking the status button will pop up the detailed status view (which now contains the Share Listener Link and other buttons that would be on the status bar).
+
+=======
+Release notes for build 2.7.3:
+This version introduces one new feature and one cosmetic change.
+
+New feature: There is a new Whisperer setting called "Status Bar on top". When you turn this on, it removes the "Share Listener Link" (and all touch sensitivity) from the mid-screen status bar, so that assistive keyboards do not accidentally trigger these controls. Instead, a "Status" button (showing a person with a question mark) appears at the left of the top bar of controls: clicking this status button will pop up the detailed status view (which now contains the Share Listener Link and other buttons that would be on the status bar).
+
+Cosmetic change: Because this app is now published by the non-profit Whisper Project (a project of Software in the Public Interest), rather than by ClickOneTwo Consulting LLC, the web pages for instructional and support content have changed locations.
+========
+
+
