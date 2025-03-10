@@ -1,78 +1,16 @@
-# Whisper: conversation without voice
+# In My Voice: “talking” via voice clones
 
-The Whisper app facilitates conversation where one of the participants (called the _Whisperer_) has difficulty speaking but not hearing, and the other participants (called _Listeners_) can speak to the Whisperer.  The Whisperer “speaks” by typing, and the Listeners “hear” that typing in real time.
+The advent of high-quality, AI-driven voice cloning and text-to-speech technologies has opened up a lot of possibilities for people who have lost the ability to produce their original voice. Now that high-quality voice clones can be created from as little as 20 or 30 seconds of speech, even users who did not intentionally create a “voice bank” before losing their voice can use “incidental recordings” (e.g., outgoing and incoming voicemail messages) to produce a high-quality voice clone with a number of different providers.
 
-## Design
+The *In My Voice* app allows users to type in what they want to say and, within a second or two, hear it produced by their custom voice clone. In addition, it allows users to create favorites that can be “typed” with a single button press. It also allows users to quickly repeat previous statements, or to copy them and edit them as needed.
 
-The Whisper app uses a [simple entity model](#whisper-entities) to represent devices, users, and conversations. It uses a [simple data protocol](#whisper-protocol) to connect a Whisperer with Listeners. iOS and macOS devices running the Whisper app can establish conversations over Bluetooth LE without any internet connection, but for conversations with browser-based or remote Listeners the app relies on the [whisper server](#whisper-server) to provide coordination. 
+The *In My Voice* app works with multiple voice clone providers, including Apple’s on-device speech facilities and online providers such as [ElevenLabs](https://elevenlabs.io). It’s also been designed for easy addition of new providers, and as an open-source app anyone in the community can contribute.
 
-### Whisper Entities
-
-Whisper assigns each device that can whisper or listen a _device ID_ (which is a UUID).  iOS/macOS devices create their own device IDs, retain them in sandbox storage, and communicate them to the whisper server. Browsers are assigned device IDs by the whisper server and retain them in a long-lived cookie.
-
-A whisper user is represented by a long-lived _profile_ entity, identified by a UUID.  A whisper profile stores the user’s chosen _username_, the list of conversations that the user has created as the Whisperer, and the list of conversations that the user has participated in as a Listener. Each generation of a device ID also generates a new profile entity which starts out as the user profile in use on that device.  However, existing devices can elect to use the profile shared from another device, so that multiple devices can be used by the same user.  When different devices are using the same profile, they cooperate with the whisper server to make sure any profile updates made on one device are also made on the others.
-
-A whisper conversation is represented as a long-lived _conversation_ entity, identified by a UUID. Each conversation is created by a Whisperer. That Whisperer then controls which Listeners are allowed to join that conversation, and their profile IDs are kept in the conversation.  Whenever a user profile is created, it contains a default conversation for the user to Whisper with, but that user can create new conversations and switch among them at will.
-
-### Whisper Protocol
-
-The whisper protocol consists of packets, typically very small, sent from whisperer to listener or vice versa. (There is no listener-to-listener communication.) Each packet is a utf8-encoded string in three parts:
-
-- a decimal integer packet type (called the _*offset*_ for historical reasons)
-- a vertical bar '|' dividing the offset from the packet data
-- the packet data itself
-
-There are two kinds of packets: _*text*_ packets and _*control*_ packets:
-
-- Text packets are used to send changes in the Whisperer’s live text. They have offsets of 0 or greater, and their packet data is text. Their offset indicates the position past which the packet text replaces the live text. If a listener receives an offset that's shorter than the live text, he can assume the user has revised earlier text. If a listener receives an offset that's longer than the live text, they can assume they’ve missed a packet and call for a re-read of the live text, suspending incremental text packet processing until the full data is received.
-- Control packets have offsets less than 0, and the interpretation of their packet data depends on their offset. Some of them are used to carry content changes, such as shifting the live text to past text when the Whisperer hits return. Others are used for connection control, such as authorization handshakes and flow control
-
-The whisper protocol is designed to work over a transport layer that provides:
-
-1. peer-to-peer, point-to-point or broadcast, sequenced delivery of packets, and
-2. two independent, simultaneous channels, each with its own authentication.
-
-The app currently supports two transport layers:
-
-- Bluetooth LE connections (for local iOS/macOS Listeners), and
-- the [Ably](https://ably.com) pub/sub realtime infrastructure (for remote or browser-based Listeners).
-
-A single conversation can utilize both transports, with some Listeners on Bluetooth and others on Ably.
-
-Establishment and teardown of connections between a Whisperer and Listeners takes place on one channel (called the _control_ channel), and then content transfer from Whisperer to Listeners takes place on another channel (called the _content_ channel).  The separate authentication of the two channels is used to prevent Listeners who aren’t authorized from eavesdropping on a conversation.
-
-The canonical sequence for establishing a new conversation between a Whisperer and a Listener goes as follows:
-
-1. The Listener sends the Whisperer a _listen offer_ packet on the control channel.  This packet contains the listener’s profile ID but reveals nothing about the listener’s username.
-2. The Whisperer sends the Listener a *whisper offer* packet on the control channel. This contains the id and name of the conversation being offered as well as the Whisperer’s profile id and username.
-3. The Listener decides based on the offer information whether they want to participate in the conversation.  If they do, they respond with a *listen request* packet, giving their profile id and name.
-4. The Whisperer sees the _listen request_ packet and decides based on the request information whether they want to allow the Listener into the conversation:
-   1. If so, the Whisperer authorizes the Listener on the content channel and sends a _listen authorization_ packet.
-   2. If not, the Whisperer sends a _listen deauthorization_ packet.
-
-5. If the Listener receives a _listen authorization_ packet, they connect to the content channel and send a _joining_ message on the control channel.
-
-Because a Whisperer can recognize an existing listener from their _listen offer_ packet, the canonical sequence for a Listener re-joining a conversation to which they have previously been a party is just steps 1, 4.1, and 5 from the above sequence.
-
-Whenever a Whisperer drops from a conversation, they send a _dropping_ packet to let the Listeners know, and vice versa (Listeners who drop send a _dropping_ packet to the Whisperer).
-
-#### Transport vs Application Layer
-
-The implementation of whispering/listening is broken into two layers: a _transport_ layer that handles making/breaking connections and sending protocol messages between conversation participants, and an _application_ layer that understands the semantics of the messages being exchanged. As mentioned above, the transport layer may either be broadcast based (all packets seen by all participants) or it may be point-to-point (all packets go from one participant to a specific other participant).
-
-All content packets, and almost all control packets, are both initiated at the application layer by the sender and then processed at the application layer by the receiver.  There are three exceptions:
-
-* The _listen offer_ packet is initiated from the tranport layer on the listener side whenever it starts up (broadcast) or connects to a new whisperer (point-to-point).  This packet announces the presence of the new listener and is passed to the whisper application layer.  Without this packet, listeners who arrive mid-conversation would not be noticed by the whisperer.
-* The _whisper offer_ packet is initiated from the broadcast transport layer on the whisperer side when it first connects to the control channel.  Without this packet, late-arriving whisperers would not be aware of (broadcast-based) listeners who had connected earlier.
-* The _leave conversation_ packet.  This packet is sent by the transport layer to warn other participants that they are disconnecting from the conversation.  The disconnection may be motivated either by the application layer (e.g., if the user quits) or by the transport layer (e.g., if there is a transport error and the connection must be torn down). Whenever a participant’s transport receives a _leave conversation_ packet from a participant that is already known to the application layer, it tells the application layer of the departure.
-
-### Whisper Server
-
-The whisper server coordinates and secures all internet-based interactions between devices, including both internet-based conversations and the synchronization of profiles.    Whisper device IDs are tracked on the whisper server, where they are associated with all of the other entities used in the app’s operation on that device.
+For users with multiple devices, *In My Voice* allows synchronizing voice and favorites settings across devices so the user experience is completely consistent.
 
 ## License
 
-All code and textual materials in this repository are copyright 2023 Daniel C. Brotsky, and licensed under the GNU Afero General Public License v3, which is reproduced in full in the [LICENSE](LICENSE) file.
+All code and textual materials in this repository are copyright 2023-2025 Daniel C. Brotsky, and licensed under the GNU Affero General Public License v3, which is reproduced in full in the [LICENSE](LICENSE) file.
 
 The icon assets in this repository come from [the Noun Project](https://thenounproject.com), and are licensed via subscription by Daniel Brotsky for use in this application (see details [here](https://www.thenounproject.com/legal)).
 
@@ -97,6 +35,3 @@ Daniel Brotsky gratefully acknowledges the following content creators whose mate
 - [Voice Over Off Icon](https://thenounproject.com/icon/voice-over-off-3644052/) by [Justin Blake](https://thenounproject.com/justin.blake.315/) via [the Noun Project](https://thenounproject.com).
 - [Whisper Speech Bubble Icon](https://thenounproject.com/icon/whisper-speech-bubble-4215124/) by [Lucas Helle](https://thenounproject.com/lucashelle/) via [the Noun Project](https://thenounproject.com).
 - [Uncheck](https://thenounproject.com/icon/uncheck-6992025/) by [Annisa](https://thenounproject.com/creator/adeannisa0102/) via [the Noun Project](https://thenounproject.com).
-
-Daniel Brotsky is also grateful for the example application [ColorStripe](https://github.com/artemnovichkov/ColorStripe), designed by [@artemnovichkov](https://github.com/artemnovichkov) as described in his [blog post](https://blog.artemnovichkov.com/bluetooth-and-swiftui). Some of the code in ColorStripe, especially the use of Combine to connect Core Bluetooth managers with ViewModels, has been used in Whisper, as permitted by the [MIT license](https://github.com/artemnovichkov/ColorStripe/blob/main/LICENSE) under which ColorStripe was released.
-

@@ -1,1 +1,0 @@
-This is an open-source app licensed under AGPLv3.  Sources are at https://github.com/whisper-project/client.swift.

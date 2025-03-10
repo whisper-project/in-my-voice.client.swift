@@ -1,7 +1,0 @@
-Screenshot sequence:
-
-1. Home Screen - Bill is user
-
-2. Whisper Screen (light and dark) - connected to 2 listeners Phil and Al, live text "So what do you think we should do?", past text "I've noticed that too / I'm more worried about the second one"
-
-3. Whisper Profile Screen - three conversations "Family", "Weekly Staff", and "Weekly 1-1"

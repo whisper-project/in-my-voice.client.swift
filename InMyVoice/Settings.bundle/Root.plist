@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>StringsTable</key>
+	<string>Root</string>
+	<key>PreferenceSpecifiers</key>
+	<array>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
+			<string>History Settings</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>History Buttons</string>
+			<key>Key</key>
+			<string>history_buttons_preference</string>
+			<key>DefaultValue</key>
+			<string>r-i-f</string>
+			<key>Titles</key>
+			<array>
+				<string>Repeat, Interject, Favorite</string>
+				<string>Repeat, Interject</string>
+				<string>Interject, Favorite</string>
+				<string>Repeat, Favorite</string>
+				<string>Repeat</string>
+				<string>Interject</string>
+				<string>Favorite</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>r-i-f</string>
+				<string>r-i</string>
+				<string>i-f</string>
+				<string>r-f</string>
+				<string>r</string>
+				<string>i</string>
+				<string>f</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTextFieldSpecifier</string>
+			<key>Title</key>
+			<string>Interjection Prefix</string>
+			<key>Key</key>
+			<string>interjection_prefix_preference</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>Interjection Alert</string>
+			<key>Key</key>
+			<string>interjection_alert_preference</string>
+			<key>DefaultValue</key>
+			<string></string>
+			<key>Values</key>
+			<array>
+				<string></string>
+				<string>bike-bell</string>
+				<string>bike-horn</string>
+				<string>air-horn</string>
+			</array>
+			<key>Titles</key>
+			<array>
+				<string>None</string>
+				<string>Bicycle Bell</string>
+				<string>Bicycle Horn</string>
+				<string>Air Horn</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
