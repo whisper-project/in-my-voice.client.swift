@@ -12,29 +12,36 @@ struct MainView: View {
 	@AppStorage("main_view_large_sizes_setting") private var useLargeSizes: Bool = false
 
 	@State var mode: OperatingMode = .ask
+	@State var magnify: Bool = PreferenceData.useLargeFontSizes
     @StateObject private var model: MainViewModel = .init()
-            
+
     var body: some View {
         switch mode {
         case .ask:
             VStack {
                 Spacer()
-                ChoiceView(mode: $mode, TcpStatus: $model.status)
-					.onAppear {
-						UserProfile.shared.update()
-					}
+				ChoiceView(mode: $mode)
                 Spacer()
-				Toggle("Larger Type", isOn: $useLargeSizes)
-					.frame(maxWidth: useLargeSizes ? 220 : 175)
+				Toggle("Larger Type", isOn: $magnify)
+					.frame(maxWidth: magnify ? 220 : 175)
+					.onChange(of: magnify) {
+						PreferenceData.useLargeFontSizes = magnify
+					}
                 Text("v\(versionString)")
                     .textSelection(.enabled)
                     .font(FontSizes.fontFor(name: .xxxsmall))
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     .padding(EdgeInsets(top: 20, leading: 0, bottom: 5, trailing: 0))
             }
-			.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
+			.dynamicTypeSize(magnify ? .accessibility1 : dynamicTypeSize)
+			.alert("Notification", isPresented: $model.showMessage) {
+				Text(model.message)
+			}
         case .whisper:
 			WhisperView(mode: $mode)
+				.alert("Notification", isPresented: $model.showMessage) {
+					Text(model.message)
+				}
         }
     }
 }

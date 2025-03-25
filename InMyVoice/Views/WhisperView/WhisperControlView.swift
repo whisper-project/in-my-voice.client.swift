@@ -8,10 +8,8 @@ import SwiftUI
 struct WhisperControlView: View {
 	@Environment(\.colorScheme) private var colorScheme
 	@AppStorage("typing_volume_setting") private var typingVolume: Double = PreferenceData.typingVolume
-	@AppStorage("status_buttons_top_preference") private var statusTop: Bool = PreferenceData.statusButtonsTopPreference
 
 	@Binding var size: FontSizes.FontSize
-	@Binding var status: Bool
 	@Binding var magnify: Bool
 	@Binding var interjecting: Bool
 	@Binding var showFavorites: Bool
@@ -25,18 +23,13 @@ struct WhisperControlView: View {
 	@State private var alertSound = PreferenceData.alertSound
 	@State private var typing = PreferenceData.hearTyping
 	@State private var typingSound = PreferenceData.typingSound
-	@State private var speaking: Bool = false
 	@State private var allGroups: [FavoritesGroup] = []
-	@StateObject private var fp = UserProfile.shared.favoritesProfile
+	@StateObject private var fp = FavoritesProfile.shared
 
 	var body: some View {
 		HStack(alignment: .center) {
-			if statusTop {
-				statusButton()
-			}
 			alarmButton()
 			typingButton()
-			speechButton()
 			clearButton()
 			repeatButton()
 			interjectingButton()
@@ -51,17 +44,7 @@ struct WhisperControlView: View {
 	}
 
 	private func updateFromProfile() {
-		speaking = PreferenceData.speakWhenWhispering
 		allGroups = fp.allGroups()
-	}
-
-	@ViewBuilder private func statusButton() -> some View {
-		Button {
-			status.toggle()
-		} label: {
-			buttonImage(systemName: "person.crop.circle.badge.questionmark.fill", pad: 5)
-		}
-		Spacer()
 	}
 
 	@ViewBuilder private func alarmButton() -> some View {
@@ -78,16 +61,6 @@ struct WhisperControlView: View {
 			buttonImage(name: alertSound + "-icon", pad: 5)
 		} primaryAction: {
 			playSound()
-		}
-		Spacer()
-	}
-
-	@ViewBuilder private func speechButton() -> some View {
-		Button {
-			speaking.toggle()
-			PreferenceData.speakWhenWhispering = speaking
-		} label: {
-			buttonImage(name: speaking ? "voice-over-on" : "voice-over-off", pad: 5)
 		}
 		Spacer()
 	}

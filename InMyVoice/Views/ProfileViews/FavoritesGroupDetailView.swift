@@ -17,8 +17,7 @@ struct FavoritesGroupDetailView: View {
 	@State var newName: String = ""
 	@State var favorites: [Favorite] = []
 	@State var allFavorites: [Favorite] = []
-	@StateObject private var up = UserProfile.shared
-	@StateObject private var fp = UserProfile.shared.favoritesProfile
+	@StateObject private var fp = FavoritesProfile.shared
 
 	var body: some View {
 		Form {

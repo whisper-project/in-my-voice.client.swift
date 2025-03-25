@@ -21,7 +21,7 @@ final class SleepControl {
 			if status == kIOReturnSuccess {
 				sleepDisabled = true
 			} else {
-				logAnomaly("Couldn't disable auto-screen-sleep on Mac: return value was \(status)")
+				ServerProtocol.notifyAnomaly("Couldn't disable auto-screen-sleep on Mac: return value was \(status)")
 			}
 		}
 	}

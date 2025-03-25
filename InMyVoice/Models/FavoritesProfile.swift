@@ -6,8 +6,6 @@
 import Foundation
 
 fileprivate struct StoredProfile: Codable {
-	var id: String
-	var timestamp: Int
 	var favorites: [Favorite]
 	var groupList: [String]
 	var groupTable: [String: [String]]
@@ -49,21 +47,17 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 		lhs.name < rhs.name
 	}
 	
-	func speakText(errorCallback: TransportErrorCallback? = nil) {
-		speakTextInternal(regenerate: false, errorCallback: errorCallback)
+	func speakText() {
+		speakTextInternal(regenerate: false)
 	}
 
 	func regenerateText() {
 		speakTextInternal(regenerate: true)
 	}
 
-	private func speakTextInternal(regenerate: Bool, errorCallback: TransportErrorCallback? = nil) {
-		let memoize: TransportSuccessCallback = { result in
-			if let result = result {
-				errorCallback?(result.0, result.1)
-				return
-			}
-			if let item = ElevenLabs.shared.lookupText(self.text) {
+	private func speakTextInternal(regenerate: Bool) {
+		let memoize: SpeechCallback = { item in
+			if let item = item {
 				if item.hash != self.speechHash || item.historyId != self.speechId {
 					self.speechHash = item.hash
 					self.speechId = item.historyId
@@ -74,7 +68,7 @@ final class Favorite: Identifiable, Comparable, Hashable, Codable {
 		if regenerate {
 			ElevenLabs.shared.forgetText(text)
 		}
-		ElevenLabs.shared.speakText(text: text, successCallback: memoize)
+		ElevenLabs.shared.speakText(text: text, callback: memoize)
 	}
 }
 
@@ -152,44 +146,40 @@ final class FavoritesGroup: Identifiable, Hashable {
 	}
 }
 
-final class FavoritesProfile: Codable, ObservableObject {
-	static private let saveName = PreferenceData.profileRoot + "FavoritesProfile"
-	
-	var id: String
-	@Published var timestamp: Int
-	private var favoritesTable: [String: Favorite]
-	private var lookupTable: [String: [Favorite]]
+final class FavoritesProfile: ObservableObject {
+	static let shared = FavoritesProfile()
+
+	@Published private(set) var timestamp: Int = 0
+
+	private let saveName = PreferenceData.profileRoot + "FavoritesProfile"
+	private var favoritesTable: [String: Favorite] = [:]
+	private var lookupTable: [String: [Favorite]] = [:]
 	private(set) var allGroup: FavoritesGroup! = nil
-	private var groupTable: [String: FavoritesGroup]
+	private var groupTable: [String: FavoritesGroup] = [:]
 	private var groupList: [FavoritesGroup] = []
 	private var serverPassword: String = ""
 
-	// because favorites profiles don't existing in older versions,
-	// we may actually need to create one for a shared profile which
-	// has a password, so we accept the password when creating it.
-	init(_ profileId: String, serverPassword: String = "") {
-		id = profileId
-		self.serverPassword = serverPassword
-		timestamp = Int(Date.now.timeIntervalSince1970)
-		favoritesTable = [:]
-		lookupTable = [:]
-		groupList = []
-		groupTable = [:]
+	init() {
 		allGroup = FavoritesGroup(profile: self, name: "")
-		_ = addFavoriteInternal(name: "Sample", text: "This is a sample favorite.", tags: [])
-		// if we have a server password, this save will try posting the new profile.
-		// The post will fail if some other client has posted one first.
-		save(verb: "POST")
+		if !load() {
+			_ = addFavoriteInternal(name: "Sample", text: "This is a sample favorite.", tags: [])
+			save()
+		}
 	}
 
-	init(from: any Decoder) throws {
-		let stored = try StoredProfile(from: from)
-		id = stored.id
-		timestamp = stored.timestamp
-		favoritesTable = [:]
-		lookupTable = [:]
-		groupList = []
-		groupTable = [:]
+	private func toStored() -> StoredProfile {
+		let favorites = Array(allGroup.favorites)
+		let groupList = groupList.map{ $0.name }
+		let groupTable = groupTable.mapValues{ g in g.favorites.map{ $0.name } }
+		let stored = StoredProfile(favorites: favorites, groupList: groupList, groupTable: groupTable)
+		return stored
+	}
+
+	private func fromStored(_ stored: StoredProfile) {
+		self.favoritesTable = [:]
+		self.lookupTable = [:]
+		self.groupTable = [:]
+		self.groupList = []
 		allGroup = FavoritesGroup(profile: self, name: "")
 		for f in stored.favorites {
 			f.profile = self
@@ -213,26 +203,41 @@ final class FavoritesProfile: Codable, ObservableObject {
 		}
 	}
 
-	/// update the existing profile from a loaded server-side profile
-	private func updateFromProfile(_ profile: FavoritesProfile) {
-		self.favoritesTable = profile.favoritesTable
-		self.lookupTable = profile.lookupTable
-		self.allGroup = profile.allGroup
-		for f in allGroup.favorites { f.profile = self }
-		self.groupList = profile.groupList
-		for g in self.groupList { g.profile = self }
-		self.groupTable = profile.groupTable
-		self.timestamp = profile.timestamp
+	private func load() -> Bool {
+		if let data = Data.loadJsonFromDocumentsDirectory(saveName),
+		   let stored = try? JSONDecoder().decode(StoredProfile.self, from: data)
+		{
+			fromStored(stored)
+			return true
+		}
+		return false
 	}
 
-	func encode(to: any Encoder) throws {
-		let favorites = Array(allGroup.favorites)
-		let groupList = groupList.map{ $0.name }
-		let groupTable = groupTable.mapValues{ g in g.favorites.map{ $0.name } }
-		let stored = StoredProfile(
-			id: id, timestamp: timestamp, favorites: favorites, groupList: groupList, groupTable: groupTable
-		)
-		try stored.encode(to: to)
+	func downloadFavorites() {
+		let dataHandler: (Data) -> Void = { data in
+			if let stored = try? JSONDecoder().decode(StoredProfile.self, from: data) {
+				self.fromStored(stored)
+				self.save(localOnly: true)
+			}
+		}
+		ServerProtocol.downloadFavorites(dataHandler)
+	}
+
+	fileprivate func save(localOnly: Bool = false) {
+		DispatchQueue.main.async {
+			self.timestamp += 1
+		}
+		guard let data = try? JSONEncoder().encode(toStored()) else {
+			ServerProtocol.notifyAnomaly("Cannot encode favorites profile for local save: \(self)")
+			return
+		}
+		guard data.saveJsonToDocumentsDirectory(saveName) else {
+			ServerProtocol.notifyAnomaly("Cannot save favorites profile to Documents directory")
+			return
+		}
+		if !localOnly {
+			ServerProtocol.uploadFavorites(data)
+		}
 	}
 
 	private func addFavoriteInternal(name: String, text: String, tags: [String] = []) -> Favorite {
@@ -245,7 +250,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 			if let tagSet = groupTable[name] {
 				tagSet.addInternal(f)
 			} else {
-				logAnomaly("Ignoring unknown name (\(name)) in newFavorite(\(name))")
+				ServerProtocol.notifyAnomaly("Ignoring unknown name (\(name)) in newFavorite(\(name))")
 			}
 		}
 		return f
@@ -280,7 +285,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 			return false
 		}
 		guard favoritesTable[f.name] === f else {
-			logAnomaly("Ignore unknown favorite (\(f.name)) in renameFavorite")
+			ServerProtocol.notifyAnomaly("Ignore unknown favorite (\(f.name)) in renameFavorite")
 			return false
 		}
 		favoritesTable.removeValue(forKey: f.name)
@@ -307,7 +312,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 	fileprivate func deleteFavorites(_ fs: [Favorite]) {
 		for f in fs {
 			guard f === favoritesTable[f.name] else {
-				logAnomaly("Ignoring unknown favorite \(f.name) in deleteFavorite")
+				ServerProtocol.notifyAnomaly("Ignoring unknown favorite \(f.name) in deleteFavorite")
 				continue
 			}
 			favoritesTable.removeValue(forKey: f.name)
@@ -350,7 +355,7 @@ final class FavoritesProfile: Codable, ObservableObject {
 			return false
 		}
 		guard groupTable[g.name] === g else {
-			logAnomaly("Ignore unknown name (\(g.name)) in renameGroup")
+			ServerProtocol.notifyAnomaly("Ignore unknown name (\(g.name)) in renameGroup")
 			return false
 		}
 		groupTable.removeValue(forKey: g.name)
@@ -380,121 +385,5 @@ final class FavoritesProfile: Codable, ObservableObject {
 
 	func getGroup(_ name: String) -> FavoritesGroup? {
 		groupTable[name]
-	}
-
-	fileprivate func save(verb: String = "PUT", localOnly: Bool = false) {
-		if !localOnly {
-			timestamp = Int(Date.now.timeIntervalSince1970)
-		}
-		guard let data = try? JSONEncoder().encode(self) else {
-			fatalError("Cannot encode favorites profile: \(self)")
-		}
-		guard data.saveJsonToDocumentsDirectory(FavoritesProfile.saveName) else {
-			fatalError("Cannot save favorites profile to Documents directory")
-		}
-		if !localOnly && !serverPassword.isEmpty {
-			saveToServer(data: data, verb: verb)
-		}
-	}
-
-	static func load(_ profileId: String, serverPassword: String) -> FavoritesProfile? {
-		if let data = Data.loadJsonFromDocumentsDirectory(FavoritesProfile.saveName),
-		   let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data)
-		{
-			if profileId == profile.id {
-				profile.serverPassword = serverPassword
-				return profile
-			}
-			logger.warning("Asked to load profile with id \(profileId), deleting saved profile with id \(profile.id)")
-			Data.removeJsonFromDocumentsDirectory(FavoritesProfile.saveName)
-		}
-		return nil
-	}
-
-	private func saveToServer(data: Data, verb: String = "PUT") {
-		let path = "/api/v2/favoritesProfile" + (verb == "PUT" ? "/\(id)" : "")
-		guard let url = URL(string: PreferenceData.voiceServer + path) else {
-			fatalError("Can't create URL for favorites profile upload")
-		}
-		logger.info("\(verb) of favorites profile to server, current timestamp: \(self.timestamp)")
-		var request = URLRequest(url: url)
-		request.httpMethod = verb
-		if verb == "PUT" {
-			request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
-		}
-		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
-		request.httpBody = data
-		Data.executeJSONRequest(request)
-	}
-
-	func update(_ notifyChange: (() -> Void)? = nil) {
-		guard !serverPassword.isEmpty else {
-			// not a shared profile, so no way to update
-			return
-		}
-		func handler(_ code: Int, _ data: Data) {
-			if code == 200 {
-				if let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data) {
-					logger.info("Received updated favorites profile, timestamp is \(profile.timestamp)")
-					self.updateFromProfile(profile)
-					save(localOnly: true)
-					notifyChange?()
-				} else {
-					logAnomaly("Received invalid favorites profile data: \(String(decoding: data, as: UTF8.self))")
-				}
-			} else if code == 404 {
-				// this is supposed to be a shared profile, but the server doesn't have it?!
-				logAnomaly("Found no favorites profile on server when updating, uploading one")
-				save(verb: "POST")
-			}
-		}
-		let path = "/api/v2/favoritesProfile/\(id)"
-		guard let url = URL(string: PreferenceData.voiceServer + path) else {
-			fatalError("Can't create URL for favorites profile download")
-		}
-		var request = URLRequest(url: url)
-		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
-		request.setValue("\"\(self.timestamp)\"", forHTTPHeaderField: "If-None-Match")
-		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
-		request.httpMethod = "GET"
-		Data.executeJSONRequest(request, handler: handler)
-	}
-
-	func startSharing(serverPassword: String, ownConversations: [WhisperConversation] = []) {
-		self.serverPassword = serverPassword
-		save(verb: "POST")
-	}
-
-	func loadShared(id: String, serverPassword: String, completionHandler: @escaping (Int) -> Void) {
-		func handler(_ code: Int, _ data: Data) {
-			if code == 404 {
-				// apparently the server doesn't have this profile component yet
-				logAnomaly("Found no favorites profile on server when loading shared, uploading one")
-				save(verb: "POST")
-				completionHandler(200)
-			} else if code < 200 || code >= 300 {
-				completionHandler(code)
-			} else if let profile = try? JSONDecoder().decode(FavoritesProfile.self, from: data) {
-				self.id = id
-				self.serverPassword = serverPassword
-				self.updateFromProfile(profile)
-				save(localOnly: true)
-				completionHandler(200)
-			} else {
-				logAnomaly("Received invalid favorites profile data: \(String(decoding: data, as: UTF8.self))")
-				completionHandler(-1)
-			}
-		}
-		let path = "/api/v2/favoritesProfile/\(id)"
-		guard let url = URL(string: PreferenceData.voiceServer + path) else {
-			fatalError("Can't create URL for favorites profile download")
-		}
-		var request = URLRequest(url: url)
-		request.setValue("Bearer \(serverPassword)", forHTTPHeaderField: "Authorization")
-		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
-		request.setValue("\"  impossible-timestamp   \"", forHTTPHeaderField: "If-None-Match")
-		request.httpMethod = "GET"
-		Data.executeJSONRequest(request, handler: handler)
 	}
 }

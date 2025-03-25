@@ -7,34 +7,33 @@ import Foundation
 import AVFAudio
 import CryptoKit
 
+typealias SpeechCallback = (SpeechItem?) -> Void
+
 final class SpeechItem {
+	static fileprivate var elevenLabsApiKey: String = ""
+	static fileprivate var elevenLabsVoiceId: String = ""
+
+	static fileprivate func isEnabled() -> Bool {
+		return !elevenLabsApiKey.isEmpty && !elevenLabsVoiceId.isEmpty
+	}
+
 	private struct SpeechSettings {
 		let apiRoot: String = "https://api.elevenlabs.io/v1"
 		let outputFormat: String = "mp3_44100_128"
-		let modelId: String = "eleven_turbo_v2"
+		let modelId: String = "eleven_flash_v2"
 		let similarityBoost: Float = 0.5
 		let stability: Float = 0.5
 		let useSpeakerBoost: Bool = true
-		var apiKey, voiceId, dictionaryId, dictionaryVersion: String
-		var optimizeStreamingLatency: Int
+		let optimizeStreamingLatency: Int = 1
+		var apiKey: String = elevenLabsApiKey
+		var voiceId: String = elevenLabsVoiceId
 
 		func stableHash() -> String {
 			var hasher = HasherFNV1a()
 			hasher.combine(apiKey)
 			hasher.combine(voiceId)
-			hasher.combine(dictionaryId)
-			hasher.combine(dictionaryVersion)
-			hasher.combine(optimizeStreamingLatency)
 			let val = hasher.finalize()
 			return String(val, radix: 32, uppercase: false)
-		}
-
-		init() {
-			apiKey = PreferenceData.elevenLabsApiKey()
-			voiceId = PreferenceData.elevenLabsVoiceId()
-			dictionaryId = PreferenceData.elevenLabsDictionaryId()
-			dictionaryVersion = PreferenceData.elevenLabsDictionaryVersion()
-			optimizeStreamingLatency = PreferenceData.elevenLabsLatencyReduction()
 		}
 	}
 
@@ -53,15 +52,15 @@ final class SpeechItem {
 		historyId = id
 	}
 
-	fileprivate func generateSpeech(_ callback: @escaping TransportSuccessCallback) {
+	fileprivate func generateSpeech(_ callback: @escaping SpeechCallback) {
 		let settings = SpeechSettings()
 		guard !settings.apiKey.isEmpty, !settings.voiceId.isEmpty else {
-			callback((.settings, "Can't generate ElevenLabs speech due to empty api key or voice id"))
+			callback(nil)
 			return
 		}
 		let endpoint = "\(settings.apiRoot)/text-to-speech/\(settings.voiceId)/stream"
 		let query = "?output_format=\(settings.outputFormat)&optimize_streaming_latency=\(settings.optimizeStreamingLatency)"
-		var body: [String: Any] = [
+		let body: [String: Any] = [
 			"model_id": settings.modelId,
 			"text": text,
 			"voice_settings": [
@@ -70,14 +69,6 @@ final class SpeechItem {
 				"use_speaker_boost": settings.useSpeakerBoost
 			]
 		]
-		if !settings.dictionaryId.isEmpty && !settings.dictionaryVersion.isEmpty {
-			body["pronunciation_dictionary_locators"] = [
-				[
-					"pronunciation_dictionary_id": settings.dictionaryId,
-					"version_id": settings.dictionaryVersion,
-				]
-			]
-		}
 		guard let data = try? JSONSerialization.data(withJSONObject: body) else {
 			fatalError("Can't encode body for voice generation call")
 		}
@@ -88,15 +79,13 @@ final class SpeechItem {
 		request.httpBody = data
 		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
 			guard error == nil else {
-				let report = "Failed to generate speech: \(String(describing: error))"
-				logAnomaly(report)
-				callback((.temporary, report))
+				ServerProtocol.notifyAnomaly("Failed to generate speech: \(String(describing: error))")
+				callback(nil)
 				return
 			}
 			guard let response = response as? HTTPURLResponse else {
-				let report = "Received non-HTTP response on speech generation: \(String(describing: response))"
-				logAnomaly(report)
-				callback((.temporary, report))
+				ServerProtocol.notifyAnomaly("Received non-HTTP response on speech generation: \(String(describing: response))")
+				callback(nil)
 				return
 			}
 			if response.statusCode == 200,
@@ -110,52 +99,26 @@ final class SpeechItem {
 					self.historyId = id
 					self.hash = hash
 				} else {
-					logAnomaly("Speech generation is missing history item ID: \(response.allHeaderFields)")
+					ServerProtocol.notifyAnomaly("Speech generation is missing history item ID: \(response.allHeaderFields)")
 				}
-				callback(nil)
+				callback(self)
 				return
 			}
-			logAnomaly("Speech generation of \(self.text) got response status \(response.statusCode)")
-			guard let data = data,
-				  let body = try? JSONSerialization.jsonObject(with: data),
-				  let obj = body as? [String:Any] else {
-				logAnomaly("Can't deserialize speech generation response body: \(String(describing: data))")
-				return
-			}
-			logAnomaly("Error details of speech generation: \(obj)")
-			if response.statusCode == 401 {
-				callback((.settings, "Invalid ElevenLabs API key"))
-			} else if let detail = obj["detail"] as? [String: String],
-					  let status = detail["status"],
-					  let message = detail["message"]
-			{
-				if status == "voice_not_found" {
-					callback((.settings, "Invalid ElevenLabs voice ID"))
-				} else if status == "pronunciation_dictionary_not_found" {
-					callback((.settings, "Invalid ElevenLabs dictionary ID or version"))
-				} else {
-					callback((.report, "ElevenLabs reported a problem: \(message)"))
-				}
-			} else {
-				callback((.report, "ElevenLabs reported a mysterious problem: \(String(describing: obj))"))
-			}
+			ServerProtocol.notifyElevenLabsFailure(action: "generate", code: response.statusCode, data: data)
+			callback(nil)
 		}
 		logger.info("Posting generation request for '\(self.text)' to ElevenLabs")
 		task.resume()
 	}
 
-	static fileprivate func isEnabled() -> Bool {
-		return !PreferenceData.elevenLabsApiKey().isEmpty && !PreferenceData.elevenLabsVoiceId().isEmpty
-	}
-
-	fileprivate func downloadSpeech(_ callback: @escaping TransportSuccessCallback) {
+	fileprivate func downloadSpeech(_ callback: @escaping SpeechCallback) {
 		let settings = SpeechSettings()
 		guard !settings.apiKey.isEmpty else {
-			callback((.settings, "Can't download ElevenLabs speech due to empty api key"))
+			callback(nil)
 			return
 		}
 		guard let id = historyId, let hash = hash else {
-			logAnomaly("Can't download with missing history settings, regenerating...")
+			ServerProtocol.notifyAnomaly("Can't download with missing history settings, regenerating...")
 			generateSpeech(callback)
 			return
 		}
@@ -172,15 +135,13 @@ final class SpeechItem {
 		request.setValue(settings.apiKey, forHTTPHeaderField: "xi-api-key")
 		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
 			guard error == nil else {
-				let report = "Failed to retrieve speech: \(String(describing: error))"
-				logAnomaly(report)
-				callback((.temporary, report))
+				ServerProtocol.notifyAnomaly("Failed to download speech: \(String(describing: error))")
+				callback(nil)
 				return
 			}
 			guard let response = response as? HTTPURLResponse else {
-				let report = "Received non-HTTP response on speech retrieval of item \(id): \(String(describing: response))"
-				logAnomaly(report)
-				callback((.temporary, report))
+				ServerProtocol.notifyAnomaly("Received non-HTTP response on speech retrieval of item \(id): \(String(describing: response))")
+				callback(nil)
 				return
 			}
 			if response.statusCode == 200,
@@ -188,55 +149,82 @@ final class SpeechItem {
 			{
 				logger.info("Successful speech retrieval for item \(id, privacy: .public)")
 				self.audio = NSPurgeableData(data: data)
-				callback(nil)
+				callback(self)
 				return
 			}
-			logAnomaly("Speech retrieval of history item \(id) got response status \(response.statusCode)")
-			guard let data = data,
-				  let body = try? JSONSerialization.jsonObject(with: data),
-				  let obj = body as? [String:Any] else {
-				logAnomaly("Can't deserialize speech retrieval response body: \(String(describing: data))")
-				return
-			}
-			logAnomaly("Error details of speech generation: \(obj)")
-			if response.statusCode == 401 {
-				callback((.settings, "Invalid ElevenLabs API key"))
-			} else if let detail = obj["detail"] as? [String: String],
-					  let status = detail["status"],
-					  let message = detail["message"]
-			{
-				if status == "invalid_uid" {
-					callback((.report, "ElevenLabs history item not found"))
-				} else {
-					callback((.report, "ElevenLabs reported a problem: \(message)"))
-				}
-			} else {
-				callback((.report, "ElevenLabs reported a mysterious problem: \(String(describing: obj))"))
-			}
+			ServerProtocol.notifyElevenLabsFailure(action: "download", code: response.statusCode, data: data)
+			callback(nil)
 		}
-		logger.info("Posting retrieval request for item \(id) to ElevenLabs")
+		logger.info("Posting retrieval request for item \(id, privacy: .public) to ElevenLabs")
 		task.resume()
 	}
 }
 
-final class ElevenLabs: NSObject, @preconcurrency AVAudioPlayerDelegate {
+final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 	static let shared = ElevenLabs()
 
-	private typealias GeneratedItem = (item: SpeechItem, audio: Data)
+	private static let fallbackSynth = AVSpeechSynthesizer()
 
+	private typealias GeneratedItem = (item: SpeechItem, audio: Data)
+	private let saveName = PreferenceData.profileRoot + "ElevenLabsSettings"
 	private var pastItems: [String: SpeechItem] = [:]
 	private var pendingItems: [GeneratedItem] = []
-	private var errorCallback: TransportErrorCallback?
+	private var callback: SpeechCallback?
 	private var speaker: AVAudioPlayer?
 	private var emptyTextCount: Int = 0
 
-	private static let synthesizer = AVSpeechSynthesizer()
+	override init() {
+		super.init()
+		loadSettings()
+	}
 
 	private func keyText(_ text: String) -> String {
 		let trim = text.trimmingCharacters(in: .whitespacesAndNewlines)
 		let lower = trim.lowercased()
 		let key = lower.split(separator: " ", omittingEmptySubsequences: true).joined(separator: " ")
 		return key
+	}
+
+	private func loadSettings() {
+		if let data = Data.loadJsonFromDocumentsDirectory(saveName),
+		   let settings = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+		   let apiKey = settings["apiKey"] as? String,
+		   let voiceId = settings["voiceId"] as? String
+		{
+			SpeechItem.elevenLabsApiKey = apiKey
+			SpeechItem.elevenLabsVoiceId = voiceId
+		} else {
+			saveSettings(localOnly: true)
+		}
+	}
+
+	private func saveSettings(localOnly: Bool = false) {
+		let settings: [String: String] = [
+			"apiKey": SpeechItem.elevenLabsApiKey,
+			"voiceId": SpeechItem.elevenLabsVoiceId,
+		]
+		guard let data = try? JSONSerialization.data(withJSONObject: settings, options: []) else {
+			return
+		}
+		data.saveJsonToDocumentsDirectory(saveName)
+		if (!localOnly) {
+			ServerProtocol.uploadElevenLabsSettings(data)
+		}
+	}
+
+	func downloadSettings() {
+		let dataHandler: (Data) -> Void = { data in
+			if let obj = try? JSONSerialization.jsonObject(with: data, options: []),
+			   let settings = obj as? [String: String],
+			   let apiKey = settings["apiKey"],
+			   let voiceId = settings["voiceId"]
+			{
+				SpeechItem.elevenLabsApiKey = apiKey
+				SpeechItem.elevenLabsVoiceId = voiceId
+				self.saveSettings(localOnly: true)
+			}
+		}
+		ServerProtocol.downloadElevenLabsSettings(dataHandler)
 	}
 
 	static func isEnabled() -> Bool {
@@ -255,22 +243,12 @@ final class ElevenLabs: NSObject, @preconcurrency AVAudioPlayerDelegate {
 		pastItems.removeValue(forKey: keyText(text))
 	}
 
-	func speakText(text: String, errorCallback: TransportErrorCallback? = nil) {
-		speakText(text: text, successCallback: { result in
-			if let (severity, message) = result {
-				errorCallback?(severity, message)
-			}
-		})
-	}
-
-	func speakText(text: String, successCallback: @escaping TransportSuccessCallback) {
+	func speakText(text: String, callback: SpeechCallback? = nil) {
+		self.callback = callback
 		guard SpeechItem.isEnabled() else {
 			fallback(text)
-			successCallback(nil)
+			self.callback?(nil)
 			return
-		}
-		errorCallback = { severity, message in
-			successCallback((severity, message))
 		}
 		guard !text.isEmpty else {
 			emptyTextCount += 1
@@ -284,37 +262,41 @@ final class ElevenLabs: NSObject, @preconcurrency AVAudioPlayerDelegate {
 		if let existing = pastItems[keyText(text)] {
 			if let audio = existing.audio, audio.beginContentAccess() {
 				logger.info("Successful reuse of generated speech for item \(existing.historyId, privacy: .public)")
-				successCallback(nil)
+				callback?(existing)
 				self.queueSpeech((existing, Data(audio)))
 				audio.endContentAccess()
 			} else {
-				existing.downloadSpeech() { error in
-					if error != nil {
+				existing.downloadSpeech() { success in
+					if success == nil {
 						self.fallback(text)
+						self.callback?(nil)
 					} else if let audio = existing.audio, audio.beginContentAccess() {
 						self.queueSpeech((existing, Data(audio)))
 						audio.endContentAccess()
+						self.callback?(existing)
 					} else {
-						logAnomaly("Downloaded audio was purged before it could be played")
+						ServerProtocol.notifyAnomaly("Downloaded audio was purged before it could be played")
 						self.fallback(text)
+						self.callback?(nil)
 					}
-					successCallback(error)
 				}
 			}
 		} else {
 			let item = SpeechItem(text)
-			item.generateSpeech() { error in
-				if error != nil {
+			item.generateSpeech() { success in
+				if success == nil {
 					self.fallback(text)
+					self.callback?(nil)
 				} else if let audio = item.audio, audio.beginContentAccess() {
 					self.pastItems[self.keyText(text)] = item
 					self.queueSpeech((item, Data(audio)))
 					audio.endContentAccess()
+					self.callback?(item)
 				} else {
-					logAnomaly("Generated audio was purged before it could be played")
+					ServerProtocol.notifyAnomaly("Generated audio was purged before it could be played")
 					self.fallback(text)
+					self.callback?(nil)
 				}
-				successCallback(error)
 			}
 		}
 	}
@@ -323,13 +305,13 @@ final class ElevenLabs: NSObject, @preconcurrency AVAudioPlayerDelegate {
 		// fallback to Apple speech generation
 		DispatchQueue.main.async {
 			let utterance = AVSpeechUtterance(string: text)
-			Self.synthesizer.speak(utterance)
+			Self.fallbackSynth.speak(utterance)
 		}
 	}
 
 	private func queueSpeech(_ item: GeneratedItem) {
 		guard !item.audio.isEmpty else {
-			logAnomaly("No audio in Generated Item: \(item.item)")
+			ServerProtocol.notifyAnomaly("No audio in Generated Item: \(item.item)")
 			return
 		}
 		DispatchQueue.main.async {
@@ -352,12 +334,12 @@ final class ElevenLabs: NSObject, @preconcurrency AVAudioPlayerDelegate {
 			if let player = speaker {
 				player.delegate = ElevenLabs.shared
 				if !player.play() {
-					logAnomaly("Couldn't play speech for item \(item.item)")
+					ServerProtocol.notifyAnomaly("Couldn't play speech for item \(item.item)")
 				}
 			}
 		}
 		catch {
-			logAnomaly("Couldn't create player for speech: \(error)")
+			ServerProtocol.notifyAnomaly("Couldn't create player for speech: \(error)")
 		}
 	}
 
@@ -373,12 +355,13 @@ final class ElevenLabs: NSObject, @preconcurrency AVAudioPlayerDelegate {
 		playFirstSpeech()
 	}
 
-	@MainActor
 	func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully: Bool) {
 		if !successfully {
 			logger.warning("Generated speech did not play successfully")
 		}
-		playNextSpeech()
+		DispatchQueue.main.async {
+			self.playNextSpeech()
+		}
 	}
 
 	func abortCurrentSpeech() {

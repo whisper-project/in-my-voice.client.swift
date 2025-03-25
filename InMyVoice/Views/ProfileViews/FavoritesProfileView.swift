@@ -15,10 +15,9 @@ struct FavoritesProfileView: View {
 	var f: Favorite? = nil
 
 	@State private var path: NavigationPath = .init()
-	@State private var allGroup: FavoritesGroup = UserProfile.shared.favoritesProfile.allGroup
+	@State private var allGroup: FavoritesGroup = FavoritesProfile.shared.allGroup
 	@State private var favorites: [Favorite] = []
-	@StateObject private var up = UserProfile.shared
-	@StateObject private var fp = UserProfile.shared.favoritesProfile
+	@StateObject private var fp = FavoritesProfile.shared
 
 	var body: some View {
 		NavigationStack(path: $path) {
@@ -64,7 +63,6 @@ struct FavoritesProfileView: View {
 			.onChange(of: fp.timestamp, initial: true, updateFromProfile)
 		}
 		.onAppear{
-			up.update()
 			// if we were given views, push them on the stack
 			if let g = g {
 				path.append("Groups")
@@ -74,7 +72,6 @@ struct FavoritesProfileView: View {
 				path.append(f)
 			}
 		}
-		.onDisappear(perform: up.update)
 	}
 
 	func addFavorite() {

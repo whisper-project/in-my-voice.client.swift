@@ -22,7 +22,7 @@ struct FavoritesDetailView: View {
 	@State var newText: String = ""
 	@State var groups: Set<FavoritesGroup> = Set()
 	@State var allGroups: [FavoritesGroup] = []
-	@StateObject private var fp = UserProfile.shared.favoritesProfile
+	@StateObject private var fp = FavoritesProfile.shared
 
 	var body: some View {
 		Form {

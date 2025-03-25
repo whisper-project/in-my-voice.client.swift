@@ -10,7 +10,7 @@ struct FavoritesUseView: View {
 	@Binding var group: FavoritesGroup
 
 	@State private var favorites: [Favorite] = []
-	@StateObject private var fp = UserProfile.shared.favoritesProfile
+	@StateObject private var fp = FavoritesProfile.shared
 
 	var body: some View {
 		Form {

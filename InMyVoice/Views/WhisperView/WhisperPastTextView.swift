@@ -14,7 +14,7 @@ struct WhisperPastTextView: View {
 
 	@State private var rows: [Row] = []
 	@AppStorage("history_buttons_preference") private var buttonsPref: String?
-	@ObservedObject private var fp = UserProfile.shared.favoritesProfile
+	@ObservedObject private var fp = FavoritesProfile.shared
 
     var body: some View {
 		ScrollViewReader { proxy in

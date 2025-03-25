@@ -9,7 +9,7 @@ struct FavoritesGroupView: View {
 	@Binding var path: NavigationPath
 
 	@State private var groups: [FavoritesGroup] = []
-	@StateObject private var fp = UserProfile.shared.favoritesProfile
+	@StateObject private var fp = FavoritesProfile.shared
 
 	var body: some View {
 		Form {

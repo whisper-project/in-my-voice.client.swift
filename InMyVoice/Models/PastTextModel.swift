@@ -8,12 +8,8 @@ import Foundation
 final class PastTextModel: ObservableObject {
     @Published var pastText: String = ""
 	@Published var rawPastText: String = ""
-    @Published private(set) var addLinesAtTop = false
-    
-    init(mode: OperatingMode, initialText: String = "") {
-        if mode == .listen && !PreferenceData.listenerMatchesWhisperer() {
-            addLinesAtTop = true
-        }
+
+    init(initialText: String = "") {
 		rawPastText = initialText
         pastText = addLinks(initialText)
     }
@@ -27,9 +23,6 @@ final class PastTextModel: ObservableObject {
 		if pastText.isEmpty {
 			rawPastText = line
 			pastText = linked
-		} else if addLinesAtTop {
-			rawPastText = line + "\n" + pastText
-			pastText = linked + "\n" + pastText
 		} else {
 			rawPastText += "\n" + line
 			pastText += "\n" + linked
@@ -45,12 +38,8 @@ final class PastTextModel: ObservableObject {
 		if pastText.isEmpty {
 			return (raw: [], linked: [])
 		}
-		var rawLines = rawPastText.split(separator: "\n", omittingEmptySubsequences: false)
-        var lines = pastText.split(separator: "\n", omittingEmptySubsequences: false)
-        if addLinesAtTop {
-			rawLines.reverse()
-            lines.reverse()
-        }
+		let rawLines = rawPastText.split(separator: "\n", omittingEmptySubsequences: false)
+        let lines = pastText.split(separator: "\n", omittingEmptySubsequences: false)
 		return (raw: rawLines.map{ String($0) }, linked: lines.map{ String($0) })
     }
     
@@ -68,12 +57,12 @@ final class PastTextModel: ObservableObject {
         addText(text)
     }
 
-	func addLinks(_ text: String) -> String {
+	private func addLinks(_ text: String) -> String {
 		if text.isEmpty {
 			return text
 		}
 		guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
-			logAnomaly("Couldn't create NSDataDetector for link checking in past text")
+			ServerProtocol.notifyAnomaly("Couldn't create NSDataDetector for link checking in past text")
 			return text
 		}
 		var text = text

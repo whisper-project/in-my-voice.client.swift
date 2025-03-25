@@ -15,14 +15,28 @@ struct PreferenceData {
 	private static var cloudSettings = NSUbiquitousKeyValueStore.default
 
     // server endpoint
+	static private let stageServer = "https://stage.in-my-voice.whisper-project.org"
+	static private let prodServer = "https://in-my-voice.whisper-project.org"
     #if DEBUG
-	static private let altServer = ProcessInfo.processInfo.environment["INMYVOICE_SERVER"] != nil
-	static let voiceServer = ProcessInfo.processInfo.environment["INMYVOICE_SERVER"] ?? "https://stage.in-my-voice.whisper-project.org"
-	static let profileRoot = altServer ? "dev-" : "stage-"
+	static private let altServer = ProcessInfo.processInfo.environment["INMYVOICE_SERVER"]
+	static let appServer = altServer ?? stageServer
+	static let profileRoot = altServer != nil ? "dev-" : "stage-"
     #else
-    static let voiceServer = "https://in-my-voice.whisper-project.org"
+    static let appServer = prodServer
 	static let profileRoot = ""
     #endif
+
+	// website endpoints
+	static var website = "https://whisper-project.github.io/in-my-voice.client.swift"
+	static func aboutSite() -> URL {
+		return URL(string: website)!
+	}
+	static func supportSite() -> URL {
+		return URL(string: "\(website)/support.html")!
+	}
+	static func instructionSite() -> URL {
+		return URL(string: "\(website)/instructions.html")!
+	}
 
     // client ID for this device
     static var clientId: String {
@@ -36,30 +50,67 @@ struct PreferenceData {
     }
 
 	// local profileID
-	static var profileId: String {
+	static var profileId: String? {
 		get {
-			if let id = localSettings.string(forKey: "profile_id") {
-				return id
-			} else {
-				let id = UUID().uuidString
-				cloudSettings.setValue(id, forKey: "profile_id")
-				return id
-			}
+			localSettings.string(forKey: "profile_id")
 		}
 		set(id) {
-			localSettings.setValue(id, forKey: "profile_id")
+			if let id = id {
+				localSettings.setValue(id, forKey: "profile_id")
+			} else {
+				localSettings.removeObject(forKey: "profile_id")
+			}
 		}
 	}
 
-	static var isProfileSynced: Bool {
-		guard let cloudId = cloudSettings.string(forKey: "profile_id") else {
-			return false
+	static var cloudProfileId: String? {
+		get {
+			return cloudSettings.string(forKey: "profile_id")
 		}
-		return cloudId == profileId
+		set (id) {
+			if let id = id {
+				cloudSettings.set(id, forKey: "profile_id")
+			} else {
+				cloudSettings.removeObject(forKey: "profile_id")
+			}
+		}
 	}
 
-	static func syncProfileId() {
-		cloudSettings.setValue(profileId, forKey: "profile_id")
+	static func syncWithCloud() {
+		cloudSettings.synchronize()
+	}
+
+	static func syncProfile() {
+		cloudSettings.synchronize()
+		let id = profileId ?? ""
+		let cloudId = cloudProfileId ?? ""
+		if id == "" {
+			if cloudId != "" {
+				logger.info("Using profile ID from cloud: \(cloudId, privacy: .public)")
+				profileId = cloudId
+			} else {
+				let id = UUID().uuidString
+				logger.info("No local or cloud Profile ID found, setting both to: \(id, privacy: .public)")
+				profileId = id
+				cloudProfileId = id
+			}
+		} else if cloudId == "" {
+			logger.info( "No cloud profile ID found, saving local to cloud: \(id, privacy: .public)")
+			cloudProfileId = id
+		} else if id == cloudId {
+			logger.info("Local and cloud Profile IDs match: \(id, privacy: .public)")
+		} else {
+			ServerProtocol.notifyAnomaly("Local profile ID (\(id)) doesn't match cloud profile ID (\(cloudId))")
+			if UUID(uuidString: cloudId) == nil {
+				let id = UUID().uuidString
+				ServerProtocol.notifyAnomaly("Cloud profile ID is not a valid UUID, resetting local and cloud to \(id)")
+				profileId = id
+				cloudProfileId = id
+			} else {
+				ServerProtocol.notifyAnomaly("Resetting local profile ID to \(cloudId)")
+				profileId = cloudId
+			}
+		}
 	}
 
 	// size of text
@@ -167,10 +218,10 @@ struct PreferenceData {
 	static var currentFavoritesGroup: FavoritesGroup {
 		get {
 			if let name = localSettings.string(forKey: "current_favorite_tag_setting"),
-			   let group = UserProfile.shared.favoritesProfile.getGroup(name) {
+			   let group = FavoritesProfile.shared.getGroup(name) {
 				group
 			} else {
-				UserProfile.shared.favoritesProfile.allGroup
+				FavoritesProfile.shared.allGroup
 			}
 		}
 		set(new) {
@@ -178,146 +229,44 @@ struct PreferenceData {
 		}
 	}
 
-	/// Preferences
-	static private var elevenLabsApiKeyPreference: String {
+	/// Root.plist settings
+	static private var interjectionPrefixSetting: String {
 		get {
-			localSettings.string(forKey: "elevenlabs_api_key_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
+			localSettings.string(forKey: "interjection_prefix_setting")?.trimmingCharacters(in: .whitespaces) ?? ""
 		}
 		set(val) {
-			localSettings.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_api_key_preference")
+			localSettings.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "interjection_prefix_setting")
 		}
 	}
 
-	static private var elevenLabsVoiceIdPreference: String {
+	static private var interjectionAlertSetting: String {
 		get {
-			localSettings.string(forKey: "elevenlabs_voice_id_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
+			localSettings.string(forKey: "interjection_alert_setting") ?? ""
 		}
 		set(val) {
-			localSettings.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_voice_id_preference")
+			localSettings.setValue(val, forKey: "interjection_alert_setting")
 		}
 	}
 
-	static private var elevenLabsDictionaryIdPreference: String {
+	static private var historyButtonsSetting: String {
 		get {
-			localSettings.string(forKey: "elevenlabs_dictionary_id_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
+			localSettings.string(forKey: "history_buttons_setting") ?? "r-i-f"
 		}
 		set(val) {
-			localSettings.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_dictionary_id_preference")
+			localSettings.setValue(val, forKey: "history_buttons_setting")
 		}
-	}
-
-	static private var elevenLabsDictionaryVersionPreference: String {
-		get {
-			localSettings.string(forKey: "elevenlabs_dictionary_version_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
-		}
-		set(val) {
-			localSettings.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "elevenlabs_dictionary_version_preference")
-		}
-	}
-
-	static private var elevenLabsLatencyReductionPreference: Int {
-		get {
-			localSettings.integer(forKey: "elevenlabs_latency_reduction_preference") + 1
-		}
-		set(val) {
-			localSettings.setValue(val - 1, forKey: "elevenlabs_latency_reduction_preference")
-		}
-	}
-
-	static private var interjectionPrefixPreference: String {
-		get {
-			localSettings.string(forKey: "interjection_prefix_preference")?.trimmingCharacters(in: .whitespaces) ?? ""
-		}
-		set(val) {
-			localSettings.setValue(val.trimmingCharacters(in: .whitespaces), forKey: "interjection_prefix_preference")
-		}
-	}
-
-	static private var interjectionAlertPreference: String {
-		get {
-			localSettings.string(forKey: "interjection_alert_preference") ?? ""
-		}
-		set(val) {
-			localSettings.setValue(val, forKey: "interjection_alert_preference")
-		}
-	}
-
-	static private var historyButtonsPreference: String {
-		get {
-			localSettings.string(forKey: "history_buttons_preference") ?? "r-i-f"
-		}
-		set(val) {
-			localSettings.setValue(val, forKey: "history_buttons_preference")
-		}
-	}
-
-	// speech keys
-	static func elevenLabsApiKey() -> String {
-		return elevenLabsApiKeyPreference
-	}
-	static func elevenLabsVoiceId() -> String {
-		return elevenLabsVoiceIdPreference
-	}
-	static func elevenLabsDictionaryId() -> String {
-		return elevenLabsDictionaryIdPreference
-	}
-	static func elevenLabsDictionaryVersion() -> String {
-		return elevenLabsDictionaryVersionPreference
-	}
-	static func elevenLabsLatencyReduction() -> Int {
-		return elevenLabsLatencyReductionPreference
 	}
 
 	// interjection behavior
 	static func interjectionPrefix() -> String {
-		if interjectionPrefixPreference.isEmpty {
+		if interjectionPrefixSetting.isEmpty {
 			return ""
 		} else {
-			return interjectionPrefixPreference + " "
+			return interjectionPrefixSetting + " "
 		}
 	}
 
 	static func interjectionAlertSound() -> String {
-		return interjectionAlertPreference
-	}
-
-	static let preferenceVersion = 1
-
-	static func preferencesToJson() -> String {
-		let preferences = [
-			"version": "\(preferenceVersion)",
-			"elevenlabs_api_key_preference": elevenLabsApiKeyPreference,
-			"elevenlabs_voice_id_preference": elevenLabsVoiceIdPreference,
-			"elevenlabs_dictionary_id_preference": elevenLabsDictionaryIdPreference,
-			"elevenlabs_dictionary_version_preference": elevenLabsDictionaryVersionPreference,
-			"elevenlabs_latency_reduction_preference": "\(elevenLabsLatencyReductionPreference)",
-			"interjection_prefix_preference": interjectionPrefixPreference,
-			"interjection_alert_preference": interjectionAlertPreference,
-			"history_buttons_preference": historyButtonsPreference,
-		]
-		guard let json = try? JSONSerialization.data(withJSONObject: preferences, options: .sortedKeys) else {
-			fatalError("Can't encode preferences data: \(preferences)")
-		}
-		return String(decoding: json, as: UTF8.self)
-	}
-
-	static func jsonToPreferences(_ json: String) {
-		guard let val = try? JSONSerialization.jsonObject(with: Data(json.utf8)),
-			  let preferences = val as? [String: String]
-		else {
-			fatalError("Can't decode preferences data: \(json)")
-		}
-		let version = Int(preferences["version"] ?? "") ?? 1
-		if version != preferenceVersion {
-			logAnomaly("Setting preferences from v\(version) preference data, expected v\(preferenceVersion)")
-		}
-		elevenLabsApiKeyPreference = preferences["elevenlabs_api_key_preference"] ?? ""
-		elevenLabsVoiceIdPreference = preferences["elevenlabs_voice_id_preference"] ?? ""
-		elevenLabsDictionaryIdPreference = preferences["elevenlabs_dictionary_id_preference"] ?? ""
-		elevenLabsDictionaryVersionPreference = preferences["elevenlabs_dictionary_version_preference"] ?? ""
-		elevenLabsLatencyReductionPreference = Int(preferences["elevenlabs_latency_reduction_preference"] ?? "") ?? 1
-		interjectionPrefixPreference = preferences["interjection_prefix_preference"] ?? ""
-		interjectionAlertPreference = preferences["interjection_alert_preference"] ?? ""
-		historyButtonsPreference = preferences["history_buttons_preference"] ?? "r-i-f"
+		return interjectionAlertSetting
 	}
 }

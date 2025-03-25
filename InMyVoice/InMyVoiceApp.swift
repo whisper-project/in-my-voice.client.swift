@@ -29,10 +29,6 @@ let connectingPastText = """
     This is where lines will move after the whisperer hits return.
     The most recent line will be on the bottom.
     """
-let website = "https://whisper-project.github.io/client.swift"
-let aboutSite = URL(string: website)!
-let supportSite = URL(string: "\(website)/support.html")!
-let instructionSite = URL(string: "\(website)/instructions.html")!
 let settingsUrl = URL(string: UIApplication.openSettingsURLString)!
 
 /// global constants for light/dark mode
@@ -90,153 +86,20 @@ struct whisperApp: App {
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-		PreferenceData.resetSecretsIfServerHasChanged()
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers])
         } catch (let err) {
 			logger.error("Failed to set audio session category: \(err, privacy: .public)")
         }
-        logger.info("Registering for remote notifications")
-        application.registerForRemoteNotifications()
+		PreferenceData.syncProfile()
+		ServerProtocol.notifyLaunch()
+		ElevenLabs.shared.downloadSettings()
+		FavoritesProfile.shared.downloadFavorites()
         return true
     }
     
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        logger.info("Received APNs token")
-        let value: [String: Any] = [
-            "clientId": PreferenceData.clientId,
-            "token": deviceToken.base64EncodedString(),
-            "userName": UserProfile.shared.username,
-			"profileId": UserProfile.shared.id,
-            "lastSecret": PreferenceData.lastClientSecret(),
-            "appInfo": "\(platformInfo)|\(versionString)",
-			"isPresenceLogging": PreferenceData.doPresenceLogging ? 1 : 0,
-        ]
-        guard let body = try? JSONSerialization.data(withJSONObject: value) else {
-            fatalError("Can't encode body for device token call")
-        }
-        guard let url = URL(string: PreferenceData.voiceServer + "/api/v2/apnsToken") else {
-            fatalError("Can't create URL for device token call")
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = body
-        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-            guard error == nil else {
-				logAnomaly("Failed to post APNs token: \(String(describing: error))")
-                return
-            }
-            guard let response = response as? HTTPURLResponse else {
-				logAnomaly("Received non-HTTP response on APNs token post: \(String(describing: response))")
-                return
-            }
-			if response.statusCode == 201 || response.statusCode == 204 {
-                logger.info("Successful post of APNs token")
-				if response.statusCode == 201 {
-					logger.info("Server reponse forces reset of client secret and turns on packet logging")
-					// Our secret has gone out of sync with server, it will create a new one
-					// and post it to us.  Until that happens, we need to use our last
-					// secret because the server doesn't know the current secret.
-					PreferenceData.resetClientSecret()
-					// Whenever we get a new secret, we start logging packets to the server
-					// for debugging purposes.  It will tell us to stop when it wants to.
-					PreferenceData.doPresenceLogging = true
-				}
-                return
-            }
-			logAnomaly("Received unexpected response on APNs token post: \(response.statusCode)")
-            guard let data = data,
-                  let body = try? JSONSerialization.jsonObject(with: data),
-                  let obj = body as? [String:String] else {
-				logAnomaly("Can't deserialize APNs token post response body: \(String(describing: data))")
-                return
-            }
-			logAnomaly("Response body of failed APNs token post: \(obj)")
-        }
-        logger.info("Posting APNs token to whisper-server")
-        task.resume()
-    }
-    
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-		logAnomaly("Failed to get APNs token: \(error)")
-    }
-    
-    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        logger.info("Received APNs background notification")
-        if let value = userInfo["secret"], let secret = value as? String {
-            logger.info("Succesfully saved data from background notification")
-            PreferenceData.updateClientSecret(secret)
-            let value = [
-                "clientId": PreferenceData.clientId,
-                "lastSecret": PreferenceData.lastClientSecret()
-            ]
-            guard let body = try? JSONSerialization.data(withJSONObject: value) else {
-                fatalError("Can't encode body for notification confirmation call")
-            }
-            guard let url = URL(string: PreferenceData.voiceServer + "/api/v2/apnsReceivedNotification") else {
-                fatalError("Can't create URL for notification confirmation call")
-            }
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = body
-            let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-                guard error == nil else {
-                    logAnomaly("Failed to post notification confirmation: \(String(describing: error))")
-					completionHandler(.failed)
-					return
-                }
-                guard let response = response as? HTTPURLResponse else {
-                    logAnomaly("Received non-HTTP response on notification confirmation: \(String(describing: response))")
-					completionHandler(.failed)
-					return
-                }
-                if response.statusCode == 204 {
-                    logger.info("Successful post of notification confirmation")
-                    completionHandler(.newData)
-                    return
-                }
-				logAnomaly("Received unexpected response on notification confirmation post: \(response.statusCode)")
-                completionHandler(.failed)
-            }
-            logger.info("Posting notification confirmation to whisper-server")
-            task.resume()
-        } else {
-			logAnomaly("Background notification has unexpected data: \(String(describing: userInfo))")
-            completionHandler(.failed)
-        }
-    }
-
 	func applicationWillTerminate(_ application: UIApplication) {
-		let shared = AppStatus.shared
-		shared.appIsQuitting = true
+		ServerProtocol.notifyQuit()
 	}
-}
-
-// following code from https://stackoverflow.com/a/66394826/558006
-func restartApplication(){
-	let localUserInfo: [AnyHashable : Any] = ["pushType": "restart"]
-
-	let content = UNMutableNotificationContent()
-	content.title = "Whisper app is ready to launch"
-	content.body = "Tap to open the application"
-	content.sound = UNNotificationSound.default
-	content.userInfo = localUserInfo
-	let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
-
-	let identifier = "org.whisper-project.client.swift.restart"
-	let request = UNNotificationRequest.init(identifier: identifier, content: content, trigger: trigger)
-
-	let center = UNUserNotificationCenter.current()
-	center.add(request)
-	
-	exit(0)
-}
-
-final class AppStatus: ObservableObject {
-	static var shared: AppStatus = .init()
-
-	@Published var appIsQuitting: Bool = false
 }

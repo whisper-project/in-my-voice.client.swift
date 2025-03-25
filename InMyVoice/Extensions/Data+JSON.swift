@@ -19,7 +19,7 @@ extension Data {
 			return true
 		}
 		catch (let err) {
-			logAnomaly("Failed to write \(filename).json: \(err)")
+			ServerProtocol.notifyAnomaly("Failed to write \(filename).json: \(err)")
 			return false
 		}
 	}
@@ -37,7 +37,7 @@ extension Data {
 			return data
 		}
 		catch (let err) {
-			logAnomaly("Failure reading \(filename).json: \(err)")
+			ServerProtocol.notifyAnomaly("Failure reading \(filename).json: \(err)")
 			return nil
 		}
 	}
@@ -55,47 +55,8 @@ extension Data {
 			return true
 		}
 		catch (let err) {
-			logAnomaly("Failure deleting \(filename).json: \(err)")
+			ServerProtocol.notifyAnomaly("Failure deleting \(filename).json: \(err)")
 			return false
 		}
-	}
-
-	static func executeJSONRequest(_ request: URLRequest, handler: ((Int, Data) -> Void)? = nil) {
-		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-			guard error == nil else {
-				logger.error("Failed to execute \(request, privacy: .public): \(String(describing: error), privacy: .public)")
-				return
-			}
-			guard let response = response as? HTTPURLResponse else {
-				logger.error("Received non-HTTP response to \(request, privacy: .public): \(String(describing: response), privacy: .public)")
-				return
-			}
-			if (response.statusCode >= 200 && response.statusCode < 300) {
-				if let data = data, data.count > 0 {
-					// logger.info("Received \(response.statusCode) response with \(data.count) byte body")
-					handler?(response.statusCode, data)
-				} else {
-					// logger.info("Received \(response.statusCode) response with empty body")
-					handler?(response.statusCode, Data())
-				}
-			} else {
-				if response.statusCode == 404 {
-					logger.error("No such route: \(String(describing: request.httpMethod)) \(String(describing: request.url))")
-					handler?(response.statusCode, Data())
-				} else if let data = data, data.count > 0 {
-					// if let message = String(data: data, encoding: .utf8) {
-					// 	logger.error("Received \(response.statusCode, privacy: .public) response with message: \(message, privacy: .public)")
-					// } else {
-					// 	logger.error("Received \(response.statusCode, privacy: .public) reponse with non-UTF8 body: \(String(describing: data), privacy: .public)")
-					// }
-					handler?(response.statusCode, data)
-				} else {
-					// logger.error("Received \(response.statusCode, privacy: .public) response with no body")
-					handler?(response.statusCode, Data())
-				}
-			}
-		}
-		// logger.info("Executing \(request.httpMethod!) \(request.url!)")
-		task.resume()
 	}
 }

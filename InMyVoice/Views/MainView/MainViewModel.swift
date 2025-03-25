@@ -7,14 +7,14 @@ import Combine
 import CoreBluetooth
 
 final class MainViewModel: ObservableObject {
-    @Published var status: TcpStatus = .on
-    
-    private var factory = ComboFactory.shared
+    @Published var message: String = ""
+	@Published var showMessage: Bool = false
+
     private var cancellables: Set<AnyCancellable> = []
     
     init() {
-        self.factory.statusSubject
-            .sink(receiveValue: setStatus)
+        ServerProtocol.messageSubject
+            .sink(receiveValue: setMessage)
             .store(in: &cancellables)
     }
     
@@ -22,7 +22,13 @@ final class MainViewModel: ObservableObject {
         cancellables.cancel()
     }
     
-    private func setStatus(_ new: TcpStatus) {
-        status = new
+    private func setMessage(_ new: String?) {
+		guard let new = new else {
+			return
+		}
+		DispatchQueue.main.async {
+			self.message = new
+			self.showMessage = true
+		}
     }
 }
