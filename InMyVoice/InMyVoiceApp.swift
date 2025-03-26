@@ -8,9 +8,7 @@ import SwiftUI
 import UserNotifications
 
 /// build information
-#if targetEnvironment(simulator)
-let platformInfo = "simulator"
-#elseif targetEnvironment(macCatalyst)
+#if targetEnvironment(macCatalyst)
 let platformInfo = "mac"
 #else
 let platformInfo = UIDevice.current.userInterfaceIdiom == .phone ? "phone" : "pad"

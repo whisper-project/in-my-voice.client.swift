@@ -22,7 +22,7 @@ struct MainView: View {
                 Spacer()
 				if (platformInfo != "mac") {
 					Toggle("Larger Type", isOn: $magnify)
-						.frame(maxWidth: magnify ? 220 : 175)
+						.frame(maxWidth: magnify ? 250 : 200)
 						.onChange(of: magnify) {
 							PreferenceData.useLargeFontSizes = magnify
 						}

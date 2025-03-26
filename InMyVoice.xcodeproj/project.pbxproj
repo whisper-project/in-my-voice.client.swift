@@ -25,6 +25,7 @@
 		375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375152A02B61E6990045FEBD /* ElevenLabs.swift */; };
 		37541D5A2C71150F00922C01 /* FavoritesUseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D592C71150F00922C01 /* FavoritesUseView.swift */; };
 		37541D5C2C71172C00922C01 /* WhisperControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D5B2C71172C00922C01 /* WhisperControlView.swift */; };
+		376EEE9F2D94A33900B3B747 /* View+OnRotate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376EEE9E2D94A33900B3B747 /* View+OnRotate.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
 		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
 		37763CE529AAC1E50051CFE5 /* InMyVoiceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CE429AAC1E50051CFE5 /* InMyVoiceApp.swift */; };
@@ -69,6 +70,7 @@
 		37541D592C71150F00922C01 /* FavoritesUseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesUseView.swift; sourceTree = "<group>"; };
 		37541D5B2C71172C00922C01 /* WhisperControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WhisperControlView.swift; sourceTree = "<group>"; };
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		376EEE9E2D94A33900B3B747 /* View+OnRotate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+OnRotate.swift"; sourceTree = "<group>"; };
 		3771F83429DD2F900011419E /* FontSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizes.swift; sourceTree = "<group>"; };
 		3775A13929AD4EB6007159F5 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		37763CE129AAC1E50051CFE5 /* InMyVoice.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InMyVoice.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -223,6 +225,7 @@
 				377B3D222C4716F70041D26C /* SleepControl.swift */,
 				37159A9D2C605481005CB922 /* String+LocalizedError.swift */,
 				37159AA72C6A9488005CB922 /* HasherFNV1a.swift */,
+				376EEE9E2D94A33900B3B747 /* View+OnRotate.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -346,6 +349,7 @@
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
 				377B3D232C4716F70041D26C /* SleepControl.swift in Sources */,
 				37159AA42C66F425005CB922 /* FavoritesDetailView.swift in Sources */,
+				376EEE9F2D94A33900B3B747 /* View+OnRotate.swift in Sources */,
 				37159A9E2C605481005CB922 /* String+LocalizedError.swift in Sources */,
 				37763D2029AC4C5B0051CFE5 /* Set+Cancelable.swift in Sources */,
 				371311EA2D7FCD88006BFA2F /* SettingsView.swift in Sources */,
