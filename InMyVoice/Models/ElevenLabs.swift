@@ -245,17 +245,17 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 
 	func speakText(text: String, callback: SpeechCallback? = nil) {
 		self.callback = callback
-		guard SpeechItem.isEnabled() else {
-			fallback(text)
-			self.callback?(nil)
-			return
-		}
 		guard !text.isEmpty else {
 			emptyTextCount += 1
 			if emptyTextCount == 2 {
 				abortCurrentSpeech()
 				emptyTextCount = 0
 			}
+			return
+		}
+		guard SpeechItem.isEnabled() else {
+			fallback(text)
+			self.callback?(nil)
 			return
 		}
 		emptyTextCount = 0
@@ -365,6 +365,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 	}
 
 	func abortCurrentSpeech() {
+		Self.fallbackSynth.stopSpeaking(at: .immediate)
 		DispatchQueue.main.async {
 			guard let player = self.speaker else {
 				// nothing to abort

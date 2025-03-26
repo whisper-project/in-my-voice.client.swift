@@ -108,7 +108,7 @@ class ServerProtocol {
 		path: String, method: String, query: [String: String]?, body: Data?, handler: ((Int, Data) -> Void)? = nil
 	) {
 		var uri = "\(PreferenceData.appServer)/api/swift/v1\(path)"
-		var logMessage = "\(method) \(uri)"
+		let logMessage = "\(method) \(uri)"
 		if let query = query {
 			uri += "?" + query.map { key, value in
 				"\(key)=\(value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"

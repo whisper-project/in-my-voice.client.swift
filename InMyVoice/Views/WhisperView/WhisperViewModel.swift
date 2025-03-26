@@ -39,12 +39,6 @@ final class WhisperViewModel: ObservableObject {
     /// Returns the new live text the view should display.
 	/// Any complete lines in the new live text are treated as if they had been typed with 0 duration
     func updateLiveText(old: String, new: String) -> String {
-		if liveTextStartTime == nil {
-			liveTextStartTime = Date.now
-			liveTextChangeCount = 1
-		} else {
-			liveTextChangeCount += 1
-		}
 		if old == new {
 			return liveText
 		}
@@ -140,6 +134,10 @@ final class WhisperViewModel: ObservableObject {
 				// they have deleted whatever text they had
 				if playingTypingSound {
 					stopTypingSound()
+				}
+			} else {
+				if !playingTypingSound {
+					maybeStartTypingSound()
 				}
 			}
 		} else {
