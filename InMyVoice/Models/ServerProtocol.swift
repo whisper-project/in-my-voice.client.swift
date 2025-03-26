@@ -108,6 +108,7 @@ class ServerProtocol {
 		path: String, method: String, query: [String: String]?, body: Data?, handler: ((Int, Data) -> Void)? = nil
 	) {
 		var uri = "\(PreferenceData.appServer)/api/swift/v1\(path)"
+		var logMessage = "\(method) \(uri)"
 		if let query = query {
 			uri += "?" + query.map { key, value in
 				"\(key)=\(value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
@@ -133,7 +134,7 @@ class ServerProtocol {
 			}
 			let code = response.statusCode
 			let body = data ?? Data()
-			logger.info("Received \(code) response with \(body.count) byte body")
+			logger.info("\(logMessage, privacy: .public): response \(code) with \(body.count) byte body")
 			if let message = response.value(forHTTPHeaderField: "X-Message") {
 				logger.info("Received server message: \(message, privacy: .public)")
 				Self.messageSubject.send(message)
@@ -161,7 +162,7 @@ class ServerProtocol {
 			}
 			handler?(code, body)
 		}
-		logger.info("Executing \(method, privacy: .public) \(uri, privacy: .public)")
+		logger.info("Executing \(logMessage, privacy: .public)")
 		task.resume()
 	}
 }
