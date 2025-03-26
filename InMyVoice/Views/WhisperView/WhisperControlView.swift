@@ -183,7 +183,7 @@ struct WhisperControlView: View {
 	}
 
 	@ViewBuilder private func maybeFontSizeToggle() -> some View {
-		if isOnPhone() {
+		if isOnPhone() || isOnMac() {
 			EmptyView()
 		} else {
 			Toggle(isOn: $magnify) {
@@ -241,7 +241,11 @@ struct WhisperControlView: View {
 	}
 
 	private func isOnPhone() -> Bool {
-		return UIDevice.current.userInterfaceIdiom == .phone
+		return platformInfo == "phone"
+	}
+
+	private func isOnMac() -> Bool {
+		return platformInfo == "mac"
 	}
 
 	private func buttonSize() -> CGFloat {

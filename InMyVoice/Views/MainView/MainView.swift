@@ -9,8 +9,6 @@ struct MainView: View {
     @Environment(\.colorScheme) private var colorScheme
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-	@AppStorage("main_view_large_sizes_setting") private var useLargeSizes: Bool = false
-
 	@State var mode: OperatingMode = .ask
 	@State var magnify: Bool = PreferenceData.useLargeFontSizes
     @StateObject private var model: MainViewModel = .init()
@@ -20,25 +18,27 @@ struct MainView: View {
         case .ask:
             VStack {
                 Spacer()
-				ChoiceView(mode: $mode)
+				ChoiceView(mode: $mode, magnify: $magnify)
                 Spacer()
-				Toggle("Larger Type", isOn: $magnify)
-					.frame(maxWidth: magnify ? 220 : 175)
-					.onChange(of: magnify) {
-						PreferenceData.useLargeFontSizes = magnify
-					}
+				if (platformInfo != "mac") {
+					Toggle("Larger Type", isOn: $magnify)
+						.frame(maxWidth: magnify ? 220 : 175)
+						.onChange(of: magnify) {
+							PreferenceData.useLargeFontSizes = magnify
+						}
+				}
                 Text("v\(versionString)")
                     .textSelection(.enabled)
                     .font(FontSizes.fontFor(name: .xxxsmall))
                     .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
                     .padding(EdgeInsets(top: 20, leading: 0, bottom: 5, trailing: 0))
             }
-			.dynamicTypeSize(magnify ? .accessibility1 : dynamicTypeSize)
 			.alert("Notification", isPresented: $model.showMessage) {
 				Text(model.message)
 			}
+			.dynamicTypeSize(magnify ? .accessibility1 : dynamicTypeSize)
         case .whisper:
-			WhisperView(mode: $mode)
+			WhisperView(mode: $mode, magnify: $magnify)
 				.alert("Notification", isPresented: $model.showMessage) {
 					Text(model.message)
 				}

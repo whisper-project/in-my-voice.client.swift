@@ -4,7 +4,6 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import SwiftUI
-import SwiftUIWindowBinder
 
 struct WhisperView: View {
     @Environment(\.colorScheme) var colorScheme
@@ -12,6 +11,7 @@ struct WhisperView: View {
     @Environment(\.scenePhase) var scenePhase
 
     @Binding var mode: OperatingMode
+	@Binding var magnify: Bool
 
 	@AppStorage("interjection_prefix_preference") private var interjectionPrefix: String?
 	@AppStorage("interjection_alert_preference") private var interjectionAlert: String?
@@ -20,7 +20,6 @@ struct WhisperView: View {
     @FocusState private var focusField: String?
     @StateObject private var model: WhisperViewModel = .init()
 	@State private var size = PreferenceData.fontSize
-	@State private var magnify: Bool = PreferenceData.useLargeFontSizes
 	@State private var interjecting: Bool = false
 	@State private var editFavorites: Bool = false
 	@State private var editFavoritesFavorite: Favorite? = nil
@@ -29,7 +28,6 @@ struct WhisperView: View {
 	@State private var showFavorites: Bool = PreferenceData.showFavorites
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
-	@State private var window: Window?
 
     var body: some View {
 		GeometryReader { geometry in
@@ -39,10 +37,10 @@ struct WhisperView: View {
 			.multilineTextAlignment(.leading)
 			.lineLimit(nil)
 			.alert("Confirm Stop", isPresented: $confirmStop) {
-				Button("Stop") {
+				Button("Stop", role: .destructive) {
 					mode = .ask
 				}
-				Button("Don't Stop") {
+				Button("Don't Stop", role: .cancel) {
 					focusField = "liveText"
 				}
 			} message: {
@@ -234,5 +232,5 @@ struct WhisperView: View {
 }
 
 #Preview {
-	WhisperView(mode: makeBinding(.whisper))
+	WhisperView(mode: makeBinding(.whisper), magnify: makeBinding(false))
 }

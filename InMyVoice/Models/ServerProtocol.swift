@@ -108,7 +108,7 @@ class ServerProtocol {
 		path: String, method: String, query: [String: String]?, body: Data?, handler: ((Int, Data) -> Void)? = nil
 	) {
 		var uri = "\(PreferenceData.appServer)/api/swift/v1\(path)"
-		let logMessage = "\(method) \(uri)"
+		let requestDescription = "\(method) \(uri)"
 		if let query = query {
 			uri += "?" + query.map { key, value in
 				"\(key)=\(value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
@@ -122,7 +122,7 @@ class ServerProtocol {
 		}
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.setValue(PreferenceData.profileId!, forHTTPHeaderField: "X-Profile-Id")
-		request.setValue("swift-v0|\(platformInfo)|\(versionString)", forHTTPHeaderField: "X-Client-Type")
+		request.setValue("swift-v1|\(platformInfo)|\(versionString)", forHTTPHeaderField: "X-Client-Type")
 		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
 			guard error == nil else {
 				logger.error("Failed to execute \(request, privacy: .public): \(String(describing: error), privacy: .public)")
@@ -134,7 +134,7 @@ class ServerProtocol {
 			}
 			let code = response.statusCode
 			let body = data ?? Data()
-			logger.info("\(logMessage, privacy: .public): response \(code) with \(body.count) byte body")
+			logger.info("\(requestDescription, privacy: .public): response \(code) with \(body.count) byte body")
 			if let message = response.value(forHTTPHeaderField: "X-Message") {
 				logger.info("Received server message: \(message, privacy: .public)")
 				Self.messageSubject.send(message)
@@ -162,7 +162,7 @@ class ServerProtocol {
 			}
 			handler?(code, body)
 		}
-		logger.info("Executing \(logMessage, privacy: .public)")
+		logger.info("Executing \(requestDescription, privacy: .public)")
 		task.resume()
 	}
 }

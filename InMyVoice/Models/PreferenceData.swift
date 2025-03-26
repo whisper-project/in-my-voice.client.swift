@@ -126,7 +126,11 @@ struct PreferenceData {
 	// whether to magnify text
 	static var useLargeFontSizes: Bool {
 		get {
-			localSettings.bool(forKey: "use_large_font_sizes_setting")
+			if (platformInfo == "mac") {
+				return false
+			} else {
+				return localSettings.bool(forKey: "use_large_font_sizes_setting")
+			}
 		}
 		set (new) {
 			localSettings.setValue(new, forKey: "use_large_font_sizes_setting")

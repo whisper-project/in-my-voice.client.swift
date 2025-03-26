@@ -44,7 +44,7 @@ struct FontSizes {
         }
     }
     
-    static let minTextSize = 4
+	static let minTextSize = platformInfo == "mac" ? 5 : 4
     static let maxTextSize = 8
 
     static func nextTextLarger(_ size: Int) -> Int {

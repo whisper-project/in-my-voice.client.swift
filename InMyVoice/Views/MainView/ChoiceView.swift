@@ -4,7 +4,6 @@
 // GNU Affero General Public License v3. See the LICENSE file for details.
 
 import SwiftUI
-import SwiftUIWindowBinder
 
 
 struct ChoiceView: View {
@@ -13,21 +12,15 @@ struct ChoiceView: View {
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@AppStorage("whisper_tap_preference") private var whisperTapAction: String?
 	@AppStorage("listen_tap_preference") private var listenTapAction: String?
-	@AppStorage("main_view_large_sizes_setting") private var useLargeSizes: Bool = false
 
 	@Binding var mode: OperatingMode
+	@Binding var magnify: Bool
 
     @State private var showSpeechProfile = false
 	@State private var showFavorites = false
 	@State private var showNoConnection = false
 	@State private var showSharingSheet = false
     @FocusState private var nameEdit: Bool
-	@State private var window: Window?
-
-    let nameWidth = CGFloat(350)
-    let nameHeight = CGFloat(105)
-    let choiceButtonWidth = CGFloat(200)
-    let choiceButtonHeight = CGFloat(45)
 
     var body: some View {
 		VStack(spacing: 40) {
@@ -36,57 +29,64 @@ struct ChoiceView: View {
 			}) {
 				Text("Speak")
 					.foregroundColor(.white)
+					.font(FontSizes.fontFor(FontSizes.minTextSize))
 					.fontWeight(.bold)
-					.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+					.frame(width: choiceButtonWidth() + 20, height: choiceButtonHeight() + 10, alignment: .center)
 			}
 			.background(Color.accentColor)
 			.cornerRadius(15)
-			Button(action: {
-				showSpeechProfile = true
-			}) {
-				Text("Speech Settings")
-					.foregroundColor(.white)
-					.fontWeight(.bold)
-					.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-			}
-			.background(Color.accentColor)
-			.cornerRadius(15)
-			.sheet(isPresented: $showSpeechProfile) {
-				SpeechProfileView()
-					.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
-			}
 			Button(action: {
 				showFavorites = true
 			}) {
-				Text("Favorites Settings")
+				Text("Edit Favorites")
 					.foregroundColor(.white)
+					.font(FontSizes.fontFor(FontSizes.minTextSize))
 					.fontWeight(.bold)
-					.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+					.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
 			}
 			.background(Color.accentColor)
 			.cornerRadius(15)
 			.sheet(isPresented: $showFavorites) {
 				FavoritesProfileView()
-					.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
+					.dynamicTypeSize(magnify ? .accessibility1 : dynamicTypeSize)
 			}
-			Button(action: {
-				UIApplication.shared.open(settingsUrl)
-			}) {
-				Text("App Settings")
-					.foregroundColor(.white)
-					.fontWeight(.bold)
-					.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+			HStack(spacing: 50) {
+				Button(action: {
+					showSpeechProfile = true
+				}) {
+					Text("Speech Settings")
+						.foregroundColor(.white)
+						.font(FontSizes.fontFor(FontSizes.minTextSize))
+						.fontWeight(.bold)
+						.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
+				}
+				.background(Color.accentColor)
+				.cornerRadius(15)
+				.sheet(isPresented: $showSpeechProfile) {
+					SpeechProfileView()
+						.dynamicTypeSize(magnify ? .accessibility1 : dynamicTypeSize)
+				}
+				Button(action: {
+					UIApplication.shared.open(settingsUrl)
+				}) {
+					Text("App Settings")
+						.foregroundColor(.white)
+						.font(FontSizes.fontFor(FontSizes.minTextSize))
+						.fontWeight(.bold)
+						.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
+				}
+				.background(Color.accentColor)
+				.cornerRadius(15)
 			}
-			.background(Color.accentColor)
-			.cornerRadius(15)
 			VStack (spacing: 25) {
 				Button(action: {
 					UIApplication.shared.open(PreferenceData.instructionSite())
 				}) {
 					Text("How To Use")
 						.foregroundColor(.white)
+						.font(FontSizes.fontFor(FontSizes.minTextSize))
 						.fontWeight(.bold)
-						.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+						.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
 				}
 				.background(Color.accentColor)
 				.cornerRadius(15)
@@ -94,19 +94,31 @@ struct ChoiceView: View {
 					Button("About", action: {
 						UIApplication.shared.open(PreferenceData.aboutSite())
 					})
-					.frame(width: choiceButtonWidth, alignment: .center)
+					.font(FontSizes.fontFor(FontSizes.minTextSize))
+					.frame(width: choiceButtonWidth(), alignment: .center)
 					Spacer()
 					Button("Support", action: {
 						UIApplication.shared.open(PreferenceData.supportSite())
 					})
-					.frame(width: choiceButtonWidth, alignment: .center)
+					.font(FontSizes.fontFor(FontSizes.minTextSize))
+					.frame(width: choiceButtonWidth(), alignment: .center)
 				}
-				.frame(width: nameWidth)
+				.frame(width: aboutSupportWidth())
 			}
 		}
     }
+
+	private func aboutSupportWidth() -> CGFloat {
+		return 350
+	}
+	private func choiceButtonWidth() -> CGFloat {
+		return magnify ? 300 : 200
+	}
+	private func choiceButtonHeight() -> CGFloat {
+		return magnify ? 77 : 45
+	}
 }
 
 #Preview {
-    ChoiceView(mode: makeBinding(.ask))
+	ChoiceView(mode: makeBinding(.ask), magnify: makeBinding(false))
 }
