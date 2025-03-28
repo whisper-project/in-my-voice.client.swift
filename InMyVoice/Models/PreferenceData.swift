@@ -49,6 +49,16 @@ struct PreferenceData {
         }
     }
 
+	// whether this user is in the study
+	static var inStudy: Bool {
+		get {
+			localSettings.bool(forKey: "in_study")
+		}
+		set(inStudy) {
+			localSettings.setValue(inStudy, forKey: "in_study")
+		}
+	}
+
 	// local profileID
 	static var profileId: String? {
 		get {

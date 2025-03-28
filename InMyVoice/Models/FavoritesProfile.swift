@@ -5,7 +5,7 @@
 
 import Foundation
 
-fileprivate struct StoredProfile: Codable {
+fileprivate struct StoredFavorites: Codable {
 	var favorites: [Favorite]
 	var groupList: [String]
 	var groupTable: [String: [String]]
@@ -167,15 +167,15 @@ final class FavoritesProfile: ObservableObject {
 		}
 	}
 
-	private func toStored() -> StoredProfile {
+	private func toStored() -> StoredFavorites {
 		let favorites = Array(allGroup.favorites)
 		let groupList = groupList.map{ $0.name }
 		let groupTable = groupTable.mapValues{ g in g.favorites.map{ $0.name } }
-		let stored = StoredProfile(favorites: favorites, groupList: groupList, groupTable: groupTable)
+		let stored = StoredFavorites(favorites: favorites, groupList: groupList, groupTable: groupTable)
 		return stored
 	}
 
-	private func fromStored(_ stored: StoredProfile) {
+	private func fromStored(_ stored: StoredFavorites) {
 		self.favoritesTable = [:]
 		self.lookupTable = [:]
 		self.groupTable = [:]
@@ -205,7 +205,7 @@ final class FavoritesProfile: ObservableObject {
 
 	private func load() -> Bool {
 		if let data = Data.loadJsonFromDocumentsDirectory(saveName),
-		   let stored = try? JSONDecoder().decode(StoredProfile.self, from: data)
+		   let stored = try? JSONDecoder().decode(StoredFavorites.self, from: data)
 		{
 			fromStored(stored)
 			return true
@@ -215,9 +215,14 @@ final class FavoritesProfile: ObservableObject {
 
 	func downloadFavorites() {
 		let dataHandler: (Data) -> Void = { data in
-			if let stored = try? JSONDecoder().decode(StoredProfile.self, from: data) {
+			if data.count == 0 {
+				// no server favorites available, make no changes
+			} else if let stored = try? JSONDecoder().decode(StoredFavorites.self, from: data) {
 				self.fromStored(stored)
 				self.save(localOnly: true)
+			} else {
+				let body = String(decoding: data, as: Unicode.UTF8.self)
+				ServerProtocol.notifyAnomaly("Downloaded favorites are malformed: \(body)")
 			}
 		}
 		ServerProtocol.downloadFavorites(dataHandler)

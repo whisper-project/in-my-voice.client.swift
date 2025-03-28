@@ -26,6 +26,9 @@
 		37541D5A2C71150F00922C01 /* FavoritesUseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D592C71150F00922C01 /* FavoritesUseView.swift */; };
 		37541D5C2C71172C00922C01 /* WhisperControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D5B2C71172C00922C01 /* WhisperControlView.swift */; };
 		376EEE9F2D94A33900B3B747 /* View+OnRotate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376EEE9E2D94A33900B3B747 /* View+OnRotate.swift */; };
+		376EEEA12D96043900B3B747 /* StudyIdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376EEEA02D96043900B3B747 /* StudyIdView.swift */; };
+		376EEEA32D9604F800B3B747 /* ElevenLabsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376EEEA22D9604F800B3B747 /* ElevenLabsSettingsView.swift */; };
+		376EEEA52D96054F00B3B747 /* AppleSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376EEEA42D96054F00B3B747 /* AppleSettingsView.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
 		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
 		37763CE529AAC1E50051CFE5 /* InMyVoiceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37763CE429AAC1E50051CFE5 /* InMyVoiceApp.swift */; };
@@ -71,6 +74,9 @@
 		37541D5B2C71172C00922C01 /* WhisperControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WhisperControlView.swift; sourceTree = "<group>"; };
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		376EEE9E2D94A33900B3B747 /* View+OnRotate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+OnRotate.swift"; sourceTree = "<group>"; };
+		376EEEA02D96043900B3B747 /* StudyIdView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyIdView.swift; sourceTree = "<group>"; };
+		376EEEA22D9604F800B3B747 /* ElevenLabsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsSettingsView.swift; sourceTree = "<group>"; };
+		376EEEA42D96054F00B3B747 /* AppleSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSettingsView.swift; sourceTree = "<group>"; };
 		3771F83429DD2F900011419E /* FontSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizes.swift; sourceTree = "<group>"; };
 		3775A13929AD4EB6007159F5 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		37763CE129AAC1E50051CFE5 /* InMyVoice.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InMyVoice.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -256,6 +262,9 @@
 				37159AA32C66F425005CB922 /* FavoritesDetailView.swift */,
 				37541D592C71150F00922C01 /* FavoritesUseView.swift */,
 				37487C2E2D8F7452005BD862 /* SpeechProfileView.swift */,
+				376EEEA02D96043900B3B747 /* StudyIdView.swift */,
+				376EEEA22D9604F800B3B747 /* ElevenLabsSettingsView.swift */,
+				376EEEA42D96054F00B3B747 /* AppleSettingsView.swift */,
 			);
 			path = ProfileViews;
 			sourceTree = "<group>";
@@ -345,6 +354,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				377646C829BACB73002C411C /* MainView.swift in Sources */,
+				376EEEA12D96043900B3B747 /* StudyIdView.swift in Sources */,
 				37487C2F2D8F7452005BD862 /* SpeechProfileView.swift in Sources */,
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
 				377B3D232C4716F70041D26C /* SleepControl.swift in Sources */,
@@ -359,6 +369,7 @@
 				37487C312D8F8258005BD862 /* FavoritesProfile.swift in Sources */,
 				377646C629BACB4B002C411C /* MainViewModel.swift in Sources */,
 				375152A12B61E6990045FEBD /* ElevenLabs.swift in Sources */,
+				376EEEA52D96054F00B3B747 /* AppleSettingsView.swift in Sources */,
 				377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */,
 				37541D5A2C71150F00922C01 /* FavoritesUseView.swift in Sources */,
 				371311EC2D7FCE7D006BFA2F /* SettingView.swift in Sources */,
@@ -373,6 +384,7 @@
 				37159AA22C66F40C005CB922 /* FavoritesGroupDetailView.swift in Sources */,
 				374BBEBB29BD809D0052997A /* WhisperViewModel.swift in Sources */,
 				37159AA62C69EA70005CB922 /* FavoritesGroupView.swift in Sources */,
+				376EEEA32D9604F800B3B747 /* ElevenLabsSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

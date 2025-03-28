@@ -6,8 +6,44 @@
 import SwiftUI
 
 struct SpeechProfileView: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+#if targetEnvironment(macCatalyst)
+	@Environment(\.dismiss) private var dismiss
+#endif
+	@AppStorage("in_study") private var inStudy: Bool = PreferenceData.inStudy
+
+	@State private var wantsToParticipateInStudy: Bool = false
+
+	var body: some View {
+		NavigationView {
+			Form {
+				Toggle("Are you participating in a research study?", isOn: $wantsToParticipateInStudy)
+					.disabled(inStudy)
+				if wantsToParticipateInStudy {
+					Section(header: Text("Study Participation Details")) {
+						StudyIdView(inStudy: $inStudy)
+					}
+				} else {
+					Section(header: Text("ElevenLabs Speech Settings")) {
+						ElevenLabsSettingsView()
+					}
+				}
+				Section(header: Text("Apple Speech Settings")){
+					AppleSettingsView()
+				}
+			}
+			.navigationTitle("Speech Settings")
+			.navigationBarTitleDisplayMode(.inline)
+			.toolbar {
+#if targetEnvironment(macCatalyst)
+				ToolbarItem(placement: .topBarLeading) {
+					Button(action: { dismiss() }, label: { Text("Close") } )
+				}
+#endif
+			}
+		}
+		.onAppear {
+			wantsToParticipateInStudy = inStudy
+		}
     }
 }
 

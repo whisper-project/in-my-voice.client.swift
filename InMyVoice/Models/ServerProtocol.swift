@@ -62,14 +62,27 @@ class ServerProtocol {
 		}
 	}
 
+	static func notifyJoinStudy(_ studyId: String, _ completionHandler: @escaping (Bool) -> Void) {
+		sendRequest(path: "/join-study", method: "POST", query: nil,
+					body: toData(["studyId": studyId])) { status, _ in
+			completionHandler(status == 204)
+		}
+	}
+
+	static func notifyLeaveStudy(_ completionHandler: @escaping (Bool) -> Void) {
+		sendRequest(path: "/leave-study", method: "POST", query: nil, body: nil) { status, _ in
+			completionHandler(status == 204)
+		}
+	}
+
 	static func downloadElevenLabsSettings(_ dataHandler: @escaping (Data) -> Void) {
 		let completionHandler: (Int, Data) -> Void = { status, data in
 			switch status {
 			case 200:
 				dataHandler(data)
 			case 204:
-				// no settings available, don't call handler
-				break
+				// no settings available, let handler know
+				dataHandler(Data())
 			default:
 				notifyAnomaly("Failed to download Eleven Labs settings: status code \(status)")
 			}
@@ -77,8 +90,8 @@ class ServerProtocol {
 		sendRequest(path: "/speech-settings/eleven", method: "GET", query: nil, body: nil, handler: completionHandler)
 	}
 
-	static func uploadElevenLabsSettings(_ settings: Data) {
-		sendRequest(path: "/speech-settings/eleven", method: "PUT", query: nil, body: settings)
+	static func proposeElevenLabsSettings(_ settings: Data, _ completionHandler: @escaping (Int, Data?) -> Void) {
+		sendRequest(path: "/speech-settings/eleven", method: "POST", query: nil, body: settings, handler: completionHandler)
 	}
 
 	static func downloadFavorites(_ dataHandler: @escaping (Data) -> Void) {
@@ -87,8 +100,8 @@ class ServerProtocol {
 			case 200:
 				dataHandler(data)
 			case 204:
-				// no favorites available, don't call handler
-				break
+				// no favorites available, let handler know
+				dataHandler(Data())
 			default:
 				notifyAnomaly("Failed to download favorites: status code \(status)")
 			}
@@ -135,6 +148,10 @@ class ServerProtocol {
 			let code = response.statusCode
 			let body = data ?? Data()
 			logger.info("\(requestDescription, privacy: .public): response \(code) with \(body.count) byte body")
+			if let inStudy = response.value(forHTTPHeaderField: "X-Study-Membership-Update") {
+				logger.info("Received notification of study membership: \(inStudy, privacy: .public)")
+				PreferenceData.inStudy = inStudy == "true"
+			}
 			if let message = response.value(forHTTPHeaderField: "X-Message") {
 				logger.info("Received server message: \(message, privacy: .public)")
 				Self.messageSubject.send(message)
