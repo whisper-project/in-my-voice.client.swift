@@ -167,7 +167,7 @@ struct ChoiceView: View {
 		return magnify ? 54 : 45
 	}
 	private func stackSpacing() -> CGFloat {
-		return orientation == .portrait ? (magnify ? 20 : 40) : (magnify ? 10 : 20)
+		return orientation == .portrait ? (magnify ? 20 : 40) : platformInfo == "phone" ? (magnify ? 10 : 20) : (magnify ? 20 : 40)
 	}
 }
 

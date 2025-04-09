@@ -16,7 +16,10 @@ struct StudyIdView: View {
 	@State private var wantsOut: Bool = false
 	@State private var studyId: String = ""
 	@State private var state: ValidationState = .idle
-	@State private var validationSucceded: Bool?
+	@State private var validationSucceeded: Bool?
+	@State private var voiceName: String = ElevenLabs.voiceName
+
+	@ObservedObject private var elevenLabs = ElevenLabs.shared
 
 	var body: some View {
 		if (inStudy) {
@@ -24,8 +27,15 @@ struct StudyIdView: View {
 			case .validating:
 				ProgressView()
 			case .idle:
-				if validationSucceded ?? true {
+				if validationSucceeded ?? true {
 					Text("Your study enrollment is confirmed. Your ElevenLabs voice settings have been provided by the study administrators. If you would like to change your settings, please work with the study administrators.")
+					HStack(spacing: 5) {
+						Text("Your ElevenLabs voice is named:")
+						Text(voiceName)
+					}
+					.onChange(of: elevenLabs.timestamp, initial: true) {
+						voiceName = ElevenLabs.voiceName
+					}
 				} else {
 					Text("Sorry, a temporary problem prevented dropping you from the study. Please try again later.")
 				}
@@ -38,7 +48,7 @@ struct StudyIdView: View {
 						state = .validating
 						ServerProtocol.notifyLeaveStudy() { result in
 							state = .idle
-							validationSucceded = result
+							validationSucceeded = result
 						}
 					}
 				}, message: {
@@ -48,7 +58,7 @@ struct StudyIdView: View {
 		} else {
 			switch state {
 			case .idle:
-				if validationSucceded ?? true {
+				if validationSucceeded ?? true {
 					Text("To enroll in the study, enter your Unique Participant Number and click the button.")
 				} else {
 					Text("The Unique Participant Number you entered was not accepted. Please correct it and try again.")
@@ -58,7 +68,7 @@ struct StudyIdView: View {
 					Button("Validate UPN and Join Study") {
 						ServerProtocol.notifyJoinStudy(studyId) { result in
 							state = .idle
-							validationSucceded = result
+							validationSucceeded = result
 						}
 					}
 				}

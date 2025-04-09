@@ -9,11 +9,35 @@ import CryptoKit
 
 typealias SpeechCallback = (SpeechItem?) -> Void
 
-final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
+struct VoiceInfo: Codable {
+	var voiceId: String
+	var name: String
+	var category: String
+	var labels: [String: String]
+	var description: String
+	var previewUrl: String
+	var isOwner: Bool
+
+	enum CodingKeys: String, CodingKey {
+		case voiceId = "voice_id"
+		case name = "name"
+		case category = "category"
+		case labels = "labels"
+		case description = "description"
+		case previewUrl = "preview_url"
+		case isOwner = "is_owner"
+	}
+}
+
+final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 	static let shared = ElevenLabs()
+
+	@Published private(set) var timestamp: Int = 0
 
 	static private(set) var apiKey: String = ""
 	static private(set) var voiceId: String = ""
+	static private(set) var voiceName: String = ""
+	static private(set) var voices: [VoiceInfo] = []
 
 	static func isEnabled() -> Bool {
 		return !Self.apiKey.isEmpty && !Self.voiceId.isEmpty
@@ -27,11 +51,14 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 	private var pendingItems: [GeneratedItem] = []
 	private var callback: SpeechCallback?
 	private var speaker: AVAudioPlayer?
+	private var previewPlayer: AVAudioPlayer?
 	private var emptyTextCount: Int = 0
+	private var fallbackVoice: AVSpeechSynthesisVoice? = nil
 
 	override init() {
 		super.init()
 		loadSettings()
+		loadFallbackVoice()
 	}
 
 	private func keyText(_ text: String) -> String {
@@ -45,10 +72,12 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		if let data = Data.loadJsonFromDocumentsDirectory(saveName),
 		   let settings = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
 		   let apiKey = settings["apiKey"] as? String,
-		   let voiceId = settings["voiceId"] as? String
+		   let voiceId = settings["voiceId"] as? String,
+		   let voiceName = settings["voiceName"] as? String
 		{
 			Self.apiKey = apiKey
 			Self.voiceId = voiceId
+			Self.voiceName = voiceName
 		} else {
 			saveSettings()
 		}
@@ -58,11 +87,46 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		let settings: [String: String] = [
 			"apiKey": Self.apiKey,
 			"voiceId": Self.voiceId,
+			"voiceName": Self.voiceName,
 		]
 		guard let data = try? JSONSerialization.data(withJSONObject: settings, options: []) else {
 			return
 		}
 		data.saveJsonToDocumentsDirectory(saveName)
+	}
+
+	func proposeSettings(apiKey: String, voiceId: String = "", voiceName: String = "", _ callback: @escaping (Bool) -> Void) {
+		let settings = ["apiKey": apiKey, "voiceId": voiceId, "voiceName": voiceName]
+		guard let data = try? JSONSerialization.data(withJSONObject: settings, options: []) else {
+			ServerProtocol.notifyAnomaly("Failed to serialize settings for apiKey and voiceId validation")
+			callback(false)
+			return
+		}
+		ServerProtocol.proposeElevenLabsSettings(data) { code, data in
+			switch code {
+			case 200:
+				// apiKey is fine, list of voices has been returned
+				Self.voices.removeAll()
+				if let data = data,
+				   let voices = try? JSONDecoder().decode([VoiceInfo].self, from: data) {
+					Self.voices = voices
+				} else {
+					ServerProtocol.notifyAnomaly("Failed to decode voice list")
+				}
+				callback(true)
+			case 204:
+				// both apiKey and voice are good
+				callback(true)
+			case 401:
+				// apiKey is no good
+				callback(false)
+			case 403:
+				// voice was specified but is not valid
+				callback(false)
+			default:
+				callback(false)
+			}
+		}
 	}
 
 	func downloadSettings() {
@@ -71,18 +135,24 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 				// server has no settings, so we shouldn't
 				Self.apiKey = ""
 				Self.voiceId = ""
+				Self.voiceName = ""
 				self.saveSettings()
 			} else if let obj = try? JSONSerialization.jsonObject(with: data, options: []),
 					  let settings = obj as? [String: String],
 					  let apiKey = settings["apiKey"],
-					  let voiceId = settings["voiceId"]
+					  let voiceId = settings["voiceId"],
+					  let voiceName = settings["voiceName"]
 			{
 				Self.apiKey = apiKey
 				Self.voiceId = voiceId
+				Self.voiceName = voiceName
 				self.saveSettings()
 			} else {
 				let body = String(String(decoding: data, as: Unicode.UTF8.self))
 				ServerProtocol.notifyAnomaly("Downloaded server speech settings were malformed: \(body)")
+			}
+			DispatchQueue.main.async {
+				self.timestamp += 1
 			}
 		}
 		ServerProtocol.downloadElevenLabsSettings(dataHandler)
@@ -98,6 +168,54 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 
 	func forgetText(_ text: String) {
 		pastItems.removeValue(forKey: keyText(text))
+	}
+
+	func playAudioUrl(_ url: URL) {
+		var request = URLRequest(url: url)
+		request.httpMethod = "GET"
+		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+			guard error == nil else {
+				ServerProtocol.notifyAnomaly("Failed to download audio URL \(url): \(String(describing: error))")
+				return
+			}
+			guard let response = response as? HTTPURLResponse else {
+				ServerProtocol.notifyAnomaly("Received non-HTTP response downloading audio URL \(url): \(String(describing: response))")
+				return
+			}
+			if response.statusCode == 200,
+			   let data = data
+			{
+				logger.info("Successful speech retrieval for audio URL \(url, privacy: .public)")
+				DispatchQueue.main.async {
+					do {
+						// release the old player
+						self.previewPlayer = nil
+						self.previewPlayer = try AVAudioPlayer(data: data, fileTypeHint: "mp3")
+						if !self.previewPlayer!.play() {
+							ServerProtocol.notifyAnomaly("Couldn't play speech for audio URL \(url)")
+						}
+					}
+					catch {
+						ServerProtocol.notifyAnomaly("Couldn't create player for audio URL \(url)")
+					}
+				}
+			} else {
+				ServerProtocol.notifyAnomaly("Got status code \(response.statusCode) downloading audio URL \(url)")
+			}
+		}
+		logger.info("Posting retrieval request for audio URL \(url)")
+		task.resume()
+	}
+
+	func playAppleVoice(voice: AVSpeechSynthesisVoice?, text: String) {
+		fallback(text, voice: voice)
+	}
+
+	func loadFallbackVoice() {
+		if let ident = PreferenceData.preferredVoiceIdentifier,
+		   let voice = AVSpeechSynthesisVoice(identifier: ident) {
+			self.fallbackVoice = voice
+		}
 	}
 
 	func speakText(text: String, callback: SpeechCallback? = nil) {
@@ -158,10 +276,15 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 		}
 	}
 
-	private func fallback(_ text: String) {
+	private func fallback(_ text: String, voice: AVSpeechSynthesisVoice? = nil) {
 		// fallback to Apple speech generation
+		let utterance = AVSpeechUtterance(string: text)
+		if let voice = voice {
+			utterance.voice = voice
+		} else if let voice = self.fallbackVoice {
+			utterance.voice = voice
+		}
 		DispatchQueue.main.async {
-			let utterance = AVSpeechUtterance(string: text)
 			Self.fallbackSynth.speak(utterance)
 		}
 	}
@@ -236,13 +359,9 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate {
 
 final class SpeechItem {
 	private struct SpeechSettings {
-		let apiRoot: String = "https://api.elevenlabs.io/v1"
+		let apiRoot: String = "https://api.us.elevenlabs.io/v1"
 		let outputFormat: String = "mp3_44100_128"
 		let modelId: String = "eleven_flash_v2"
-		let similarityBoost: Float = 0.5
-		let stability: Float = 0.5
-		let useSpeakerBoost: Bool = true
-		let optimizeStreamingLatency: Int = 1
 		var apiKey: String = ElevenLabs.apiKey
 		var voiceId: String = ElevenLabs.voiceId
 
@@ -277,15 +396,10 @@ final class SpeechItem {
 			return
 		}
 		let endpoint = "\(settings.apiRoot)/text-to-speech/\(settings.voiceId)/stream"
-		let query = "?output_format=\(settings.outputFormat)&optimize_streaming_latency=\(settings.optimizeStreamingLatency)"
+		let query = "?output_format=\(settings.outputFormat)"
 		let body: [String: Any] = [
 			"model_id": settings.modelId,
 			"text": text,
-			"voice_settings": [
-				"similarity_boost": settings.similarityBoost,
-				"stability": settings.stability,
-				"use_speaker_boost": settings.useSpeakerBoost
-			]
 		]
 		guard let data = try? JSONSerialization.data(withJSONObject: body) else {
 			fatalError("Can't encode body for voice generation call")

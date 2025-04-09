@@ -86,10 +86,6 @@ struct PreferenceData {
 		}
 	}
 
-	static func syncWithCloud() {
-		cloudSettings.synchronize()
-	}
-
 	static func syncProfile() {
 		cloudSettings.synchronize()
 		let id = profileId ?? ""
@@ -119,6 +115,20 @@ struct PreferenceData {
 			} else {
 				ServerProtocol.notifyAnomaly("Resetting local profile ID to \(cloudId)")
 				profileId = cloudId
+			}
+		}
+	}
+
+	// preferred Apple voice
+	static var preferredVoiceIdentifier: String? {
+		get {
+			localSettings.string(forKey: "preferred_voice_identifier")
+		}
+		set(id) {
+			if let id = id {
+				localSettings.setValue(id, forKey: "preferred_voice_identifier")
+			} else {
+				localSettings.removeObject(forKey: "preferred_voice_identifier")
 			}
 		}
 	}
