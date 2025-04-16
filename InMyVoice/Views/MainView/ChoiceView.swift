@@ -107,7 +107,7 @@ struct ChoiceView: View {
 		.background(Color.accentColor)
 		.cornerRadius(15)
 		.sheet(isPresented: $showSpeechProfile) {
-			SpeechProfileView()
+			SpeechSettingsView()
 				.dynamicTypeSize(magnify ? .accessibility1 : dynamicTypeSize)
 		}
 	}

@@ -133,6 +133,16 @@ struct PreferenceData {
 		}
 	}
 
+	// last-known 3rd-party speech service usage percentage
+	static var lastUsagePercentage: Int? {
+		get {
+			localSettings.object(forKey: "last_usage_percentage_setting") as? Int
+		}
+		set (new) {
+			localSettings.set(new, forKey: "last_usage_percentage_setting")
+		}
+	}
+
 	// size of text
 	static var fontSize: FontSizes.FontSize {
 		get {

@@ -17,6 +17,8 @@ struct ElevenLabsSettingsView: View {
 		case validating
 	}
 
+	@State private var timestamp = ElevenLabs.shared.timestamp
+	@State private var isEnabled: Bool = ElevenLabs.isEnabled()
 	@State private var apiKey: String = ElevenLabs.apiKey
 	@State private var voiceId: String? = ElevenLabs.voiceId
 	@State private var voices: [VoiceInfo] = ElevenLabs.voices
@@ -33,22 +35,25 @@ struct ElevenLabsSettingsView: View {
 	@StateObject private var elevenLabs = ElevenLabs.shared
 
     var body: some View {
-		if apiKeyValidated && voiceIdValidated {
+		if isEnabled && apiKeyValidated && voiceIdValidated {
 			Text("Your ElevenLabs account is enabled and you have chosen a voice. You can make changes here.")
 			HStack(spacing: 5) {
 				Text("Your ElevenLabs voice is named:")
 				Text(voiceName)
 			}
+			ElevenLabsUsageView()
 			HStack {
 				Button("Change API Key") {
 					apiKeyValidated = false
+					voiceIdValidated = false
+					voiceId = nil
 					validationSucceeded = nil
 				}
 				Spacer()
 				Button("Change Voice") {
 					voiceIdValidated = false
-					validationSucceeded = nil
 					voiceId = nil
+					validationSucceeded = nil
 					validateApiKey()
 				}
 				Spacer()
@@ -57,7 +62,7 @@ struct ElevenLabsSettingsView: View {
 				}
 			}
 			.buttonStyle(BorderlessButtonStyle())
-			.onChange(of: elevenLabs.timestamp, updateFromElevenLabs)
+			.onChange(of: elevenLabs.timestamp) { updateFromElevenLabs() }
 		} else if !apiKeyValidated {
 			// we are editing the API key, no voice yet
 			switch validationState {
@@ -69,15 +74,20 @@ struct ElevenLabsSettingsView: View {
 					Text("Sorry, the API key you entered is invalid. Please try again.")
 						.lineLimit(nil)
 				}
+				TextField("ElevenLabs API Key", text: $apiKey, axis: .vertical)
 				HStack {
-					TextField("ElevenLabs API Key", text: $apiKey, axis: .vertical)
 					Button("Validate API Key") {
 						validateApiKey()
 					}
 					.disabled(apiKey.isEmpty || !apiKey.hasPrefix("sk_"))
+					Spacer()
+					Button("Cancel") {
+						updateFromElevenLabs(true)
+					}
+					.disabled(!isEnabled)
 				}
 				.buttonStyle(BorderlessButtonStyle())
-				.onChange(of: elevenLabs.timestamp, updateFromElevenLabs)
+				.onChange(of: elevenLabs.timestamp) { updateFromElevenLabs() }
 			case .validating:
 				ProgressView()
 			}
@@ -111,13 +121,7 @@ struct ElevenLabsSettingsView: View {
 					.disabled(previewUrl == nil)
 					Spacer()
 					Button("Set as my voice") {
-						if let voiceId = voiceId {
-							validationState = .validating
-							ElevenLabs.shared.proposeSettings(apiKey: apiKey, voiceId: voiceId) { ok in
-								self.validationState = .idle
-								self.voiceIdValidated = ok
-							}
-						}
+						validateVoiceId()
 					}
 					.disabled(voiceId == nil)
 				}
@@ -129,15 +133,18 @@ struct ElevenLabsSettingsView: View {
 						previewUrl = URL(string: voice.previewUrl)
 					}
 				}
-				.onChange(of: elevenLabs.timestamp, updateFromElevenLabs)
+				.onChange(of: elevenLabs.timestamp) { updateFromElevenLabs() }
 			case .validating:
 				ProgressView("Fetching voice data...")
 			}
 		}
     }
 
-	private func updateFromElevenLabs() {
+	private func updateFromElevenLabs(_ force: Bool = false) {
+		guard force || timestamp != elevenLabs.timestamp else { return }
+		timestamp = elevenLabs.timestamp
 		if ElevenLabs.isEnabled() {
+			isEnabled = true
 			apiKey = ElevenLabs.apiKey
 			apiKeyValidated = true
 			voiceId = ElevenLabs.voiceId
@@ -145,6 +152,7 @@ struct ElevenLabsSettingsView: View {
 			voiceName = ElevenLabs.voiceName
 			voices = ElevenLabs.voices
 		} else {
+			isEnabled = false
 			apiKey = ""
 			apiKeyValidated = false
 			voiceId = nil
@@ -174,6 +182,24 @@ struct ElevenLabsSettingsView: View {
 				voiceId = nil
 				apiKeyValidated = false
 				voiceIdValidated = false
+				voiceName = ""
+				voices = []
+			}
+		}
+	}
+
+	private func validateVoiceId() {
+		if let voiceId = voiceId {
+			validationState = .validating
+			ElevenLabs.shared.proposeSettings(apiKey: apiKey, voiceId: voiceId) { ok in
+				self.validationState = .idle
+				if ok {
+					// force the update if the settings are the same as before,
+					// otherwise the timestamp update will make it happen
+					updateFromElevenLabs(apiKey == ElevenLabs.apiKey && voiceId == ElevenLabs.voiceId)
+				} else {
+					ServerProtocol.notifyAnomaly("Voice ID validation failed but voice was received from server")
+				}
 			}
 		}
 	}

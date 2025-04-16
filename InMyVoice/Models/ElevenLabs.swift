@@ -9,30 +9,12 @@ import CryptoKit
 
 typealias SpeechCallback = (SpeechItem?) -> Void
 
-struct VoiceInfo: Codable {
-	var voiceId: String
-	var name: String
-	var category: String
-	var labels: [String: String]
-	var description: String
-	var previewUrl: String
-	var isOwner: Bool
-
-	enum CodingKeys: String, CodingKey {
-		case voiceId = "voice_id"
-		case name = "name"
-		case category = "category"
-		case labels = "labels"
-		case description = "description"
-		case previewUrl = "preview_url"
-		case isOwner = "is_owner"
-	}
-}
-
 final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 	static let shared = ElevenLabs()
 
 	@Published private(set) var timestamp: Int = 0
+	@Published private(set) var usageData: AccountInfo? = nil
+	@Published private(set) var usageCutoff: Bool = false
 
 	static private(set) var apiKey: String = ""
 	static private(set) var voiceId: String = ""
@@ -81,6 +63,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 		} else {
 			saveSettings()
 		}
+		downloadUsage()
 	}
 
 	private func saveSettings() {
@@ -137,6 +120,10 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 				Self.voiceId = ""
 				Self.voiceName = ""
 				self.saveSettings()
+				self.usageData = nil
+				DispatchQueue.main.async {
+					self.timestamp += 1
+				}
 			} else if let obj = try? JSONSerialization.jsonObject(with: data, options: []),
 					  let settings = obj as? [String: String],
 					  let apiKey = settings["apiKey"],
@@ -147,15 +134,89 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 				Self.voiceId = voiceId
 				Self.voiceName = voiceName
 				self.saveSettings()
+				self.downloadUsage()
+				DispatchQueue.main.async {
+					self.timestamp += 1
+				}
 			} else {
 				let body = String(String(decoding: data, as: Unicode.UTF8.self))
 				ServerProtocol.notifyAnomaly("Downloaded server speech settings were malformed: \(body)")
 			}
-			DispatchQueue.main.async {
-				self.timestamp += 1
-			}
 		}
 		ServerProtocol.downloadElevenLabsSettings(dataHandler)
+	}
+
+	func downloadUsage() {
+		downloadUsage { }
+	}
+
+	func downloadUsage(_ complete: @escaping () -> Void) {
+		// no-op if we aren't configured
+		guard Self.isEnabled() else {
+			self.usageData = nil
+			PreferenceData.lastUsagePercentage = nil
+			complete()
+			return
+		}
+		let endpoint = "https://api.us.elevenlabs.io/v1/user/subscription"
+		var request = URLRequest(url: URL(string: endpoint)!)
+		request.httpMethod = "GET"
+		request.setValue(Self.apiKey, forHTTPHeaderField: "xi-api-key")
+		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+			guard error == nil else {
+				ServerProtocol.notifyAnomaly("Failed to get usage data from ElevenLabs: \(String(describing: error))")
+				complete()
+				return
+			}
+			guard let response = response as? HTTPURLResponse else {
+				ServerProtocol.notifyAnomaly("Received non-HTTP response on ElevenLabs usage fetch: \(String(describing: response))")
+				complete()
+				return
+			}
+			if response.statusCode == 200,
+			   let data = data,
+			   let result = try? JSONDecoder().decode(AccountInfo.self, from: data)
+			{
+				PreferenceData.lastUsagePercentage = self.usageData?.usagePercentage
+				DispatchQueue.main.async {
+					self.usageData = result
+					self.usageCutoff = result.usagePercentage > result.usagePercentageCutoff
+				}
+				complete()
+				return
+			}
+			ServerProtocol.notifyElevenLabsFailure(action: "usage", code: response.statusCode, data: data)
+			complete()
+		}
+		logger.info("Getting new usage data from ElevenLabs")
+		task.resume()
+		return
+	}
+
+	func notifyUsage() {
+		let pastPct = PreferenceData.lastUsagePercentage ?? 0
+		downloadUsage {
+			if let usage = self.usageData,
+			   usage.usagePercentage != pastPct {
+				let currentPct = usage.usagePercentage
+				let usageMessage = ElevenLabsUsageView.usageMessage(usage)
+				let restoreMessage = "Your ElevenLabs voice will be used for your speech."
+				let warningMessage = """
+					If you use the remainder of your allotment before that date, your Apple voice will be used for speech.
+					"""
+				var msg: String?
+				if self.usageCutoff {
+					msg = usageMessage + "\n" + ElevenLabsUsageView.cutoffMessage
+				} else if pastPct >= usage.usagePercentageCutoff {
+					msg = usageMessage + "\n" + restoreMessage
+				} else if pastPct < 90 && currentPct >= 90 {
+					msg = usageMessage + "\n" + warningMessage
+				}
+				if let msg = msg {
+					ServerProtocol.messageSubject.send(msg)
+				}
+			}
+		}
 	}
 
 	func lookupText(_ text: String) -> SpeechItem? {
@@ -228,7 +289,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 			}
 			return
 		}
-		guard Self.isEnabled() else {
+		guard Self.isEnabled() && !usageCutoff else {
 			fallback(text)
 			self.callback?(nil)
 			return
@@ -489,5 +550,44 @@ final class SpeechItem {
 		}
 		logger.info("Posting retrieval request for item \(id, privacy: .public) to ElevenLabs")
 		task.resume()
+	}
+}
+
+struct VoiceInfo: Codable {
+	var voiceId: String
+	var name: String
+	var category: String
+	var labels: [String: String]
+	var description: String
+	var previewUrl: String
+	var isOwner: Bool
+
+	enum CodingKeys: String, CodingKey {
+		case voiceId = "voice_id"
+		case name = "name"
+		case category = "category"
+		case labels = "labels"
+		case description = "description"
+		case previewUrl = "preview_url"
+		case isOwner = "is_owner"
+	}
+}
+
+struct AccountInfo: Codable {
+	var usedChars: Int
+	var limitChars: Int
+	var nextRenew: Int
+	let usagePercentageCutoff: Int = 99
+
+	enum CodingKeys: String, CodingKey {
+		case usedChars = "character_count"
+		case limitChars = "character_limit"
+		case nextRenew = "next_character_count_reset_unix"
+	}
+
+	var usagePercentage: Int {
+		get {
+			return usedChars * 100 / limitChars
+		}
 	}
 }

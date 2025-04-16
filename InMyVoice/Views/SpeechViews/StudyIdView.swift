@@ -36,6 +36,7 @@ struct StudyIdView: View {
 					.onChange(of: elevenLabs.timestamp, initial: true) {
 						voiceName = ElevenLabs.voiceName
 					}
+					ElevenLabsUsageView()
 				} else {
 					Text("Sorry, a temporary problem prevented dropping you from the study. Please try again later.")
 				}
@@ -49,10 +50,13 @@ struct StudyIdView: View {
 						ServerProtocol.notifyLeaveStudy() { result in
 							state = .idle
 							validationSucceeded = result
+							if result {
+								inStudy = false
+							}
 						}
 					}
 				}, message: {
-					Text("Do you really want to leave the study?\nThis will remove your ElevenLabs voice settings.")
+					Text("Do you really want to leave the study?\nThis will not remove your ElevenLabs voice settings.")
 				})
 			}
 		} else {

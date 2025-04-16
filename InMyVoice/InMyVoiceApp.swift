@@ -92,6 +92,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         }
 		PreferenceData.syncProfile()
 		ServerProtocol.notifyLaunch()
+		ElevenLabs.shared.notifyUsage()
 		ElevenLabs.shared.downloadSettings()
 		FavoritesProfile.shared.downloadFavorites()
         return true

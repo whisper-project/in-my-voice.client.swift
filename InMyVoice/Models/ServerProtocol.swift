@@ -168,6 +168,10 @@ class ServerProtocol {
 				logger.info("Received notification of updated favorites")
 				FavoritesProfile.shared.downloadFavorites()
 			}
+			if response.value(forHTTPHeaderField: "X-Usage-Update") != nil {
+				logger.info("Received notification of updated usage")
+				ElevenLabs.shared.notifyUsage()
+			}
 			switch code {
 			case 404...405:
 				fatalError("Received \(response.statusCode) response to \(method) on URI: \(uri)")
