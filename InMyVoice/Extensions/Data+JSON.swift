@@ -33,8 +33,12 @@ extension Data {
 				create: false
 			)
 			let fileUrl = folderURL.appendingPathComponent("\(filename).json")
-			let data = try Data(contentsOf: fileUrl)
-			return data
+			if FileManager.default.fileExists(atPath: fileUrl.path) {
+				let data = try Data(contentsOf: fileUrl)
+				return data
+			} else {
+				return nil
+			}
 		}
 		catch (let err) {
 			ServerProtocol.notifyAnomaly("Failure reading \(filename).json: \(err)")
@@ -51,7 +55,9 @@ extension Data {
 				create: false
 			)
 			let fileUrl = folderURL.appendingPathComponent("\(filename).json")
-			try FileManager.default.removeItem(at: fileUrl)
+			if FileManager.default.fileExists(atPath: fileUrl.path) {
+				try FileManager.default.removeItem(at: fileUrl)
+			}
 			return true
 		}
 		catch (let err) {

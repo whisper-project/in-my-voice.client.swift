@@ -49,13 +49,39 @@ struct PreferenceData {
         }
     }
 
-	// whether this user is in the study
+	// whether this user is in the study, this is sent by the server
+	// whenever it changes, but it is cached in case we're offline.
+	//
+	// It defaults to false for new installations.
+	static private var _inStudy: Bool?
 	static var inStudy: Bool {
 		get {
-			localSettings.bool(forKey: "in_study")
+			return _inStudy ?? {
+				_inStudy = localSettings.bool(forKey: "in_study")
+				return _inStudy!
+			}()
 		}
-		set(inStudy) {
-			localSettings.setValue(inStudy, forKey: "in_study")
+		set(val) {
+			_inStudy = val
+			localSettings.setValue(val, forKey: "in_study")
+		}
+	}
+
+	// whether to collect stats for users not in the study, this is sent by the server
+	// whenever it changes, but it is cached between launches in case we're offline.
+	//
+	// It defaults to true for new installations.
+	static private var _collectNonStudyStats: Bool?
+	static var collectNonStudyStats: Bool {
+		get {
+			return _collectNonStudyStats ?? {
+				_collectNonStudyStats = !localSettings.bool(forKey: "only_collect_study_stats")
+				return _collectNonStudyStats!
+			}()
+		}
+		set(val) {
+			_collectNonStudyStats = val
+			localSettings.setValue(!val, forKey: "only_collect_study_stats")
 		}
 	}
 

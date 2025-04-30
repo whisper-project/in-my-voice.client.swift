@@ -16,6 +16,9 @@ class ServerProtocol {
 
 	static func notifyLaunch() {
 		sendRequest(path: "/launch", method: "POST", query: nil, body: nil)
+		lineWorkQueue.sync {
+			sendPendingStats()
+		}
 	}
 
 	static func notifyForeground() {
@@ -28,9 +31,13 @@ class ServerProtocol {
 
 	static func notifyQuit() {
 		sendRequest(path: "/shutdown", method: "POST", query: nil, body: nil)
+		lineWorkQueue.sync {
+			saveLineStats()
+		}
 	}
 
-	static func notifyChangeData(count: Int, startTime: Date?, durationMs: Int?) {
+	static func notifyCompleteLine(changes: Int, startTime: Date?, durationMs: Int?, text: String) {
+		guard PreferenceData.inStudy || PreferenceData.collectNonStudyStats else { return }
 		var duration: Int = 0
 		if let startTime = startTime {
 			duration = Int((Date.now.timeIntervalSince(startTime)) * 1000)
@@ -38,17 +45,21 @@ class ServerProtocol {
 		if let durationMs = durationMs {
 			duration += durationMs
 		}
-		if count > 0 && duration > 0 {
-			sendRequest(path: "/change-data", method: "POST", query: nil, body: toData(["count": count, "duration": duration]))
+		if changes > 0 || duration > 0 {
+			lineWorkQueue.sync {
+				sendLineData(["completed": Int(Date.now.timeIntervalSince1970 * 1000),
+							  "changes": changes, "duration": duration, "length": text.count])
+			}
 		}
 	}
 
-	static func notifyRepeatLine() {
-		sendRequest(path: "/repeat-line", method: "POST", query: nil, body: nil)
-	}
-
-	static func notifyFavorite(_ text: String) {
-		sendRequest(path: "/favorite", method: "POST", query: nil, body: toData(["text": text]))
+	static func notifyRepeatLine(isFavorite: Bool, text: String) {
+		guard PreferenceData.inStudy || PreferenceData.collectNonStudyStats else { return }
+		lineWorkQueue.sync {
+			sendLineData(["isFavorite": isFavorite, "text": text],
+						 ["completed": Int(Date.now.timeIntervalSince1970 * 1000),
+						  "changes": 0, "duration": 0, "length": text.count])
+		}
 	}
 
 	static func notifyElevenLabsFailure(action: String, code: Int, data: Data?) {
@@ -152,6 +163,10 @@ class ServerProtocol {
 				logger.info("Received notification of study membership: \(inStudy, privacy: .public)")
 				PreferenceData.inStudy = inStudy == "true"
 			}
+			if let nonStudyStats = response.value(forHTTPHeaderField: "X-Non-Study-Collect-Stats-Update") {
+				logger.info("Received notification of whether to send non-study stats: \(nonStudyStats, privacy: .public)")
+				PreferenceData.collectNonStudyStats = nonStudyStats == "true"
+			}
 			if let message = response.value(forHTTPHeaderField: "X-Message") {
 				logger.info("Received server message: \(message, privacy: .public)")
 				Self.messageSubject.send(message)
@@ -185,5 +200,68 @@ class ServerProtocol {
 		}
 		logger.info("Executing \(requestDescription, privacy: .public)")
 		task.resume()
+	}
+
+	private static var lineWorkQueue = DispatchQueue(label: "lineQueue", qos: .utility)
+	private static var lineStatsPendingQueue: [[String:Any]] = []
+	private static var lineStatsSubmissionId: Int64 = 0
+	private static var lineStatsSubmissionsQueue: [Int64] = []
+	private static var lineStatsSubmissionCounts: [Int64:Int64] = [:]
+
+	// always perform this on the lineWorkQueue
+	private static func sendPendingStats() {
+		if let data = Data.loadJsonFromDocumentsDirectory("line-data") {
+			Data.removeJsonFromDocumentsDirectory("line-data")
+			if let stats = try? JSONSerialization.jsonObject(with: data) as? [[String:Any]] {
+				lineStatsPendingQueue = stats
+				sendLineData()
+			} else {
+				notifyAnomaly("Could not deserialize pending stats data.")
+			}
+		}
+	}
+
+	// always perform this on the lineWorkQueue
+	private static func saveLineStats() {
+		guard lineStatsPendingQueue.count > 0 else {
+			Data.removeJsonFromDocumentsDirectory("line-data")
+			return
+		}
+		if let data = try? JSONSerialization.data(withJSONObject: lineStatsPendingQueue, options: .prettyPrinted) {
+			data.saveJsonToDocumentsDirectory("line-data")
+		} else {
+			notifyAnomaly("Failed to serialize pending stats data.")
+		}
+	}
+
+	// always perform this on the lineWorkQueue
+	private static func sendLineData(_ data: [String:Any]...) {
+		let requestData = lineStatsPendingQueue + data
+		lineStatsPendingQueue = []
+		guard let body = try? JSONSerialization.data(withJSONObject: requestData) else {
+			notifyAnomaly("Failed to serialize stats data for request, discarding it.")
+			return
+		}
+		let uri = "\(PreferenceData.appServer)/api/swift/v1/line-data"
+		var request = URLRequest(url: URL(string: uri)!)
+		request.httpMethod = "POST"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.httpBody = body
+		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
+		request.setValue(PreferenceData.profileId!, forHTTPHeaderField: "X-Profile-Id")
+		request.setValue(platformInfo, forHTTPHeaderField: "X-Platform-Info")
+		let task = URLSession.shared.dataTask(with: request) { (_, _, error) in
+			lineWorkQueue.sync { processOneResponse(error == nil, requestData) }
+		}
+		logger.info("Sending line stats, count: \(requestData.count)")
+		task.resume()
+	}
+
+	// always perform this on the lineWorkQueue
+	private static func processOneResponse(_ success: Bool, _ data: [[String:Any]]) {
+		if !success {
+			logger.info("Requeing line stats, count: \(data.count)")
+			lineStatsPendingQueue.append(contentsOf: data)
+		}
 	}
 }

@@ -77,18 +77,15 @@ final class WhisperViewModel: ObservableObject {
 		return liveText
 	}
 
-	/// Repeat a line typed by the Whisperer
-	func repeatLine(_ text: String? = nil) {
+	/// Repeat a line typed by the Whisperer, which may be a favorite
+	func repeatLine(_ text: String? = nil, _ isFavorite: Bool = false) {
 		let line = text ?? lastLiveText
 		pastText.addLine(line)
 		if !line.trimmingCharacters(in: .whitespaces).isEmpty {
 			lastLiveText = line
 		}
 		speak(line)
-		if (text == nil) {
-			// actually a repeat, not a favorite being used
-			ServerProtocol.notifyRepeatLine()
-		}
+		ServerProtocol.notifyRepeatLine(isFavorite: isFavorite, text: line)
 	}
 
     /// Play the alert sound to all the listeners
@@ -164,7 +161,7 @@ final class WhisperViewModel: ObservableObject {
 			lastLiveText = liveText
 		}
 		speak(liveText)
-		ServerProtocol.notifyChangeData(count: liveTextChangeCount, startTime: liveTextStartTime, durationMs: liveTextDurationMs)
+		ServerProtocol.notifyCompleteLine(changes: liveTextChangeCount, startTime: liveTextStartTime, durationMs: liveTextDurationMs, text: liveText)
 		liveTextStartTime = nil
 		liveTextDurationMs = nil
 		liveTextChangeCount = 0

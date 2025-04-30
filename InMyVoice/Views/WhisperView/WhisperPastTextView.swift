@@ -8,7 +8,7 @@ import SwiftUI
 struct WhisperPastTextView: View {
 	@Binding var interjecting: Bool
 	@ObservedObject var model: PastTextModel
-	var again: ((String?) -> Void)?
+	var again: ((String?, Bool) -> Void)?
 	var edit: ((String) -> Void)?
 	var favorite: ((String, [Favorite]) -> Void)?
 
@@ -71,7 +71,7 @@ struct WhisperPastTextView: View {
 		} else {
 			let buttons = buttonsPref ?? "r-i-f"
 			if buttons.contains("r") {
-				Button("Repeat", systemImage: "repeat", action: { again?(row.raw) })
+				Button("Repeat", systemImage: "repeat", action: { again?(row.raw, !row.favorites.isEmpty) })
 					.labelStyle(.iconOnly)
 					.buttonStyle(.bordered)
 					.disabled(interjecting || row.linked.isEmpty)

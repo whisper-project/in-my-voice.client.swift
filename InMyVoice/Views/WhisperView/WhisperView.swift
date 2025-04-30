@@ -99,8 +99,7 @@ struct WhisperView: View {
 	private func maybeFavorite(_ f: Favorite? = nil) {
 		editFavorites = false
 		if let f = f {
-			model.repeatLine(f.text)
-			ServerProtocol.notifyFavorite(f.text)
+			model.repeatLine(f.text, true)
 		}
 	}
 
@@ -124,6 +123,11 @@ struct WhisperView: View {
 		editFavorites = true
 	}
 
+	/// Repeat a line typed by the whisperer which is not a favorite
+	func repeatSpeech(_text: String? = nil) {
+		model.repeatLine(_text)
+	}
+
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
 		WhisperControlView(size: $size,
 						   magnify: $magnify,
@@ -132,7 +136,7 @@ struct WhisperView: View {
 						   group: $group,
 						   maybeStop: maybeStop,
 						   playSound: model.playSound,
-						   repeatSpeech: model.repeatLine,
+						   repeatSpeech: repeatSpeech,
 						   editFavorites: doEditFavorites,
 						   clearTyping: clearTyping)
 			.padding(EdgeInsets(top: whisperViewTopPad, leading: sidePad, bottom: 0, trailing: sidePad))
