@@ -159,34 +159,7 @@ class ServerProtocol {
 			let code = response.statusCode
 			let body = data ?? Data()
 			logger.info("\(requestDescription, privacy: .public): response \(code) with \(body.count) byte body")
-			if let inStudy = response.value(forHTTPHeaderField: "X-Study-Membership-Update") {
-				logger.info("Received notification of study membership: \(inStudy, privacy: .public)")
-				PreferenceData.inStudy = inStudy == "true"
-			}
-			if let nonStudyStats = response.value(forHTTPHeaderField: "X-Non-Study-Collect-Stats-Update") {
-				logger.info("Received notification of whether to send non-study stats: \(nonStudyStats, privacy: .public)")
-				PreferenceData.collectNonStudyStats = nonStudyStats == "true"
-			}
-			if let message = response.value(forHTTPHeaderField: "X-Message") {
-				logger.info("Received server message: \(message, privacy: .public)")
-				Self.messageSubject.send(message)
-			}
-			if let websiteLocation = response.value(forHTTPHeaderField: "X-Website-Location") {
-				logger.info("Received updated website location: \(websiteLocation, privacy: .public)")
-				PreferenceData.website = websiteLocation
-			}
-			if response.value(forHTTPHeaderField: "X-Speech-Settings-Update") != nil {
-				logger.info("Received notification of updated speech settings")
-				ElevenLabs.shared.downloadSettings()
-			}
-			if response.value(forHTTPHeaderField: "X-Favorites-Update") != nil {
-				logger.info("Received notification of updated favorites")
-				FavoritesProfile.shared.downloadFavorites()
-			}
-			if response.value(forHTTPHeaderField: "X-Usage-Update") != nil {
-				logger.info("Received notification of updated usage")
-				ElevenLabs.shared.notifyUsage()
-			}
+			processResponseHeaders(response)
 			switch code {
 			case 404...405:
 				fatalError("Received \(response.statusCode) response to \(method) on URI: \(uri)")
@@ -200,6 +173,37 @@ class ServerProtocol {
 		}
 		logger.info("Executing \(requestDescription, privacy: .public)")
 		task.resume()
+	}
+
+	private static func processResponseHeaders(_ response: HTTPURLResponse) {
+		if let inStudy = response.value(forHTTPHeaderField: "X-Study-Membership-Update") {
+			logger.info("Received notification of study membership: \(inStudy, privacy: .public)")
+			PreferenceData.inStudy = inStudy == "true"
+		}
+		if let nonStudyStats = response.value(forHTTPHeaderField: "X-Non-Study-Collect-Stats-Update") {
+			logger.info("Received notification of whether to send non-study stats: \(nonStudyStats, privacy: .public)")
+			PreferenceData.collectNonStudyStats = nonStudyStats == "true"
+		}
+		if let message = response.value(forHTTPHeaderField: "X-Message") {
+			logger.info("Received server message: \(message, privacy: .public)")
+			Self.messageSubject.send(message)
+		}
+		if let websiteLocation = response.value(forHTTPHeaderField: "X-Website-Location") {
+			logger.info("Received updated website location: \(websiteLocation, privacy: .public)")
+			PreferenceData.website = websiteLocation
+		}
+		if response.value(forHTTPHeaderField: "X-Speech-Settings-Update") != nil {
+			logger.info("Received notification of updated speech settings")
+			ElevenLabs.shared.downloadSettings()
+		}
+		if response.value(forHTTPHeaderField: "X-Favorites-Update") != nil {
+			logger.info("Received notification of updated favorites")
+			FavoritesProfile.shared.downloadFavorites()
+		}
+		if response.value(forHTTPHeaderField: "X-Usage-Update") != nil {
+			logger.info("Received notification of updated usage")
+			ElevenLabs.shared.notifyUsage()
+		}
 	}
 
 	private static var lineWorkQueue = DispatchQueue(label: "lineQueue", qos: .utility)
@@ -250,8 +254,11 @@ class ServerProtocol {
 		request.setValue(PreferenceData.clientId, forHTTPHeaderField: "X-Client-Id")
 		request.setValue(PreferenceData.profileId!, forHTTPHeaderField: "X-Profile-Id")
 		request.setValue(platformInfo, forHTTPHeaderField: "X-Platform-Info")
-		let task = URLSession.shared.dataTask(with: request) { (_, _, error) in
+		let task = URLSession.shared.dataTask(with: request) { (_, response, error) in
 			lineWorkQueue.sync { processOneResponse(error == nil, requestData) }
+			if let response = response as? HTTPURLResponse {
+				processResponseHeaders(response)
+			}
 		}
 		logger.info("Sending line stats, count: \(requestData.count)")
 		task.resume()
@@ -260,7 +267,7 @@ class ServerProtocol {
 	// always perform this on the lineWorkQueue
 	private static func processOneResponse(_ success: Bool, _ data: [[String:Any]]) {
 		if !success {
-			logger.info("Requeing line stats, count: \(data.count)")
+			logger.info("Requeueing line stats, count: \(data.count)")
 			lineStatsPendingQueue.append(contentsOf: data)
 		}
 	}
