@@ -162,7 +162,7 @@ final class FavoritesProfile: ObservableObject {
 	init() {
 		allGroup = FavoritesGroup(profile: self, name: "")
 		if !load() {
-			_ = addFavoriteInternal(name: "Sample", text: "This is a sample favorite.", tags: [])
+			_ = addFavoriteInternal(name: "Don't interrupt!", text: "Please don’t interrupt while I’m typing.", tags: [])
 			save()
 		}
 	}
