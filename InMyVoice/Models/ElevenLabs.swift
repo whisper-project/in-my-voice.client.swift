@@ -153,8 +153,10 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 	func downloadUsage(_ complete: @escaping () -> Void) {
 		// no-op if we aren't configured
 		guard Self.isEnabled() else {
-			self.usageData = nil
-			PreferenceData.lastUsagePercentage = nil
+			DispatchQueue.main.async {
+				self.usageData = nil
+				PreferenceData.lastUsagePercentage = nil
+			}
 			complete()
 			return
 		}

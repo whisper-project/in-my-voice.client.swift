@@ -41,6 +41,7 @@
 		377C010A2B7AD47800489C05 /* Data+JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C01092B7AD47800489C05 /* Data+JSON.swift */; };
 		377D71162A913E8B009B416F /* PreferenceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D71142A913E2E009B416F /* PreferenceData.swift */; };
 		377FA1972DA9E95A00D47420 /* ElevenLabsUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377FA1962DA9E95A00D47420 /* ElevenLabsUsageView.swift */; };
+		378887792DD3119E002C3DD3 /* PrivacyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378887782DD3119E002C3DD3 /* PrivacyView.swift */; };
 		37922F272C72B66B00D250C6 /* typewriter-carriage-return.caf in Resources */ = {isa = PBXBuildFile; fileRef = 37922F242C72B66B00D250C6 /* typewriter-carriage-return.caf */; };
 		37922F282C72B66B00D250C6 /* typewriter-bell.caf in Resources */ = {isa = PBXBuildFile; fileRef = 37922F252C72B66B00D250C6 /* typewriter-bell.caf */; };
 		37922F292C72B66B00D250C6 /* typewriter-two-minutes.caf in Resources */ = {isa = PBXBuildFile; fileRef = 37922F262C72B66B00D250C6 /* typewriter-two-minutes.caf */; };
@@ -90,6 +91,7 @@
 		377C01092B7AD47800489C05 /* Data+JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+JSON.swift"; sourceTree = "<group>"; };
 		377D71142A913E2E009B416F /* PreferenceData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceData.swift; sourceTree = "<group>"; };
 		377FA1962DA9E95A00D47420 /* ElevenLabsUsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsUsageView.swift; sourceTree = "<group>"; };
+		378887782DD3119E002C3DD3 /* PrivacyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyView.swift; sourceTree = "<group>"; };
 		37922F242C72B66B00D250C6 /* typewriter-carriage-return.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "typewriter-carriage-return.caf"; sourceTree = "<group>"; };
 		37922F252C72B66B00D250C6 /* typewriter-bell.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "typewriter-bell.caf"; sourceTree = "<group>"; };
 		37922F262C72B66B00D250C6 /* typewriter-two-minutes.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "typewriter-two-minutes.caf"; sourceTree = "<group>"; };
@@ -119,7 +121,6 @@
 			isa = PBXGroup;
 			children = (
 				37487C2E2D8F7452005BD862 /* SpeechSettingsView.swift */,
-				376EEEA02D96043900B3B747 /* StudyIdView.swift */,
 				376EEEA22D9604F800B3B747 /* ElevenLabsSettingsView.swift */,
 				377FA1962DA9E95A00D47420 /* ElevenLabsUsageView.swift */,
 				376EEEA42D96054F00B3B747 /* AppleSettingsView.swift */,
@@ -189,6 +190,7 @@
 		37763D0F29AB54F80051CFE5 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				378887772DD31159002C3DD3 /* StudyViews */,
 				371311E82D7FCD52006BFA2F /* SpeechViews */,
 				37CBBD0D2AFB110B006AE49F /* FavoritesViews */,
 				377646C229BAC589002C411C /* MainView */,
@@ -245,6 +247,15 @@
 				3797F9FD2A7F2B9B00F76817 /* ChoiceView.swift */,
 			);
 			path = MainView;
+			sourceTree = "<group>";
+		};
+		378887772DD31159002C3DD3 /* StudyViews */ = {
+			isa = PBXGroup;
+			children = (
+				378887782DD3119E002C3DD3 /* PrivacyView.swift */,
+				376EEEA02D96043900B3B747 /* StudyIdView.swift */,
+			);
+			path = StudyViews;
 			sourceTree = "<group>";
 		};
 		3796EF6B2AA12986009C716F /* Frameworks */ = {
@@ -355,6 +366,7 @@
 				37487C2F2D8F7452005BD862 /* SpeechSettingsView.swift in Sources */,
 				3771F83529DD2F900011419E /* FontSizes.swift in Sources */,
 				377B3D232C4716F70041D26C /* SleepControl.swift in Sources */,
+				378887792DD3119E002C3DD3 /* PrivacyView.swift in Sources */,
 				37159AA42C66F425005CB922 /* FavoritesDetailView.swift in Sources */,
 				377FA1972DA9E95A00D47420 /* ElevenLabsUsageView.swift in Sources */,
 				376EEE9F2D94A33900B3B747 /* View+OnRotate.swift in Sources */,

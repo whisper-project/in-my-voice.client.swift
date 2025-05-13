@@ -73,9 +73,21 @@ class ServerProtocol {
 		}
 	}
 
-	static func notifyJoinStudy(_ studyId: String, _ completionHandler: @escaping (Bool) -> Void) {
+	static func fetchStudies(_ completionHandler: @escaping ([String: String], Bool) -> Void) {
+		sendRequest(path: "/fetch-studies", method: "GET", query: nil, body: nil) { status, data in
+			if status == 200,
+			   let studies = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String]
+			{
+				completionHandler(studies, true)
+				return
+			}
+			completionHandler([:], false)
+		}
+	}
+
+	static func notifyJoinStudy(_ studyId: String, _ upn: String, _ completionHandler: @escaping (Bool) -> Void) {
 		sendRequest(path: "/join-study", method: "POST", query: nil,
-					body: toData(["studyId": studyId])) { status, _ in
+					body: toData(["studyId": studyId, "upn": upn])) { status, _ in
 			completionHandler(status == 204)
 		}
 	}

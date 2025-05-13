@@ -16,16 +16,8 @@ struct SpeechSettingsView: View {
 	var body: some View {
 		NavigationView {
 			Form {
-				Toggle("Are you participating in a research study?", isOn: $wantsToParticipateInStudy)
-					.disabled(inStudy)
-				if wantsToParticipateInStudy {
-					Section(header: Text("Study Participation Details")) {
-						StudyIdView(inStudy: $inStudy)
-					}
-				} else {
-					Section(header: Text("ElevenLabs Speech Settings")) {
-						ElevenLabsSettingsView()
-					}
+				Section(header: Text("ElevenLabs Speech Settings")) {
+					ElevenLabsSettingsView()
 				}
 				Section(header: Text("Apple Speech Settings")){
 					AppleSettingsView()

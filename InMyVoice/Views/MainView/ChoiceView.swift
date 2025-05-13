@@ -17,6 +17,7 @@ struct ChoiceView: View {
 	@State private var orientation = UIDevice.current.orientation
     @State private var showSpeechProfile = false
 	@State private var showFavorites = false
+	@State private var showPrivacy = false
 	@State private var showNoConnection = false
 	@State private var showSharingSheet = false
     @FocusState private var nameEdit: Bool
@@ -128,7 +129,13 @@ struct ChoiceView: View {
 
 	@ViewBuilder private func HowToUseButton() -> some View {
 		VStack (spacing: stackSpacing()) {
-			Spacer().frame(height: 0)
+			Button("Data Collection and Privacy", action: {
+				showPrivacy = true
+			})
+			.font(FontSizes.fontFor(FontSizes.minTextSize))
+			.sheet(isPresented: $showPrivacy) {
+				PrivacyView(speech: { showPrivacy = false; showSpeechProfile = true })
+			}
 			Button(action: {
 				UIApplication.shared.open(PreferenceData.instructionSite())
 			}) {

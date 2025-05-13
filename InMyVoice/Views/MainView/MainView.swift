@@ -34,13 +34,19 @@ struct MainView: View {
                     .padding(EdgeInsets(top: 20, leading: 0, bottom: 5, trailing: 0))
             }
 			.alert("Notification", isPresented: $model.showMessage) {
-				Text(model.message)
+				Text(LocalizedStringKey(model.message))
+				Button("OK") {
+					self.model.showMessage = false
+				}
 			}
 			.dynamicTypeSize(magnify ? .accessibility1 : dynamicTypeSize)
         case .whisper:
 			WhisperView(mode: $mode, magnify: $magnify)
 				.alert("Notification", isPresented: $model.showMessage) {
-					Text(model.message)
+					Text(LocalizedStringKey(model.message))
+					Button("OK") {
+						self.model.showMessage = false
+					}
 				}
         }
     }
