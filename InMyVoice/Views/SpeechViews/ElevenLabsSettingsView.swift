@@ -84,7 +84,6 @@ struct ElevenLabsSettingsView: View {
 					Button("Cancel") {
 						updateFromElevenLabs(true)
 					}
-					.disabled(!isEnabled)
 				}
 				.buttonStyle(BorderlessButtonStyle())
 				.onChange(of: elevenLabs.timestamp) { updateFromElevenLabs() }
@@ -124,6 +123,10 @@ struct ElevenLabsSettingsView: View {
 						validateVoiceId()
 					}
 					.disabled(voiceId == nil)
+					Spacer()
+					Button("Cancel") {
+						updateFromElevenLabs(true)
+					}
 				}
 				.buttonStyle(BorderlessButtonStyle())
 				.onChange(of: voiceId) {
@@ -167,6 +170,7 @@ struct ElevenLabsSettingsView: View {
 		ElevenLabs.shared.proposeSettings(apiKey: apiKey) { ok in
 			validationState = .idle
 			apiKeyValidated = ok
+			validationSucceeded = ok
 			if ok {
 				prepareVoiceChoices()
 			}

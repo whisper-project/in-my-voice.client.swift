@@ -6,31 +6,35 @@
 import SwiftUI
 
 struct StudyIdView: View {
-	@Binding var inStudy: Bool
-	var speech: () -> Void
-
 	enum ValidationState {
 		case idle
 		case validating
 	}
 
+	@Binding var inStudy: String?
+	var speech: () -> Void
+
+	@State private var studies: [String: String] = [:]
 	@State private var studyId: String = ""
 	@State private var upn: String = ""
+	@State private var joinedWithSettings: Bool? = nil
 
 	var body: some View {
-		if (inStudy) {
-			InStudyView(inStudy: $inStudy, speech: speech)
+		if let studyName = inStudy {
+			InStudyView(studyName: studyName, studyId: $studyId, joinedWithSettings: $joinedWithSettings, speech: speech)
 		} else {
 			if studyId == "" {
-				ChooseStudyView(studyId: $studyId)
+				ChooseStudyView(studies: $studies, studyId: $studyId)
 			} else {
-				ChooseUpnView(studyId: $studyId, upn: $upn)
+				ChooseUpnView(studies: $studies, studyId: $studyId, upn: $upn, joinedWithSettings: $joinedWithSettings)
 			}
 		}
 	}
 
 	struct InStudyView: View {
-		@Binding var inStudy: Bool
+		var studyName: String
+		@Binding var studyId: String
+		@Binding var joinedWithSettings: Bool?
 		var speech: () -> Void
 
 		@ObservedObject private var elevenLabs = ElevenLabs.shared
@@ -39,109 +43,106 @@ struct StudyIdView: View {
 		@State private var voiceName: String = ElevenLabs.voiceName
 		@State private var wantsOut: Bool = false
 		@State private var state: ValidationState = .idle
-		@State private var validationSucceeded: Bool?
+		@State private var leftStudy: Bool? = nil
 
 		var body: some View {
 			switch state {
 			case .validating:
 				ProgressView()
 			case .idle:
-				if validationSucceeded ?? true {
-					if apiKey == "" {
-						Text("Your study enrollment is confirmed.")
-							.onChange(of: elevenLabs.timestamp, initial: true) {
-								apiKey = ElevenLabs.apiKey
-								voiceName = ElevenLabs.voiceName
-							}
-						Button("Configure Speech Settings") {
-							speech()
-						}
+				if joinedWithSettings != nil {
+					Text("Your enrollment in the \(studyName) study is confirmed.")
+					if joinedWithSettings == true {
+						Text("Your study administrators have provided ElevenLabs settings that will be shared among all your devices. You will need to configure your desired Apple speech settings on each device.")
 					} else {
-						Text("Your study enrollment is confirmed. Your initial ElevenLabs voice settings have been provided by the study administrators.")
-						HStack(spacing: 5) {
-							Text("Your ElevenLabs voice is named:")
-							Text(voiceName)
-						}
-						.onChange(of: elevenLabs.timestamp, initial: true) {
-							apiKey = ElevenLabs.apiKey
-							voiceName = ElevenLabs.voiceName
-						}
-						ElevenLabsUsageView()
-							.onAppear(perform: elevenLabs.downloadUsage)
-						Button("Configure Speech Settings") {
-							speech()
-						}
+						Text("Your next step is to configure your Apple and ElevenLabs speech settings.")
 					}
-				} else {
+				} else if leftStudy == false {
 					Text("Sorry, a temporary problem prevented dropping you from the study. Please try again later.")
+				} else {
+					Text("You are currently enrolled in the \(studyName) study.")
 				}
-				Button("Drop me from the study") {
-					self.wantsOut = true
-				}
-				.alert("Confirmation", isPresented: $wantsOut, actions: {
-					Button("No", role: .cancel) {}
-					Button("Yes", role: .destructive) {
-						state = .validating
-						ServerProtocol.notifyLeaveStudy() { result in
-							state = .idle
-							validationSucceeded = result
-							if result {
-								inStudy = false
-							}
-						}
+				HStack {
+					Button("Configure Speech Settings", action: speech)
+					Spacer()
+					Button("Drop me from the study") {
+						self.wantsOut = true
 					}
-				}, message: {
-					Text("Do you really want to leave the study?")
-				})
+					.alert("Confirmation", isPresented: $wantsOut, actions: {
+						Button("No", role: .cancel, action: {})
+						Button("Yes", role: .destructive, action: leaveStudy)
+					}, message: {
+						Text("Do you really want to leave the study?")
+					})
+				}
+				.buttonStyle(.borderless)
+			}
+		}
+
+		func leaveStudy() {
+			state = .validating
+			leftStudy = nil
+			ServerProtocol.notifyLeaveStudy() { success in
+				DispatchQueue.main.async {
+					self.state = .idle
+					self.leftStudy = success
+					if success {
+						studyId = ""
+						PreferenceData.inStudy = nil
+					}
+				}
 			}
 		}
 	}
 
 	struct ChooseStudyView: View {
+		@Binding var studies: [String: String]
 		@Binding var studyId: String
 
-		@State private var studies: [String: String] = [:]
-		@State private var chosenStudyId: String?
+		@State private var chosenStudyId: String? = nil
 		@State private var state: ValidationState = .idle
-		@State private var validationSucceeded: Bool?
+		@State private var validationSucceeded: Bool? = nil
 
 		var body: some View {
-			VStack(alignment: .leading) {
-				switch state {
-				case .validating:
+			EmptyView()
+				.onAppear(perform: updateStudies)
+			switch state {
+			case .validating:
+				Text("Fetching the available studies...")
+				ProgressView()
+			case .idle:
+				if validationSucceeded == nil {
 					Text("Fetching the available studies...")
-					ProgressView()
-				case .idle:
-					if validationSucceeded ?? true {
-						if studies.isEmpty {
-							Text("Sorry, but there are no studies currently available. Please try again later.")
-							Button("Try Again") {
-								updateStudies()
-							}
-						} else {
-							Picker("Available Studies", selection: $chosenStudyId) {
-								Text("(Choose a study)").tag(nil as String?)
-								ForEach(studies.keys.sorted(), id: \.self) { studyName in
-									Text(studyName).tag(self.studies[studyName])
-								}
-							}
-							Button("Select this study") {
-								studyId = chosenStudyId!
-							}
-							.disabled(chosenStudyId == nil)
-						}
-					} else {
-						Text("Sorry, there was an error fetching the available studies. Please try again later.")
+						.onAppear(perform: updateStudies)
+				} else if validationSucceeded == true {
+					if studies.isEmpty {
+						Text("Sorry, but there are no studies currently available. Please try again later.")
 						Button("Try Again") {
 							updateStudies()
 						}
+					} else {
+						Picker("Available Studies", selection: $chosenStudyId) {
+							Text("(Choose a study)").tag(nil as String?)
+							ForEach(studies.keys.sorted(), id: \.self) { studyName in
+								Text(studyName).tag(self.studies[studyName])
+							}
+						}
+						Button("Select this study") {
+							studyId = chosenStudyId!
+							chosenStudyId = nil
+						}
+						.disabled(chosenStudyId == nil)
+					}
+				} else {
+					Text("Sorry, there was an error fetching the available studies. Please try again later.")
+					Button("Try Again") {
+						updateStudies()
 					}
 				}
 			}
-			.onAppear(perform: updateStudies)
 		}
 
-		private func updateStudies() {
+		func updateStudies() {
 			state = .validating
 			ServerProtocol.fetchStudies() { studies, ok in
 				self.studies = studies
@@ -152,39 +153,66 @@ struct StudyIdView: View {
 	}
 
 	struct ChooseUpnView: View {
+		@Binding var studies: [String: String]
 		@Binding var studyId: String
 		@Binding var upn: String
+		@Binding var joinedWithSettings: Bool?
 
 		@State private var state: ValidationState = .idle
-		@State private var validationSucceeded: Bool?
+		@State private var validationSucceeded: Bool? = nil
 
 		var body: some View {
 			switch state {
 			case .idle:
 				if validationSucceeded ?? true {
-					Text("To enroll in the study, enter your Unique Participant Number and click the button.")
+					Text("To enroll in \(findName()), enter your Unique Participant Number and click the button.")
 				} else {
-					Text("The Unique Participant Number you entered was not accepted. Please correct it and try again.")
+					Text("The Unique Participant Number you entered for \(findName()) was not accepted. Please correct it and try again.")
 				}
 				TextField("Unique Participant Number", text: $upn)
 					.autocorrectionDisabled(true)
 					.textInputAutocapitalization(.none)
 				HStack {
-					Button("Validate UPN and Join Study") {
-						ServerProtocol.notifyJoinStudy(studyId, upn) { result in
-							state = .idle
-							validationSucceeded = result
-						}
-					}
-					.disabled(upn == "")
+					Button("Validate UPN and Join Study", action: joinStudy)
+						.disabled(upn == "")
 					Spacer()
 					Button("Choose a Different Study") {
 						studyId = ""
 						upn = ""
 					}
+					.disabled(studies.count == 1)
 				}
+				.buttonStyle(.borderless)
 			case .validating:
 				ProgressView()
+			}
+		}
+
+		func findName() -> String {
+			for (name, id) in studies {
+				if id == studyId {
+					return "the " + name + " study"
+				}
+			}
+			return "the study"
+		}
+
+		func joinStudy() {
+			state = .validating
+			ServerProtocol.notifyJoinStudy(studyId, upn) { status in
+				state = .idle
+				switch status {
+				case 200:
+					joinedWithSettings = true
+					validationSucceeded = true
+					upn = ""
+				case 204:
+					joinedWithSettings = false
+					validationSucceeded = true
+					upn = ""
+				default:
+					validationSucceeded = false
+				}
 			}
 		}
 	}

@@ -93,10 +93,11 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 				if let data = data,
 				   let voices = try? JSONDecoder().decode([VoiceInfo].self, from: data) {
 					Self.voices = voices
+					callback(true)
 				} else {
 					ServerProtocol.notifyAnomaly("Failed to decode voice list")
+					callback(false)
 				}
-				callback(true)
 			case 204:
 				// both apiKey and voice are good
 				callback(true)
@@ -112,38 +113,47 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 		}
 	}
 
-	func downloadSettings() {
-		let dataHandler: (Data) -> Void = { data in
-			if data.isEmpty {
-				// server has no settings, so we shouldn't
-				Self.apiKey = ""
-				Self.voiceId = ""
-				Self.voiceName = ""
-				self.saveSettings()
-				self.usageData = nil
-				DispatchQueue.main.async {
-					self.timestamp += 1
-				}
-			} else if let obj = try? JSONSerialization.jsonObject(with: data, options: []),
-					  let settings = obj as? [String: String],
-					  let apiKey = settings["apiKey"],
-					  let voiceId = settings["voiceId"],
-					  let voiceName = settings["voiceName"]
-			{
-				Self.apiKey = apiKey
-				Self.voiceId = voiceId
-				Self.voiceName = voiceName
-				self.saveSettings()
-				self.downloadUsage()
-				DispatchQueue.main.async {
-					self.timestamp += 1
-				}
-			} else {
-				let body = String(String(decoding: data, as: Unicode.UTF8.self))
-				ServerProtocol.notifyAnomaly("Downloaded server speech settings were malformed: \(body)")
-			}
+	private func applyServerSettings(_ data: Data?) {
+		guard let data = data else {
+			// there was an error on the server fetch, ignore result
+			return
 		}
-		ServerProtocol.downloadElevenLabsSettings(dataHandler)
+		if data.isEmpty {
+			// server has no settings, so we shouldn't
+			Self.apiKey = ""
+			Self.voiceId = ""
+			Self.voiceName = ""
+			self.saveSettings()
+			self.usageData = nil
+			DispatchQueue.main.async {
+				self.timestamp += 1
+			}
+		} else if let obj = try? JSONSerialization.jsonObject(with: data, options: []),
+				  let settings = obj as? [String: String],
+				  let apiKey = settings["apiKey"],
+				  let voiceId = settings["voiceId"],
+				  let voiceName = settings["voiceName"]
+		{
+			Self.apiKey = apiKey
+			Self.voiceId = voiceId
+			Self.voiceName = voiceName
+			self.saveSettings()
+			self.downloadUsage()
+			DispatchQueue.main.async {
+				self.timestamp += 1
+			}
+		} else {
+			let body = String(String(decoding: data, as: Unicode.UTF8.self))
+			ServerProtocol.notifyAnomaly("Downloaded server speech settings were malformed: \(body)")
+		}
+	}
+
+	func downloadSettings() {
+		ServerProtocol.downloadElevenLabsSettings(applyServerSettings)
+	}
+
+	func downloadStudySettings() {
+		ServerProtocol.downloadStudySettings(applyServerSettings)
 	}
 
 	func downloadUsage() {

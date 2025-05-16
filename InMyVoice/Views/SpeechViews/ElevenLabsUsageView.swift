@@ -28,7 +28,7 @@ struct ElevenLabsUsageView: View {
 						}
 					}
 			case .timeout:
-				Text("There was an error fetching your ElevenLabs usage data. Perhaps you are offline?")
+				Text("Checking your ElevenLabs usage. If it doesn't appear soon, you can try again.")
 				Button("Try again") {
 					validationState = .validating
 				}

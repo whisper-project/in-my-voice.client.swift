@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-let privacyText = """
+let usageText = """
 	The In My Voice app does not collect any data from your usage of the app \
 	unless you voluntarily participate in a research study (see below). \
 	If you choose to participate in a research study, data about your usage \
@@ -13,25 +13,32 @@ let privacyText = """
 	research purposes. Contact your study administrators for details of \
 	exactly what data is collected and how it is used.
 	"""
+let backupText = """
+	The In My Voice server keeps a copy of your ElevenLabs settings and your \
+	Favorite phrases so that they can be shared automatically among all your \
+	devices. This data can only be accessed by devices that are registered \
+	to your Apple ID.
+	"""
 
 struct PrivacyView: View {
 #if targetEnvironment(macCatalyst)
 	@Environment(\.dismiss) private var dismiss
 #endif
-	@AppStorage("in_study") private var inStudy: Bool = PreferenceData.inStudy
+	@AppStorage("in_study") private var inStudy: String?
 
 	var speech: () -> Void
 
-	@State private var wantsToParticipateInStudy: Bool = PreferenceData.inStudy
+	@State private var wantsToParticipateInStudy: Bool = PreferenceData.inStudy != nil
 
 	var body: some View {
 		NavigationView {
 			Form {
-				Text(privacyText)
-				Toggle("Are you participating in a research study?", isOn: $wantsToParticipateInStudy)
-					.disabled(inStudy)
-				if wantsToParticipateInStudy {
-					Section(header: Text("Study Participation Details")) {
+				Text(usageText)
+				Text(backupText)
+				Section(header: Text("Study Participation")) {
+					Toggle("Are you participating in a research study?", isOn: $wantsToParticipateInStudy)
+						.disabled(inStudy != nil)
+					if wantsToParticipateInStudy {
 						StudyIdView(inStudy: $inStudy, speech: speech)
 					}
 				}
@@ -47,7 +54,7 @@ struct PrivacyView: View {
 			}
 		}
 		.onChange(of: inStudy, initial: true) {
-			wantsToParticipateInStudy = inStudy
+			wantsToParticipateInStudy = inStudy != nil
 		}
 	}
 }

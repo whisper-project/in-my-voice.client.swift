@@ -37,7 +37,7 @@ class ServerProtocol {
 	}
 
 	static func notifyCompleteLine(changes: Int, startTime: Date?, durationMs: Int?, text: String) {
-		guard PreferenceData.inStudy || PreferenceData.collectNonStudyStats else { return }
+		guard PreferenceData.inStudy != nil else { return }
 		var duration: Int = 0
 		if let startTime = startTime {
 			duration = Int((Date.now.timeIntervalSince(startTime)) * 1000)
@@ -54,7 +54,7 @@ class ServerProtocol {
 	}
 
 	static func notifyRepeatLine(isFavorite: Bool, text: String) {
-		guard PreferenceData.inStudy || PreferenceData.collectNonStudyStats else { return }
+		guard PreferenceData.inStudy != nil else { return }
 		lineWorkQueue.sync {
 			sendLineData(["isFavorite": isFavorite, "text": text],
 						 ["completed": Int(Date.now.timeIntervalSince1970 * 1000),
@@ -85,10 +85,10 @@ class ServerProtocol {
 		}
 	}
 
-	static func notifyJoinStudy(_ studyId: String, _ upn: String, _ completionHandler: @escaping (Bool) -> Void) {
+	static func notifyJoinStudy(_ studyId: String, _ upn: String, _ completionHandler: @escaping (Int) -> Void) {
 		sendRequest(path: "/join-study", method: "POST", query: nil,
 					body: toData(["studyId": studyId, "upn": upn])) { status, _ in
-			completionHandler(status == 204)
+			completionHandler(status)
 		}
 	}
 
@@ -98,7 +98,24 @@ class ServerProtocol {
 		}
 	}
 
-	static func downloadElevenLabsSettings(_ dataHandler: @escaping (Data) -> Void) {
+	static func downloadStudySettings(_ dataHandler: @escaping (Data?) -> Void) {
+		let completionHandler: (Int, Data) -> Void = { status, data in
+			switch status {
+			case 200:
+				dataHandler(data)
+			case 204:
+				// no data, let handler know
+				dataHandler(Data())
+			default:
+				notifyAnomaly("Failed to download study settings: status code \(status)")
+				// server error, let handler know
+				dataHandler(nil)
+			}
+		}
+		sendRequest(path: "/participant-settings/eleven", method: "GET", query: nil, body: nil, handler: completionHandler)
+	}
+
+	static func downloadElevenLabsSettings(_ dataHandler: @escaping (Data?) -> Void) {
 		let completionHandler: (Int, Data) -> Void = { status, data in
 			switch status {
 			case 200:
@@ -108,6 +125,8 @@ class ServerProtocol {
 				dataHandler(Data())
 			default:
 				notifyAnomaly("Failed to download Eleven Labs settings: status code \(status)")
+				// error on the server side, let handler know
+				dataHandler(nil)
 			}
 		}
 		sendRequest(path: "/speech-settings/eleven", method: "GET", query: nil, body: nil, handler: completionHandler)
@@ -190,11 +209,7 @@ class ServerProtocol {
 	private static func processResponseHeaders(_ response: HTTPURLResponse) {
 		if let inStudy = response.value(forHTTPHeaderField: "X-Study-Membership-Update") {
 			logger.info("Received notification of study membership: \(inStudy, privacy: .public)")
-			PreferenceData.inStudy = inStudy == "true"
-		}
-		if let nonStudyStats = response.value(forHTTPHeaderField: "X-Non-Study-Collect-Stats-Update") {
-			logger.info("Received notification of whether to send non-study stats: \(nonStudyStats, privacy: .public)")
-			PreferenceData.collectNonStudyStats = nonStudyStats == "true"
+			PreferenceData.inStudy = inStudy
 		}
 		if let message = response.value(forHTTPHeaderField: "X-Message") {
 			logger.info("Received server message: \(message, privacy: .public)")

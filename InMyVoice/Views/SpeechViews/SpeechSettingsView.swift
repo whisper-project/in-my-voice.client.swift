@@ -9,9 +9,6 @@ struct SpeechSettingsView: View {
 #if targetEnvironment(macCatalyst)
 	@Environment(\.dismiss) private var dismiss
 #endif
-	@AppStorage("in_study") private var inStudy: Bool = PreferenceData.inStudy
-
-	@State private var wantsToParticipateInStudy: Bool = PreferenceData.inStudy
 
 	var body: some View {
 		NavigationView {
@@ -33,9 +30,6 @@ struct SpeechSettingsView: View {
 				}
 #endif
 			}
-		}
-		.onChange(of: inStudy, initial: true) {
-			wantsToParticipateInStudy = inStudy
 		}
     }
 }
