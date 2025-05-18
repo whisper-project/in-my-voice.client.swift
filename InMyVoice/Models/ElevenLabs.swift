@@ -113,47 +113,42 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 		}
 	}
 
-	private func applyServerSettings(_ data: Data?) {
-		guard let data = data else {
-			// there was an error on the server fetch, ignore result
-			return
-		}
-		if data.isEmpty {
-			// server has no settings, so we shouldn't
-			Self.apiKey = ""
-			Self.voiceId = ""
-			Self.voiceName = ""
-			self.saveSettings()
-			self.usageData = nil
-			DispatchQueue.main.async {
-				self.timestamp += 1
-			}
-		} else if let obj = try? JSONSerialization.jsonObject(with: data, options: []),
-				  let settings = obj as? [String: String],
-				  let apiKey = settings["apiKey"],
-				  let voiceId = settings["voiceId"],
-				  let voiceName = settings["voiceName"]
-		{
-			Self.apiKey = apiKey
-			Self.voiceId = voiceId
-			Self.voiceName = voiceName
-			self.saveSettings()
-			self.downloadUsage()
-			DispatchQueue.main.async {
-				self.timestamp += 1
-			}
-		} else {
-			let body = String(String(decoding: data, as: Unicode.UTF8.self))
-			ServerProtocol.notifyAnomaly("Downloaded server speech settings were malformed: \(body)")
-		}
-	}
-
 	func downloadSettings() {
-		ServerProtocol.downloadElevenLabsSettings(applyServerSettings)
-	}
-
-	func downloadStudySettings() {
-		ServerProtocol.downloadStudySettings(applyServerSettings)
+		let handler: (Data?) -> Void = { data in
+			guard let data = data else {
+				// there was an error on the server fetch, ignore result
+				return
+			}
+			if data.isEmpty {
+				// server has no settings, so we shouldn't
+				Self.apiKey = ""
+				Self.voiceId = ""
+				Self.voiceName = ""
+				self.saveSettings()
+				self.usageData = nil
+				DispatchQueue.main.async {
+					self.timestamp += 1
+				}
+			} else if let obj = try? JSONSerialization.jsonObject(with: data, options: []),
+					  let settings = obj as? [String: String],
+					  let apiKey = settings["apiKey"],
+					  let voiceId = settings["voiceId"],
+					  let voiceName = settings["voiceName"]
+			{
+				Self.apiKey = apiKey
+				Self.voiceId = voiceId
+				Self.voiceName = voiceName
+				self.saveSettings()
+				self.downloadUsage()
+				DispatchQueue.main.async {
+					self.timestamp += 1
+				}
+			} else {
+				let body = String(String(decoding: data, as: Unicode.UTF8.self))
+				ServerProtocol.notifyAnomaly("Downloaded server speech settings were malformed: \(body)")
+			}
+		}
+		ServerProtocol.downloadElevenLabsSettings(handler)
 	}
 
 	func downloadUsage() {

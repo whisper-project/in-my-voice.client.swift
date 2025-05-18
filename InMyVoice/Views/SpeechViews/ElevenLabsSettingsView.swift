@@ -31,6 +31,7 @@ struct ElevenLabsSettingsView: View {
 	@State private var validationState: ValidationState = .idle
 	@State private var validationSucceeded: Bool?
 	@State private var previewUrl: URL?
+	@State private var studySettingsDifferent: Bool?
 
 	@StateObject private var elevenLabs = ElevenLabs.shared
 
@@ -62,7 +63,20 @@ struct ElevenLabsSettingsView: View {
 				}
 			}
 			.buttonStyle(BorderlessButtonStyle())
-			.onChange(of: elevenLabs.timestamp) { updateFromElevenLabs() }
+			.onChange(of: elevenLabs.timestamp, initial: true) {
+				updateFromElevenLabs()
+				checkStudySettings()
+			}
+			.onAppear(perform: checkStudySettings)
+			switch studySettingsDifferent {
+			case true:
+				Text("You have changed your ElevenLabs settings from those provided by your study administrators.")
+				Button("Revert to study settings", action: revertToStudySettings)
+			case false:
+				EmptyView()
+			default:
+				ProgressView()
+			}
 		} else if !apiKeyValidated {
 			// we are editing the API key, no voice yet
 			switch validationState {
@@ -206,6 +220,16 @@ struct ElevenLabsSettingsView: View {
 				}
 			}
 		}
+	}
+
+	private func checkStudySettings() {
+		ServerProtocol.compareStudyElevenLabsSettings(updateIfDifferent: false) { different in
+			self.studySettingsDifferent = different
+		}
+	}
+
+	private func revertToStudySettings() {
+		ServerProtocol.compareStudyElevenLabsSettings(updateIfDifferent: true) { _ in }
 	}
 
 	private class LabelOption: Identifiable {

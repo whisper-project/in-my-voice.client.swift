@@ -98,21 +98,12 @@ class ServerProtocol {
 		}
 	}
 
-	static func downloadStudySettings(_ dataHandler: @escaping (Data?) -> Void) {
-		let completionHandler: (Int, Data) -> Void = { status, data in
-			switch status {
-			case 200:
-				dataHandler(data)
-			case 204:
-				// no data, let handler know
-				dataHandler(Data())
-			default:
-				notifyAnomaly("Failed to download study settings: status code \(status)")
-				// server error, let handler know
-				dataHandler(nil)
-			}
+	static func compareStudyElevenLabsSettings(updateIfDifferent: Bool, _ callback: @escaping (Bool) -> Void) {
+		let completionHandler: (Int, Data) -> Void = { status, _ in
+			callback(status == 200)
 		}
-		sendRequest(path: "/participant-settings/eleven", method: "GET", query: nil, body: nil, handler: completionHandler)
+		sendRequest(path: "/participant-settings/eleven", method: "GET",
+					query: ["update": "\(updateIfDifferent)"], body: nil, handler: completionHandler)
 	}
 
 	static func downloadElevenLabsSettings(_ dataHandler: @escaping (Data?) -> Void) {
