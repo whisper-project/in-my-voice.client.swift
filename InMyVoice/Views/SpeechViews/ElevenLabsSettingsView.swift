@@ -245,11 +245,16 @@ struct ElevenLabsSettingsView: View {
 			"age": "Age",
 			"accent": "Accent",
 			"use_case": "Use Case",
+			"language": "Language",
 		]
 
-		init(_ id: String) {
+		init?(_ id: String) {
 			self.id = id
-			self.label = Self.idLabelMap[id] ?? id
+			guard let label = Self.idLabelMap[id] else {
+				// non-standard labels turn out to be metadata mistakes made by ElevenLabs
+				return nil
+			}
+			self.label = label
 			self.values = []
 			self.value = nil
 		}
@@ -277,7 +282,7 @@ struct ElevenLabsSettingsView: View {
 
 	private func prepareVoiceChoices() {
 		voices = ElevenLabs.voices
-		let categoryOption = LabelOption("category")
+		let categoryOption = LabelOption("category")!
 		labelOptions = [categoryOption]
 		for voice in voices {
 			if !categoryOption.values.contains(where: { $0 == voice.category }) {
@@ -286,13 +291,15 @@ struct ElevenLabsSettingsView: View {
 			for var (label, value) in voice.labels {
 				label = label.lowercased().trimmingCharacters(in: .whitespaces)
 				value = value.trimmingCharacters(in: .whitespaces)
-				var option = labelOptions.first(where: { $0.id == label })
-				if option == nil {
-					option = LabelOption(label)
-					labelOptions.append(option!)
-				}
-				if !option!.values.contains(where: { $0 == value }) {
-					option!.values.append(value)
+				if let option = labelOptions.first(where: { $0.id == label }) {
+					if !option.values.contains(where: { $0 == value }) {
+						option.values.append(value)
+					}
+				} else if let option = LabelOption(label) {
+					labelOptions.append(option)
+					option.values.append(value)
+				} else {
+					ServerProtocol.notifyAnomaly("ElevenLabs voice ID \(voice.voiceId) name \(voice.name) has unknown label: \(label)")
 				}
 			}
 		}
