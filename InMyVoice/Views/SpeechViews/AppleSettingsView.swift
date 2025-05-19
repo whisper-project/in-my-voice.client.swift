@@ -27,7 +27,7 @@ struct AppleSettingsView: View {
 	var body: some View {
 		if !isChoosingVoice {
 			if elevenLabsEnabled {
-				Text("Apple's built-in speech-to-text is used when you are offline.")
+				Text("You have chosen to use an ElevenLabs voice. Apple's built-in speech-to-text will be used when you are offline.")
 					.onChange(of: elevenLabs.timestamp) {
 						elevenLabsEnabled = ElevenLabs.isEnabled()
 					}
@@ -113,6 +113,10 @@ struct AppleSettingsView: View {
 					}
 				}
 				.disabled(selectedVoiceId == nil)
+				Spacer()
+				Button("Cancel") {
+					isChoosingVoice = false
+				}
 			}
 			.buttonStyle(BorderlessButtonStyle())
 		}

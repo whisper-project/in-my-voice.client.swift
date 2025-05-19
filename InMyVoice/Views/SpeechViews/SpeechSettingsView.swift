@@ -13,11 +13,11 @@ struct SpeechSettingsView: View {
 	var body: some View {
 		NavigationView {
 			Form {
-				Section(header: Text("ElevenLabs Speech Settings")) {
-					ElevenLabsSettingsView()
-				}
 				Section(header: Text("Apple Speech Settings")){
 					AppleSettingsView()
+				}
+				Section(header: Text("ElevenLabs Speech Settings")) {
+					ElevenLabsSettingsView()
 				}
 			}
 			.onAppear(perform: ElevenLabs.shared.downloadUsage)
