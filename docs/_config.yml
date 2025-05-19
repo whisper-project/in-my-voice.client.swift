@@ -2,7 +2,7 @@ title: In My Voice
 description: Reference website for the app In My Voice
 theme: just-the-docs
 
-url: https://docs.whisper-project.github.io
+url: https://docs.in-my-voice.whisper-project.org
 
 plugins:
   - jekyll-relative-links
