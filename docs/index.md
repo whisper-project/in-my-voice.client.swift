@@ -4,36 +4,33 @@ title: About
 nav_order: 1
 ---
 
-# Whisper
+# In My Voice
 
-Whisper is an app that allows someone who doesn’t speak aloud to participate in a spoken conversation with others who do. The *Whisperer* uses the app to type their part of the conversation. The *Listeners* use either the app or a browser to see what the Whisperer is saying. The Listeners speak their responses aloud to the Whisperer and to each other.
+In My Voice is an app that allows someone who doesn’t speak aloud to participate in a spoken conversation with others who do. The non-speaking participant participates by typing: their typed words are then vocalized using Text-to-Speech technology available from a number of different providers. The currently-supported providers are [Apple](https://support.apple.com/en-us/105018) and [Eleven Labs](https://elevenlabs.io), both of whom support “voice cloning”—the creation of a text-to-speech voice that sounds like a specific person.
 
 To learn how to use the app, visit [Instructions](instructions.md). For help, visit [Support](support.md).
 
 ## Privacy
 
-Neither the [Whisper Project](http://whisper-project.org) (the maker of Whisper) nor [Software in the Public Interest](https://spi-inc.org) (the publisher of Whisper) collects, stores, or processes any data about individuals who use Whisper.
+Neither the [Whisper Project](http://whisper-project.org) (the maker of In My Voice) nor [Software in the Public Interest](https://spi-inc.org) (the publisher of In My Voice) collects, stores, or processes any data about individuals who use In My Voice. 
 
-The contents of conversations held through Whisper are not stored *anywhere*, even on device-local storage, unless the Whisperer has opted to make transcripts available, in which case the transcripts are stored on the Whisper server for no more than one year and made available only as requested by the Whisperer. These transcripts are not associated with any data about the participants as individuals or any data that can be used to identify the participants as individuals.
+The In My Voice app never collects usage data unless an individual user has chosen to participate in a research study. In that case, data about study participant usage is provided to the study administrators for research purposes. Details of what data is collected and how it is used varies from study to study; each study provides detailed information about this in their study agreements.
 
-The name you enter in the app (or browser, if used for listening) is stored both locally on your device and on the Whisper server. This name is not associated with any data about you as an individual or any data that can be used to identify you as an individual. It is used only to identify you in conversations with other individuals or, after you explicitly give permission, for customer support purposes.
+Because the In My Voice app automatically syncs app settings (including ElevenLabs voice settings and Favorites) among the devices registered to a specific Apple ID, a copy of these settings is kept on the In My Voice server. This data is accessible from devices registered to the user’s Apple ID and, after the user has explicitly requested it, by Whisper Project personnel for support purposes.
 
-Your favorites and other settings in the Whisper app (called your *user profile*) are stored locally on your device. If you use profile sharing, then your user profile is also stored on the Whisper server. As with the name you enter in the app, your user profile is not associated with any data about you as an individual or any data that can be used to identify you as an individual. It is used on the server only to maintain synchronization between your devices.
+The In My Voice app collects and sends to its server a variety of diagnostic data.  This diagnostic data is not associated with any data about you as an individual or any data that can be used to identify you as an individual. This data is never used for any purpose except to resolve issues reported by users and to improve the app's behavior:
 
-Whisper collects and sends to its server a variety of diagnostic data.  This diagnostic data is not associated with any data about you as an individual or any data that can be used to identify you as an individual. This data is never used for any purpose except to resolve issues reported by users and to improve the app's behavior:
+* Information about crashes and other errors that interrupt the use of the app.
+* Identifiers created by the app that are specific to the device or the user’s app settings. These identifiers are random strings of characters that are different for each device and user.
+* The dates and times that the app was launched or that data was typed by a user.
 
-* Information about crashes and other errors that interrupt conversations in the Whisper app.
-* Identifiers created by the app that are specific to the device, the user’s profile and conversations that the user creates. These identifiers are random strings of characters that are different for each device, user, and conversation.
-* The dates and times that the app was launched, that a Whisperer started a conversation, and that a Listener joined a conversation.
-* The names of all conversations.
-
-All identifiers created by the app, all names entered by users, all user profiles, and all associated dates/times are purged from the Whisper server if the devices, users, and conversations they are associated with have not been used in the past 12 months.
+All identifiers created by the app, as well as all associated settings and diagnostic data, are purged from the In My Voice server if the devices and settings they are associated with have not been used in the past 12 months.
 
 ## Acknowledgements
 
 Apple, AirDrop, App Store, macOS, iPhone, and iPad are trademarks of Apple Inc., registered in the U.S. and other countries and regions. iOS is a trademark or registered trademark of Cisco in the U.S. and other countries and is used under license.
 
-The Whisper authors gratefully acknowledge the following content creators whose materials are used by permission in the Whisper application:
+The Whisper Project gratefully acknowledges the following content creators whose materials are used by permission in both the In My Voice and Whisper applications:
 
 - [Air Horn Icon](https://thenounproject.com/icon/air-horn-4437429/) by [SuperNdre](https://thenounproject.com/pccandriaja13/) via [the Noun Project](https://thenounproject.com).
 - [Air Horn Sound](https://pixabay.com/sound-effects/air-horn-close-and-loud-106073/) by goose278 from [Pixabay](https://pixabay.com).
@@ -53,6 +50,6 @@ The Whisper authors gratefully acknowledge the following content creators whose 
 
 ## Copyright
 
-Copyright 2023-2024 Daniel Brotsky. All rights reserved.
+Copyright 2023-2025 Daniel Brotsky. All rights reserved.
 
-This documentation, like all parts of Whisper, is open-source and available for free under the terms of the [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html).
+This documentation, like all parts of In My Voice, is open-source and available for free under the terms of the [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html).
