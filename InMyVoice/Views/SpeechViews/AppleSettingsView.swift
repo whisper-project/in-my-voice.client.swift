@@ -10,7 +10,6 @@ struct AppleSettingsView: View {
 	@AppStorage("preferred_voice_identifier") var selectedAppleVoiceId: String?
 
 	@State private var isChoosingVoice: Bool = false
-	@State private var selectedAppleVoice: AVSpeechSynthesisVoice?
 	@State private var voices: [AVSpeechSynthesisVoice] = []
 	@State private var filteredVoices: [AVSpeechSynthesisVoice] = []
 	@State private var selectedVoiceId: String?
@@ -19,10 +18,6 @@ struct AppleSettingsView: View {
 	@State private var elevenLabsEnabled: Bool = ElevenLabs.isEnabled()
 
 	@StateObject private var elevenLabs = ElevenLabs.shared
-
-	init() {
-		selectedAppleVoice = loadVoice(PreferenceData.preferredVoiceIdentifier)
-	}
 
 	var body: some View {
 		if !isChoosingVoice {
@@ -37,7 +32,7 @@ struct AppleSettingsView: View {
 						elevenLabsEnabled = ElevenLabs.isEnabled()
 					}
 			}
-			if let voice = selectedAppleVoice {
+			if let voice = loadVoice(selectedAppleVoiceId) {
 				Text("You have selected \(voice.name) as your preferred Apple voice.")
 				HStack {
 					Button("Play a sample") {
@@ -49,7 +44,6 @@ struct AppleSettingsView: View {
 					}
 					Spacer()
 					Button("Use system default") {
-						selectedAppleVoice = nil
 						PreferenceData.preferredVoiceIdentifier = nil
 					}
 				}
@@ -103,8 +97,7 @@ struct AppleSettingsView: View {
 				.disabled(selectedVoiceId == nil)
 				Spacer()
 				Button("Set as my voice") {
-					if let voice = loadVoice(selectedVoiceId) {
-						selectedAppleVoice = voice
+					if loadVoice(selectedVoiceId) != nil {
 						PreferenceData.preferredVoiceIdentifier = selectedVoiceId
 						ElevenLabs.shared.loadFallbackVoice()
 						isChoosingVoice = false
