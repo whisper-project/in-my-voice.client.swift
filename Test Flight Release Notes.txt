@@ -1,0 +1,2 @@
+Version 1.0.3:
+First beta release. All the planned functionality is available. If you are a beta tester who's helping with testing study-related functionality, you will get an email with your study ID and unique participant number.
