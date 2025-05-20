@@ -27,7 +27,18 @@ struct PreferenceData {
     #endif
 
 	// website endpoints
-	static var website = "https://whisper-project.github.io/in-my-voice.client.swift"
+	static var website: String {
+		get {
+			if let siteUrl = localSettings.string(forKey: "website_url_settings") {
+				return siteUrl
+			} else {
+				return "https://docs.in-my-voice.whisper-project.org"
+			}
+		}
+		set (newValue) {
+			localSettings.set(newValue, forKey: "website_url_settings")
+		}
+	}
 	static func aboutSite() -> URL {
 		return URL(string: website)!
 	}
