@@ -352,8 +352,9 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 		} else if let voice = self.fallbackVoice {
 			utterance.voice = voice
 		}
-		
-		Self.fallbackSynth.speak(utterance)
+		DispatchQueue.main.async {
+			Self.fallbackSynth.speak(utterance)
+		}
 	}
 
 	private func queueSpeech(_ item: GeneratedItem) {

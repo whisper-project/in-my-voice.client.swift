@@ -13,13 +13,15 @@ struct WhisperPastTextView: View {
 	var favorite: ((String, [Favorite]) -> Void)?
 
 	@State private var rows: [Row] = []
+	@State private var bottomRow: Int?
 	@AppStorage("history_buttons_preference") private var buttonsPref: String?
 	@ObservedObject private var fp = FavoritesProfile.shared
 
     var body: some View {
-		ScrollViewReader { proxy in
-			List {
+		ScrollView {
+			LazyVStack(alignment: .leading) {
 				ForEach(rows) { row in
+					Divider()
 					HStack(spacing: 5) {
 						makeButtons(row)
 						Text(.init(row.linked))
@@ -28,13 +30,10 @@ struct WhisperPastTextView: View {
 					.id(row.id)
 				}
 			}
-			.listStyle(.plain)
-			.onChange(of: rows.count) {
-				if !rows.isEmpty {
-					proxy.scrollTo(0, anchor: .bottom)
-				}
-			}
+			.scrollTargetLayout()
 		}
+		.defaultScrollAnchor(.bottom)
+		.scrollPosition(id: $bottomRow, anchor: .bottom)
 		.onChange(of: fp.timestamp, updateRows)
 		.onChange(of: model.pastText, initial: true, updateRows)
     }
@@ -43,16 +42,26 @@ struct WhisperPastTextView: View {
 		rows = makeRows()
 	}
 
-	private struct Row: Identifiable {
+	private struct Row: Identifiable, Hashable {
 		let id: Int
 		let raw: String
 		let linked: String
 		let favorites: [Favorite]
+
+		static func == (lhs: Row, rhs: Row) -> Bool {
+			lhs.id == rhs.id
+		}
+
+		func hash(into hasher: inout Hasher) {
+			hasher.combine(id)
+		}
 	}
 
 	private func makeRows() -> [Row] {
 		var rows: [Row] = []
-		if !model.pastText.isEmpty {
+		if model.pastText.isEmpty {
+			bottomRow = nil
+		} else {
 			let (raw: rawLines, linked: linkedLines) = model.getLines()
 			let max = rawLines.count - 1
 			for i in 0...max {
@@ -61,6 +70,7 @@ struct WhisperPastTextView: View {
 				let favorites = fp.lookupFavorite(text: hidden)
 				rows.append(Row(id: i - max, raw: hidden, linked: shown, favorites: favorites))
 			}
+			bottomRow = 0
 		}
 		return rows
 	}
