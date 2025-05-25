@@ -1,0 +1,22 @@
+iPhone typing:
+---
+This is what I want to say. I type it, and then it gets read aloud when I hit return.
+It's fastest if I use an external keyboard, but I can also use the built-in thumb-typing keyboard if I want to.
+When typing with the software keyboard, there's less room to see my history.
+So often I keep the favorites view on top so I can tap on favorites for fast access.
+This is text that will be read aloud as soon as I hit return.
+
+iPad typing:
+---
+This is what I want to say. I type it, and then it gets read aloud when I hit return.
+It's fastest if I use an external keyboard, such as a Magic Keyboard on an iPad.
+I can repeat a line simply by clicking on the repeat button (at the far left).
+I can type a favorite by clicking the name of the favorite at the right.
+This is text that will be read aloud as soon as I hit return.
+
+Mac typing:
+---
+This is what I want to say. I type it, and then it gets read aloud when I hit return.
+I can repeat a line simply by clicking on the repeat button (at the far left).
+I can type a favorite by clicking the name of the favorite at the right.
+This is text that will be read aloud as soon as I hit return.
