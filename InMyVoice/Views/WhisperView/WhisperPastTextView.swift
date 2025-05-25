@@ -59,19 +59,15 @@ struct WhisperPastTextView: View {
 
 	private func makeRows() -> [Row] {
 		var rows: [Row] = []
-		if model.pastText.isEmpty {
-			bottomRow = nil
-		} else {
-			let (raw: rawLines, linked: linkedLines) = model.getLines()
-			let max = rawLines.count - 1
-			for i in 0...max {
-				let hidden = rawLines[i]
-				let shown = String(linkedLines[i].trimmingCharacters(in: .whitespaces))
-				let favorites = fp.lookupFavorite(text: hidden)
-				rows.append(Row(id: i - max, raw: hidden, linked: shown, favorites: favorites))
-			}
-			bottomRow = 0
+		let (raw: rawLines, linked: linkedLines) = model.getLines()
+		for i in 0..<rawLines.count {
+			let hidden = rawLines[i]
+			let shown = String(linkedLines[i].trimmingCharacters(in: .whitespaces))
+			let favorites = fp.lookupFavorite(text: hidden)
+			rows.append(Row(id: i, raw: hidden, linked: shown, favorites: favorites))
 		}
+		rows.append(Row(id: rows.count, raw: "", linked: "", favorites: []))
+		bottomRow = rows.count
 		return rows
 	}
 
