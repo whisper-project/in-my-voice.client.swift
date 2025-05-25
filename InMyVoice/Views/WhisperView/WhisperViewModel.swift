@@ -44,7 +44,8 @@ final class WhisperViewModel: ObservableObject {
 		}
 		var newLines = new.split(separator: "\n", omittingEmptySubsequences: false)
 		let lastLine = String(newLines.removeLast())
-		for _ in newLines {
+		for line in newLines {
+			_ = setLiveText(String(line))
 			completeLine()
 		}
 		return setLiveText(lastLine)
