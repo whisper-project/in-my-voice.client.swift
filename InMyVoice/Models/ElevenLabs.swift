@@ -344,6 +344,8 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 		}
 	}
 
+	private static var fallbackQueue = DispatchQueue(label: "fallbackQueue", qos: .default)
+
 	private func fallback(_ text: String, voice: AVSpeechSynthesisVoice? = nil) {
 		// fallback to Apple speech generation
 		let utterance = AVSpeechUtterance(string: text)
@@ -352,7 +354,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 		} else if let voice = self.fallbackVoice {
 			utterance.voice = voice
 		}
-		DispatchQueue.main.async {
+		Self.fallbackQueue.async {
 			Self.fallbackSynth.speak(utterance)
 		}
 	}
@@ -413,7 +415,9 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 	}
 
 	func abortCurrentSpeech() {
-		Self.fallbackSynth.stopSpeaking(at: .immediate)
+		Self.fallbackQueue.async {
+			Self.fallbackSynth.stopSpeaking(at: .immediate)
+		}
 		DispatchQueue.main.async {
 			guard let player = self.speaker else {
 				// nothing to abort
