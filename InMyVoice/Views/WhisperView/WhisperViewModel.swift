@@ -68,7 +68,7 @@ final class WhisperViewModel: ObservableObject {
 			interjectionPrefixOverride = nil
 			playInterjectionSound()
 		} else {
-			if !liveText.isEmpty && liveText != PreferenceData.interjectionPrefix() {
+			if !liveText.isEmpty {
 				_ = submitLiveText()
 			}
 			liveText = pendingLiveText
