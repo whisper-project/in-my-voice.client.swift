@@ -129,8 +129,9 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 				Self.voiceId = ""
 				Self.voiceName = ""
 				self.saveSettings()
-				self.usageData = nil
 				DispatchQueue.main.async {
+					self.usageData = nil
+					PreferenceData.lastUsagePercentage = nil
 					self.timestamp += 1
 				}
 			} else if let obj = try? JSONSerialization.jsonObject(with: data, options: []),
