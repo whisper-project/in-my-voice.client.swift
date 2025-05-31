@@ -8,3 +8,9 @@ First beta release. All the planned functionality is available. Things to test:
 5. Use the app preferences to configure the speech history buttons.
 6. If you are a beta tester who's helping with testing study-related functionality, you will get an email with your unique participant number. Try joining the study, and make sure it configures your ElevenLabs voice appropriately.
 7. If you have multiple devices, try setting the app up on one device and then make sure the favorites and ElevenLabs settings are synced to your other devices.
+=====
+Version 1.0.6:
+This release adds support for switching the ElevenLabs voice generation model to Turbo rather than Flash. Look for an "Advanced settings" control once you have configured your ElevenLabs voice.
+
+This release also fixes previously-reported bugs in the documentation and in filtering of ElevenLabs voices.
+=====
