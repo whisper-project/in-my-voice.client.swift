@@ -1,8 +1,8 @@
-title: Whisper
-description: Reference website for the app Whisper
+title: In My Voice
+description: Reference website for the app In My Voice
 theme: just-the-docs
 
-url: https://whisper-project.github.io/client.swift
+url: https://docs.in-my-voice.whisper-project.org
 
 plugins:
   - jekyll-relative-links

@@ -40,7 +40,7 @@ jobs:
       - name: Build static pages
         run: |
           cd ./docs
-          bundle exec jekyll build --baseurl ${{ steps.pages.outputs.base_path }}
+          bundle exec jekyll build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
