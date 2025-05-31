@@ -17,6 +17,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 	@Published private(set) var usageCutoff: Bool = false
 
 	static private(set) var apiKey: String = ""
+	static private(set) var modelId: String = "flash"
 	static private(set) var voiceId: String = ""
 	static private(set) var voiceName: String = ""
 	static private(set) var voices: [VoiceInfo] = []
@@ -52,12 +53,13 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 
 	private func loadSettings() {
 		if let data = Data.loadJsonFromDocumentsDirectory(saveName),
-		   let settings = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-		   let apiKey = settings["apiKey"] as? String,
-		   let voiceId = settings["voiceId"] as? String,
-		   let voiceName = settings["voiceName"] as? String
+		   let settings = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String],
+		   let apiKey = settings["apiKey"],
+		   let voiceId = settings["voiceId"],
+		   let voiceName = settings["voiceName"]
 		{
 			Self.apiKey = apiKey
+			Self.modelId = settings["modelId"] ?? "" == "turbo" ? "turbo" : "flash"
 			Self.voiceId = voiceId
 			Self.voiceName = voiceName
 		} else {
@@ -69,6 +71,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 	private func saveSettings() {
 		let settings: [String: String] = [
 			"apiKey": Self.apiKey,
+			"modelId": Self.modelId == "turbo" ? "turbo" : "flash",
 			"voiceId": Self.voiceId,
 			"voiceName": Self.voiceName,
 		]
@@ -78,8 +81,8 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 		data.saveJsonToDocumentsDirectory(saveName)
 	}
 
-	func proposeSettings(apiKey: String, voiceId: String = "", voiceName: String = "", _ callback: @escaping (Bool) -> Void) {
-		let settings = ["apiKey": apiKey, "voiceId": voiceId, "voiceName": voiceName]
+	func proposeSettings(apiKey: String, voiceId: String = "", modelId: String = "", _ callback: @escaping (Bool) -> Void) {
+		let settings = ["apiKey": apiKey, "voiceId": voiceId, "modelId": modelId]
 		guard let data = try? JSONSerialization.data(withJSONObject: settings, options: []) else {
 			ServerProtocol.notifyAnomaly("Failed to serialize settings for apiKey and voiceId validation")
 			callback(false)
@@ -122,6 +125,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 			if data.isEmpty {
 				// server has no settings, so we shouldn't
 				Self.apiKey = ""
+				Self.modelId = ""
 				Self.voiceId = ""
 				Self.voiceName = ""
 				self.saveSettings()
@@ -136,6 +140,7 @@ final class ElevenLabs: NSObject, AVAudioPlayerDelegate, ObservableObject {
 					  let voiceName = settings["voiceName"]
 			{
 				Self.apiKey = apiKey
+				Self.modelId = settings["modelId"] ?? "" == "turbo" ? "turbo" : "flash"
 				Self.voiceId = voiceId
 				Self.voiceName = voiceName
 				self.saveSettings()
@@ -433,14 +438,15 @@ final class SpeechItem {
 	private struct SpeechSettings {
 		let apiRoot: String = "https://api.us.elevenlabs.io/v1"
 		let outputFormat: String = "mp3_44100_128"
-		let modelId: String = "eleven_flash_v2"
 		var apiKey: String = ElevenLabs.apiKey
 		var voiceId: String = ElevenLabs.voiceId
+		let modelId: String = ElevenLabs.modelId == "turbo" ? "eleven_turbo_v2" : "eleven_flash_v2"
 
 		func stableHash() -> String {
 			var hasher = HasherFNV1a()
 			hasher.combine(apiKey)
 			hasher.combine(voiceId)
+			hasher.combine(modelId)
 			let val = hasher.finalize()
 			return String(val, radix: 32, uppercase: false)
 		}

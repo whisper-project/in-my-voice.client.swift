@@ -28,6 +28,8 @@ struct ElevenLabsSettingsView: View {
 	@State private var voiceName: String = ElevenLabs.voiceName
 	@State private var apiKeyValidated: Bool = ElevenLabs.isEnabled()
 	@State private var voiceIdValidated: Bool = ElevenLabs.isEnabled()
+	@State private var showAdvanced: Bool = ElevenLabs.modelId == "turbo"
+	@State private var modelId: String = ElevenLabs.modelId
 	@State private var validationState: ValidationState = .idle
 	@State private var validationSucceeded: Bool?
 	@State private var previewUrl: URL?
@@ -76,6 +78,20 @@ struct ElevenLabsSettingsView: View {
 				EmptyView()
 			default:
 				ProgressView()
+			}
+			Toggle("Show advanced settings", isOn: $showAdvanced)
+			if showAdvanced {
+				switch validationState {
+				case .idle:
+					Picker("ElevenLabs generation model", selection: $modelId) {
+						Text("Flash (faster, less nuanced)").tag("flash")
+						Text("Turbo (slower, more nuanced)").tag("turbo")
+					}
+					Button("Use this model", action: changeModel)
+						.disabled(modelId == ElevenLabs.modelId)
+				case .validating:
+					ProgressView()
+				}
 			}
 		} else if !apiKeyValidated {
 			// we are editing the API key, no voice yet
@@ -160,6 +176,7 @@ struct ElevenLabsSettingsView: View {
 	private func updateFromElevenLabs(_ force: Bool = false) {
 		guard force || timestamp != elevenLabs.timestamp else { return }
 		timestamp = elevenLabs.timestamp
+		modelId = ElevenLabs.modelId
 		if ElevenLabs.isEnabled() {
 			isEnabled = true
 			apiKey = ElevenLabs.apiKey
@@ -176,6 +193,17 @@ struct ElevenLabsSettingsView: View {
 			voiceIdValidated = false
 			voiceName = ""
 			voices = []
+		}
+	}
+
+	private func changeModel() {
+		validationState = .validating
+		ElevenLabs.shared.proposeSettings(apiKey: apiKey, voiceId: voiceId!, modelId: modelId) { ok in
+			validationState = .idle
+			validationSucceeded = ok
+			if !ok {
+				modelId = ElevenLabs.modelId
+			}
 		}
 	}
 
@@ -209,12 +237,12 @@ struct ElevenLabsSettingsView: View {
 	private func validateVoiceId() {
 		if let voiceId = voiceId {
 			validationState = .validating
-			ElevenLabs.shared.proposeSettings(apiKey: apiKey, voiceId: voiceId) { ok in
+			ElevenLabs.shared.proposeSettings(apiKey: apiKey, voiceId: voiceId, modelId: modelId) { ok in
 				self.validationState = .idle
 				if ok {
 					// force the update if the settings are the same as before,
 					// otherwise the timestamp update will make it happen
-					updateFromElevenLabs(apiKey == ElevenLabs.apiKey && voiceId == ElevenLabs.voiceId)
+					updateFromElevenLabs(apiKey == ElevenLabs.apiKey && voiceId == ElevenLabs.voiceId && modelId == ElevenLabs.modelId)
 				} else {
 					ServerProtocol.notifyAnomaly("Voice ID validation failed but voice was received from server")
 				}
@@ -310,11 +338,15 @@ struct ElevenLabsSettingsView: View {
 	private func filterVoices() {
 		filteredVoices = []
 		voiceLoop: for voice in voices {
-			if !voice.isOwner && hideStockVoices {
+			if voice.category == "premade" && hideStockVoices {
 				continue
 			}
 			for option in labelOptions {
-				if let wanted = option.value, wanted != voice.labels[option.id] {
+				if option.id == "category" {
+					if let wanted = option.value, wanted != voice.category {
+						continue voiceLoop
+					}
+				} else if let wanted = option.value, wanted != voice.labels[option.id] {
 					continue voiceLoop
 				}
 			}
