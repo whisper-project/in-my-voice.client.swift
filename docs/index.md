@@ -22,7 +22,7 @@ The In My Voice app collects and sends to its server a variety of diagnostic dat
 
 * Information about crashes and other errors that interrupt the use of the app.
 * Identifiers created by the app that are specific to the device or the user’s app settings. These identifiers are random strings of characters that are different for each device and user.
-* The dates and times that the app was launched or that data was typed by a user.
+* The dates and times that the app was launched, became active, became inactive, or was terminated.
 
 All identifiers created by the app, as well as all associated settings and diagnostic data, are purged from the In My Voice server if the devices and settings they are associated with have not been used in the past 12 months.
 
