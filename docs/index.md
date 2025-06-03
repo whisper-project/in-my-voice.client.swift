@@ -12,7 +12,7 @@ To learn how to use the app, visit [Instructions](instructions.md). For help, vi
 
 ## Privacy
 
-Neither the [Whisper Project](http://whisper-project.org) (the maker of In My Voice) nor [Software in the Public Interest](https://spi-inc.org) (the publisher of In My Voice) collects, stores, or processes any data about individuals who use In My Voice. 
+Neither the [Whisper Project](http://whisper-project.org) (the maker of In My Voice) nor [Software in the Public Interest](https://spi-inc.org) (the publisher of In My Voice) collects, stores, or processes any personal data, including face data, about individuals who use In My Voice.
 
 The In My Voice app never collects usage data unless an individual user has chosen to participate in a research study. In that case, data about study participant usage is provided to the study administrators for research purposes. Details of what data is collected and how it is used varies from study to study; each study provides detailed information about this in their study agreements.
 

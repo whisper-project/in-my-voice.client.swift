@@ -14,3 +14,8 @@ This release adds support for switching the ElevenLabs voice generation model to
 
 This release also fixes previously-reported bugs in the documentation and in filtering of ElevenLabs voices.
 =====
+Version 1.0.7:
+This release contains no functional changes. Non-functional changes were made
+in response to App Store review questions. And the docs were updated to meet
+Apple guidelines related to privacy.
+=====
