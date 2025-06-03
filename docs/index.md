@@ -12,7 +12,7 @@ To learn how to use the app, visit [Instructions](instructions.md). For help, vi
 
 ## Privacy
 
-Neither the [Whisper Project](http://whisper-project.org) (the maker of In My Voice) nor [Software in the Public Interest](https://spi-inc.org) (the publisher of In My Voice) collects, stores, or processes any data about individuals who use In My Voice. 
+Neither the [Whisper Project](http://whisper-project.org) (the maker of In My Voice) nor [Software in the Public Interest](https://spi-inc.org) (the publisher of In My Voice) collects, stores, or processes any personal data, including face data, about individuals who use In My Voice.
 
 The In My Voice app never collects usage data unless an individual user has chosen to participate in a research study. In that case, data about study participant usage is provided to the study administrators for research purposes. Details of what data is collected and how it is used varies from study to study; each study provides detailed information about this in their study agreements.
 
@@ -22,7 +22,7 @@ The In My Voice app collects and sends to its server a variety of diagnostic dat
 
 * Information about crashes and other errors that interrupt the use of the app.
 * Identifiers created by the app that are specific to the device or the user’s app settings. These identifiers are random strings of characters that are different for each device and user.
-* The dates and times that the app was launched or that data was typed by a user.
+* The dates and times that the app was launched, became active, became inactive, or was terminated.
 
 All identifiers created by the app, as well as all associated settings and diagnostic data, are purged from the In My Voice server if the devices and settings they are associated with have not been used in the past 12 months.
 
